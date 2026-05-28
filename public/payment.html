@@ -1,0 +1,2412 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Secure Subscription Checkout — Viyan MedAssist</title>
+  <!-- Google Fonts: Manrope & Outfit -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&family=Outfit:wght@500;600;700;800&display=swap"
+    rel="stylesheet">
+  <!-- Tabler Icons Webfont -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+
+  <style>
+    /* ── DESIGN SYSTEM VARIABLES ── */
+    :root {
+      --sys-teal: #00C9A7;
+      --sys-teal-hover: #00B396;
+      --sys-teal-dim: rgba(0, 201, 167, 0.13);
+      --sys-danger: #EF4444;
+      --sys-danger-dim: rgba(239, 68, 68, 0.13);
+      --sys-amber: #F59E0B;
+      --sys-amber-dim: rgba(245, 158, 11, 0.13);
+
+      /* Dark mode colors by default */
+      --page-bg: #0A0F1C;
+      --sidebar-bg: #0D1321;
+      --card-bg: #111827;
+      --card-inner: #1A2236;
+      --border-color: #1F2A44;
+      --input-bg: #0D1525;
+      --text-primary: #F1F5F9;
+      --text-muted: #94A3B8;
+      --text-label: #64748B;
+    }
+
+    [data-theme="light"] {
+      --page-bg: #F4F6FA;
+      --card-bg: #FFFFFF;
+      --card-inner: #F8FAFC;
+      --border-color: #E2E8F0;
+      --input-bg: #F8FAFC;
+      --text-primary: #0F172A;
+      --text-muted: #64748B;
+      --text-label: #64748B;
+    }
+
+    /* ── BASE RESET ── */
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Manrope', sans-serif;
+      background-color: var(--page-bg);
+      color: var(--text-primary);
+      min-height: 100vh;
+      display: flex;
+      transition: background-color 200ms ease, color 200ms ease;
+    }
+
+    /* ── SIDEBAR (220px, always dark) ── */
+    .sidebar {
+      width: 220px;
+      background-color: #0D1321;
+      border-right: 1px solid #1F2A44;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      position: fixed;
+      left: 0;
+      top: 0;
+      z-index: 100;
+    }
+
+    .sidebar-header {
+      padding: 20px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      border-bottom: 1px solid #1F2A44;
+    }
+
+    .logo-box {
+      width: 36px;
+      height: 36px;
+      background-color: var(--sys-teal-dim);
+      border: 1px solid var(--sys-teal);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--sys-teal);
+      font-family: 'Outfit', sans-serif;
+      font-weight: 800;
+      font-size: 20px;
+    }
+
+    .brand-name {
+      font-family: 'Outfit', sans-serif;
+      font-weight: 700;
+      font-size: 15px;
+      color: #F1F5F9;
+    }
+
+    .brand-name span {
+      display: block;
+      font-size: 10px;
+      font-weight: 500;
+      color: var(--sys-teal);
+      letter-spacing: 0.05em;
+    }
+
+    .nav-list {
+      list-style: none;
+      padding: 16px 8px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      flex: 1;
+    }
+
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 12px;
+      color: #94A3B8;
+      font-size: 13px;
+      font-weight: 500;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      text-decoration: none;
+    }
+
+    .nav-item:hover {
+      background-color: rgba(255, 255, 255, 0.03);
+      color: #F1F5F9;
+    }
+
+    .nav-item.active {
+      background-color: var(--sys-teal-dim);
+      color: var(--sys-teal);
+      border-left: 3px solid var(--sys-teal);
+      border-top-left-radius: 0;
+      border-bottom-left-radius: 0;
+      font-weight: 600;
+    }
+
+    .nav-bottom {
+      padding: 16px;
+      border-top: 1px solid #1F2A44;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    /* ── APP MAIN WINDOW ── */
+    .app-container {
+      margin-left: 220px;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+    }
+
+    /* ── TOPBAR (60px) ── */
+    .topbar {
+      height: 60px;
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 32px;
+      background-color: var(--card-bg);
+      transition: background-color 200ms ease, border-color 200ms ease;
+    }
+
+    .topbar-left {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .secure-pill {
+      background-color: var(--sys-teal-dim);
+      border: 1px solid var(--sys-teal);
+      color: var(--sys-teal);
+      padding: 4px 10px;
+      border-radius: 9999px;
+      font-size: 11px;
+      font-family: 'Outfit', sans-serif;
+      font-weight: 700;
+    }
+
+    .search-bar {
+      position: relative;
+    }
+
+    .search-bar input {
+      width: 280px;
+      background-color: var(--input-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 8px 12px 8px 36px;
+      color: var(--text-primary);
+      font-size: 12px;
+      outline: none;
+      transition: all 0.2s ease;
+    }
+
+    .search-bar input:focus {
+      border-color: var(--sys-teal);
+    }
+
+    .search-bar i {
+      position: absolute;
+      left: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--text-muted);
+      font-size: 14px;
+    }
+
+    .topbar-right {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+    }
+
+    .theme-toggle,
+    .bell-btn {
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      cursor: pointer;
+      font-size: 18px;
+      transition: color 0.2s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .theme-toggle:hover,
+    .bell-btn:hover {
+      color: var(--text-primary);
+    }
+
+    .user-profile {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .user-info {
+      text-align: right;
+    }
+
+    .user-name {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    .user-role {
+      font-size: 10px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .user-avatar {
+      width: 32px;
+      height: 32px;
+      background-color: var(--sys-teal-dim);
+      border: 1px solid var(--sys-teal);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--sys-teal);
+      font-weight: 700;
+      font-family: 'Outfit', sans-serif;
+      font-size: 12px;
+    }
+
+    /* ── PAGE CONTENT AREA ── */
+    .page-content {
+      padding: 32px;
+      max-width: 1200px;
+      width: 100%;
+      margin: 0 auto;
+      flex: 1;
+    }
+
+    .back-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      color: var(--sys-teal);
+      text-decoration: none;
+      font-size: 13px;
+      font-weight: 600;
+      margin-bottom: 16px;
+      cursor: pointer;
+      transition: color 0.2s;
+    }
+
+    .back-btn:hover {
+      color: var(--sys-teal-hover);
+    }
+
+    .page-title {
+      font-family: 'Outfit', sans-serif;
+      font-size: 24px;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin-bottom: 4px;
+    }
+
+    .page-subtitle {
+      font-size: 13px;
+      color: var(--text-muted);
+      margin-bottom: 32px;
+    }
+
+    /* ── MAIN WORKSPACE GRID ── */
+    .checkout-grid {
+      display: grid;
+      grid-template-columns: 58% 40%;
+      gap: 20px;
+      align-items: start;
+    }
+
+    .sys-card {
+      background-color: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 14px;
+      padding: 24px;
+      transition: background-color 200ms ease, border-color 200ms ease;
+    }
+
+    .card-label {
+      font-family: 'Outfit', sans-serif;
+      font-size: 10px;
+      font-weight: 600;
+      color: var(--text-label);
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      margin-bottom: 12px;
+      display: block;
+    }
+
+    /* ── SECTION: CONTACT INFO ── */
+    .inner-card {
+      background-color: var(--card-inner);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 16px;
+      margin-bottom: 24px;
+    }
+
+    .info-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+
+    .info-item {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .info-item .lbl {
+      font-family: 'Outfit', sans-serif;
+      font-size: 9px;
+      font-weight: 600;
+      color: var(--text-label);
+      letter-spacing: 0.05em;
+    }
+
+    .info-item .val-wrapper {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 13px;
+      color: var(--text-primary);
+      font-weight: 500;
+    }
+
+    .info-item i {
+      color: var(--text-label);
+      font-size: 12px;
+    }
+
+    /* ── SECTION: GST DETAILS ── */
+    .row-inputs {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-bottom: 8px;
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+
+    .sys-input-field {
+      background-color: var(--input-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 10px 14px;
+      color: var(--text-primary);
+      font-family: 'Manrope', sans-serif;
+      font-size: 13px;
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+      width: 100%;
+    }
+
+    .sys-input-field:focus {
+      border-color: var(--sys-teal);
+    }
+
+    .helper-note {
+      font-size: 11px;
+      color: var(--text-muted);
+      font-style: italic;
+      margin-bottom: 24px;
+      display: block;
+    }
+
+    /* ── SECTION: PAYMENT METHOD TABS ── */
+    .tabs-row {
+      display: flex;
+      border-bottom: 1px solid var(--border-color);
+      margin-bottom: 20px;
+    }
+
+    .tab-btn {
+      flex: 1;
+      padding: 12px;
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      font-family: 'Outfit', sans-serif;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: all 0.2s;
+      border-bottom: 2px solid transparent;
+    }
+
+    .tab-btn:hover {
+      color: var(--text-primary);
+    }
+
+    .tab-btn.active {
+      color: var(--sys-teal);
+      border-bottom-color: var(--sys-teal);
+    }
+
+    .tab-content {
+      display: none;
+    }
+
+    .tab-content.active {
+      display: block;
+    }
+
+    /* ── INFO BOXES ── */
+    .info-box {
+      background-color: var(--sys-teal-dim);
+      border-left: 3px solid var(--sys-teal);
+      padding: 12px;
+      border-radius: 4px;
+      font-size: 12px;
+      line-height: 1.5;
+      color: var(--text-primary);
+      margin-bottom: 20px;
+    }
+
+    /* ── CARD TAB SPECIFICS ── */
+    .card-logo-container {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+
+    .card-detect-chip {
+      position: absolute;
+      right: 12px;
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 10px;
+      font-weight: 700;
+      color: #fff;
+      display: none;
+    }
+
+    .chip-visa {
+      background-color: #1a4f9c;
+      display: block;
+    }
+
+    .chip-mc {
+      background-color: #eb001b;
+      display: block;
+    }
+
+    .chip-rupay {
+      background-color: #008d82;
+      display: block;
+    }
+
+    .cvv-container {
+      position: relative;
+    }
+
+    .cvv-toggle-btn {
+      position: absolute;
+      right: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      cursor: pointer;
+    }
+
+    /* ── UPI TAB SPECIFICS ── */
+    .upi-shortcuts {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+
+    .upi-shortcut-btn {
+      background-color: var(--card-inner);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 10px;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      font-size: 11px;
+      font-weight: 600;
+      transition: all 0.2s;
+    }
+
+    .upi-shortcut-btn:hover {
+      border-color: var(--sys-teal);
+      transform: translateY(-2px);
+    }
+
+    .upi-logo-box {
+      width: 24px;
+      height: 24px;
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      font-size: 10px;
+      font-weight: 700;
+    }
+
+    .logo-gpay {
+      background-color: #4285F4;
+    }
+
+    .logo-phonepe {
+      background-color: #5F259F;
+    }
+
+    .logo-paytm {
+      background-color: #00B9F5;
+    }
+
+    .logo-bhim {
+      background-color: #FF9933;
+    }
+
+    .or-divider {
+      display: flex;
+      align-items: center;
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 12px;
+      margin: 24px 0;
+    }
+
+    .or-divider::before,
+    .or-divider::after {
+      content: '';
+      flex: 1;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .or-divider:not(:empty)::before {
+      margin-right: .5em;
+    }
+
+    .or-divider:not(:empty)::after {
+      margin-left: .5em;
+    }
+
+    .qr-section {
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin-bottom: 24px;
+    }
+
+    .qr-box {
+      width: 160px;
+      height: 160px;
+      border: 2px dashed var(--sys-teal);
+      background-color: var(--card-inner);
+      border-radius: 8px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+
+    .qr-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 6px;
+      width: 80px;
+      height: 80px;
+    }
+
+    .qr-pixel {
+      background-color: var(--text-primary);
+      border-radius: 2px;
+    }
+
+    .qr-box span {
+      font-size: 11px;
+      color: var(--sys-teal);
+      font-weight: 600;
+    }
+
+    /* UPI STATUS TIMER BOX */
+    .status-box {
+      background-color: var(--sys-amber-dim);
+      border: 1px solid var(--sys-amber);
+      border-radius: 8px;
+      padding: 16px;
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 24px;
+      text-align: center;
+    }
+
+    .status-icon {
+      font-size: 32px;
+      animation: pulse 1.5s infinite;
+    }
+
+    .status-title {
+      font-weight: 700;
+      font-size: 14px;
+    }
+
+    .status-timer {
+      font-family: monospace;
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--sys-amber);
+    }
+
+    .pulsing-dots::after {
+      content: ' .';
+      animation: dots 1.5s infinite step-start;
+    }
+
+    /* ── NET BANKING TAB SPECIFICS ── */
+    .banks-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+      margin-top: 16px;
+      margin-bottom: 20px;
+    }
+
+    .bank-grid-btn {
+      background-color: var(--card-inner);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 12px 6px;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      font-size: 11px;
+      font-weight: 600;
+      transition: all 0.2s;
+      text-align: center;
+    }
+
+    .bank-grid-btn:hover,
+    .bank-grid-btn.selected {
+      border-color: var(--sys-teal);
+      background-color: var(--sys-teal-dim);
+      color: var(--sys-teal);
+    }
+
+    .bank-logo {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      font-weight: 700;
+      font-size: 10px;
+    }
+
+    .logo-sbi {
+      background-color: #00a4e4;
+    }
+
+    .logo-hdfc {
+      background-color: #004c8f;
+    }
+
+    .logo-icici {
+      background-color: #f58220;
+    }
+
+    .logo-axis {
+      background-color: #97144d;
+    }
+
+    .logo-kotak {
+      background-color: #ed1c24;
+    }
+
+    .logo-pnb {
+      background-color: #a32b2f;
+    }
+
+    .logo-bob {
+      background-color: #f15a22;
+    }
+
+    .logo-canara {
+      background-color: #0077b5;
+    }
+
+    /* REDIRECT INTERSTITIAL */
+    .redirect-overlay {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 48px 24px;
+      text-align: center;
+    }
+
+    .progress-bar-container {
+      width: 100%;
+      max-width: 320px;
+      height: 6px;
+      background-color: var(--border-color);
+      border-radius: 999px;
+      overflow: hidden;
+      margin: 20px 0;
+    }
+
+    .progress-bar-fill {
+      height: 100%;
+      width: 0%;
+      background-color: var(--sys-teal);
+      border-radius: 999px;
+      transition: width 2s linear;
+    }
+
+    /* ── COUPON SECTION ── */
+    .coupon-row {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 8px;
+    }
+
+    .coupon-success-chip {
+      display: none;
+      background-color: rgba(16, 185, 129, 0.1);
+      border: 1px solid #10B981;
+      color: #10B981;
+      border-radius: 6px;
+      padding: 8px 12px;
+      font-size: 12px;
+      font-weight: 600;
+      width: 100%;
+    }
+
+    /* ── TERMS & FOOTER BUTTON ── */
+    .terms-label {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      font-size: 12px;
+      color: var(--text-muted);
+      cursor: pointer;
+      margin-top: 24px;
+      margin-bottom: 24px;
+    }
+
+    .terms-label input {
+      margin-top: 3px;
+      accent-color: var(--sys-teal);
+    }
+
+    .terms-label a {
+      color: var(--sys-teal);
+      text-decoration: underline;
+    }
+
+    .pay-submit-btn {
+      width: 100%;
+      height: 52px;
+      background-color: var(--sys-teal);
+      color: #FFFFFF;
+      border: none;
+      border-radius: 8px;
+      font-family: 'Outfit', sans-serif;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      transition: all 0.2s;
+    }
+
+    .pay-submit-btn:hover:not(:disabled) {
+      background-color: var(--sys-teal-hover);
+    }
+
+    .pay-submit-btn:disabled {
+      background-color: var(--border-color);
+      color: var(--text-muted);
+      cursor: not-allowed;
+    }
+
+    .pay-btn-footer {
+      text-align: center;
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-top: 12px;
+    }
+
+    /* ── RIGHT COLUMN: ORDER SUMMARY ── */
+    .summary-title {
+      font-family: 'Outfit', sans-serif;
+      font-size: 16px;
+      font-weight: 600;
+      margin-bottom: 16px;
+    }
+
+    .summary-divider {
+      height: 1px;
+      background-color: var(--border-color);
+      margin: 16px 0;
+    }
+
+    .plan-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+    }
+
+    .plan-info h4 {
+      font-family: 'Outfit', sans-serif;
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    .plan-info p {
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+
+    .plan-price {
+      font-family: 'Outfit', sans-serif;
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+
+    .features-list {
+      list-style: none;
+      margin-top: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .feature-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+      color: var(--text-primary);
+    }
+
+    .feature-row i {
+      color: var(--sys-teal);
+      font-size: 14px;
+    }
+
+    .summary-calc-row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 13px;
+      color: var(--text-primary);
+      margin-bottom: 12px;
+    }
+
+    .summary-calc-row.discount-row {
+      display: none;
+      color: var(--sys-teal);
+    }
+
+    .summary-total-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-family: 'Outfit', sans-serif;
+      font-size: 18px;
+      font-weight: 700;
+      margin-top: 16px;
+    }
+
+    .summary-total-row span:last-child {
+      font-size: 24px;
+      color: var(--sys-teal);
+    }
+
+    .summary-badges {
+      display: flex;
+      gap: 8px;
+      justify-content: space-between;
+      margin-top: 20px;
+    }
+
+    .badge-pill {
+      flex: 1;
+      background-color: var(--card-inner);
+      border: 1px solid var(--border-color);
+      border-radius: 9999px;
+      padding: 6px;
+      font-size: 10px;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-align: center;
+      white-space: nowrap;
+    }
+
+    .summary-footer-text {
+      text-align: center;
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-top: 16px;
+    }
+
+    /* Collapsible Developer Box */
+    .dev-note-box {
+      margin-top: 24px;
+      background-color: var(--sys-teal-dim);
+      border: 1px solid var(--sys-teal);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    .dev-note-header {
+      padding: 12px 16px;
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--sys-teal);
+    }
+
+    .dev-note-body {
+      padding: 0 16px 16px;
+      font-size: 11px;
+      line-height: 1.6;
+      color: var(--text-primary);
+      display: none;
+    }
+
+    .dev-note-body pre {
+      background-color: rgba(0, 0, 0, 0.3);
+      padding: 8px;
+      border-radius: 4px;
+      margin-top: 8px;
+      overflow-x: auto;
+      font-family: monospace;
+    }
+
+    /* ── RAZORPAY SIMULATION CHECKOUT MODAL ── */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: rgba(0, 0, 0, 0.7);
+      backdrop-filter: blur(4px);
+      z-index: 1000;
+      display: none;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .razorpay-modal {
+      width: 480px;
+      background-color: #FFFFFF;
+      color: #1A1A1A;
+      border-radius: 12px;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+      overflow: hidden;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
+
+    .rp-header {
+      background-color: #0E1F40;
+      color: #FFFFFF;
+      padding: 16px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .rp-logo {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-weight: 700;
+      font-size: 16px;
+    }
+
+    .rp-logo-symbol {
+      width: 24px;
+      height: 24px;
+      background-color: #3399FF;
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 900;
+      color: #fff;
+    }
+
+    .rp-close-btn {
+      background: none;
+      border: none;
+      color: #94A3B8;
+      cursor: pointer;
+      font-size: 20px;
+    }
+
+    .rp-subheader {
+      background-color: #F8FAFC;
+      padding: 12px 20px;
+      display: flex;
+      justify-content: space-between;
+      border-bottom: 1px solid #E2E8F0;
+      font-size: 13px;
+    }
+
+    .rp-body {
+      padding: 24px 20px;
+    }
+
+    .rp-otp-title {
+      font-size: 15px;
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+
+    .rp-otp-desc {
+      font-size: 12px;
+      color: #64748B;
+      margin-bottom: 20px;
+    }
+
+    .rp-otp-input-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+      margin-bottom: 20px;
+    }
+
+    .rp-otp-box {
+      width: 48px;
+      height: 48px;
+      border: 1px solid #CBD5E1;
+      border-radius: 6px;
+      text-align: center;
+      font-size: 20px;
+      font-weight: 700;
+      outline: none;
+    }
+
+    .rp-otp-box:focus {
+      border-color: #3399FF;
+      box-shadow: 0 0 0 2px rgba(51, 153, 255, 0.2);
+    }
+
+    .rp-resend-link {
+      font-size: 12px;
+      color: #3399FF;
+      text-decoration: none;
+      font-weight: 500;
+      display: block;
+      margin-bottom: 24px;
+    }
+
+    .rp-pay-btn {
+      width: 100%;
+      height: 48px;
+      background-color: #3399FF;
+      color: #FFFFFF;
+      border: none;
+      border-radius: 6px;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: background-color 0.2s;
+    }
+
+    .rp-pay-btn:hover {
+      background-color: #257fd4;
+    }
+
+    .rp-footer {
+      text-align: center;
+      padding: 16px;
+      background-color: #F8FAFC;
+      border-top: 1px solid #E2E8F0;
+      font-size: 11px;
+      color: #94A3B8;
+    }
+
+    /* OTP VERIFICATION LOADER IN MODAL */
+    .rp-verifying {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      padding: 32px 0;
+      text-align: center;
+    }
+
+    /* ── PAYMENT SUCCESS VIEW ── */
+    .full-center-view {
+      display: none;
+      max-width: 540px;
+      margin: 40px auto 0;
+      width: 100%;
+    }
+
+    .success-icon-wrapper {
+      width: 80px;
+      height: 80px;
+      margin: 0 auto 24px;
+    }
+
+    .success-svg {
+      width: 80px;
+      height: 80px;
+    }
+
+    .success-circle {
+      fill: none;
+      stroke: var(--sys-teal);
+      stroke-width: 4;
+      stroke-dasharray: 251;
+      stroke-dashoffset: 251;
+      animation: drawCircle 1.2s ease-in-out forwards;
+      transform-origin: center;
+    }
+
+    .success-check {
+      fill: none;
+      stroke: var(--sys-teal);
+      stroke-width: 4;
+      stroke-dasharray: 100;
+      stroke-dashoffset: 100;
+      animation: drawCheck 0.8s 0.8s ease-in-out forwards;
+    }
+
+    .success-box-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin: 24px 0;
+    }
+
+    .success-box-grid .box {
+      background-color: var(--card-inner);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 12px;
+    }
+
+    /* ── PAYMENT FAILED VIEW ── */
+    .failed-svg {
+      width: 80px;
+      height: 80px;
+    }
+
+    .failed-circle {
+      fill: none;
+      stroke: var(--sys-danger);
+      stroke-width: 4;
+      stroke-dasharray: 251;
+      stroke-dashoffset: 251;
+      animation: drawCircle 1.2s ease-in-out forwards;
+    }
+
+    .failed-cross {
+      fill: none;
+      stroke: var(--sys-danger);
+      stroke-width: 4;
+      stroke-dasharray: 100;
+      stroke-dashoffset: 100;
+      animation: drawCheck 0.8s 0.8s ease-in-out forwards;
+    }
+
+    .failed-reason-box {
+      background-color: var(--sys-danger-dim);
+      border: 1px solid var(--sys-danger);
+      border-radius: 8px;
+      padding: 16px;
+      margin: 20px 0;
+      font-size: 13px;
+      color: var(--sys-danger);
+      text-align: left;
+    }
+
+    /* ── TOAST SYSTEM ── */
+    #toast-container {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      z-index: 9999;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .sys-toast {
+      background-color: #111827;
+      border: 1px solid #1F2A44;
+      border-left: 4px solid var(--sys-teal);
+      border-radius: 8px;
+      padding: 12px 20px;
+      color: #F1F5F9;
+      font-size: 13px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.5);
+      animation: slideIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+      min-width: 280px;
+    }
+
+    .sys-toast.warning {
+      border-left-color: var(--sys-amber);
+    }
+
+    .sys-toast.error {
+      border-left-color: var(--sys-danger);
+    }
+
+    /* ── ANIMATIONS ── */
+    @keyframes drawCircle {
+      to {
+        stroke-dashoffset: 0;
+      }
+    }
+
+    @keyframes drawCheck {
+      to {
+        stroke-dashoffset: 0;
+      }
+    }
+
+    @keyframes slideIn {
+      from {
+        transform: translateY(20px);
+        opacity: 0;
+      }
+
+      to {
+        transform: translateY(0);
+        opacity: 1;
+      }
+    }
+
+    @keyframes pulse {
+      0% {
+        transform: scale(1);
+        opacity: 1;
+      }
+
+      50% {
+        transform: scale(1.1);
+        opacity: 0.7;
+      }
+
+      100% {
+        transform: scale(1);
+        opacity: 1;
+      }
+    }
+
+    @keyframes dots {
+      0% {
+        content: ' .';
+      }
+
+      33% {
+        content: ' ..';
+      }
+
+      66% {
+        content: ' ...';
+      }
+    }
+
+    .spinner {
+      border: 2px solid rgba(255, 255, 255, 0.2);
+      border-left-color: #fff;
+      border-radius: 50%;
+      width: 16px;
+      height: 16px;
+      animation: spin 0.8s linear infinite;
+      display: inline-block;
+    }
+
+    @keyframes spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+    .error-msg {
+      color: var(--sys-danger);
+      font-size: 11px;
+      margin-top: 4px;
+      display: none;
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- ── SIDEBAR ── -->
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <div class="logo-box">W</div>
+      <div class="brand-name">
+        VIYAN MEDASSIST
+        <span>ENTERPRISE HUB</span>
+      </div>
+    </div>
+    <ul class="nav-list">
+      <li><a class="nav-item" href="#" onclick="showToast('Navigating to Dashboard...')"><i
+            class="ti ti-layout-dashboard"></i> Dashboard</a></li>
+      <li><a class="nav-item" href="#" onclick="showToast('Navigating to Stock...')"><i class="ti ti-box"></i> Stock</a>
+      </li>
+      <li><a class="nav-item" href="#" onclick="showToast('Navigating to Billing/POS...')"><i class="ti ti-receipt"></i>
+          Billing/POS</a></li>
+      <li><a class="nav-item" href="#" onclick="showToast('Navigating to Purchases...')"><i
+            class="ti ti-shopping-cart"></i> Purchases</a></li>
+      <li><a class="nav-item" href="#" onclick="showToast('Navigating to Import...')"><i class="ti ti-download"></i>
+          Import</a></li>
+      <li><a class="nav-item" href="#" onclick="showToast('Navigating to Sales...')"><i class="ti ti-trending-up"></i>
+          Sales</a></li>
+      <li><a class="nav-item" href="#" onclick="showToast('Navigating to Reports...')"><i class="ti ti-chart-bar"></i>
+          Reports</a></li>
+      <li><a class="nav-item" href="#" onclick="showToast('Navigating to Expiry & Batch...')"><i
+            class="ti ti-calendar-clock"></i> Expiry & Batch</a></li>
+      <li><a class="nav-item" href="#" onclick="showToast('Navigating to Barcode & QR...')"><i class="ti ti-qrcode"></i>
+          Barcode & QR</a></li>
+      <li><a class="nav-item active" href="#" onclick="showToast('Navigating to System Settings...')"><i
+            class="ti ti-settings"></i> System Settings</a></li>
+    </ul>
+    <div class="nav-bottom">
+      <a class="nav-item" href="#" onclick="showToast('Opening Help Center...')"><i class="ti ti-help-circle"></i> Help
+        Center</a>
+      <a class="nav-item" href="#" onclick="showToast('Logging out...')"><i class="ti ti-logout"></i> Log Out</a>
+    </div>
+  </aside>
+
+  <!-- ── MAIN CONTENT CONTAINER ── -->
+  <div class="app-container">
+
+    <!-- ── TOPBAR ── -->
+    <header class="topbar">
+      <div class="topbar-left">
+        <div class="search-bar">
+          <i class="ti ti-search"></i>
+          <input type="text" placeholder="Search analytics, stock, or clinical logs...">
+        </div>
+      </div>
+      <div class="topbar-right">
+        <button class="theme-toggle" id="theme-btn" onclick="toggleTheme()">
+          <i class="ti ti-moon" id="theme-icon"></i>
+        </button>
+        <button class="bell-btn" onclick="showToast('No new notifications', 'info')">
+          <i class="ti ti-bell"></i>
+        </button>
+        <div class="user-profile">
+          <div class="user-info">
+            <div class="user-name">R. Sanjay</div>
+            <div class="user-role">Staff Pharmacist</div>
+          </div>
+          <div class="user-avatar">RS</div>
+        </div>
+      </div>
+    </header>
+
+    <!-- ── CONTENT BODY ── -->
+    <main class="page-content" id="main-content">
+
+      <!-- ── BACK LINK ── -->
+      <a class="back-btn" onclick="showToast('Returning to subscription plans...')">
+        <i class="ti ti-arrow-left"></i> Back to Plans
+      </a>
+      <h1 class="page-title">Complete Your Subscription</h1>
+      <p class="page-subtitle">Secure checkout powered by Razorpay</p>
+
+      <!-- ── TWO COLUMN CHECKOUT LAYOUT ── -->
+      <div class="checkout-grid" id="checkout-view">
+
+        <!-- LEFT: PAYMENT FORM -->
+        <div class="settings-col">
+          <div class="sys-card">
+
+            <!-- SECTION 1: Contact Info -->
+            <span class="card-label">CONTACT INFORMATION</span>
+            <div class="inner-card">
+              <div class="info-grid">
+                <div class="info-item">
+                  <span class="lbl">FULL NAME</span>
+                  <div class="val-wrapper">R. Sanjay <i class="ti ti-lock"></i></div>
+                </div>
+                <div class="info-item">
+                  <span class="lbl">EMAIL ADDRESS</span>
+                  <div class="val-wrapper">sanjay@viyanpharmacy.com <i class="ti ti-lock"></i></div>
+                </div>
+                <div class="info-item">
+                  <span class="lbl">PHONE NUMBER</span>
+                  <div class="val-wrapper">+91 98765 43210 <i class="ti ti-lock"></i></div>
+                </div>
+                <div class="info-item">
+                  <span class="lbl">PHARMACY NAME</span>
+                  <div class="val-wrapper">Viyan Pharmacy <i class="ti ti-lock"></i></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- SECTION 2: GST -->
+            <span class="card-label">GST DETAILS (OPTIONAL)</span>
+            <div class="row-inputs">
+              <div class="form-group" style="margin-bottom:0">
+                <input type="text" class="sys-input-field" id="gstin-input" placeholder="29AABCC1234D1Z5 — optional">
+              </div>
+              <div class="form-group" style="margin-bottom:0">
+                <input type="text" class="sys-input-field" id="bizname-input" placeholder="Viyan Pharmacy">
+              </div>
+            </div>
+            <span class="helper-note">GST invoice will be generated if GSTIN is provided</span>
+
+            <!-- SECTION 3: Payment Method Tabs -->
+            <span class="card-label">PAYMENT METHOD</span>
+            <div class="tabs-row">
+              <button class="tab-btn active" id="tab-card-btn" onclick="switchTab('card')"><i
+                  class="ti ti-credit-card"></i> Card</button>
+              <button class="tab-btn" id="tab-upi-btn" onclick="switchTab('upi')"><i class="ti ti-phone"></i>
+                UPI</button>
+              <button class="tab-btn" id="tab-net-btn" onclick="switchTab('net')"><i class="ti ti-building-bank"></i>
+                Net Banking</button>
+            </div>
+
+            <!-- ── TAB CONTENT: CARD ── -->
+            <div class="tab-content active" id="tab-card">
+              <div class="info-box">
+                🔒 Card details are securely processed by Razorpay. We never store your card data. Clicking Pay will
+                open Razorpay's secure hosted checkout.
+              </div>
+              <div class="form-group">
+                <span class="card-label">CARD NUMBER</span>
+                <div class="card-logo-container">
+                  <input type="text" class="sys-input-field" id="card-num-input" placeholder="1234 5678 9012 3456"
+                    oninput="formatCard(this)">
+                  <span class="card-detect-chip" id="card-type-chip">VISA</span>
+                </div>
+                <span class="error-msg" id="err-card-num">Please enter a valid card number</span>
+              </div>
+              <div class="row-inputs">
+                <div class="form-group">
+                  <span class="card-label">EXPIRY DATE</span>
+                  <input type="text" class="sys-input-field" id="card-exp-input" placeholder="MM / YY" maxlength="5"
+                    oninput="formatExpiry(this)">
+                  <span class="error-msg" id="err-card-exp">Enter expiry (MM/YY)</span>
+                </div>
+                <div class="form-group">
+                  <span class="card-label">CVV</span>
+                  <div class="cvv-container">
+                    <input type="password" class="sys-input-field" id="card-cvv-input" placeholder="•••" maxlength="3">
+                    <button class="cvv-toggle-btn" onclick="toggleCvv()"><i class="ti ti-eye"></i></button>
+                  </div>
+                  <span class="error-msg" id="err-card-cvv">Enter 3-digit CVV</span>
+                </div>
+              </div>
+              <div class="form-group">
+                <span class="card-label">CARDHOLDER NAME</span>
+                <input type="text" class="sys-input-field" id="card-name-input" placeholder="Name as on card">
+                <span class="error-msg" id="err-card-name">Enter cardholder name</span>
+              </div>
+              <label class="terms-label" style="margin-top:12px; margin-bottom:12px">
+                <input type="checkbox" checked> Save this card for future payments
+              </label>
+            </div>
+
+            <!-- ── TAB CONTENT: UPI ── -->
+            <div class="tab-content" id="tab-upi">
+              <div class="info-box">
+                <strong>How UPI payment works:</strong><br>
+                1. Enter your UPI ID and click Pay<br>
+                2. A payment request is sent to your UPI app (GPay/PhonePe/Paytm)<br>
+                3. Open your UPI app — you will see a collect request for ₹942.82<br>
+                4. Approve the payment in your app using your UPI PIN<br>
+                5. Payment confirmation is sent automatically — this page updates
+              </div>
+              <div class="form-group">
+                <span class="card-label">UPI ID</span>
+                <input type="text" class="sys-input-field" id="upi-input" placeholder="yourname@upi">
+                <span class="error-msg" id="err-upi">Please enter a valid UPI ID (e.g. name@paytm)</span>
+              </div>
+
+              <div class="upi-shortcuts">
+                <div class="upi-shortcut-btn" onclick="fillUpiHint('gpay')">
+                  <div class="upi-logo-box logo-gpay">G</div>
+                  GPay
+                </div>
+                <div class="upi-shortcut-btn" onclick="fillUpiHint('phonepe')">
+                  <div class="upi-logo-box logo-phonepe">P</div>
+                  PhonePe
+                </div>
+                <div class="upi-shortcut-btn" onclick="fillUpiHint('paytm')">
+                  <div class="upi-logo-box logo-paytm">Py</div>
+                  Paytm
+                </div>
+                <div class="upi-shortcut-btn" onclick="fillUpiHint('bhim')">
+                  <div class="upi-logo-box logo-bhim">B</div>
+                  BHIM
+                </div>
+              </div>
+
+              <div class="or-divider">OR</div>
+
+              <div class="qr-section">
+                <span class="card-label">Scan with any UPI app</span>
+                <div class="qr-box">
+                  <div class="qr-grid">
+                    <div class="qr-pixel"></div>
+                    <div class="qr-pixel"></div>
+                    <div class="qr-pixel"></div>
+                    <div class="qr-pixel"></div>
+                    <div class="qr-pixel"></div>
+                    <div class="qr-pixel"></div>
+                    <div class="qr-pixel"></div>
+                    <div class="qr-pixel"></div>
+                    <div class="qr-pixel"></div>
+                    <div class="qr-pixel"></div>
+                    <div class="qr-pixel"></div>
+                    <div class="qr-pixel"></div>
+                    <div class="qr-pixel"></div>
+                    <div class="qr-pixel"></div>
+                    <div class="qr-pixel"></div>
+                    <div class="qr-pixel"></div>
+                  </div>
+                  <span>QR Code</span>
+                </div>
+                <div style="font-size:12px; font-weight:600;">Amount: <span id="qr-amt">₹942.82</span> — Viyan MedAssist
+                </div>
+              </div>
+            </div>
+
+            <!-- ── TAB CONTENT: NET BANKING ── -->
+            <div class="tab-content" id="tab-net">
+              <div class="info-box">
+                Clicking Pay will redirect you to your bank's secure login page. Complete payment there and you'll be
+                automatically redirected back.
+              </div>
+              <div class="form-group">
+                <span class="card-label">SELECT YOUR BANK</span>
+                <select class="sys-input-field" id="bank-select" onchange="syncBankSelection(this.value)">
+                  <option value="">-- Choose Bank --</option>
+                  <option value="SBI">State Bank of India (SBI)</option>
+                  <option value="HDFC">HDFC Bank</option>
+                  <option value="ICICI">ICICI Bank</option>
+                  <option value="Axis">Axis Bank</option>
+                  <option value="Kotak">Kotak Mahindra</option>
+                  <option value="PNB">Punjab National Bank (PNB)</option>
+                  <option value="BOB">Bank of Baroda (BOB)</option>
+                  <option value="Canara">Canara Bank</option>
+                  <option value="Yes">Yes Bank</option>
+                </select>
+                <span class="error-msg" id="err-bank">Please select your bank</span>
+              </div>
+
+              <div class="banks-grid">
+                <div class="bank-grid-btn" id="bank-sbi" onclick="selectQuickBank('SBI')">
+                  <div class="bank-logo logo-sbi">SB</div>SBI
+                </div>
+                <div class="bank-grid-btn" id="bank-hdfc" onclick="selectQuickBank('HDFC')">
+                  <div class="bank-logo logo-hdfc">HD</div>HDFC
+                </div>
+                <div class="bank-grid-btn" id="bank-icici" onclick="selectQuickBank('ICICI')">
+                  <div class="bank-logo logo-icici">IC</div>ICICI
+                </div>
+                <div class="bank-grid-btn" id="bank-axis" onclick="selectQuickBank('Axis')">
+                  <div class="bank-logo logo-axis">AX</div>Axis
+                </div>
+                <div class="bank-grid-btn" id="bank-kotak" onclick="selectQuickBank('Kotak')">
+                  <div class="bank-logo logo-kotak">KM</div>Kotak
+                </div>
+                <div class="bank-grid-btn" id="bank-pnb" onclick="selectQuickBank('PNB')">
+                  <div class="bank-logo logo-pnb">PN</div>PNB
+                </div>
+                <div class="bank-grid-btn" id="bank-bob" onclick="selectQuickBank('BOB')">
+                  <div class="bank-logo logo-bob">BO</div>BOB
+                </div>
+                <div class="bank-grid-btn" id="bank-canara" onclick="selectQuickBank('Canara')">
+                  <div class="bank-logo logo-canara">CN</div>Canara
+                </div>
+              </div>
+            </div>
+
+            <!-- UPI TIMING CONTAINER -->
+            <div class="status-box" id="upi-status-container">
+              <div class="status-icon">📱</div>
+              <div class="status-title">Payment request sent to your UPI app</div>
+              <div id="upi-vpa-display" style="font-weight:600; font-size:13px; color:var(--text-primary);"></div>
+              <div class="status-timer" id="upi-clock">Waiting... 0:00</div>
+              <div style="font-size:11px; color:var(--text-muted);" class="pulsing-dots">Checking payment status</div>
+
+              <!-- Simulators -->
+              <div style="display:flex; gap:8px; width:100%; margin-top:12px;">
+                <button class="sys-btn-outline" style="flex:1; border-color:var(--sys-teal); color:var(--sys-teal);"
+                  onclick="triggerSuccess()">Simulate: Payment Approved</button>
+                <button class="sys-btn-outline" style="flex:1; border-color:var(--sys-danger); color:var(--sys-danger);"
+                  onclick="triggerFailure('Transaction declined by user')">Simulate: Payment Failed</button>
+              </div>
+            </div>
+
+            <!-- REDIRECT OVERLAY CONTAINER -->
+            <div class="redirect-overlay" id="redirect-container">
+              <i class="ti ti-building-bank" style="font-size:40px; color:var(--sys-teal); margin-bottom:12px;"></i>
+              <h3 style="font-family:'Outfit', sans-serif;" id="redirect-bank-title">Redirecting to bank</h3>
+              <p style="font-size:13px; color:var(--text-muted); margin-top:8px;">You are being redirected to your
+                bank's secure net banking portal.</p>
+              <p style="font-size:12px; color:var(--text-muted);">Do not close this window or press Back.</p>
+              <div class="progress-bar-container">
+                <div class="progress-bar-fill" id="redirect-progress"></div>
+              </div>
+              <div id="redirect-pay-id" style="font-family:monospace; font-size:11px; color:var(--text-muted);"></div>
+
+              <div id="redirect-action-box"
+                style="display:none; flex-direction:column; gap:12px; width:100%; max-width:320px; margin-top:16px;">
+                <div style="font-size:12px; color:var(--sys-amber); font-weight:600;" class="pulsing-dots">Waiting for
+                  payment confirmation from bank</div>
+                <div style="display:flex; gap:8px;">
+                  <button class="sys-btn-outline" style="flex:1; border-color:var(--sys-teal); color:var(--sys-teal);"
+                    onclick="triggerSuccess()">Simulate: Confirmed</button>
+                  <button class="sys-btn-outline"
+                    style="flex:1; border-color:var(--sys-danger); color:var(--sys-danger);"
+                    onclick="triggerFailure('Net Banking transaction failed')">Simulate: Failed</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- SECTION 4: Promo Code & Submission -->
+            <div id="form-submission-area">
+              <span class="card-label">PROMO COUPON CODE</span>
+              <div class="coupon-row" id="coupon-row-input">
+                <input type="text" class="sys-input-field" id="coupon-input" placeholder="Enter coupon code"
+                  style="flex:1">
+                <button class="sys-btn-outline" onclick="applyPromo()">Apply</button>
+              </div>
+              <div class="coupon-success-chip" id="coupon-chip"></div>
+
+              <label class="terms-label" id="terms-box-label">
+                <input type="checkbox" id="terms-chk" onchange="syncPayBtnState()">
+                I agree to the <a href="#">Terms of Service</a> and <a href="#">Privacy Policy</a>
+              </label>
+
+              <button class="pay-submit-btn" id="pay-main-btn" disabled onclick="initiatePayment()">
+                <i class="ti ti-lock"></i> Pay <span id="btn-total-amt">₹942.82</span> Securely
+              </button>
+              <div class="pay-btn-footer">256-bit SSL encrypted • PCI DSS compliant • Razorpay</div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- RIGHT: ORDER SUMMARY -->
+        <div class="settings-col">
+          <div class="sys-card">
+            <h3 class="summary-title">Order Summary</h3>
+            <div class="summary-divider"></div>
+
+            <div class="plan-row">
+              <div class="plan-info">
+                <h4>Enterprise</h4>
+                <p>Monthly subscription license</p>
+              </div>
+              <div class="plan-price">₹799</div>
+            </div>
+
+            <ul class="features-list">
+              <li class="feature-row"><i class="ti ti-circle-check"></i> Unlimited pharmacy SKU cataloging</li>
+              <li class="feature-row"><i class="ti ti-circle-check"></i> 5 full staff terminals included</li>
+              <li class="feature-row"><i class="ti ti-circle-check"></i> Compliant GSTR pharmaceutical reports</li>
+              <li class="feature-row"><i class="ti ti-circle-check"></i> Live priority tech nodes</li>
+            </ul>
+
+            <div class="summary-divider"></div>
+
+            <div class="summary-calc-row">
+              <span>Subtotal:</span>
+              <span>₹799.00</span>
+            </div>
+            <div class="summary-calc-row">
+              <span>GST (18%):</span>
+              <span>₹143.82</span>
+            </div>
+            <div class="summary-calc-row discount-row" id="summary-discount-row">
+              <span>Coupon discount:</span>
+              <span id="summary-discount-val">-₹188.56</span>
+            </div>
+
+            <div class="summary-divider"></div>
+
+            <div class="summary-total-row">
+              <span>Total Payable:</span>
+              <span id="summary-total-amt">₹942.82</span>
+            </div>
+
+            <div class="summary-divider"></div>
+
+            <div class="summary-badges">
+              <div class="badge-pill">🔒 256-BIT SSL</div>
+              <div class="badge-pill">✓ PCI DSS COMPLIANT</div>
+              <div class="badge-pill">🛡 SECURE BILLING</div>
+            </div>
+
+            <p class="summary-footer-text">SaaS billing gateway powered securely by Razorpay</p>
+          </div>
+
+          <!-- Developer Collapsible Box -->
+          <div class="dev-note-box">
+            <div class="dev-note-header" onclick="toggleDevBox()">
+              <span>Developer Note: Razorpay Implementation Code</span>
+              <i class="ti ti-chevron-down" id="dev-box-arrow"></i>
+            </div>
+            <div class="dev-note-body" id="dev-box-body">
+              <p>To integrate this payment flow securely in a production app using the Razorpay Web SDK:</p>
+              <pre>
+// 1. BACKEND API: Create Razorpay Order
+// POST /api/create-order
+const order = await razorpay.orders.create({
+  amount: 94282, // Amount in paise
+  currency: "INR",
+  receipt: "receipt_order_74321"
+});
+return res.json({ id: order.id });
+
+// 2. FRONTEND: Call checkout modal on click
+const options = {
+  key: "YOUR_RAZORPAY_KEY",
+  amount: 94282,
+  currency: "INR",
+  name: "Viyan MedAssist",
+  description: "Enterprise Subscription",
+  order_id: order.id,
+  handler: function (response) {
+    // Send payments details to verify signature
+    verifyPayment(response);
+  },
+  prefill: {
+    name: "R. Sanjay",
+    email: "sanjay@viyanpharmacy.com",
+    contact: "+919876543210"
+  }
+};
+const rzp = new Razorpay(options);
+rzp.open();
+              </pre>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- PAYMENT SUCCESS CARD -->
+      <div class="full-center-view" id="success-view">
+        <div class="sys-card" style="text-align:center;">
+          <div class="success-icon-wrapper">
+            <svg class="success-svg" viewBox="0 0 80 80">
+              <circle class="success-circle" cx="40" cy="40" r="38" />
+              <path class="success-check" d="M23 40 l11 11 l23 -23" />
+            </svg>
+          </div>
+          <h2 style="font-family:'Outfit',sans-serif; margin-bottom:8px;">Payment Successful! 🎉</h2>
+          <p style="color:var(--text-muted); font-size:14px; margin-bottom:24px;">MedAssist Enterprise plan activated
+            for Viyan Pharmacy</p>
+
+          <div class="success-box-grid">
+            <div class="box">
+              <div style="font-size:10px; color:var(--text-label); font-weight:700;">PLAN ACTIVATED</div>
+              <div style="font-weight:600; font-size:14px; margin-top:4px;">Enterprise</div>
+            </div>
+            <div class="box">
+              <div style="font-size:10px; color:var(--text-label); font-weight:700;">AMOUNT PAID</div>
+              <div style="font-weight:600; font-size:14px; margin-top:4px;" id="success-paid-amt">₹942.82</div>
+            </div>
+            <div class="box" style="text-align:left;">
+              <div style="font-size:10px; color:var(--text-label); font-weight:700;">PAYMENT ID</div>
+              <div style="font-family:monospace; font-size:11px; margin-top:4px;">pay_QXz7k2Mn8v9L</div>
+            </div>
+            <div class="box" style="text-align:left;">
+              <div style="font-size:10px; color:var(--text-label); font-weight:700;">NEXT BILLING</div>
+              <div style="font-weight:600; font-size:14px; margin-top:4px;">14 Jun 2026</div>
+            </div>
+          </div>
+
+          <p
+            style="font-size:13px; color:var(--text-muted); display:flex; align-items:center; justify-content:center; gap:8px; margin-bottom:28px;">
+            <i class="ti ti-mail"></i> Receipt sent to sanjay@viyanpharmacy.com
+          </p>
+
+          <button class="pay-submit-btn" style="margin-bottom:12px;"
+            onclick="showToast('Navigating to Dashboard...'); resetToSettings();">Go to Dashboard</button>
+          <button class="sys-btn-outline" style="width:100%; justify-content:center; height:48px;"
+            onclick="showToast('Generating PDF receipt...')"><i class="ti ti-download"></i> Download Receipt
+            (PDF)</button>
+        </div>
+      </div>
+
+      <!-- PAYMENT FAILED CARD -->
+      <div class="full-center-view" id="failed-view">
+        <div class="sys-card" style="text-align:center;">
+          <div class="success-icon-wrapper">
+            <svg class="failed-svg" viewBox="0 0 80 80">
+              <circle class="failed-circle" cx="40" cy="40" r="38" />
+              <path class="failed-cross" d="M26 26 l28 28 M54 26 l-28 28" />
+            </svg>
+          </div>
+          <h2 style="font-family:'Outfit',sans-serif; margin-bottom:8px; color:var(--sys-danger);">Payment Failed</h2>
+          <p style="color:var(--text-muted); font-size:14px; margin-bottom:16px;">Your payment could not be processed.
+          </p>
+
+          <div class="failed-reason-box">
+            <div
+              style="font-weight:700; font-size:11px; text-transform:uppercase; letter-spacing:0.05em; margin-bottom:4px;">
+              Error Details</div>
+            <div>Error Code: PAYMENT_FAILED</div>
+            <div id="failed-reason-text">Reason: Transaction declined by bank</div>
+          </div>
+
+          <button class="pay-submit-btn" style="margin-bottom:12px; background-color:var(--sys-teal);"
+            onclick="retryPayment()">Try Again with Different Method</button>
+          <button class="sys-btn-outline" style="width:100%; justify-content:center; height:48px;"
+            onclick="showToast('Opening support ticket...')">Contact Support</button>
+        </div>
+      </div>
+
+    </main>
+
+  </div>
+
+  <!-- ── RAZORPAY MOCKED DIALOG ── -->
+  <div class="modal-overlay" id="razorpay-modal-overlay">
+    <div class="razorpay-modal">
+      <div class="rp-header">
+        <div class="rp-logo">
+          <div class="rp-logo-symbol">R</div>
+          Razorpay Checkout
+        </div>
+        <button class="rp-close-btn" onclick="closeRazorpayModal()">×</button>
+      </div>
+      <div class="rp-subheader">
+        <strong>Viyan MedAssist</strong>
+        <strong style="color:#0E1F40;" id="rp-header-amt">₹942.82</strong>
+      </div>
+
+      <!-- FORM BODY -->
+      <div class="rp-body" id="rp-form-body">
+        <div class="rp-otp-title">Enter OTP</div>
+        <div class="rp-otp-desc" id="rp-otp-phone-display">Enter 6-digit OTP sent to +91 987•• ••210</div>
+
+        <div class="rp-otp-input-row">
+          <input type="text" class="rp-otp-box" maxlength="1" onkeyup="moveOtp(this, 1)">
+          <input type="text" class="rp-otp-box" maxlength="1" onkeyup="moveOtp(this, 2)">
+          <input type="text" class="rp-otp-box" maxlength="1" onkeyup="moveOtp(this, 3)">
+          <input type="text" class="rp-otp-box" maxlength="1" onkeyup="moveOtp(this, 4)">
+          <input type="text" class="rp-otp-box" maxlength="1" onkeyup="moveOtp(this, 5)">
+          <input type="text" class="rp-otp-box" maxlength="1" onkeyup="moveOtp(this, 6)">
+        </div>
+
+        <a class="rp-resend-link" href="#" onclick="showToast('OTP resent successfully', 'success')">Resend OTP</a>
+
+        <button class="rp-pay-btn" id="rp-modal-submit-btn" onclick="verifyRazorpayOtp()">Pay Securely</button>
+      </div>
+
+      <!-- VERIFYING OTP LOADER -->
+      <div class="rp-body rp-verifying" id="rp-verifying-body">
+        <div class="spinner"
+          style="width:36px; height:36px; border-width:3px; border-left-color:#3399FF; margin-bottom:16px;"></div>
+        <div style="font-weight:600; font-size:15px; color:#1A1A1A;">Verifying payment...</div>
+        <div style="font-size:12px; color:#64748B; margin-top:8px;">Please do not refresh this page.</div>
+      </div>
+
+      <div class="rp-footer">Protected by Razorpay | PCI DSS Compliant</div>
+    </div>
+  </div>
+
+  <!-- TOAST CONTAINER -->
+  <div id="toast-container"></div>
+
+  <!-- ── CHEKOUT PAGE STATE & LOGIC ── -->
+  <script>
+    // ── APPLICATION STATE ──
+    const state = {
+      paymentMethod: 'card', // 'card', 'upi', 'net'
+      couponApplied: false,
+      termsAccepted: false,
+      couponCode: 'MEDASSIST20',
+      upiTimer: null,
+      upiSecs: 0,
+      basePrice: 799,
+      gstRate: 0.18,
+      discountRate: 0.20,
+      activeBank: ''
+    };
+
+    // ── TOAST MESSAGING SYSTEM ──
+    function showToast(message, type = 'success') {
+      const container = document.getElementById('toast-container');
+      const toast = document.createElement('div');
+      toast.className = `sys-toast ${type === 'warning' ? 'warning' : type === 'error' ? 'error' : ''}`;
+
+      let icon = 'ti-circle-check';
+      if (type === 'warning') icon = 'ti-alert-triangle';
+      if (type === 'error') icon = 'ti-shield-x';
+
+      toast.innerHTML = `<i class="ti ${icon}"></i> <span>${message}</span>`;
+      container.appendChild(toast);
+
+      setTimeout(() => {
+        toast.style.animation = 'slideIn 0.3s reverse forwards';
+        setTimeout(() => toast.remove(), 300);
+      }, 3000);
+    }
+
+    // ── GLOBAL THEME TOGGLER ──
+    function toggleTheme() {
+      const htmlEl = document.documentElement;
+      const themeBtn = document.getElementById('theme-btn');
+      const themeIcon = document.getElementById('theme-icon');
+      const current = htmlEl.getAttribute('data-theme');
+      const newTheme = current === 'dark' ? 'light' : 'dark';
+
+      htmlEl.setAttribute('data-theme', newTheme);
+      themeIcon.className = newTheme === 'dark' ? 'ti ti-moon' : 'ti ti-sun';
+      showToast(`Switched to ${newTheme} mode`, 'info');
+    }
+
+    // ── INTERACTIVE TABS SWAPPING ──
+    function switchTab(method) {
+      if (state.paymentMethod === method) return;
+
+      // Stop UPI timers or Net redirects if running
+      resetUpiStatus();
+      resetRedirectStatus();
+
+      state.paymentMethod = method;
+
+      // Update Tab CSS
+      document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+      document.getElementById(`tab-${method}-btn`).classList.add('active');
+
+      // Update Form Content Display
+      document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+      document.getElementById(`tab-${method}`).classList.add('active');
+
+      showToast(`Method updated to ${method.toUpperCase()}`, 'info');
+    }
+
+    // ── LIVE INPUT FORMATTING ──
+    // Card Formatter
+    function formatCard(el) {
+      let val = el.value.replace(/\s+/g, '').replace(/[^0-9]/gi, '');
+      let matches = val.match(/\d{4,16}/g);
+      let match = (matches && matches[0]) || '';
+      let parts = [];
+
+      for (let i = 0, len = match.length; i < len; i += 4) {
+        parts.push(match.substring(i, i + 4));
+      }
+
+      if (parts.length > 0) {
+        el.value = parts.join(' ');
+      } else {
+        el.value = val;
+      }
+
+      // Detect card type
+      const firstDigit = val.charAt(0);
+      const chip = document.getElementById('card-type-chip');
+      chip.className = 'card-detect-chip';
+      chip.style.display = 'none';
+
+      if (firstDigit === '4') {
+        chip.innerText = 'VISA';
+        chip.className = 'card-detect-chip chip-visa';
+        chip.style.display = 'block';
+      } else if (firstDigit === '5') {
+        chip.innerText = 'MASTERCARD';
+        chip.className = 'card-detect-chip chip-mc';
+        chip.style.display = 'block';
+      } else if (firstDigit === '6') {
+        chip.innerText = 'RUPAY';
+        chip.className = 'card-detect-chip chip-rupay';
+        chip.style.display = 'block';
+      }
+    }
+
+    // Expiry Formatter (MM / YY)
+    function formatExpiry(el) {
+      let val = el.value.replace(/\s+/g, '').replace(/[^0-9]/gi, '');
+      if (val.length >= 2) {
+        el.value = val.substring(0, 2) + ' / ' + val.substring(2, 4);
+      } else {
+        el.value = val;
+      }
+    }
+
+    // CVV Visibility Toggle
+    function toggleCvv() {
+      const cvvInput = document.getElementById('card-cvv-input');
+      const isPass = cvvInput.type === 'password';
+      cvvInput.type = isPass ? 'text' : 'password';
+    }
+
+    // UPI App Selector
+    function fillUpiHint(app) {
+      const input = document.getElementById('upi-input');
+      if (app === 'gpay') input.value = 'sanjay@okaxis';
+      if (app === 'phonepe') input.value = '9876543210@ybl';
+      if (app === 'paytm') input.value = '9876543210@paytm';
+      if (app === 'bhim') input.value = 'sanjay@upi';
+      input.dispatchEvent(new Event('input'));
+      showToast(`${app.toUpperCase()} shortcut configured`);
+    }
+
+    // Bank Grid Select Synchronization
+    function selectQuickBank(bank) {
+      state.activeBank = bank;
+      document.querySelectorAll('.bank-grid-btn').forEach(btn => btn.classList.remove('selected'));
+      document.getElementById(`bank-${bank.toLowerCase()}`).classList.add('selected');
+
+      const select = document.getElementById('bank-select');
+      select.value = bank;
+      showToast(`Selected bank: ${bank}`);
+    }
+
+    function syncBankSelection(val) {
+      state.activeBank = val;
+      document.querySelectorAll('.bank-grid-btn').forEach(btn => btn.classList.remove('selected'));
+      if (val) {
+        const btn = document.getElementById(`bank-${val.toLowerCase()}`);
+        if (btn) btn.classList.add('selected');
+      }
+    }
+
+    // ── LIVE ORDER SUMMARY AND COUPONS CALCULATION ──
+    function calculateTotal() {
+      const base = state.basePrice;
+      const gst = base * state.gstRate;
+      const discount = state.couponApplied ? base * state.discountRate : 0;
+      const total = base + gst - discount;
+
+      // Update Summary Fields
+      document.getElementById('summary-total-amt').innerText = `₹${total.toFixed(2)}`;
+      document.getElementById('btn-total-amt').innerText = `₹${total.toFixed(2)}`;
+      document.getElementById('qr-amt').innerText = `₹${total.toFixed(2)}`;
+      document.getElementById('rp-header-amt').innerText = `₹${total.toFixed(2)}`;
+      document.getElementById('success-paid-amt').innerText = `₹${total.toFixed(2)}`;
+
+      if (state.couponApplied) {
+        document.getElementById('summary-discount-row').style.display = 'flex';
+        document.getElementById('summary-discount-val').innerText = `-₹${discount.toFixed(2)}`;
+      } else {
+        document.getElementById('summary-discount-row').style.display = 'none';
+      }
+    }
+
+    function applyPromo() {
+      const input = document.getElementById('coupon-input');
+      const chip = document.getElementById('coupon-chip');
+      const val = input.value.trim().toUpperCase();
+
+      if (val === state.couponCode) {
+        state.couponApplied = true;
+        chip.style.display = 'block';
+        chip.className = 'coupon-success-chip';
+        chip.innerText = `MEDASSIST20 applied — 20% discount applied — ₹${(state.basePrice * state.discountRate).toFixed(2)} saved`;
+        document.getElementById('coupon-row-input').style.display = 'none';
+        showToast('Coupon applied successfully!', 'success');
+        calculateTotal();
+      } else {
+        showToast('Invalid or expired coupon code', 'error');
+      }
+    }
+
+    // ── TERMS & PAY BUTTON INTERLOCKING ──
+    function syncPayBtnState() {
+      const chk = document.getElementById('terms-chk');
+      const btn = document.getElementById('pay-main-btn');
+      state.termsAccepted = chk.checked;
+      btn.disabled = !state.termsAccepted;
+    }
+
+    // ── CORE PAYMENT INITIATION HUB ──
+    function initiatePayment() {
+      // Clear errors
+      document.querySelectorAll('.error-msg').forEach(msg => msg.style.display = 'none');
+
+      if (state.paymentMethod === 'card') {
+        processCardPayment();
+      } else if (state.paymentMethod === 'upi') {
+        processUpiPayment();
+      } else if (state.paymentMethod === 'net') {
+        processNetBankingPayment();
+      }
+    }
+
+    // ── CARD METHOD WORKFLOW ──
+    function processCardPayment() {
+      const cNum = document.getElementById('card-num-input').value.trim();
+      const cExp = document.getElementById('card-exp-input').value.trim();
+      const cCvv = document.getElementById('card-cvv-input').value.trim();
+      const cName = document.getElementById('card-name-input').value.trim();
+
+      let hasErr = false;
+      if (cNum.replace(/\s/g, '').length < 16) {
+        document.getElementById('err-card-num').style.display = 'block';
+        hasErr = true;
+      }
+      if (cExp.length < 5) {
+        document.getElementById('err-card-exp').style.display = 'block';
+        hasErr = true;
+      }
+      if (cCvv.length < 3) {
+        document.getElementById('err-card-cvv').style.display = 'block';
+        hasErr = true;
+      }
+      if (!cName) {
+        document.getElementById('err-card-name').style.display = 'block';
+        hasErr = true;
+      }
+
+      if (hasErr) {
+        showToast('Please correct the validation errors', 'error');
+        return;
+      }
+
+      // Step 2: Show loading on main button
+      const payBtn = document.getElementById('pay-main-btn');
+      payBtn.disabled = true;
+      payBtn.innerHTML = `<span class="spinner"></span> Initialising Razorpay...`;
+
+      // Step 3: Trigger checkout modal after 800ms
+      setTimeout(() => {
+        document.getElementById('razorpay-modal-overlay').style.display = 'flex';
+        // reset OTP fields
+        document.querySelectorAll('.rp-otp-box').forEach(box => box.value = '');
+        document.getElementById('rp-form-body').style.display = 'block';
+        document.getElementById('rp-verifying-body').style.display = 'none';
+      }, 800);
+    }
+
+    function closeRazorpayModal() {
+      document.getElementById('razorpay-modal-overlay').style.display = 'none';
+      const payBtn = document.getElementById('pay-main-btn');
+      payBtn.disabled = false;
+      payBtn.innerHTML = `<i class="ti ti-lock"></i> Pay <span id="btn-total-amt">₹942.82</span> Securely`;
+      calculateTotal();
+      showToast('Razorpay checkout closed', 'warning');
+    }
+
+    function moveOtp(el, index) {
+      if (el.value.length === 1 && index < 6) {
+        document.querySelectorAll('.rp-otp-box')[index].focus();
+      }
+    }
+
+    function verifyRazorpayOtp() {
+      // Show loading
+      document.getElementById('rp-form-body').style.display = 'none';
+      document.getElementById('rp-verifying-body').style.display = 'flex';
+
+      // Verify and go to success screen
+      setTimeout(() => {
+        document.getElementById('razorpay-modal-overlay').style.display = 'none';
+        triggerSuccess();
+      }, 1500);
+    }
+
+    // ── UPI METHOD WORKFLOW ──
+    function processUpiPayment() {
+      const upiId = document.getElementById('upi-input').value.trim();
+      if (!upiId || !upiId.includes('@')) {
+        document.getElementById('err-upi').style.display = 'block';
+        showToast('Please enter a valid UPI ID', 'error');
+        return;
+      }
+
+      // Disable submission area
+      document.getElementById('form-submission-area').style.display = 'none';
+      document.getElementById('upi-vpa-display').innerText = `UPI ID: ${upiId}`;
+      document.getElementById('upi-status-container').style.display = 'flex';
+
+      // Start counter
+      state.upiSecs = 0;
+      state.upiTimer = setInterval(() => {
+        state.upiSecs++;
+        const mins = Math.floor(state.upiSecs / 60);
+        const secs = state.upiSecs % 60;
+        const clockEl = document.getElementById('upi-clock');
+        clockEl.innerText = `Waiting... ${mins}:${secs < 10 ? '0' : ''}${secs}`;
+
+        if (state.upiSecs >= 300) { // 5-minute timeout
+          clearInterval(state.upiTimer);
+          clockEl.style.color = 'var(--sys-danger)';
+          document.getElementById('upi-status-container').style.borderColor = 'var(--sys-danger)';
+          showToast('Payment request expired. Please retry.', 'error');
+        }
+      }, 1000);
+    }
+
+    function resetUpiStatus() {
+      if (state.upiTimer) {
+        clearInterval(state.upiTimer);
+      }
+      document.getElementById('upi-status-container').style.display = 'none';
+      document.getElementById('form-submission-area').style.display = 'block';
+    }
+
+    // ── NET BANKING METHOD WORKFLOW ──
+    function processNetBankingPayment() {
+      if (!state.activeBank) {
+        document.getElementById('err-bank').style.display = 'block';
+        showToast('Please select your bank', 'error');
+        return;
+      }
+
+      // Hide core buttons & start redirect
+      document.getElementById('form-submission-area').style.display = 'none';
+      const container = document.getElementById('redirect-container');
+      container.style.display = 'flex';
+
+      const select = document.getElementById('bank-select');
+      document.getElementById('redirect-bank-title').innerText = `Redirecting to ${select.options[select.selectedIndex].text}`;
+
+      // Random payment ID
+      const randomId = "pay_" + Math.random().toString(36).substring(2, 10) + Math.random().toString(36).substring(2, 10);
+      document.getElementById('redirect-pay-id').innerText = `Payment ID: ${randomId}`;
+
+      // Start Redirect Progress Bar
+      const bar = document.getElementById('redirect-progress');
+      bar.style.width = '100%';
+
+      setTimeout(() => {
+        // Show status checker
+        document.getElementById('redirect-action-box').style.display = 'flex';
+      }, 2000);
+    }
+
+    function resetRedirectStatus() {
+      document.getElementById('redirect-container').style.display = 'none';
+      document.getElementById('redirect-progress').style.width = '0%';
+      document.getElementById('redirect-action-box').style.display = 'none';
+      document.getElementById('form-submission-area').style.display = 'block';
+    }
+
+    // ── SYSTEM NAVIGATION ACTIONS ──
+    function triggerSuccess() {
+      resetUpiStatus();
+      resetRedirectStatus();
+
+      // Swap layout with success card
+      document.getElementById('checkout-view').style.display = 'none';
+      document.getElementById('success-view').style.display = 'block';
+      showToast('Payment captures verified successfully!', 'success');
+    }
+
+    function triggerFailure(reason) {
+      resetUpiStatus();
+      resetRedirectStatus();
+
+      document.getElementById('failed-reason-text').innerText = `Reason: ${reason}`;
+      document.getElementById('checkout-view').style.display = 'none';
+      document.getElementById('failed-view').style.display = 'block';
+      showToast('Payment validation failed', 'error');
+    }
+
+    function retryPayment() {
+      document.getElementById('failed-view').style.display = 'none';
+      document.getElementById('checkout-view').style.display = 'grid';
+      calculateTotal();
+    }
+
+    function resetToSettings() {
+      // Clear forms
+      document.getElementById('success-view').style.display = 'none';
+      document.getElementById('checkout-view').style.display = 'grid';
+
+      document.getElementById('card-num-input').value = '';
+      document.getElementById('card-exp-input').value = '';
+      document.getElementById('card-cvv-input').value = '';
+      document.getElementById('card-name-input').value = '';
+      document.getElementById('upi-input').value = '';
+      document.getElementById('bank-select').value = '';
+      document.querySelectorAll('.bank-grid-btn').forEach(btn => btn.classList.remove('selected'));
+      state.activeBank = '';
+
+      calculateTotal();
+    }
+
+    // ── COLLAPSIBLE DEV BOX CONTROLLER ──
+    function toggleDevBox() {
+      const body = document.getElementById('dev-box-body');
+      const arrow = document.getElementById('dev-box-arrow');
+      const isOpen = body.style.display === 'block';
+
+      body.style.display = isOpen ? 'none' : 'block';
+      arrow.className = isOpen ? 'ti ti-chevron-down' : 'ti ti-chevron-up';
+    }
+
+    // ── ESC KEY MODAL CLOSER ──
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        const modal = document.getElementById('razorpay-modal-overlay');
+        if (modal.style.display === 'flex') {
+          closeRazorpayModal();
+        }
+      }
+    });
+
+    // ── INITIAL LOAD ──
+    calculateTotal();
+  </script>
+</body>
+
+</html>

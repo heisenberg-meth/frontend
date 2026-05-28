@@ -1,0 +1,2711 @@
+import { useState, useMemo, useEffect, useRef } from "react";
+import { useNavigate } from "react-router-dom";
+import api from "../api.js";
+import { API_ROUTES } from "../constants/api.routes.js";
+import {
+  IndianRupee,
+  Receipt,
+  Clock,
+  ArrowLeft,
+  Plus,
+  Minus,
+  Search,
+  History,
+  RefreshCw,
+  Barcode,
+  X,
+  CheckCircle2,
+  Printer,
+  MessageCircle,
+  Save,
+  Download,
+  Eye,
+  Loader2,
+} from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+  normalizeArrayResponse,
+  normalizeObjectResponse,
+} from "../utils/apiNormalizer";
+import { useAuth } from "../hooks/useAuth";
+import { normalizeInvoice } from "../utils/billingNormalizer";
+import "../styles/BillingPOS.css";
+
+/* ─── Number to words helper ── */
+function numberToWords(n) {
+  if (n === 0) return "Zero";
+  const ones = [
+    "",
+    "One",
+    "Two",
+    "Three",
+    "Four",
+    "Five",
+    "Six",
+    "Seven",
+    "Eight",
+    "Nine",
+    "Ten",
+    "Eleven",
+    "Twelve",
+    "Thirteen",
+    "Fourteen",
+    "Fifteen",
+    "Sixteen",
+    "Seventeen",
+    "Eighteen",
+    "Nineteen",
+  ];
+  const tens = [
+    "",
+    "",
+    "Twenty",
+    "Thirty",
+    "Forty",
+    "Fifty",
+    "Sixty",
+    "Seventy",
+    "Eighty",
+    "Ninety",
+  ];
+  function twoDigits(num) {
+    if (num < 20) return ones[num];
+    return tens[Math.floor(num / 10)] + (num % 10 ? " " + ones[num % 10] : "");
+  }
+  function threeDigits(num) {
+    if (num === 0) return "";
+    if (num < 100) return twoDigits(num);
+    return (
+      ones[Math.floor(num / 100)] +
+      " Hundred" +
+      (num % 100 ? " and " + twoDigits(num % 100) : "")
+    );
+  }
+  let intPart = Math.floor(n);
+  let result = "";
+  if (intPart >= 10000000) {
+    result += threeDigits(Math.floor(intPart / 10000000)) + " Crore ";
+    intPart %= 10000000;
+  }
+  if (intPart >= 100000) {
+    result += threeDigits(Math.floor(intPart / 100000)) + " Lakh ";
+    intPart %= 100000;
+  }
+  if (intPart >= 1000) {
+    result += threeDigits(Math.floor(intPart / 1000)) + " Thousand ";
+    intPart %= 1000;
+  }
+  if (intPart > 0) result += threeDigits(intPart);
+  return result.trim() + " Rupees Only";
+}
+
+const generateInvoiceId = () =>
+  `INV-2026-${crypto.randomUUID().slice(0, 8).toUpperCase()}`;
+
+function Spinner({ size = 14 }) {
+  return <Loader2 size={size} className="spinner-icon" />;
+}
+
+const safeNumber = (value) => {
+  const num = Number(value);
+  return Number.isFinite(num) ? num : 0;
+};
+
+const getNested = (obj, path) => {
+  const parts = path.split(".");
+  let val = obj;
+  for (const p of parts) {
+    if (val == null) return undefined;
+    val = val[p];
+  }
+  return val;
+};
+
+const resolveInvoiceField = (invoice, field, fallback) => {
+  const fieldMap = {
+    patientName: [["patient", "fullName"], "patientName", "customerName"],
+    patientPhone: [["patient", "phone"], "patientPhone", "customerPhone"],
+    invoiceNumber: ["invoiceNumber", "billNumber", "id"],
+    date: ["invoiceDate", "createdAt", "date"],
+    subtotal: ["subtotal", "subTotal", "taxableAmount"],
+    total: ["totalAmount", "grandTotal", "total"],
+    sgst: ["sgst", "sgstAmount"],
+    cgst: ["cgst", "cgstAmount"],
+    discount: ["discountAmount", "discount"],
+  };
+  const keys = fieldMap[field] || [field];
+  for (const key of keys) {
+    if (Array.isArray(key)) {
+      const val = getNested(invoice, key.join("."));
+      if (val != null) return val;
+    } else {
+      if (invoice?.[key] != null) return invoice[key];
+    }
+  }
+  return fallback;
+};
+
+const resolveInvoiceItems = (invoice) => {
+  if (Array.isArray(invoice?.items)) return invoice.items;
+  if (Array.isArray(invoice?.saleItems)) return invoice.saleItems;
+  if (Array.isArray(invoice?.itemsList)) return invoice.itemsList;
+  if (Array.isArray(invoice?.lineItems)) return invoice.lineItems;
+  return [];
+};
+
+const normalizeInvoiceItem = (item) => ({
+  ...item,
+  name: item?.medicine?.name || item?.medicineName || item?.name || "Unknown",
+  qty: item?.quantity ?? item?.qty ?? 0,
+  price: item?.unitPrice ?? item?.price ?? item?.mrp ?? 0,
+  mrp: item?.unitPrice ?? item?.price ?? item?.mrp ?? 0,
+  totalPrice: item?.totalPrice ?? item?.amount ?? 0,
+});
+
+const resolvePaymentMethod = (bill) => {
+  // Try payments array first (from backend relation)
+  if (Array.isArray(bill.payments) && bill.payments.length > 0) {
+    return bill.payments[0].paymentMode || bill.payments[0].paymentMethod || "CASH";
+  }
+  // Then fallback to direct fields
+  return bill.paymentMode || bill.paymentMethod || "CASH";
+};
+
+const normalizeBill = (bill) => ({
+  ...bill,
+  patient: resolveInvoiceField(bill, "patientName", "Walk-in Customer"),
+  phone: resolveInvoiceField(bill, "patientPhone", "-"),
+  invoiceNumber: resolveInvoiceField(bill, "invoiceNumber", bill.id),
+  itemsList: resolveInvoiceItems(bill),
+  subtotal: safeNumber(resolveInvoiceField(bill, "subtotal", 0)),
+  cgst: safeNumber(resolveInvoiceField(bill, "cgst", 0)),
+  sgst: safeNumber(resolveInvoiceField(bill, "sgst", 0)),
+  discount: safeNumber(resolveInvoiceField(bill, "discount", 0)),
+  total: safeNumber(resolveInvoiceField(bill, "total", 0)),
+  amount: safeNumber(resolveInvoiceField(bill, "total", 0)),
+  date: resolveInvoiceField(bill, "date", ""),
+  paymentMethod: resolvePaymentMethod(bill),
+});
+
+export default function BillingPOS({ showToast: parentShowToast }) {
+  const { user } = useAuth();
+  const navigate = useNavigate();
+  const showToast = parentShowToast || (() => {});
+  const [patient, setPatient] = useState(() => {
+    try {
+      const saved = localStorage.getItem("currentBillingPatient");
+      return saved ? JSON.parse(saved) : { id: null, name: "", phone: "" };
+    } catch {
+      return { id: null, name: "", phone: "" };
+    }
+  });
+  const [search, setSearch] = useState("");
+  const [showDropdown, setShowDropdown] = useState(false);
+  const [lineItems, setLineItems] = useState(() => {
+    try {
+      const saved = localStorage.getItem("currentBillingItems");
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
+  const [discount, setDiscount] = useState(0);
+  const [showPreview, setShowPreview] = useState(false);
+  const [activeInvoice, setActiveInvoice] = useState(null);
+  const [paymentMode] = useState("CASH");
+  const [setMedLoading] = useState(false);
+  const [setIsDrafting] = useState(false);
+  const [findLoading, setFindLoading] = useState(false);
+  const [patientResults, setPatientResults] = useState([]);
+  const [showPatientDropdown, setShowPatientDropdown] = useState(false);
+  const [newPatientMsg, setNewPatientMsg] = useState("");
+  const [medResults, setMedResults] = useState([]);
+  const [bills, setBills] = useState([]);
+  const [returnItems, setReturnItems] = useState([]);
+  const [selectedBill, setSelectedBill] = useState(null);
+  const [draftSaving, setDraftSaving] = useState(false);
+  const [draftSaved, setDraftSaved] = useState(false);
+  const [draftError, setDraftError] = useState("");
+  const [printLoading, setPrintLoading] = useState(false);
+  const [whatsappLoading, setWhatsappLoading] = useState(false);
+  const [phoneFieldError, setPhoneFieldError] = useState("");
+  const [findError, setFindError] = useState("");
+  const [showAllBillsModal, setShowAllBillsModal] = useState(false);
+  const [showReturnModal, setShowReturnModal] = useState(false);
+  const [returnSearchQuery, setReturnSearchQuery] = useState("");
+  const [returnModalSelectedBill, setReturnModalSelectedBill] = useState(null);
+  const [returnModalItems, setReturnModalItems] = useState({});
+  const [returnModalReason, setReturnModalReason] = useState("Patient Request");
+  const [showReturnBillModal, setShowReturnBillModal] = useState(false);
+  const [showBillDetailDrawer, setShowBillDetailDrawer] = useState(false);
+  const [allBillsFilter, setAllBillsFilter] = useState("ALL");
+  const [billCardFlash, setBillCardFlash] = useState(null);
+  const [invoiceSaving, setInvoiceSaving] = useState(false);
+  const [returnsCount, setReturnsCount] = useState(0);
+  const [loadMoreLoading, setLoadMoreLoading] = useState(false);
+  const [allBillsLoaded, setAllBillsLoaded] = useState(false);
+  const [showCloseConfirm, setShowCloseConfirm] = useState(false);
+  const [loyaltyProfile, setLoyaltyProfile] = useState(null);
+  const [returnReason, setReturnReason] = useState("Customer Request");
+  const [returnNotes, setReturnNotes] = useState("");
+  useEffect(() => {
+    localStorage.setItem("currentBillingItems", JSON.stringify(lineItems));
+  }, [lineItems]);
+
+  useEffect(() => {
+    localStorage.setItem("currentBillingPatient", JSON.stringify(patient));
+  }, [patient]);
+
+  useEffect(() => {
+    let mounted = true;
+
+      const loadBills = async () => {
+      try {
+        const res = await api.get(API_ROUTES.BILLING_INVOICES, {
+          params: { status: "PAID" },
+        });
+
+        if (!mounted) return;
+
+        const normalized = normalizeArrayResponse(res).map(normalizeInvoice);
+        setBills(normalized);
+      } catch (err) {
+        console.error(err);
+      }
+    };
+
+    loadBills();
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  const handleSearchChange = (value) => {
+    setSearch(value);
+
+    if (value.length < 2) {
+      setMedResults([]);
+      setShowDropdown(false);
+      return;
+    }
+
+    setShowDropdown(true);
+  };
+
+  const clearSearch = () => {
+    setSearch("");
+    setMedResults([]);
+    setShowDropdown(false);
+  };
+
+  useEffect(() => {
+    if (search.length >= 2) {
+      const delayDebounceFn = setTimeout(async () => {
+        setMedLoading(true);
+        try {
+          const res = await api.get(
+            API_ROUTES.INVENTORY_MEDICINES_AUTOCOMPLETE,
+            { params: { q: search } },
+          );
+          setMedResults(normalizeArrayResponse(res));
+          setShowDropdown(true);
+        } catch (err) {
+          console.error(err);
+        } finally {
+          setMedLoading(false);
+        }
+      }, 300);
+      return () => clearTimeout(delayDebounceFn);
+    }
+  }, [search, setMedLoading, setMedResults, setShowDropdown]);
+
+  const handleFindPatient = async () => {
+    if (!patient.phone.trim()) return;
+    setFindLoading(true);
+    setFindError("");
+    try {
+      const res = await api.get(API_ROUTES.PATIENTS, {
+        params: { phone: patient.phone },
+      });
+
+      const results = res.data?.data || res.data || [];
+      if (results.length > 0) {
+        setPatientResults(results);
+        setShowPatientDropdown(true);
+      } else {
+        setNewPatientMsg("New patient detected");
+        setPatientResults([]);
+      }
+    } catch (err) {
+      console.error(err);
+      setFindError(err.response?.data?.message || "Patient search failed");
+    } finally {
+      setFindLoading(false);
+    }
+  };
+
+  const selectPatient = async (p) => {
+    const nextPatient = {
+      id: p.id,
+      name: p.fullName || p.name,
+      phone: p.phone,
+    };
+
+    setPatient(nextPatient);
+    setShowPatientDropdown(false);
+    setNewPatientMsg("");
+
+    try {
+      const res = await api.get(`${API_ROUTES.PATIENTS}/${p.id}/loyalty`);
+
+      setLoyaltyProfile(normalizeObjectResponse(res));
+    } catch (err) {
+      console.error(err);
+      setLoyaltyProfile(null);
+    }
+  };
+
+  const subtotal = useMemo(
+    () =>
+      lineItems.reduce(
+        (acc, item) => acc + safeNumber(item.price) * safeNumber(item.qty),
+        0,
+      ),
+    [lineItems],
+  );
+  const tax = useMemo(
+    () =>
+      lineItems.reduce(
+        (acc, item) =>
+          acc +
+          safeNumber(item.price) *
+            safeNumber(item.qty) *
+            (safeNumber(item.gst) / 100),
+        0,
+      ),
+    [lineItems],
+  );
+  // Discount is percentage-based: input 10 means 10% off subtotal
+  const discountAmount = subtotal * (safeNumber(discount) / 100);
+  const grandTotal = Math.max(0, subtotal + tax - discountAmount);
+
+  const avgGst =
+    lineItems.length > 0
+      ? (
+          lineItems.reduce((acc, item) => acc + safeNumber(item.gst), 0) /
+          lineItems.length
+        ).toFixed(1)
+      : 0;
+  const cgstAmt = tax / 2;
+  const sgstAmt = tax / 2;
+  const visibleBills = bills.slice(0, 5);
+  const todayStr = new Date().toLocaleDateString("en-IN", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
+  const returnAmount = useMemo(() => {
+    const items = resolveInvoiceItems(selectedBill || {}).map(normalizeInvoiceItem);
+    return Object.entries(returnItems).reduce((acc, [idx, qty]) => {
+      const item = items[idx];
+      return acc + (qty || 0) * (item?.price || 0);
+    }, 0);
+  }, [returnItems, selectedBill]);
+
+  const addToLineItems = (med) => {
+    if (med.stock === 0) {
+      showToast("Item out of stock", "error");
+      return;
+    }
+    if (!med.batchId) {
+      showToast("No active batch available for this medicine", "error");
+      return;
+    }
+    setLineItems((prev) => {
+      const exists = prev.find((i) => i.id === med.id);
+      if (exists) {
+        return prev.map((i) =>
+          i.batchId === med.batchId ? { ...i, qty: i.qty + 1 } : i,
+        );
+      }
+      const price = safeNumber(med.price || med.mrp || med.salePrice);
+      return [
+        ...prev,
+        {
+          ...med,
+          qty: 1,
+          price,
+          mrp: price,
+          gst: safeNumber(med.gst || med.gstPercentage || med.gstRate),
+          total: price,
+          discount: 0,
+        },
+      ];
+    });
+    setSearch("");
+    setShowDropdown(false);
+  };
+
+  const removeRow = (batchId) =>
+    setLineItems((prev) => prev.filter((i) => i.batchId !== batchId));
+
+  const updateQty = (batchId, delta) => {
+    setLineItems((prev) =>
+      prev.map((i) => {
+        if (i.batchId === batchId) {
+          const newQty = Math.max(1, i.qty + delta);
+          if (newQty > i.stock) {
+            showToast(`Only ${i.stock} units available`, "error");
+            return i;
+          }
+          return {
+            ...i,
+            qty: newQty,
+            total: safeNumber(i.price) * newQty,
+          };
+        }
+        return i;
+      }),
+    );
+  };
+
+  const resetBillForm = () => {
+    setLineItems([]);
+    setPatient({ id: null, name: "", phone: "" });
+    setDiscount(0);
+    setPaymentMode("CASH");
+    showToast("Form Reset", "info");
+    // Auto-focus barcode input after reset
+    setTimeout(() => barcodeInputRef.current?.focus(), 100);
+  };
+
+  const handleSaveDraft = async () => {
+    if (!user?.branchId) {
+      setDraftError("Branch context missing");
+      showToast("Branch context missing. Cannot create draft.", "error");
+      return;
+    }
+    if (Number.isNaN(grandTotal)) {
+      setDraftError("Invalid total amount calculation");
+      showToast("Invalid total amount calculation", "error");
+      return;
+    }
+    if (lineItems.length === 0) {
+      setDraftError("Add at least one medicine to save draft");
+      return;
+    }
+    setDraftError("");
+    setDraftSaving(true);
+
+    try {
+      const payload = {
+        patientId: isWalkIn ? null : patient.id,
+        patientName: isWalkIn ? "Walk-in Customer" : patient.name || "Walk-in",
+        patientPhone: isWalkIn ? "" : patient.phone || "",
+        items: lineItems.map((i) => ({
+          medicineId: i.id,
+          medicineName: i.name,
+          quantity: i.qty,
+          unitPrice: i.price,
+          gstPercentage: i.gst || 0,
+          batchId: i.batchId || null,
+        })),
+        subtotal,
+        cgst: cgstAmt,
+        sgst: sgstAmt,
+        discountPercentage: safeNumber(discount),
+        discountAmount: discountAmount,
+        totalAmount: grandTotal,
+        paymentMethod: paymentMode,
+        isDraft: true,
+        branchId: user.branchId,
+      };
+      const res = await api.post("billing/invoices/draft", payload);
+      const saved = res.data?.data || res.data;
+      if (saved?.id) {
+        const normalizedDraft = {
+          ...normalizeInvoice(saved),
+          status: "DRAFT",
+          time: "Just now",
+          timeline: ["Draft Created"]
+        };
+        setBills((prev) => [normalizedDraft, ...prev]);
+        showToast(`Draft saved — ${saved.id}`, "success");
+      }
+      setDraftSaved(true);
+      setTimeout(() => setDraftSaved(false), 1500);
+    } catch (err) {
+      console.error("[DRAFT] Save failed:", err);
+      showToast(err.response?.data?.error || "Failed to save draft", "error");
+    } finally {
+      setDraftSaving(false);
+    }
+  };
+
+  const handlePrint = (invoice) => {
+    const inv = invoice || activeInvoice;
+    if (!inv) {
+      if (lineItems.length === 0) {
+        showToast("Add at least one medicine to print", "error");
+        return;
+      }
+      if (!isWalkIn && !patient.name) {
+        showToast("Please enter patient name", "error");
+        return;
+      }
+    }
+
+    setPrintLoading(true);
+    const invData = inv
+      ? { ...inv, items: resolveInvoiceItems(inv) }
+      : {
+          id: generateInvoiceId(),
+          date: new Date().toLocaleDateString("en-IN", {
+            day: "numeric",
+            month: "short",
+            year: "numeric",
+          }),
+          patient: isWalkIn ? "Walk-in Customer" : patient.name,
+          phone: isWalkIn ? "N/A" : patient.phone,
+          items: lineItems,
+          subtotal,
+          cgst: cgstAmt,
+          sgst: sgstAmt,
+          discount,
+          total: grandTotal,
+        };
+
+    const itemsRows = resolveInvoiceItems(invData).map(normalizeInvoiceItem)
+      .map(
+        (i) =>
+          `<tr><td style="padding:8px;border-bottom:1px solid #eee">${i.name}</td><td style="text-align:center;border-bottom:1px solid #eee">${i.qty}</td><td style="text-align:center;border-bottom:1px solid #eee">₹${safeNumber(i.price).toFixed(2)}</td><td style="text-align:right;border-bottom:1px solid #eee">₹${(safeNumber(i.price) * safeNumber(i.qty)).toFixed(2)}</td></tr>`,
+      )
+      .join("");
+
+    const printPatient = resolveInvoiceField(invData, "patientName", "Walk-in Customer");
+    const printPhone = resolveInvoiceField(invData, "patientPhone", "-");
+    const printSubtotal = safeNumber(resolveInvoiceField(invData, "subtotal", 0));
+    const printCgst = safeNumber(resolveInvoiceField(invData, "cgst", 0));
+    const printSgst = safeNumber(resolveInvoiceField(invData, "sgst", 0));
+    const printDiscount = safeNumber(resolveInvoiceField(invData, "discount", 0));
+    const printTotal = safeNumber(resolveInvoiceField(invData, "total", 0));
+    const printDate = resolveInvoiceField(invData, "date", new Date().toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }));
+
+    const html = `<!DOCTYPE html><html><head><title>Invoice ${invData.id}</title>
+<style>
+body{font-family:Arial,sans-serif;padding:20px;margin:0;background:#fff;color:#000}
+@media print{.no-print,.invoice-actions{display:none!important}body{margin:0;padding:20px}}
+@media screen{.invoice-actions{display:flex;gap:10px;padding:16px}}
+table{width:100%;border-collapse:collapse}
+</style></head><body>
+<div style="text-align:center;margin-bottom:32px">
+<div style="font-size:24px;font-weight:800">VIYAN MEDASSIST</div>
+<div style="font-size:12px">123, Healthcare Street, Medical Hub, Bangalore</div>
+<div style="font-size:12px">GSTIN: 29ABCDE1234F1Z1 | Ph: +91 98765 43210</div>
+</div>
+<div style="display:flex;justify-content:space-between"><div><b>INVOICE #</b> ${invData.id}</div><div><b>DATE:</b> ${printDate}</div></div>
+<div style="display:flex;justify-content:space-between;margin-top:8px"><div><b>PATIENT:</b> ${printPatient}</div><div><b>PHONE:</b> ${printPhone}</div></div>
+<table><thead><tr style="border-bottom:2px solid #000"><th style="text-align:left;padding:8px">Medicine</th><th>Qty</th><th>MRP</th><th style="text-align:right">Total</th></tr></thead><tbody>${itemsRows}</tbody></table>
+<div style="margin-top:20px;margin-left:auto;width:200px">
+<div style="display:flex;justify-content:space-between"><span>Subtotal</span><span>₹${printSubtotal.toFixed(2)}</span></div>
+<div style="display:flex;justify-content:space-between"><span>CGST</span><span>₹${printCgst.toFixed(2)}</span></div>
+<div style="display:flex;justify-content:space-between"><span>SGST</span><span>₹${printSgst.toFixed(2)}</span></div>
+${printDiscount > 0 ? `<div style="display:flex;justify-content:space-between"><span>Discount</span><span>-₹${printDiscount.toFixed(2)}</span></div>` : ""}
+<div style="display:flex;justify-content:space-between;border-top:1px solid #000;font-weight:800;margin-top:8px;padding-top:8px"><span>TOTAL</span><span>₹${printTotal.toFixed(2)}</span></div>
+</div>
+<div style="margin-top:40px;font-size:12px;text-align:center;border-top:1px solid #000;padding-top:20px">Thank you for visiting! Get well soon.</div>
+<div class="no-print invoice-actions" style="display:flex;gap:10px;padding:16px;justify-content:center;margin-top:20px">
+<button onclick="window.print()" style="padding:10px 20px;background:#00C9A7;color:#000;border:none;border-radius:8px;cursor:pointer;font-weight:700">Print</button>
+<button onclick="window.close()" style="padding:10px 20px;background:#eee;border:none;border-radius:8px;cursor:pointer">Close</button>
+</div>
+</body></html>`;
+
+    const printWindow = window.open("", "_blank");
+    printWindow.document.write(html);
+    printWindow.document.close();
+    printWindow.focus();
+    setTimeout(() => {
+      printWindow.print();
+      printWindow.close();
+      setPrintLoading(false);
+    }, 500);
+  };
+
+  const handleSendWhatsApp = () => {
+    if (!patient.phone && !isWalkIn) {
+      setPhoneFieldError("Phone number required to send WhatsApp");
+      return;
+    }
+    if (lineItems.length === 0) {
+      showToast("Add at least one medicine", "error");
+      return;
+    }
+
+    const isDraft = activeInvoice?.status === "DRAFT";
+    if (isDraft) setIsDrafting(true);
+    else setInvoiceSaving(true);
+
+    const phone = (isWalkIn ? "" : patient.phone).replace(/\D/g, "");
+    const cleaned = phone.replace(/^(91|0)/, "");
+    const formattedPhone = cleaned ? `91${cleaned}` : "";
+
+    const itemsList = lineItems
+      .map((i) => `• ${i.name} x${safeNumber(i.qty)} = ₹${(safeNumber(i.price) * safeNumber(i.qty)).toFixed(2)}`)
+      .join("\n");
+    const msg = `*VIYAN MEDASSIST*\nInvoice: ${activeInvoice?.id || "N/A"}\nDate: ${new Date().toLocaleDateString("en-IN")}\nPatient: ${patient.name || "Walk-in Customer"}\n\n*Medicines:*\n${itemsList}\n\nSubtotal: ₹${subtotal.toFixed(2)}\nCGST: ₹${cgstAmt.toFixed(2)}\nSGST: ₹${sgstAmt.toFixed(2)}\n*TOTAL: ₹${grandTotal.toFixed(2)}*\n\nThank you for visiting Viyan MedAssist!`;
+
+    if (formattedPhone) {
+      window.open(
+        `https://wa.me/${formattedPhone}?text=${encodeURIComponent(msg)}`,
+        "_blank",
+      );
+    } else {
+      showToast("No valid phone number", "error");
+    }
+
+    setTimeout(() => {
+      setWhatsappLoading(false);
+      if (formattedPhone)
+        showToast(`WhatsApp opened for +91 ${cleaned}`, "success");
+    }, 800);
+  };
+
+  const handleDownloadPDF = () => {
+    const inv = activeInvoice;
+    if (!inv) return;
+
+    const btn = document.getElementById("download-btn");
+    if (btn) {
+      btn.textContent = "⏳ Generating...";
+      btn.disabled = true;
+    }
+
+    const actions = document.getElementById("invoice-actions");
+    if (actions) actions.style.display = "none";
+
+    const invoiceDiv = document.getElementById("invoice-content");
+    if (!invoiceDiv) return;
+
+    const printWindow = window.open("", "_blank");
+    printWindow.document
+      .write(`<!DOCTYPE html><html><head><title>Invoice-${inv.id}</title>
+<style>body{font-family:Arial,sans-serif;padding:20px;margin:0;background:#fff;color:#000}@media print{@page{margin:10mm}}</style></head><body>${invoiceDiv.innerHTML}</body></html>`);
+    printWindow.document.close();
+    printWindow.focus();
+
+    setTimeout(() => {
+      printWindow.print();
+      printWindow.close();
+      if (actions) actions.style.display = "";
+      if (btn) {
+        btn.textContent = "✓ Downloaded!";
+        setTimeout(() => {
+          btn.textContent = "";
+          btn.disabled = false;
+        }, 1500);
+      }
+    }, 500);
+  };
+
+  const openBillDetail = (bill) => {
+    setSelectedBill(bill);
+    setShowBillDetailDrawer(true);
+  };
+
+  const handleBillPrint = (bill) => {
+    setBillCardFlash(bill.id);
+    setTimeout(() => setBillCardFlash(null), 500);
+    handlePrint(bill);
+  };
+
+  const handleBillWhatsApp = (bill) => {
+    setBillCardFlash(bill.id);
+    setTimeout(() => setBillCardFlash(null), 500);
+
+    const phone = (resolveInvoiceField(bill, "patientPhone", "") || "").replace(/\D/g, "");
+    if (!phone || phone === "NA") {
+      showToast("No phone number available for this bill", "error");
+      return;
+    }
+    const cleaned = phone.replace(/^(91|0)/, "");
+    const formattedPhone = `91${cleaned}`;
+
+    const itemsList = resolveInvoiceItems(bill).map(normalizeInvoiceItem)
+      .map(
+        (i) =>
+          `• ${i.name} x${i.qty} = ₹${(i.price * i.qty).toFixed(2)}`,
+      )
+      .join("\n");
+    const msg = `*VIYAN MEDASSIST*\nInvoice: ${bill.id}\nDate: ${new Date().toLocaleDateString("en-IN")}\nPatient: ${bill.patient}\n\n*Medicines:*\n${itemsList}\n\n*TOTAL: ₹${safeNumber(bill.total).toFixed(2)}*\n\nThank you for visiting Viyan MedAssist!`;
+
+    window.open(
+      `https://wa.me/${formattedPhone}?text=${encodeURIComponent(msg)}`,
+      "_blank",
+    );
+  };
+
+  const handleBillReturn = (bill) => {
+    setSelectedBill(bill);
+    setReturnItems([]);
+    setReturnReason("Customer Request");
+    setReturnNotes("");
+    setShowReturnBillModal(true);
+  };
+
+  const confirmReturn = async () => {
+    try {
+      const invoiceId = selectedBill.id;
+      const itemsList = resolveInvoiceItems(selectedBill).map(normalizeInvoiceItem);
+      const returnPayload = itemsList
+        .map((item, idx) => ({
+          idx,
+          item,
+          qty: Number(returnItems[idx]) || 0,
+        }))
+        .filter(({ qty }) => qty > 0)
+        .map(({ item, qty }) => ({
+          medicineId: item.medicineId || item.id,
+          batchId: item.batchId || null,
+          quantity: qty,
+          reason: returnReason || "Customer Request",
+        }));
+
+      if (returnPayload.length === 0) {
+        showToast("No items selected for return", "error");
+        return;
+      }
+
+      const res = await api.post(`billing/invoices/${invoiceId}/refund`, {
+        items: returnPayload,
+        reason: returnReason || "Customer Request",
+        refundAmount: returnAmount,
+      });
+      if (res.data?.success || res.data?.data) {
+        setBills((prev) =>
+          prev.map((b) =>
+            b.id === selectedBill.id ? { ...b, status: "RETURNED" } : b,
+          ),
+        );
+        setReturnsCount((c) => c + 1);
+        setShowReturnBillModal(false);
+        setSelectedBill(null);
+        showToast("Return processed successfully", "success");
+        window.dispatchEvent(new CustomEvent("dashboard:refresh"));
+      }
+    } catch (err) {
+      console.error("[RETURN] Failed:", err);
+      showToast(
+        err.response?.data?.error || "Failed to process return",
+        "error",
+      );
+    }
+  };
+
+  const handleLoadMore = async () => {
+    setLoadMoreLoading(true);
+    try {
+      const res = await api.get(API_ROUTES.BILLING_INVOICES, {
+        params: {
+          skip: bills.length,
+          limit: 10,
+          status: "PAID",
+        },
+      });
+      const newBills = (res.data?.data || res.data || []).map(normalizeInvoice);
+      if (newBills.length === 0) {
+        setAllBillsLoaded(true);
+      } else {
+        setBills((prev) => [...prev, ...newBills]);
+      }
+    } catch (err) {
+      console.error(err);
+      showToast("Failed to load more bills", "error");
+    } finally {
+      setLoadMoreLoading(false);
+    }
+  };
+
+  const handleCloseInvoiceModal = () => {
+    setShowCloseConfirm(true);
+  };
+
+  const confirmCloseInvoice = () => {
+    setShowPreview(false);
+    setShowCloseConfirm(false);
+    setActiveInvoice(null);
+  };
+
+  // Auto-focus barcode input on mount
+  useEffect(() => {
+    setTimeout(() => barcodeInputRef.current?.focus(), 300);
+  }, []);
+
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      // F2 = Save Draft
+      if (e.key === "F2") {
+        e.preventDefault();
+        if (lineItems.length > 0) handleSaveDraft();
+        return;
+      }
+      // F4 = Print
+      if (e.key === "F4") {
+        e.preventDefault();
+        if (lineItems.length > 0 || activeInvoice) handlePrint();
+        return;
+      }
+      // F8 = Generate Invoice (trigger the generate button click)
+      if (e.key === "F8") {
+        e.preventDefault();
+        const genBtn = document.getElementById("generate-invoice-btn");
+        if (genBtn && !genBtn.disabled) genBtn.click();
+        return;
+      }
+      // Ctrl+F = Focus barcode search
+      if ((e.ctrlKey || e.metaKey) && e.key === "f") {
+        e.preventDefault();
+        barcodeInputRef.current?.focus();
+        return;
+      }
+      // Escape = close modals or reset form
+      if (e.key === "Escape") {
+        if (showCloseConfirm) setShowCloseConfirm(false);
+        else if (showReturnBillModal) setShowReturnBillModal(false);
+        else if (showBillDetailDrawer) setShowBillDetailDrawer(false);
+        else if (showAllBillsModal) setShowAllBillsModal(false);
+        else if (showPreview) setShowCloseConfirm(true);
+        else if (showReturnModal) setShowReturnModal(false);
+        else resetBillForm();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [
+    showCloseConfirm,
+    showReturnBillModal,
+    showBillDetailDrawer,
+    showAllBillsModal,
+    showPreview,
+    showReturnModal,
+    lineItems,
+    activeInvoice,
+  ]);
+
+  return (
+    <div className="pos-container">
+      <div className="pos-header">
+        <div>
+          <h1>Enterprise Billing / POS</h1>
+          <p>
+            Full financial lifecycle: Drafts, FEFO Batching, and Secure
+            Distribution.
+          </p>
+        </div>
+        <div className="header-actions">
+          <button
+            className="pos-btn outline"
+            onClick={() => navigate("/analytics")}
+          >
+            <History size={16} /> Sales History
+          </button>
+          <button
+            className="pos-btn outline"
+            onClick={() => setShowReturnModal(true)}
+          >
+            <RefreshCw size={16} /> Returns
+          </button>
+          <button className="pos-btn teal" onClick={resetBillForm}>
+            <Receipt size={18} /> + New Bill
+          </button>
+        </div>
+      </div>
+
+      {/* ── Stat Cards ── */}
+      <div className="pos-stats-row">
+        {[
+          {
+            label: "TODAY'S REVENUE",
+            val:
+              "₹" +
+              bills
+                .reduce((sum, b) => sum + safeNumber(b.total), 0)
+                .toLocaleString(),
+            icon: IndianRupee,
+            col: "var(--primary)",
+          },
+          {
+            label: "BILLS TODAY",
+            val: String(bills.length),
+            icon: Receipt,
+            col: "var(--info)",
+          },
+          {
+            label: "PENDING COLLECTIONS",
+            val: "₹0",
+            icon: Clock,
+            col: "var(--warning)",
+          },
+          {
+            label: "RETURNS TODAY",
+            val: String(returnsCount),
+            icon: ArrowLeft,
+            col: "var(--danger)",
+          },
+        ].map((s, i) => (
+          <div key={i} className="pos-stat-card">
+            <div className="stat-card-header">
+              <span className="stat-label">{s.label}</span>
+              <div
+                className="stat-icon"
+                style={{ backgroundColor: `${s.col}15`, color: s.col }}
+              >
+                <s.icon size={16} />
+              </div>
+            </div>
+            <div className="stat-value">{s.val}</div>
+          </div>
+        ))}
+      </div>
+
+      <div className="pos-main-grid">
+        <div className="bill-creator-col">
+          <div className="pos-card">
+            <div className="pos-card-title">
+              <span>PATIENT DETAILS</span>
+              <div
+                className="walk-in-toggle"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setIsWalkIn((prev) => !prev);
+                  if (isWalkIn) {
+                    setPatient({ id: null, name: "", phone: "" });
+                  }
+                }}
+                title={isWalkIn ? "Walk-in mode" : "Click to enable walk-in"}
+              >
+                <div
+                  style={{
+                    width: "40px",
+                    height: "20px",
+                    background: isWalkIn
+                      ? "var(--primary)"
+                      : "var(--overlay-10)",
+                    borderRadius: "20px",
+                    position: "relative",
+                    transition: "0.3s",
+                  }}
+                >
+                  <div
+                    style={{
+                      position: "absolute",
+                      left: isWalkIn ? "22px" : "2px",
+                      top: "2px",
+                      width: "16px",
+                      height: "16px",
+                      background: "white",
+                      borderRadius: "50%",
+                      transition: "0.3s",
+                    }}
+                  />
+                </div>
+                Walk-in
+              </div>
+            </div>
+            <div className="patient-row">
+              <div className="pos-input-group">
+                <label>PATIENT NAME</label>
+                <input
+                  id="patient-name-input"
+                  className={`pos-input ${newPatientMsg ? "new-patient-input" : ""}`}
+                  placeholder={isWalkIn ? "Walk-in Customer" : "Enter name..."}
+                  value={patient.name}
+                  onChange={(e) =>
+                    setPatient({ ...patient, name: e.target.value })
+                  }
+                />
+              </div>
+              <div className="pos-input-group">
+                <label>PHONE NUMBER</label>
+                <input
+                  id="patient-phone-input"
+                  className={`pos-input ${phoneFieldError ? "input-error" : ""}`}
+                  placeholder="98765 43210"
+                  value={patient.phone}
+                  onChange={(e) => {
+                    setPatient({ ...patient, phone: e.target.value });
+                    setPhoneFieldError("");
+                  }}
+                />
+                {phoneFieldError && (
+                  <span className="field-error-text">{phoneFieldError}</span>
+                )}
+              </div>
+              <button
+                className={`pos-btn outline ${findLoading ? "btn-loading" : ""}`}
+                style={{ marginTop: "auto", height: "42px" }}
+                onClick={handleFindPatient}
+                disabled={findLoading}
+              >
+                {findLoading ? (
+                  <>
+                    <Spinner size={14} /> Searching...
+                  </>
+                ) : (
+                  <>
+                    <Search size={16} /> Find
+                  </>
+                )}
+              </button>
+            </div>
+
+            <AnimatePresence>
+              {showPatientDropdown && patientResults.length > 0 && (
+                <motion.div
+                  className="patient-search-dropdown"
+                  initial={{ opacity: 0, y: -5 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -5 }}
+                >
+                  {patientResults.map((p, i) => (
+                    <div
+                      key={i}
+                      className="patient-result-row"
+                      onClick={() => selectPatient(p)}
+                    >
+                      <span className="patient-result-name">{p.name}</span>
+                      <span className="patient-result-phone">{p.phone}</span>
+                      <span className="patient-result-visit">
+                        last visit: {p.lastVisit} days ago
+                      </span>
+                    </div>
+                  ))}
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            {newPatientMsg && (
+              <div className="new-patient-msg">{newPatientMsg}</div>
+            )}
+            {findError && <div className="find-error-msg">{findError}</div>}
+
+            {!isWalkIn && (
+              <div
+                style={{
+                  marginTop: "12px",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "12px",
+                }}
+              >
+                {/* <button
+                  className="pos-btn outline"
+                  style={{ padding: "6px 12px", fontSize: "12px" }}
+                >
+                  <FileText size={14} /> Link Prescription
+                </button> */}
+               
+                {loyaltyProfile?.accountStatus === "BLOCKED" && (
+                  <div style={{ marginTop: 4, fontWeight: 800 }}>
+                    ⚠️ CREDIT ACCOUNT BLOCKED
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+
+          <div className="pos-card">
+            <div className="search-wrapper" onClick={(e) => e.stopPropagation()}>
+              <Barcode className="barcode-icon" size={24} />
+              <input
+                ref={barcodeInputRef}
+                className="barcode-input"
+                placeholder="Scan barcode or type medicine name... (Ctrl+F)"
+                value={search}
+                onChange={(e) => handleSearchChange(e.target.value)}
+                onFocus={() => setShowDropdown(true)}
+              />
+              {search && (
+                <button
+                  className="search-clear-btn"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    clearSearch();
+                  }}
+                  style={{
+                    position: "absolute",
+                    right: "12px",
+                    top: "50%",
+                    transform: "translateY(-50%)",
+                    background: "none",
+                    border: "none",
+                    color: "var(--text-muted)",
+                    cursor: "pointer",
+                    zIndex: 10,
+                  }}
+                >
+                  <X size={16} />
+                </button>
+              )}
+              <AnimatePresence>
+                {showDropdown && medResults.length > 0 && (
+                  <motion.div
+                    className="autocomplete-dropdown"
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -10 }}
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    {medResults.map((res) => (
+                      <div
+                        key={res.id}
+                        className={`result-row ${res.stock === 0 ? "oos" : ""}`}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          addToLineItems(res);
+                        }}
+                      >
+                        <div className="result-info">
+                          <span className="result-name">{res.name}</span>
+                          <span className="result-meta">{res.generic}</span>
+                        </div>
+                        <div
+                          className="result-info"
+                          style={{ textAlign: "center" }}
+                        >
+                          <span className="result-meta">
+                            Batch: {res.batch || res.batchId}
+                          </span>
+                          <span className="result-meta">
+                            Exp: {res.exp || res.expiry}
+                          </span>
+                        </div>
+                        <div style={{ textAlign: "right" }}>
+                          <div
+                            className="result-name"
+                            style={{ color: "var(--primary)" }}
+                          >
+                            ₹{safeNumber(res.price || res.mrp).toFixed(2)}
+                          </div>
+                          <span className="result-meta">
+                            {res.stock} in stock
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+
+            <table className="line-items-table">
+              <thead>
+                <tr>
+                  <th>Item</th>
+                  <th>Qty</th>
+                  <th>MRP</th>
+                  <th>Total</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+                {lineItems.map((item) => (
+                  <tr key={item.id}>
+                    <td>
+                      <div style={{ display: "flex", flexDirection: "column" }}>
+                        <span className="result-name">{item.name}</span>
+                        <span
+                          className="result-meta"
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "4px",
+                          }}
+                        >
+                          <div
+                            style={{
+                              width: "6px",
+                              height: "6px",
+                              borderRadius: "50%",
+                              background: "var(--danger)",
+                            }}
+                          />
+                          {item.batch?.batchNumber || item.batchNumber || item.batchId || "N/A"} · Exp {item.exp}
+                        </span>
+                      </div>
+                    </td>
+                    <td>
+                      <div className="qty-stepper">
+                        <button
+                          className="step-btn"
+                          onClick={() => updateQty(item.batchId, -1)}
+                        >
+                          <Minus size={12} />
+                        </button>
+                        <input
+                          className="qty-input"
+                          value={item.qty}
+                          readOnly
+                        />
+                        <button
+                          className="step-btn"
+                          onClick={() => updateQty(item.batchId, 1)}
+                        >
+                          <Plus size={12} />
+                        </button>
+                      </div>
+                    </td>
+                    <td>
+                      <input
+                        className="pos-input"
+                        style={{ width: "60px", padding: "6px" }}
+                        value={safeNumber(item.price)}
+                        readOnly
+                      />
+                    </td>
+                    <td>
+                      <input
+                        className="pos-input"
+                        style={{ width: "50px", padding: "6px" }}
+                        value={safeNumber(item.discPercent)}
+                        readOnly
+                      />
+                    </td>
+                    <td className="result-meta" style={{ fontWeight: 800 }}>
+                      {safeNumber(item.gst)}%
+                    </td>
+                    <td
+                      style={{
+                        textAlign: "right",
+                        fontWeight: 700,
+                        color: "var(--primary)",
+                      }}
+                    >
+                      ₹
+                      {(
+                        safeNumber(item.price) * safeNumber(item.qty)
+                      ).toFixed(2)}
+                    </td>
+                    <td style={{ textAlign: "right" }}>
+                      <button
+                        className="step-btn"
+                        style={{ color: "var(--danger)" }}
+                        onClick={() => removeRow(item.batchId)}
+                      >
+                        <X size={14} />
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+                {lineItems.length === 0 && (
+                  <tr>
+                    <td
+                      colSpan={7}
+                      style={{
+                        textAlign: "center",
+                        padding: "40px",
+                        color: "var(--text-dim)",
+                        fontStyle: "italic",
+                      }}
+                    >
+                      + Click here or scan a medicine to add
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+
+            <div
+              className="payment-mode-selector"
+              style={{ marginTop: 20, display: "flex", gap: 10 }}
+            >
+              {["CASH", "UPI", "CARD"].map((m) => (
+                <button
+                  key={m}
+                  className={`pay-mode-btn ${paymentMode === m ? "active" : ""}`}
+                  onClick={() => setPaymentMode(m)}
+                  style={{
+                    padding: "8px 16px",
+                    borderRadius: "8px",
+                    border: paymentMode === m ? "2px solid var(--primary)" : "1px solid var(--overlay-10)",
+                    background: paymentMode === m ? "var(--primary)" : "transparent",
+                    color: paymentMode === m ? "#000" : "var(--text-main)",
+                    fontWeight: 700,
+                    fontSize: "12px",
+                    cursor: "pointer",
+                    transition: "all 0.2s ease",
+                  }}
+                >
+                  {m}
+                </button>
+              ))}
+            </div>
+
+            <div className="bill-summary-v3">
+              <div className="summary-row">
+                <span>Subtotal</span>
+                <span>₹{subtotal.toFixed(2)}</span>
+              </div>
+              <div className="summary-row">
+                <span>CGST (avg {avgGst}%)</span>
+                <span>₹{cgstAmt.toFixed(2)}</span>
+              </div>
+              <div className="summary-row">
+                <span>SGST (avg {avgGst}%)</span>
+                <span>₹{sgstAmt.toFixed(2)}</span>
+              </div>
+              <div className="summary-row" style={{ alignItems: "center" }}>
+                <span>Discount (%)</span>
+                <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                  <input
+                    className="pos-input"
+                    style={{ width: "60px", height: "30px", textAlign: "right" }}
+                    value={discount}
+                    onChange={(e) => setDiscount(Number(e.target.value))}
+                    min="0"
+                    max="100"
+                    type="number"
+                  />
+                  <span style={{ fontSize: "11px", color: "var(--text-muted)" }}>= ₹{discountAmount.toFixed(2)}</span>
+                </div>
+              </div>
+              <div className="summary-row grand">
+                <span>GRAND TOTAL <span style={{ fontSize: "11px", fontWeight: 400, color: "var(--text-muted)" }}>({lineItems.length} item{lineItems.length !== 1 ? "s" : ""})</span></span>
+                <span>₹{grandTotal.toFixed(2)}</span>
+              </div>
+              <div
+                style={{
+                  fontSize: "11px",
+                  color: "var(--text-muted)",
+                  marginTop: "8px",
+                  textAlign: "right",
+                }}
+              >
+                {numberToWords(Math.round(grandTotal))}
+              </div>
+            </div>
+
+            {/* ── Action Buttons ── */}
+            <div
+              style={{
+                marginTop: "32px",
+                display: "flex",
+                flexDirection: "column",
+                gap: "12px",
+              }}
+            >
+              <div style={{ display: "flex", gap: "12px" }}>
+                <button
+                  className={`pos-btn outline ${draftSaving ? "btn-loading" : ""} ${draftSaved ? "btn-success" : ""} ${draftError ? "btn-error" : ""}`}
+                  style={{ flex: 1 }}
+                  onClick={handleSaveDraft}
+                  disabled={draftSaving || lineItems.length === 0}
+                  title="Save Draft (F2)"
+                >
+                  {draftSaving ? (
+                    <>
+                      <Spinner size={16} /> Saving...
+                    </>
+                  ) : draftSaved ? (
+                    <>
+                      <CheckCircle2 size={16} /> Draft Saved!
+                    </>
+                  ) : (
+                    <>
+                      <Save size={16} /> Save Draft
+                    </>
+                  )}
+                </button>
+                <button
+                  className={`pos-btn outline ${printLoading ? "btn-loading" : ""}`}
+                  style={{ flex: 1 }}
+                  onClick={() => handlePrint()}
+                  disabled={printLoading || lineItems.length === 0}
+                  title="Print (F4)"
+                >
+                  {printLoading ? (
+                    <>
+                      <Spinner size={16} /> Printing...
+                    </>
+                  ) : (
+                    <>
+                      <Printer size={16} /> Print
+                    </>
+                  )}
+                </button>
+              </div>
+              <button
+                className={`pos-btn outline ${whatsappLoading ? "btn-loading" : ""}`}
+                onClick={handleSendWhatsApp}
+                disabled={whatsappLoading}
+              >
+                {whatsappLoading ? (
+                  <>
+                    <Spinner size={16} /> Opening WhatsApp...
+                  </>
+                ) : (
+                  <>
+                    <MessageCircle size={16} /> Send WhatsApp
+                  </>
+                )}
+              </button>
+              <button
+                id="generate-invoice-btn"
+                className="pos-btn teal"
+                style={{ height: "56px", fontSize: "18px" }}
+                title="Generate Invoice (F8)"
+                onClick={async () => {
+                  if (!user?.branchId) {
+                    showToast(
+                      "Branch context missing. Cannot generate invoice.",
+                      "error",
+                    );
+                    return;
+                  }
+                  if (Number.isNaN(grandTotal) || grandTotal <= 0) {
+                    showToast("Invalid total amount calculation", "error");
+                    return;
+                  }
+                  if (lineItems.length === 0) {
+                    showToast("Add at least one medicine", "error");
+                    return;
+                  }
+                  setInvoiceSaving(true);
+                  try {
+                    const payload = {
+                      patientId: isWalkIn ? null : patient.id,
+                      patientName: isWalkIn ? "Walk-in Customer" : (patient.name || "Walk-in Customer"),
+                      patientPhone: isWalkIn ? null : patient.phone,
+                      items: lineItems.map((it) => ({
+                        medicineId: it.id,
+                        batchId: it.batchId,
+                        quantity: it.qty,
+                        unitPrice: it.price,
+                        gstPercentage: it.gst || 0,
+                      })),
+                      paymentMode: paymentMode,
+                      discountPercentage: safeNumber(discount),
+                      discountAmount: discountAmount,
+                      branchId: user.branchId,
+                    };
+                    const res = await api.post(
+                      API_ROUTES.BILLING_INVOICES,
+                      payload,
+                    );
+                    const rawInv = res.data?.data || res.data;
+                    const newInv = normalizeInvoice(rawInv);
+                    setActiveInvoice(newInv);
+                    // Normalize the new invoice before adding to bills
+                    setBills((prev) => [normalizeBill({
+                      ...newInv,
+                      paymentMethod: paymentMode,
+                      patientName: payload.patientName,
+                      patientPhone: payload.patientPhone,
+                    }), ...prev]);
+                    setShowPreview(true);
+                    showToast(`Invoice generated`, "success");
+                    setLineItems([]);
+                    setPatient({ id: null, name: "", phone: "" });
+                    setSearch("");
+                    setDiscount(0);
+                    setPaymentMode("CASH");
+                    localStorage.removeItem("currentBillingItems");
+                    localStorage.removeItem("currentBillingPatient");
+                    // Auto-focus barcode for next bill
+                    setTimeout(() => barcodeInputRef.current?.focus(), 300);
+                  } catch (err) {
+                    console.error(err);
+                    showToast(
+                      err.response?.data?.message || "Failed to save invoice",
+                      "error",
+                    );
+                  } finally {
+                    setInvoiceSaving(false);
+                  }
+                }}
+                disabled={invoiceSaving || lineItems.length === 0}
+              >
+                {invoiceSaving ? (
+                  <>
+                    <Spinner size={20} /> SAVING INVOICE...
+                  </>
+                ) : (
+                  <>
+                    <CheckCircle2 size={24} /> GENERATE INVOICE
+                  </>
+                )}
+              </button>
+              {draftError && (
+                <div className="draft-error-text">{draftError}</div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        <div className="pos-history-col">
+          <div className="pos-card" style={{ padding: "20px" }}>
+            <div className="pos-card-title">
+              <div
+                style={{ display: "flex", alignItems: "center", gap: "8px" }}
+              >
+                <span>TODAY'S BILLS</span>
+                <span
+                  className="badge-paid"
+                  style={{ background: "var(--primary)", color: "#000" }}
+                >
+                  {bills.length}
+                </span>
+              </div>
+              <div style={{ display: "flex", gap: "12px", alignItems: "center" }}>
+                <span
+                  className="view-all-link"
+                  onClick={() => setBills([])}
+                  style={{ color: "var(--danger)" }}
+                >
+                  Clear All
+                </span>
+                <span
+                  className="view-all-link"
+                  onClick={() => setShowAllBillsModal(true)}
+                >
+                  View All →
+                </span>
+              </div>
+            </div>
+
+            <div
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                gap: "12px",
+                maxHeight: "500px",
+                overflowY: "auto",
+              }}
+            >
+              <AnimatePresence>
+                {visibleBills.map((bill) => (
+                  <motion.div
+                    key={bill.id}
+                    className={`bill-card-compact ${billCardFlash === bill.id ? "bill-card-flash" : ""} ${bill.status === "DRAFT" ? "bill-card-draft" : ""} ${bill.status === "RETURNED" ? "bill-card-returned" : ""}`}
+                    initial={{ opacity: 0, y: -20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.3, ease: "easeOut" }}
+                    onClick={() => openBillDetail(bill)}
+                  >
+                    <div className="bill-card-header">
+                      <span
+                        style={{
+                          fontFamily: "Outfit",
+                          fontWeight: 600,
+                          fontSize: "13px",
+                        }}
+                      >
+                        {resolveInvoiceField(bill, "invoiceNumber", bill.id)}
+                      </span>
+                      <span className="result-meta">{bill.time}</span>
+                    </div>
+                    <div className="bill-card-body">
+                      <div style={{ fontWeight: 600 }}>{bill.patient || resolveInvoiceField(bill, "patientName", "Walk-in Customer")}</div>
+                      <div className="result-meta">{bill.phone || resolveInvoiceField(bill, "patientPhone", "-")}</div>
+                    </div>
+                    <div className="bill-card-footer">
+                      <div className="result-meta">
+                        {bill.items.length} medicines · ₹{safeNumber(bill.total).toFixed(2)}
+                      </div>
+                      <div
+                        className={`status-badge ${bill.status === "DRAFT" ? "badge-draft" : bill.status === "RETURNED" ? "badge-returned" : "badge-paid"}`}
+                      >
+                        {bill.status}
+                      </div>
+                    </div>
+                    <div
+                      style={{
+                        display: "flex",
+                        gap: "12px",
+                        marginTop: "12px",
+                        paddingTop: "12px",
+                        borderTop: "1px solid var(--overlay-05)",
+                      }}
+                    >
+                      <Printer
+                        size={14}
+                        className={`result-meta bill-action-icon ${bill.status === "DRAFT" ? "action-disabled" : ""}`}
+                        style={{
+                          cursor:
+                            bill.status === "DRAFT" ? "not-allowed" : "pointer",
+                        }}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (bill.status !== "DRAFT") handleBillPrint(bill);
+                        }}
+                        title={
+                          bill.status === "DRAFT"
+                            ? "Generate invoice first to print"
+                            : "Print"
+                        }
+                      />
+                      <MessageCircle
+                        size={14}
+                        className="result-meta bill-action-icon"
+                        style={{ cursor: "pointer" }}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleBillWhatsApp(bill);
+                        }}
+                        title="Send WhatsApp"
+                      />
+                      <RefreshCw
+                        size={14}
+                        className="result-meta bill-action-icon"
+                        style={{ cursor: "pointer" }}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleBillReturn(bill);
+                        }}
+                        title="Process Return"
+                      />
+                    </div>
+                  </motion.div>
+                ))}
+              </AnimatePresence>
+            </div>
+            <div style={{ textAlign: "center", marginTop: "16px" }}>
+              <button
+                className={`load-more-btn ${loadMoreLoading ? "btn-loading" : ""} ${allBillsLoaded ? "btn-disabled" : ""}`}
+                onClick={handleLoadMore}
+                disabled={loadMoreLoading || allBillsLoaded}
+              >
+                {allBillsLoaded ? (
+                  "All bills loaded ✓"
+                ) : loadMoreLoading ? (
+                  <>
+                    <Spinner size={14} /> Loading...
+                  </>
+                ) : (
+                  "Load More"
+                )}
+              </button>
+            </div>
+          </div>
+
+          <div className="pos-card" style={{ padding: "20px" }}>
+            <div className="pos-card-title">TODAY'S SUMMARY</div>
+            <div
+              style={{ display: "flex", flexDirection: "column", gap: "12px" }}
+            >
+              {[
+                {
+                  label: "CASH",
+                  val:
+                    "₹" +
+                    (bills || [])
+                      .filter(
+                        (b) => (b.paymentMode || b.paymentMethod) === "CASH",
+                      )
+                      .reduce((s, b) => s + safeNumber(b.total), 0)
+                      .toLocaleString(),
+                  col: "var(--primary)",
+                  pct:
+                    (bills || []).length > 0
+                      ? ((bills || []).filter((b) => (b.paymentMethod) === "CASH").length /
+                          (bills || []).length) *
+                        100
+                      : 0,
+                },
+                {
+                  label: "UPI",
+                  val:
+                    "₹" +
+                    (bills || [])
+                      .filter(
+                        (b) => (b.paymentMode || b.paymentMethod) === "UPI",
+                      )
+                      .reduce((s, b) => s + safeNumber(b.total), 0)
+                      .toLocaleString(),
+                  col: "var(--info)",
+                  pct:
+                    (bills || []).length > 0
+                      ? ((bills || []).filter((b) => (b.paymentMethod) === "UPI").length /
+                          (bills || []).length) *
+                        100
+                      : 0,
+                },
+                {
+                  label: "CARD",
+                  val:
+                    "₹" +
+                    (bills || [])
+                      .filter(
+                        (b) => (b.paymentMode || b.paymentMethod) === "CARD",
+                      )
+                      .reduce((s, b) => s + safeNumber(b.total), 0)
+                      .toLocaleString(),
+                  col: "var(--info)",
+                  pct:
+                    (bills || []).length > 0
+                      ? ((bills || []).filter((b) => (b.paymentMethod) === "CARD").length /
+                          (bills || []).length) *
+                        100
+                      : 0,
+                },
+              ].map((s) => (
+                <div key={s.label}>
+                  <div
+                    style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      fontSize: "12px",
+                      marginBottom: "4px",
+                    }}
+                  >
+                    <span style={{ fontWeight: 700 }}>{s.label}</span>
+                    <span>{s.val}</span>
+                  </div>
+                  <div
+                    style={{
+                      height: "6px",
+                      background: "var(--overlay-05)",
+                      borderRadius: "3px",
+                      overflow: "hidden",
+                    }}
+                  >
+                    <div
+                      style={{
+                        width: `${s.pct}%`,
+                        height: "100%",
+                        background: s.col,
+                      }}
+                    />
+                  </div>
+                </div>
+              ))}
+              {bills.length === 0 && (
+                <p
+                  className="result-meta"
+                  style={{ textAlign: "center", marginTop: 40 }}
+                >
+                  No finalized bills yet.
+                </p>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* --- INVOICE PREVIEW MODAL --- */}
+      <AnimatePresence>
+        {showPreview && activeInvoice && (
+          <div
+            className="stock-modal-overlay"
+            onClick={(e) => {
+              if (e.target === e.currentTarget) handleCloseInvoiceModal();
+            }}
+          >
+            <motion.div
+              className="stock-modal-content invoice-modal-wide"
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.9 }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="stock-modal-header">
+                <div
+                  style={{ display: "flex", alignItems: "center", gap: "12px" }}
+                >
+                  <CheckCircle2 size={32} style={{ color: "var(--primary)" }} />
+                  <h3 style={{ fontFamily: "Outfit", fontWeight: 700 }}>
+                    Invoice Generated!
+                  </h3>
+                </div>
+                <button className="micro-btn" onClick={handleCloseInvoiceModal}>
+                  <X size={20} />
+                </button>
+              </div>
+              <div className="stock-modal-body">
+                <div id="invoice-content" className="invoice-print-area">
+                  <div style={{ textAlign: "center", marginBottom: "32px" }}>
+                    <div
+                      style={{
+                        fontFamily: "Outfit",
+                        fontSize: "24px",
+                        fontWeight: 800,
+                      }}
+                    >
+                      VIYAN MEDASSIST
+                    </div>
+                    <div style={{ fontSize: "12px" }}>
+                      123, Healthcare Street, Medical Hub, Bangalore
+                    </div>
+                    <div style={{ fontSize: "12px" }}>
+                      GSTIN: 29ABCDE1234F1Z1 | Ph: +91 98765 43210
+                    </div>
+                  </div>
+                  <div
+                    className="print-line"
+                    style={{ display: "flex", justifyContent: "space-between" }}
+                  >
+                    <div>
+                      <b>INVOICE #</b> {resolveInvoiceField(activeInvoice, "invoiceNumber", activeInvoice.id)}
+                    </div>
+                    <div>
+                      <b>DATE:</b> {resolveInvoiceField(activeInvoice, "date", "")}
+                    </div>
+                  </div>
+                  <div className="print-line">
+                    <div>
+                      <b>PATIENT:</b> {resolveInvoiceField(activeInvoice, "patientName", "Walk-in Customer")}
+                    </div>
+                    <div>
+                      <b>PHONE:</b> {resolveInvoiceField(activeInvoice, "patientPhone", "-")}
+                    </div>
+                  </div>
+                  <table
+                    style={{
+                      width: "100%",
+                      borderCollapse: "collapse",
+                      marginTop: "20px",
+                    }}
+                  >
+                    <thead>
+                      <tr style={{ borderBottom: "2px solid black" }}>
+                        <th style={{ textAlign: "left", padding: "8px" }}>
+                          Medicine
+                        </th>
+                        <th>Qty</th>
+                        <th>MRP</th>
+                        <th style={{ textAlign: "right" }}>Total</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {resolveInvoiceItems(activeInvoice).map(normalizeInvoiceItem).map((i, idx) => (
+                        <tr
+                          key={i.id || i.batchId || idx}
+                          style={{ borderBottom: "1px solid #eee" }}
+                        >
+                          <td style={{ padding: "8px" }}>{i.name}</td>
+                          <td style={{ textAlign: "center" }}>{safeNumber(i.qty)}</td>
+                          <td style={{ textAlign: "center" }}>
+                            ₹{safeNumber(i.price).toFixed(2)}
+                          </td>
+                          <td style={{ textAlign: "right" }}>
+                            ₹{(safeNumber(i.price) * safeNumber(i.qty)).toFixed(2)}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                  <div
+                    style={{
+                      marginTop: "20px",
+                      marginLeft: "auto",
+                      width: "200px",
+                    }}
+                  >
+                    <div
+                      style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                      }}
+                    >
+                      <span>Subtotal</span>
+                      <span>₹{safeNumber(resolveInvoiceField(activeInvoice, "subtotal", 0)).toFixed(2)}</span>
+                    </div>
+                    <div
+                      style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                      }}
+                    >
+                      <span>CGST</span>
+                      <span>₹{safeNumber(activeInvoice.cgst).toFixed(2)}</span>
+                    </div>
+                    <div
+                      style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                      }}
+                    >
+                      <span>SGST</span>
+                      <span>₹{safeNumber(resolveInvoiceField(activeInvoice, "sgst", 0)).toFixed(2)}</span>
+                    </div>
+                    {safeNumber(resolveInvoiceField(activeInvoice, "discount", 0)) > 0 && (
+                      <div
+                        style={{
+                          display: "flex",
+                          justifyContent: "space-between",
+                        }}
+                      >
+                        <span>Discount</span>
+                        <span>
+                          -₹{safeNumber(resolveInvoiceField(activeInvoice, "discount", 0)).toFixed(2)}
+                        </span>
+                      </div>
+                    )}
+                    <div
+                      style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        borderTop: "1px solid black",
+                        fontWeight: 800,
+                      }}
+                    >
+                      <span>TOTAL</span>
+                      <span>₹{safeNumber(resolveInvoiceField(activeInvoice, "total", 0)).toFixed(2)}</span>
+                    </div>
+                  </div>
+                  <div
+                    style={{
+                      marginTop: "40px",
+                      fontSize: "12px",
+                      textAlign: "center",
+                      borderTop: "1px solid black",
+                      paddingTop: "20px",
+                    }}
+                  >
+                    Thank you for visiting! Get well soon.
+                  </div>
+                </div>
+              </div>
+              <div id="invoice-actions" className="stock-modal-footer no-print">
+                <button
+                  className="pos-btn outline"
+                  onClick={() => handlePrint(activeInvoice)}
+                >
+                  <Printer size={16} /> Print Invoice
+                </button>
+                <button
+                  className="pos-btn outline"
+                  id="download-btn"
+                  onClick={handleDownloadPDF}
+                >
+                  <Download size={16} /> Download PDF
+                </button>
+                <button
+                  className="pos-btn teal"
+                  onClick={() => {
+                    setShowPreview(false);
+                    resetBillForm();
+                    setActiveInvoice(null);
+                  }}
+                >
+                  + New Bill
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Close confirmation modal */}
+      <AnimatePresence>
+        {showCloseConfirm && (
+          <div
+            className="stock-modal-overlay"
+            onClick={() => setShowCloseConfirm(false)}
+          >
+            <motion.div
+              className="stock-modal-content confirm-modal"
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.9 }}
+            >
+              <div
+                className="stock-modal-body"
+                style={{ padding: "32px", textAlign: "center" }}
+              >
+                <p
+                  style={{
+                    fontSize: "15px",
+                    fontWeight: 600,
+                    marginBottom: "24px",
+                  }}
+                >
+                  Close without saving? The invoice is already generated.
+                </p>
+                <div
+                  style={{
+                    display: "flex",
+                    gap: "12px",
+                    justifyContent: "center",
+                  }}
+                >
+                  <button
+                    className="pos-btn outline"
+                    onClick={() => setShowCloseConfirm(false)}
+                  >
+                    Stay
+                  </button>
+                  <button
+                    className="pos-btn outline"
+                    style={{
+                      background: "var(--danger)",
+                      color: "white",
+                      border: "none",
+                    }}
+                    onClick={confirmCloseInvoice}
+                  >
+                    Close
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* ═══════════════════════════════════════════════ */}
+      {/* FIX 6: All Bills Modal */}
+      {/* ═══════════════════════════════════════════════ */}
+      <AnimatePresence>
+        {showAllBillsModal && (
+          <div
+            className="stock-modal-overlay"
+            onClick={() => setShowAllBillsModal(false)}
+          >
+            <motion.div
+              className="stock-modal-content all-bills-modal"
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="stock-modal-header">
+                <h3 style={{ fontFamily: "Outfit", fontWeight: 700 }}>
+                  All Bills — {todayStr}
+                </h3>
+                <button
+                  className="micro-btn"
+                  onClick={() => setShowAllBillsModal(false)}
+                >
+                  <X size={20} />
+                </button>
+              </div>
+              <div className="stock-modal-body">
+                <div className="all-bills-toolbar">
+                  <input
+                    className="all-bills-search"
+                    placeholder="Search by invoice, patient, phone..."
+                  />
+                  <button
+                    className="pos-btn teal"
+                    style={{ padding: "8px 16px", fontSize: "13px" }}
+                  >
+                    Export Today's Bills
+                  </button>
+                </div>
+                <div className="filter-pills">
+                  {["All", "Paid", "Draft", "Returned"].map((f) => (
+                    <button
+                      key={f}
+                      className={`filter-pill ${allBillsFilter === f ? "active" : ""}`}
+                      onClick={() => setAllBillsFilter(f)}
+                    >
+                      {f}
+                    </button>
+                  ))}
+                </div>
+                <div className="all-bills-table-wrap">
+                  <table className="all-bills-table">
+                    <thead>
+                      <tr>
+                        <th>INV#</th>
+                        <th>Time</th>
+                        <th>Patient</th>
+                        <th>Phone</th>
+                        <th>Items</th>
+                        <th>Amount</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {(bills || [])
+                        .filter(
+                          (b) =>
+                            allBillsFilter === "All" ||
+                            b.status === allBillsFilter,
+                        )
+                        .map((bill) => (
+                          <tr key={bill.id}>
+                            <td style={{ fontWeight: 600 }}>
+                              {resolveInvoiceField(bill, "invoiceNumber", bill.id)}
+                            </td>
+                            <td>{bill.time}</td>
+                            <td>{bill.patient}</td>
+                            <td>{bill.phone}</td>
+                            <td>{bill.items.length}</td>
+                            <td style={{ fontWeight: 700 }}>
+                              ₹
+                              {safeNumber(bill.total).toFixed(2)}
+                            </td>
+                            <td>
+                              <span
+                                className={`status-badge ${bill.status === "DRAFT" ? "badge-draft" : bill.status === "RETURNED" ? "badge-returned" : "badge-paid"}`}
+                              >
+                                {bill.status}
+                              </span>
+                            </td>
+                            <td>
+                              <div className="all-bills-actions">
+                                <button
+                                  className="all-bills-action-btn"
+                                  onClick={() => {
+                                    openBillDetail(bill);
+                                    setShowAllBillsModal(false);
+                                  }}
+                                  title="View"
+                                >
+                                  <Eye size={14} />
+                                </button>
+                                <button
+                                  className="all-bills-action-btn"
+                                  onClick={() => handleBillPrint(bill)}
+                                  title="Print"
+                                >
+                                  <Printer size={14} />
+                                </button>
+                                <button
+                                  className="all-bills-action-btn"
+                                  onClick={() => handleBillWhatsApp(bill)}
+                                  title="WhatsApp"
+                                >
+                                  <MessageCircle size={14} />
+                                </button>
+                                <button
+                                  className="all-bills-action-btn"
+                                  onClick={() => handleBillReturn(bill)}
+                                  title="Return"
+                                >
+                                  <RefreshCw size={14} />
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {showBillDetailDrawer && selectedBill && (
+          <>
+            <motion.div
+              className="drawer-backdrop"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setShowBillDetailDrawer(false)}
+            />
+            <motion.div
+              className="bill-detail-drawer"
+              initial={{ x: "100%" }}
+              animate={{ x: 0 }}
+              exit={{ x: "100%" }}
+              transition={{ type: "tween", duration: 0.3 }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="drawer-header">
+                <div>
+                  <h3
+                    style={{
+                      fontFamily: "Outfit",
+                      fontWeight: 700,
+                      fontSize: "16px",
+                    }}
+                  >
+                    {resolveInvoiceField(selectedBill, "invoiceNumber", selectedBill.id)}
+                  </h3>
+                  <span className="result-meta">
+                    {selectedBill.time} · {resolveInvoiceField(selectedBill, "patientName", "Walk-in Customer")}
+                  </span>
+                </div>
+                <button
+                  className="micro-btn"
+                  onClick={() => setShowBillDetailDrawer(false)}
+                >
+                  <X size={20} />
+                </button>
+              </div>
+              <div className="drawer-body">
+                <div className="drawer-patient-info">
+                  <div>
+                    <span className="stat-label">PATIENT</span>
+                    <div style={{ fontWeight: 600 }}>
+                      {resolveInvoiceField(selectedBill, "patientName", "Walk-in Customer")}
+                    </div>
+                  </div>
+                  <div>
+                    <span className="stat-label">PHONE</span>
+                    <div style={{ fontWeight: 600 }}>{resolveInvoiceField(selectedBill, "patientPhone", "-")}</div>
+                  </div>
+                  <div>
+                    <span className="stat-label">PAYMENT</span>
+                    <div>
+                      <span
+                        className={`payment-badge payment-${(selectedBill.paymentMethod || "CASH").toLowerCase()}`}
+                      >
+                        {selectedBill.paymentMethod || "CASH"}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+                <table className="drawer-items-table">
+                  <thead>
+                    <tr>
+                      <th>Medicine</th>
+                      <th>Qty</th>
+                      <th>MRP</th>
+                      <th style={{ textAlign: "right" }}>Amount</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {(selectedBill.itemsList || []).map(normalizeInvoiceItem).map((item, idx) => (
+                      <tr key={idx}>
+                        <td>{item.name}</td>
+                        <td>{safeNumber(item.qty)}</td>
+                        <td>₹{safeNumber(item.price).toFixed(2)}</td>
+                        <td style={{ textAlign: "right" }}>
+                          ₹{(safeNumber(item.price) * safeNumber(item.qty)).toFixed(2)}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+                <div className="drawer-summary">
+                  <div className="summary-row">
+                    <span>Subtotal</span>
+                    <span>₹{safeNumber(resolveInvoiceField(selectedBill, "subtotal", 0)).toFixed(2)}</span>
+                  </div>
+                  <div className="summary-row">
+                    <span>CGST</span>
+                    <span>₹{safeNumber(resolveInvoiceField(selectedBill, "cgst", 0)).toFixed(2)}</span>
+                  </div>
+                  <div className="summary-row">
+                    <span>SGST</span>
+                    <span>₹{safeNumber(resolveInvoiceField(selectedBill, "sgst", 0)).toFixed(2)}</span>
+                  </div>
+                  <div className="summary-row grand">
+                    <span>TOTAL</span>
+                    <span>
+                      ₹
+                      {safeNumber(selectedBill.total).toFixed(2)}
+                    </span>
+                  </div>
+                </div>
+                <div className="drawer-timeline">
+                  <div className="stat-label" style={{ marginBottom: "8px" }}>
+                    TIMELINE
+                  </div>
+                  {(selectedBill.timeline || []).map((t, i) => (
+                    <div key={i} className="timeline-item">
+                      <div className="timeline-dot" />
+                      <span>{t}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div className="drawer-footer">
+                <button
+                  className="pos-btn outline"
+                  style={{ flex: 1 }}
+                  onClick={() => handleBillPrint(selectedBill)}
+                >
+                  <Printer size={14} /> Print
+                </button>
+                <button
+                  className="pos-btn outline"
+                  style={{ flex: 1 }}
+                  onClick={() => handleBillWhatsApp(selectedBill)}
+                >
+                  <MessageCircle size={14} /> WhatsApp
+                </button>
+                <button
+                  className="pos-btn outline"
+                  style={{
+                    flex: 1,
+                    borderColor: "var(--danger)",
+                    color: "var(--danger)",
+                  }}
+                  onClick={() => {
+                    setShowBillDetailDrawer(false);
+                    handleBillReturn(selectedBill);
+                  }}
+                >
+                  <RefreshCw size={14} /> Return
+                </button>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {showReturnBillModal && selectedBill && (
+          <div
+            className="stock-modal-overlay"
+            onClick={() => setShowReturnBillModal(false)}
+          >
+            <motion.div
+              className="stock-modal-content return-modal"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 20 }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="stock-modal-header">
+                <h3 style={{ fontFamily: "Outfit", fontWeight: 700 }}>
+                  Process Return — {resolveInvoiceField(selectedBill, "invoiceNumber", selectedBill.id)}
+                </h3>
+                <button
+                  className="micro-btn"
+                  onClick={() => setShowReturnBillModal(false)}
+                >
+                  <X size={20} />
+                </button>
+              </div>
+              <div className="stock-modal-body">
+                <table className="return-items-table">
+                  <thead>
+                    <tr>
+                      <th>Item</th>
+                      <th>Qty</th>
+                      <th>Return Qty</th>
+                      <th>Amount</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {resolveInvoiceItems(selectedBill).map(normalizeInvoiceItem).map((item, idx) => (
+                      <tr key={idx}>
+                        <td>{item.name}</td>
+                        <td>{item.qty}</td>
+                        <td>
+                          <input
+                            className="pos-input return-qty-input"
+                            type="number"
+                            min="0"
+                            max={item.qty}
+                            value={returnItems[idx] || 0}
+                            onChange={(e) =>
+                              setReturnItems((prev) => {
+                                const arr = Array.isArray(prev) ? prev : [];
+                                const next = [...arr];
+                                next[idx] = Math.min(
+                                  item.qty,
+                                  Math.max(0, Number(e.target.value)),
+                                );
+                                return next;
+                              })
+                            }
+                          />
+                        </td>
+                        <td style={{ fontWeight: 700, color: "var(--danger)" }}>
+                          ₹{(safeNumber(returnItems[idx]) * safeNumber(item.price)).toFixed(2)}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+                <div className="pos-input-group" style={{ marginTop: "16px" }}>
+                  <label>Return Reason</label>
+                  <select
+                    className="pos-input"
+                    value={returnReason}
+                    onChange={(e) => setReturnReason(e.target.value)}
+                  >
+                    <option>Customer Request</option>
+                    <option>Damaged</option>
+                    <option>Wrong Medicine</option>
+                    <option>Expiry</option>
+                  </select>
+                </div>
+                <div className="pos-input-group" style={{ marginTop: "12px" }}>
+                  <label>Notes</label>
+                  <textarea
+                    className="pos-input return-notes"
+                    value={returnNotes}
+                    onChange={(e) => setReturnNotes(e.target.value)}
+                    placeholder="Additional notes..."
+                    rows={2}
+                  />
+                </div>
+                <div className="return-total-row">
+                  <span>Return Amount</span>
+                  <span
+                    style={{
+                      fontWeight: 800,
+                      color: "var(--danger)",
+                      fontSize: "18px",
+                    }}
+                  >
+                    ₹{safeNumber(returnAmount).toFixed(2)}
+                  </span>
+                </div>
+              </div>
+              <div className="stock-modal-footer">
+                <button
+                  className="pos-btn outline"
+                  onClick={() => setShowReturnBillModal(false)}
+                >
+                  Cancel
+                </button>
+                <button
+                  className="pos-btn outline"
+                  style={{
+                    background: "var(--danger)",
+                    color: "white",
+                    border: "none",
+                  }}
+                  onClick={confirmReturn}
+                >
+                  Process Return
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {showReturnModal && (
+          <div
+            className="stock-modal-overlay"
+            onClick={() => setShowReturnModal(false)}
+          >
+            <motion.div
+              className="stock-modal-content"
+              style={{ width: "580px" }}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 20 }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="stock-modal-header">
+                <h3 style={{ fontFamily: "Outfit", fontWeight: 700 }}>
+                  Process Sales Return
+                </h3>
+                <button
+                  className="micro-btn"
+                  onClick={() => setShowReturnModal(false)}
+                >
+                  <X size={20} />
+                </button>
+              </div>
+              <div className="stock-modal-body">
+                <div
+                  className="pos-input-group"
+                  style={{ marginBottom: "24px" }}
+                >
+                  <label>Find Bill</label>
+                  <div style={{ display: "flex", gap: "8px" }}>
+                    <input
+                      className="pos-input"
+                      style={{ flex: 1 }}
+                      placeholder="Invoice number or patient name..."
+                      value={returnSearchQuery}
+                      onChange={(e) => setReturnSearchQuery(e.target.value)}
+                    />
+                  </div>
+                </div>
+                {!returnModalSelectedBill ? (
+                  <div>
+                    {(bills || [])
+                      .filter((b) => b.status === "PAID" || b.status === "RETURNED")
+                      .filter((b) => {
+                        const q = returnSearchQuery.toLowerCase();
+                        if (!q) return false;
+                        const inv = resolveInvoiceField(b, "invoiceNumber", b.id).toLowerCase();
+                        const name = resolveInvoiceField(b, "patientName", "").toLowerCase();
+                        return inv.includes(q) || name.includes(q);
+                      })
+                      .slice(0, 5)
+                      .map((bill) => (
+                        <div
+                          key={bill.id}
+                          className="patient-result-row"
+                          style={{ cursor: "pointer", padding: "10px", borderRadius: "8px", marginBottom: "4px" }}
+                          onClick={() => {
+                            setReturnModalSelectedBill(bill);
+                            setReturnModalItems({});
+                            setReturnModalReason("Patient Request");
+                          }}
+                        >
+                          <span className="patient-result-name">
+                            {resolveInvoiceField(bill, "invoiceNumber", bill.id)}
+                          </span>
+                          <span className="patient-result-phone">
+                            {resolveInvoiceField(bill, "patientName", "Walk-in Customer")}
+                          </span>
+                          <span className="result-meta">
+                            ₹{safeNumber(resolveInvoiceField(bill, "total", 0)).toFixed(2)}
+                          </span>
+                        </div>
+                      ))}
+                    {returnSearchQuery && bills.filter((b) => {
+                      const q = returnSearchQuery.toLowerCase();
+                      const inv = resolveInvoiceField(b, "invoiceNumber", b.id).toLowerCase();
+                      const name = resolveInvoiceField(b, "patientName", "").toLowerCase();
+                      return inv.includes(q) || name.includes(q);
+                    }).length === 0 && (
+                      <div style={{ padding: "20px", textAlign: "center", color: "var(--text-muted)" }}>
+                        No matching bills found
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div>
+                    <div
+                      style={{
+ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px",
+                      }}
+                    >
+                      <div>
+                        <span style={{ fontWeight: 700 }}>
+                          {resolveInvoiceField(returnModalSelectedBill, "invoiceNumber", returnModalSelectedBill.id)}
+                        </span>
+                        <span className="result-meta" style={{ marginLeft: "12px" }}>
+                          {resolveInvoiceField(returnModalSelectedBill, "patientName", "Walk-in Customer")}
+                        </span>
+                      </div>
+                      <button
+                        className="micro-btn"
+                        onClick={() => setReturnModalSelectedBill(null)}
+                      >
+                        <ArrowLeft size={16} />
+                      </button>
+                    </div>
+                    <div
+                      style={{
+                        background: "rgba(239, 68, 68, 0.05)",
+                        border: "1px solid rgba(239, 68, 68, 0.2)",
+                        borderRadius: "12px",
+                        padding: "16px",
+                      }}
+                    >
+                      {resolveInvoiceItems(returnModalSelectedBill).map(normalizeInvoiceItem).map((item, idx) => (
+                        <div
+                          key={idx}
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "12px",
+                            marginBottom: "12px",
+                          }}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={returnModalItems[idx]?.checked ?? true}
+                            onChange={(e) =>
+                              setReturnModalItems((prev) => ({
+                                ...prev,
+                                [idx]: { ...prev[idx], checked: e.target.checked },
+                              }))
+                            }
+                          />
+                          <div style={{ flex: 1 }}>{item.name}</div>
+                          <input
+                            className="p-cost-input"
+                            style={{ width: "50px" }}
+                            type="number"
+                            min={0}
+                            max={item.qty}
+                            value={returnModalItems[idx]?.qty ?? 0}
+                            onChange={(e) =>
+                              setReturnModalItems((prev) => ({
+                                ...prev,
+                                [idx]: {
+                                  ...prev[idx],
+                                  qty: Math.min(item.qty, Math.max(0, Number(e.target.value))),
+                                },
+                              }))
+                            }
+                          />
+                        </div>
+                      ))}
+                    </div>
+                    <div className="pos-input-group" style={{ marginTop: "24px" }}>
+                      <label>Return Reason</label>
+                      <select
+                        className="pos-input"
+                        value={returnModalReason}
+                        onChange={(e) => setReturnModalReason(e.target.value)}
+                      >
+                        <option>Patient Request</option>
+                        <option>Wrong Medicine</option>
+                        <option>Quality Issue</option>
+                      </select>
+                    </div>
+                  </div>
+                )}
+              </div>
+              <div className="stock-modal-footer">
+                <button
+                  className="pos-btn outline"
+                  onClick={() => {
+                    setShowReturnModal(false);
+                    setReturnModalSelectedBill(null);
+                    setReturnSearchQuery("");
+                  }}
+                >
+                  Cancel
+                </button>
+                {returnModalSelectedBill && (
+                  <button
+                    className="pos-btn outline"
+                    style={{
+                      background: "var(--danger)",
+                      color: "white",
+                      border: "none",
+                    }}
+                    onClick={async () => {
+                      const items = resolveInvoiceItems(returnModalSelectedBill).map(normalizeInvoiceItem);
+                      const returnPayload = items
+                        .map((item, idx) => ({
+                          item,
+                          qty: Number(returnModalItems[idx]?.qty) || 0,
+                          checked: returnModalItems[idx]?.checked !== false,
+                        }))
+                        .filter(({ qty, checked }) => checked && qty > 0)
+                        .map(({ item, qty }) => ({
+                          medicineId: item.medicineId || item.id,
+                          batchId: item.batchId || null,
+                          quantity: qty,
+                          reason: returnModalReason,
+                        }));
+
+                      if (returnPayload.length === 0) {
+                        showToast("No items selected for return", "error");
+                        return;
+                      }
+
+                      try {
+                        await api.post(`billing/invoices/${returnModalSelectedBill.id}/refund`, {
+                          items: returnPayload,
+                          reason: returnModalReason,
+                          refundAmount: returnPayload.reduce((acc, r) => acc + r.quantity * (items.find(i => (i.medicineId || i.id) === r.medicineId)?.price || 0), 0),
+                        });
+                        showToast("Return processed successfully", "success");
+                        setShowReturnModal(false);
+                        setReturnModalSelectedBill(null);
+                        setReturnSearchQuery("");
+                        window.dispatchEvent(new CustomEvent("dashboard:refresh"));
+                      } catch (err) {
+                        showToast(err.response?.data?.error || "Failed to process return", "error");
+                      }
+                    }}
+                  >
+                    Process Return
+                  </button>
+                )}
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}

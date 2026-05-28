@@ -1,0 +1,164 @@
+/* ── ACCOUNTING & TAX (MedAssist Pro) ── */
+
+.accounting-container {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  animation: fadeIn 0.4s ease-out;
+  padding-bottom: 60px;
+}
+
+/* Category Summary Row */
+.category-summary-row {
+  background: var(--surface);
+  border: 1px solid var(--overlay-05);
+  border-radius: 12px;
+  padding: 14px 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.category-stats-pills {
+  display: flex;
+  gap: 16px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.category-stats-pills b {
+  color: var(--text);
+}
+
+/* GST Summary Card */
+.gst-summary-split {
+  background: var(--surface);
+  border: 1px solid var(--outline-variant);
+  border-radius: 24px;
+  padding: 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+}
+
+.gst-sections-row {
+  display: grid;
+  grid-template-columns: 1fr 1px 1fr;
+  gap: 48px;
+}
+
+.gst-v-divider {
+  background: var(--outline-variant);
+  width: 1px;
+  height: 100%;
+}
+
+.gst-section-content {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.gst-data-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 14px;
+}
+
+.gst-data-label {
+  color: var(--text-muted);
+  font-weight: 600;
+}
+.gst-data-val {
+  font-family: "Outfit", sans-serif;
+  font-weight: 700;
+}
+
+.gst-section-total {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--overlay-05);
+}
+
+.net-gst-footer {
+  text-align: center;
+  padding-top: 24px;
+  border-top: 2px dashed var(--outline-variant);
+}
+
+.net-gst-amount {
+  font-family: "Outfit", sans-serif;
+  font-size: 32px;
+  font-weight: 800;
+  color: var(--primary);
+  margin-top: 8px;
+}
+
+/* Tally Integration */
+.tally-status-card {
+  background: var(--surface);
+  border: 1px solid var(--outline-variant);
+  border-radius: 16px;
+  padding: 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.tally-logo-box {
+  width: 48px;
+  height: 48px;
+  background: var(--overlay-05);
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: "Outfit", sans-serif;
+  font-weight: 800;
+  color: var(--text-muted);
+}
+
+.sync-options-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+  margin-top: 16px;
+}
+
+.sync-option-card {
+  background: var(--overlay-02);
+  border: 1px solid var(--outline-variant);
+  border-radius: 12px;
+  padding: 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+/* Quarterly Table */
+.filed-status {
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.filed-status.success {
+  background: rgba(16, 185, 129, 0.1);
+  color: var(--success);
+}
+.filed-status.warning {
+  background: rgba(245, 158, 11, 0.1);
+  color: var(--warning);
+}
+.filed-status.danger {
+  background: rgba(239, 68, 68, 0.1);
+  color: var(--danger);
+}
+
+.total-row-highlight {
+  background: rgba(79, 219, 200, 0.05);
+  font-weight: 800;
+}

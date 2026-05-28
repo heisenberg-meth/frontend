@@ -1,0 +1,408 @@
+/* ── LOGOUT MODAL (Viyan MedAssist) ── */
+
+/* Overlay */
+.logout-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.65);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  z-index: 2000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Modal Card */
+.logout-modal {
+  background: var(--surface);
+  border: 1px solid var(--outline-variant);
+  border-radius: 24px;
+  width: 420px;
+  max-width: 92vw;
+  overflow: hidden;
+  position: relative;
+  box-shadow:
+    0 24px 80px rgba(0, 0, 0, 0.5),
+    0 0 0 1px var(--outline-variant),
+    0 0 60px rgba(79, 219, 200, 0.06);
+}
+
+/* ── Header ── */
+.logout-modal-header {
+  padding: 28px 28px 0;
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+  position: relative;
+}
+
+.logout-icon-wrapper {
+  flex-shrink: 0;
+}
+
+.logout-icon-glow {
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
+  background: rgba(239, 68, 68, 0.08);
+  border: 1px solid rgba(239, 68, 68, 0.15);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--danger);
+  animation: logoutPulse 2.5s ease-in-out infinite;
+}
+
+@keyframes logoutPulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.15);
+  }
+  50% {
+    box-shadow: 0 0 20px 4px rgba(239, 68, 68, 0.1);
+  }
+}
+
+.logout-title-block {
+  flex: 1;
+}
+
+.logout-title-block h3 {
+  font-family: "Outfit", sans-serif;
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text);
+  margin: 0 0 4px;
+}
+
+.logout-title-block p {
+  font-size: 13px;
+  color: var(--text-muted);
+  line-height: 1.5;
+  margin: 0;
+}
+
+.logout-close-btn {
+  position: absolute;
+  top: 24px;
+  right: 24px;
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  border: 1px solid var(--outline-variant);
+  background: var(--overlay-03);
+  color: var(--text-dim);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.logout-close-btn:hover {
+  background: var(--overlay-08);
+  color: var(--text);
+  border-color: var(--overlay-20);
+}
+
+/* ── Body ── */
+.logout-body {
+  padding: 24px 28px;
+}
+
+/* Session Info Card */
+.logout-session-card {
+  background: var(--overlay-03);
+  border: 1px solid var(--outline-variant);
+  border-radius: 16px;
+  padding: 16px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.session-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  color: var(--text-dim);
+}
+
+.session-row svg {
+  flex-shrink: 0;
+  opacity: 0.6;
+}
+
+.session-label {
+  flex: 0 0 80px;
+  font-weight: 600;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-dim);
+}
+
+.session-value {
+  flex: 1;
+  text-align: right;
+  font-weight: 700;
+  color: var(--text);
+  font-size: 13px;
+}
+
+.session-role {
+  color: var(--primary);
+}
+
+.session-secure {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+  color: var(--success);
+}
+
+.secure-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--success);
+  box-shadow: 0 0 8px var(--success);
+  animation: secureBlink 2s ease-in-out infinite;
+}
+
+@keyframes secureBlink {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.4;
+  }
+}
+
+/* ── Checkbox ── */
+.logout-checkbox-wrapper {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  margin-top: 20px;
+  padding: 14px 16px;
+  background: var(--overlay-02);
+  border: 1px solid var(--outline-variant);
+  border-radius: 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.logout-checkbox-wrapper:hover {
+  background: var(--overlay-05);
+  border-color: var(--overlay-15);
+}
+
+.custom-checkbox-container {
+  position: relative;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.custom-checkbox-container input {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.custom-checkbox {
+  width: 20px;
+  height: 20px;
+  border-radius: 6px;
+  border: 2px solid var(--outline-variant);
+  background: var(--overlay-03);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  color: transparent;
+}
+
+.custom-checkbox.checked {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: var(--bg-dark);
+  box-shadow: 0 0 12px var(--primary-glow);
+  transform: scale(1.05);
+}
+
+.checkbox-text {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.checkbox-text span {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.checkbox-text small {
+  font-size: 11px;
+  color: var(--text-dim);
+  line-height: 1.4;
+}
+
+/* ── Footer ── */
+.logout-modal-footer {
+  padding: 20px 28px 24px;
+  display: flex;
+  gap: 12px;
+  border-top: 1px solid var(--outline-variant);
+}
+
+.logout-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 20px;
+  border-radius: 14px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  border: none;
+  font-family: "Inter", sans-serif;
+}
+
+.logout-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Cancel */
+.logout-btn.cancel {
+  background: var(--overlay-05);
+  border: 1px solid var(--outline-variant);
+  color: var(--text-muted);
+}
+
+.logout-btn.cancel:hover:not(:disabled) {
+  background: var(--overlay-10);
+  border-color: var(--overlay-20);
+  color: var(--text);
+}
+
+/* Confirm Logout */
+.logout-btn.confirm {
+  background: var(--primary);
+  color: var(--bg-dark);
+  box-shadow: 0 4px 16px var(--primary-glow);
+}
+
+.logout-btn.confirm:hover:not(:disabled) {
+  background: var(--danger);
+  box-shadow: 0 4px 20px rgba(239, 68, 68, 0.3);
+  transform: translateY(-1px);
+}
+
+.logout-btn.confirm:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+/* Spinner */
+.logout-spinner {
+  animation: logoutSpin 1s linear infinite;
+}
+
+@keyframes logoutSpin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ── Success State ── */
+.logout-success-state {
+  padding: 56px 32px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.logout-success-icon {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  background: rgba(16, 185, 129, 0.1);
+  border: 2px solid rgba(16, 185, 129, 0.25);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--success);
+  margin-bottom: 8px;
+  animation: successScale 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes successScale {
+  0% {
+    transform: scale(0);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.logout-success-state h3 {
+  font-family: "Outfit", sans-serif;
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text);
+  margin: 0;
+}
+
+.logout-success-state p {
+  font-size: 13px;
+  color: var(--text-muted);
+  margin: 0;
+}
+
+/* ── Focus & Accessibility ── */
+.logout-btn:focus-visible,
+.logout-close-btn:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+.logout-checkbox-wrapper:focus-within {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px var(--primary-glow);
+}
+
+/* ── Responsive ── */
+@media (max-width: 480px) {
+  .logout-modal {
+    width: 95vw;
+    border-radius: 20px;
+  }
+
+  .logout-modal-header {
+    padding: 24px 20px 0;
+  }
+
+  .logout-body {
+    padding: 20px;
+  }
+
+  .logout-modal-footer {
+    padding: 16px 20px 20px;
+    flex-direction: column;
+  }
+}

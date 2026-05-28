@@ -1,0 +1,207 @@
+/* ── BARCODE & QR ECOSYSTEM (MedAssist Pro) ── */
+
+.barcode-container {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  animation: fadeIn 0.4s ease-out;
+  padding-bottom: 60px;
+}
+
+/* Feature Cards */
+.barcode-features-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+}
+
+.feature-overview-card {
+  background: var(--surface);
+  border: 1px solid var(--outline-variant);
+  border-radius: 20px;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 16px;
+  transition: all 0.3s;
+}
+
+.feature-overview-card:hover {
+  background: var(--surface-container);
+  transform: translateY(-4px);
+  border-color: var(--primary);
+}
+
+.feature-icon-circle {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Label Printing Layout */
+.label-print-panels {
+  display: flex;
+  gap: 24px;
+}
+
+.label-config-panel {
+  flex: 5.5;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.label-preview-panel {
+  flex: 4.5;
+  position: sticky;
+  top: 24px;
+  height: fit-content;
+}
+
+/* Label Component Style */
+.label-preview-sticker {
+  width: 100%;
+  max-width: 320px;
+  aspect-ratio: 38/25;
+  background: white;
+  color: var(--bg-dark);
+  border-radius: 8px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+  margin: 0 auto;
+  position: relative;
+  overflow: hidden;
+}
+
+.label-med-name {
+  font-family: "Outfit", sans-serif;
+  font-weight: 700;
+  font-size: 13px;
+  line-height: 1.2;
+}
+.label-generic {
+  font-family: "Manrope", sans-serif;
+  font-size: 10px;
+  color: #666;
+  font-weight: 600;
+}
+.label-meta {
+  font-family: "Manrope", sans-serif;
+  font-size: 10px;
+  display: flex;
+  justify-content: space-between;
+  font-weight: 700;
+}
+.label-mrp {
+  font-family: "Outfit", sans-serif;
+  font-weight: 700;
+  font-size: 11px;
+  margin-top: 4px;
+}
+.label-barcode {
+  margin-top: auto;
+  width: 100%;
+  height: 30px;
+}
+.label-qr {
+  position: absolute;
+  bottom: 8px;
+  right: 8px;
+  width: 32px;
+  height: 32px;
+}
+
+/* QR Verification Frame */
+.scanner-view-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 24px;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.camera-frame {
+  width: 100%;
+  height: 280px;
+  background: var(--bg-dark);
+  border: 2px dashed var(--primary);
+  border-radius: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  position: relative;
+  overflow: hidden;
+}
+
+.scanner-laser-line {
+  position: absolute;
+  top: 0;
+  left: 10%;
+  width: 80%;
+  height: 2px;
+  background: var(--primary);
+  box-shadow: 0 0 15px var(--primary);
+  animation: scanLine 2s linear infinite;
+  z-index: 1;
+}
+
+@keyframes scanLine {
+  0% {
+    top: 10%;
+  }
+  50% {
+    top: 90%;
+  }
+  100% {
+    top: 10%;
+  }
+}
+
+/* Result Cards */
+.verify-result-card {
+  width: 100%;
+  max-width: 600px;
+  margin: 24px auto 0;
+  border-radius: 16px;
+  border: 1px solid var(--outline-variant);
+  overflow: hidden;
+}
+
+.verify-result-header {
+  padding: 14px 20px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--overlay-03);
+}
+
+.verify-result-body {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* Settings Controls */
+.settings-control-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+
+.format-checkboxes {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}

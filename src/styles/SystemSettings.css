@@ -1,0 +1,1388 @@
+/* ── SYSTEM SETTINGS COMPREHENSIVE STYLE ── */
+:root {
+  --sys-teal: #00c9a7;
+  --sys-teal-dim: rgba(0, 201, 167, 0.13);
+  --sys-teal-hover: #00b396;
+  --sys-danger: #ef4444;
+  --sys-danger-dim: rgba(239, 68, 68, 0.13);
+  --sys-amber: #f59e0b;
+  --sys-amber-dim: rgba(245, 158, 11, 0.13);
+
+  --sys-bg: #f4f6fa;
+  --sys-card: #ffffff;
+  --sys-card2: #f8fafc;
+  --sys-border: #e2e8f0;
+  --sys-input: #f8fafc;
+  --sys-text: #0f172a;
+  --sys-text-muted: #64748b;
+  --sys-text-label: #64748b;
+}
+
+[data-theme="dark"] {
+  --sys-bg: #0a0f1c;
+  --sys-card: #111827;
+  --sys-card2: #1a2236;
+  --sys-border: #1f2a44;
+  --sys-input: #0d1525;
+  --sys-text: #f1f5f9;
+  --sys-text-muted: #94a3b8;
+  --sys-text-label: #64748b;
+}
+
+.settings-page-wrapper {
+  padding: 32px;
+  font-family: "Manrope", sans-serif;
+  color: var(--sys-text);
+  background-color: var(--sys-bg);
+  min-height: 100vh;
+  transition: all 0.2s ease;
+}
+
+/* Header */
+.settings-page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 32px;
+}
+
+.header-left .breadcrumb-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 12px;
+  background-color: var(--sys-teal-dim);
+  border: 1px solid var(--sys-teal);
+  color: var(--sys-teal);
+  border-radius: 9999px;
+  font-family: "Outfit", sans-serif;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  margin-bottom: 12px;
+}
+
+.header-left h1 {
+  font-family: "Outfit", sans-serif;
+  font-size: 26px;
+  font-weight: 700;
+  margin: 0 0 4px 0;
+}
+
+.header-left p {
+  font-family: "Manrope", sans-serif;
+  font-size: 13px;
+  color: var(--sys-text-muted);
+  font-weight: 500;
+  margin: 0;
+}
+
+.header-right {
+  display: flex;
+  gap: 12px;
+}
+
+/* Buttons */
+.sys-btn-outline {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  border: 1px solid var(--sys-border);
+  background: transparent;
+  color: var(--sys-text);
+  border-radius: 8px;
+  font-family: "Outfit", sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.sys-btn-outline:hover {
+  background: var(--sys-card2);
+}
+
+.sys-btn-fill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  border: none;
+  background: var(--sys-teal);
+  color: #fff;
+  border-radius: 8px;
+  font-family: "Outfit", sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.sys-btn-fill:hover {
+  background: var(--sys-teal-hover);
+}
+
+/* Layout */
+.settings-grid {
+  display: grid;
+  grid-template-columns: 55% 45%;
+  gap: 24px;
+}
+
+.settings-col {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+/* Cards */
+.sys-card {
+  background-color: var(--sys-card);
+  border: 1px solid var(--sys-border);
+  border-radius: 14px;
+  padding: 20px;
+  transition: all 0.2s ease;
+}
+
+.sys-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.sys-card-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: "Outfit", sans-serif;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--sys-text);
+  margin: 0;
+}
+
+.sys-card-title i {
+  color: var(--sys-teal);
+}
+
+.sys-chip {
+  background-color: var(--sys-teal-dim);
+  color: var(--sys-teal);
+  padding: 4px 10px;
+  border-radius: 9999px;
+  font-family: "Outfit", sans-serif;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+/* Specific Cards */
+.enterprise-grad-card {
+  background: linear-gradient(135deg, #0f1e2a, #0a1520);
+  border-radius: 14px;
+  padding: 24px;
+  margin-bottom: 16px;
+}
+
+[data-theme="light"] .enterprise-grad-card {
+  background: linear-gradient(135deg, #0d3656, #0a1520);
+}
+
+.ent-label {
+  font-family: "Outfit", sans-serif;
+  color: var(--sys-teal);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  margin-bottom: 8px;
+}
+
+.ent-price {
+  font-family: "Outfit", sans-serif;
+  font-size: 32px;
+  font-weight: 700;
+  color: #fff;
+  margin: 0;
+}
+
+.ent-info-row {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.ent-info-item label {
+  display: block;
+  font-family: "Outfit", sans-serif;
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--sys-text-label);
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  margin-bottom: 4px;
+}
+
+.ent-info-item span {
+  font-family: "Manrope", sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--sys-text);
+}
+
+.theme-selector {
+  display: flex;
+  gap: 12px;
+}
+
+.theme-btn {
+  flex: 1;
+  padding: 12px;
+  border-radius: 9999px;
+  border: 1px solid var(--sys-border);
+  background: var(--sys-card2);
+  color: var(--sys-text-muted);
+  font-family: "Outfit", sans-serif;
+  font-weight: 600;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.theme-btn.active {
+  border-color: var(--sys-teal);
+  color: var(--sys-teal);
+  background: var(--sys-teal-dim);
+}
+
+/* Forms */
+.sys-form-group {
+  margin-bottom: 16px;
+}
+
+.sys-label {
+  display: block;
+  font-family: "Outfit", sans-serif;
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--sys-text-label);
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  margin-bottom: 8px;
+}
+
+.sys-input,
+.sys-select,
+.sys-textarea {
+  width: 100%;
+  height: 46px;
+  background: linear-gradient(
+    145deg,
+    rgba(13, 20, 40, 0.95),
+    rgba(7, 12, 28, 0.98)
+  );
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 14px;
+  padding: 0 16px;
+  color: #ffffff;
+  font-family: "Outfit", sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  transition: all 0.25s ease;
+  box-sizing: border-box;
+  backdrop-filter: blur(12px);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.04),
+    0 4px 20px rgba(0, 0, 0, 0.25);
+}
+
+.sys-textarea {
+  height: auto;
+  padding: 12px 16px;
+  min-height: 60px;
+}
+
+.sys-input:hover,
+.sys-select:hover {
+  border-color: rgba(79, 219, 200, 0.45);
+  box-shadow:
+    0 0 0 4px rgba(79, 219, 200, 0.08),
+    0 10px 25px rgba(0, 0, 0, 0.3);
+}
+
+.sys-input:focus,
+.sys-select:focus,
+.sys-textarea:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow:
+    0 0 0 4px rgba(79, 219, 200, 0.12),
+    0 10px 30px rgba(79, 219, 200, 0.15);
+}
+
+.sys-select {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  cursor: pointer;
+  background-image:
+    linear-gradient(45deg, transparent 50%, #4fdbc8 50%),
+    linear-gradient(135deg, #4fdbc8 50%, transparent 50%);
+  background-position:
+    calc(100% - 18px) calc(50% - 3px),
+    calc(100% - 12px) calc(50% - 3px);
+  background-size: 6px 6px;
+  background-repeat: no-repeat;
+  padding-right: 36px;
+}
+
+.sys-select option {
+  background: #081120;
+  color: #ffffff;
+  padding: 12px;
+}
+
+.sys-textarea {
+  resize: vertical;
+  min-height: 60px;
+}
+
+/* HSN Table */
+.hsn-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 12px;
+}
+
+.hsn-table th {
+  text-align: left;
+  font-family: "Outfit", sans-serif;
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--sys-text-label);
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--sys-border);
+}
+
+.hsn-table td {
+  font-family: "Manrope", sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--sys-border);
+}
+
+.hsn-table tr:last-child td {
+  border-bottom: none;
+}
+
+.add-row-link {
+  color: var(--sys-teal);
+  font-family: "Outfit", sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+/* Toggles */
+.sys-toggle-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 0;
+}
+
+.sys-toggle-label {
+  font-family: "Manrope", sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.sys-toggle-desc {
+  font-family: "Manrope", sans-serif;
+  font-size: 11px;
+  color: var(--sys-text-muted);
+  display: block;
+  margin-top: 2px;
+}
+
+.sys-toggle {
+  width: 44px;
+  height: 24px;
+  background-color: var(--sys-border);
+  border-radius: 24px;
+  position: relative;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+[data-theme="dark"] .sys-toggle {
+  background-color: #1f2a44;
+}
+
+.sys-toggle.on {
+  background-color: var(--sys-teal);
+}
+
+.sys-toggle-thumb {
+  width: 20px;
+  height: 20px;
+  background-color: #fff;
+  border-radius: 50%;
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  transition: all 0.2s;
+}
+
+.sys-toggle.on .sys-toggle-thumb {
+  left: 22px;
+}
+
+/* Sliders */
+.sys-slider-group {
+  margin-bottom: 24px;
+}
+
+.sys-slider-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.sys-slider {
+  width: 100%;
+  accent-color: var(--sys-teal);
+}
+
+.sys-badge {
+  background-color: var(--sys-teal-dim);
+  color: var(--sys-teal);
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-family: "Outfit", sans-serif;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+/* Danger Zone */
+.danger-card-header {
+  color: var(--sys-amber);
+}
+
+.danger-action {
+  background-color: var(--sys-danger-dim);
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 12px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+[data-theme="dark"] .danger-action {
+  background-color: #1a0a0a;
+}
+
+.danger-action-info {
+  font-family: "Outfit", sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--sys-text);
+}
+
+.danger-action-info span {
+  display: block;
+  font-family: "Manrope", sans-serif;
+  font-size: 11px;
+  color: var(--sys-text-muted);
+  font-weight: 500;
+  margin-top: 2px;
+}
+
+.btn-red-outline {
+  border: 1px solid var(--sys-danger);
+  color: var(--sys-danger);
+  background: transparent;
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-family: "Outfit", sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.btn-red-fill {
+  border: none;
+  background: var(--sys-danger);
+  color: #fff;
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-family: "Outfit", sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+/* View 2: Subscription */
+.sub-view-header {
+  text-align: center;
+  margin-bottom: 40px;
+}
+
+.sub-view-header h2 {
+  font-family: "Outfit", sans-serif;
+  font-size: 28px;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+
+.billing-toggle {
+  display: inline-flex;
+  background: var(--sys-card2);
+  border: 1px solid var(--sys-border);
+  border-radius: 9999px;
+  padding: 4px;
+  margin-bottom: 32px;
+}
+
+.billing-toggle button {
+  padding: 8px 16px;
+  border-radius: 9999px;
+  border: none;
+  background: transparent;
+  color: var(--sys-text-muted);
+  font-family: "Outfit", sans-serif;
+  font-weight: 600;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.billing-toggle button.active {
+  background: var(--sys-card);
+  color: var(--sys-text);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.plans-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 24px;
+  margin-bottom: 48px;
+}
+
+.plan-card {
+  background: var(--sys-card);
+  border: 1px solid var(--sys-border);
+  border-radius: 14px;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+
+.plan-card.highlight {
+  border: 2px solid var(--sys-teal);
+  box-shadow: 0 0 20px var(--sys-teal-dim);
+  background: var(--sys-card2);
+}
+
+.plan-badge {
+  position: absolute;
+  top: -12px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--sys-teal);
+  color: #fff;
+  padding: 4px 12px;
+  border-radius: 9999px;
+  font-family: "Outfit", sans-serif;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.plan-chip {
+  font-family: "Outfit", sans-serif;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--sys-text-muted);
+  letter-spacing: 0.05em;
+  margin-bottom: 12px;
+}
+
+.plan-price-row {
+  margin-bottom: 4px;
+  font-family: "Outfit", sans-serif;
+}
+
+.plan-price-row .amt {
+  font-size: 32px;
+  font-weight: 700;
+}
+
+.plan-price-row .per {
+  font-size: 13px;
+  color: var(--sys-text-muted);
+}
+
+.plan-subtext {
+  font-family: "Manrope", sans-serif;
+  color: var(--sys-teal);
+  font-size: 12px;
+  font-weight: 600;
+  margin-bottom: 24px;
+}
+
+.plan-features {
+  flex: 1;
+  margin-bottom: 24px;
+}
+
+.feature-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: "Manrope", sans-serif;
+  font-size: 13px;
+  margin-bottom: 12px;
+}
+
+.feature-item i.check {
+  color: var(--sys-teal);
+}
+
+.feature-item i.x {
+  color: var(--sys-danger);
+}
+
+.feature-item.muted {
+  color: var(--sys-text-muted);
+}
+
+/* FAQ */
+.faq-section {
+  max-width: 600px;
+  margin: 0 auto 24px;
+}
+
+.faq-item {
+  border-bottom: 1px solid var(--sys-border);
+  padding: 16px 0;
+  cursor: pointer;
+}
+
+.faq-q {
+  font-family: "Outfit", sans-serif;
+  font-weight: 600;
+  font-size: 14px;
+  display: flex;
+  justify-content: space-between;
+}
+
+.faq-a {
+  font-family: "Manrope", sans-serif;
+  font-size: 13px;
+  color: var(--sys-text-muted);
+  margin-top: 8px;
+  display: none;
+}
+
+.faq-item.open .faq-a {
+  display: block;
+}
+
+/* View 3: Payment */
+.payment-grid {
+  display: grid;
+  grid-template-columns: 55% 45%;
+  gap: 32px;
+}
+
+.pay-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 24px;
+}
+
+.pay-tab {
+  flex: 1;
+  padding: 12px;
+  border-radius: 8px;
+  border: 1px solid var(--sys-border);
+  background: var(--sys-card2);
+  text-align: center;
+  font-family: "Outfit", sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.pay-tab.active {
+  border-color: var(--sys-teal);
+  background: var(--sys-teal-dim);
+  color: var(--sys-teal);
+}
+
+.order-summary {
+  background: var(--sys-card);
+  border: 1px solid var(--sys-border);
+  border-radius: 14px;
+  padding: 24px;
+}
+
+.summary-row {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 12px;
+  font-family: "Outfit", sans-serif;
+  font-size: 13px;
+}
+
+.summary-divider {
+  height: 1px;
+  background: var(--sys-border);
+  margin: 16px 0;
+}
+
+/* Modals & Overlays */
+.sys-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(6px);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.sys-modal {
+  background: var(--sys-card);
+  border: 1px solid var(--sys-border);
+  border-radius: 16px;
+  width: 480px;
+  max-width: 90%;
+  padding: 32px;
+  text-align: center;
+}
+
+.sys-modal h2 {
+  font-family: "Outfit", sans-serif;
+}
+
+.sys-modal p {
+  font-family: "Manrope", sans-serif;
+}
+
+/* Trial Banner */
+.sys-trial-banner {
+  background: #1a1200;
+  border-left: 4px solid var(--sys-amber);
+  padding: 12px 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  color: #fff;
+  font-family: "Manrope", sans-serif;
+  font-size: 13px;
+}
+
+[data-theme="light"] .sys-trial-banner {
+  background: #fffbea;
+  color: var(--sys-text);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   ENHANCED PAYMENT STYLES
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ── Pay Tabs override for icon + text ── */
+.pay-tab {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+/* ── Pay method section spacing ── */
+.pay-method-section {
+  margin-top: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* ── Card type indicator badge ── */
+.card-input-wrapper {
+  position: relative;
+}
+
+.card-type-indicator {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  padding: 3px 10px;
+  border-radius: 4px;
+  color: #fff;
+  font-family: "Outfit", sans-serif;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  pointer-events: none;
+}
+
+/* ── CVV toggle ── */
+.cvv-input-wrapper {
+  position: relative;
+}
+
+.cvv-input-wrapper .sys-input {
+  padding-right: 40px;
+}
+
+.cvv-toggle-btn {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  color: var(--sys-text-muted);
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  transition: color 0.2s;
+}
+
+.cvv-toggle-btn:hover {
+  color: var(--sys-teal);
+}
+
+/* ── Payment checkbox ── */
+.pay-checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: "Manrope", sans-serif;
+  font-size: 13px;
+  color: var(--sys-text);
+  cursor: pointer;
+  user-select: none;
+}
+
+.pay-checkbox-label input[type="checkbox"] {
+  accent-color: var(--sys-teal);
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+}
+
+/* ── UPI Apps ── */
+.upi-apps-label {
+  font-family: "Outfit", sans-serif;
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--sys-text-label);
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  margin-bottom: 4px;
+}
+
+.upi-apps-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+}
+
+.upi-app-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 16px 8px;
+  border: 1px solid var(--sys-border);
+  border-radius: 12px;
+  background: var(--sys-card2);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: "Manrope", sans-serif;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--sys-text);
+}
+
+.upi-app-btn:hover {
+  border-color: var(--sys-teal);
+  background: var(--sys-teal-dim);
+  transform: translateY(-2px);
+}
+
+.upi-app-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+}
+
+/* ── UPI QR ── */
+.upi-or-divider {
+  text-align: center;
+  position: relative;
+  margin-top: 8px;
+}
+
+.upi-or-divider::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  height: 1px;
+  background: var(--sys-border);
+}
+
+.upi-or-divider span {
+  position: relative;
+  background: var(--sys-card);
+  padding: 0 16px;
+  font-family: "Outfit", sans-serif;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--sys-text-muted);
+  letter-spacing: 0.06em;
+}
+
+.upi-qr-placeholder {
+  border: 2px dashed var(--sys-border);
+  border-radius: 14px;
+  padding: 32px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.upi-qr-placeholder p {
+  font-family: "Manrope", sans-serif;
+  font-size: 12px;
+  color: var(--sys-text-muted);
+  margin: 0;
+}
+
+/* ── Net Banking ── */
+.nb-popular-label {
+  font-family: "Outfit", sans-serif;
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--sys-text-label);
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  margin-bottom: 12px;
+}
+
+.nb-banks-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+}
+
+.nb-bank-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 14px 8px;
+  border: 1px solid var(--sys-border);
+  border-radius: 10px;
+  background: var(--sys-card2);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: "Manrope", sans-serif;
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--sys-text-muted);
+}
+
+.nb-bank-btn:hover {
+  border-color: var(--sys-teal);
+  transform: translateY(-2px);
+}
+
+.nb-bank-btn.selected {
+  border-color: var(--sys-teal);
+  background: var(--sys-teal-dim);
+  color: var(--sys-teal);
+  box-shadow: 0 0 0 3px rgba(0, 201, 167, 0.12);
+}
+
+.nb-bank-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-family: "Outfit", sans-serif;
+  font-weight: 700;
+  font-size: 14px;
+}
+
+/* ── Coupon ── */
+.pay-coupon-section {
+  margin-top: 32px;
+  padding-top: 24px;
+  border-top: 1px solid var(--sys-border);
+}
+
+.coupon-applied-badge {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  background: rgba(16, 185, 129, 0.1);
+  color: #10b981;
+  border-radius: 8px;
+  font-family: "Outfit", sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  width: 100%;
+}
+
+/* ── Pay button ── */
+.pay-main-btn {
+  width: 100%;
+  justify-content: center;
+  margin-top: 24px;
+  height: 52px;
+  font-size: 15px;
+  border-radius: 12px;
+  gap: 8px;
+}
+
+.pay-main-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  filter: grayscale(0.3);
+}
+
+/* ── Summary features ── */
+.summary-features-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.summary-features-list li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: "Manrope", sans-serif;
+  font-size: 13px;
+  line-height: 2;
+  color: var(--sys-text);
+}
+
+/* ── Summary security ── */
+.summary-security-row {
+  display: flex;
+  justify-content: space-between;
+  font-family: "Outfit", sans-serif;
+  font-size: 11px;
+  color: var(--sys-text-muted);
+  font-weight: 600;
+}
+
+.summary-security-row span {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* ── OTP Modal ── */
+.otp-modal {
+  max-width: 420px;
+  text-align: center;
+}
+
+.otp-bank-badge {
+  width: 56px;
+  height: 56px;
+  border-radius: 16px;
+  background: var(--sys-teal-dim);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto;
+}
+
+.otp-input-group {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  margin-bottom: 20px;
+}
+
+.otp-digit-input {
+  width: 48px;
+  height: 56px;
+  text-align: center;
+  font-family: "Outfit", sans-serif;
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--sys-text);
+  background: var(--sys-input);
+  border: 2px solid var(--sys-border);
+  border-radius: 12px;
+  outline: none;
+  transition: all 0.2s ease;
+}
+
+.otp-digit-input:focus {
+  border-color: var(--sys-teal);
+  box-shadow: 0 0 0 3px var(--sys-teal-dim);
+}
+
+.otp-timer-row {
+  text-align: center;
+  font-family: "Manrope", sans-serif;
+  font-size: 13px;
+  color: var(--sys-text-muted);
+}
+
+.otp-resend-btn {
+  background: none;
+  border: none;
+  color: var(--sys-teal);
+  font-family: "Outfit", sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.otp-resend-btn:hover {
+  color: var(--sys-teal-hover);
+}
+
+/* ── Success screen ── */
+.pay-success-container {
+  text-align: center;
+  padding: 80px 0;
+}
+
+.pay-success-anim {
+  width: 80px;
+  height: 80px;
+  margin: 0 auto;
+}
+
+.pay-checkmark {
+  width: 80px;
+  height: 80px;
+}
+
+.pay-checkmark-circle {
+  stroke-dasharray: 166;
+  stroke-dashoffset: 166;
+  stroke-width: 2;
+  stroke-miterlimit: 10;
+  stroke: var(--sys-teal);
+  animation: payCheckCircle 0.6s ease-in-out forwards;
+}
+
+.pay-checkmark-check {
+  stroke-dasharray: 48;
+  stroke-dashoffset: 48;
+  stroke-width: 3;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke: var(--sys-teal);
+  animation: payCheckStroke 0.3s ease-in-out 0.6s forwards;
+}
+
+@keyframes payCheckCircle {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes payCheckStroke {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+/* ── Processing spinner ── */
+.pay-processing-container {
+  text-align: center;
+  padding: 120px 0;
+}
+
+.pay-spinner {
+  width: 48px;
+  height: 48px;
+  border: 3px solid var(--sys-border);
+  border-top-color: var(--sys-teal);
+  border-radius: 50%;
+  margin: 0 auto;
+  animation: paySpinner 0.8s linear infinite;
+}
+
+@keyframes paySpinner {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.pay-spinner-small {
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: paySpinner 0.6s linear infinite;
+}
+
+/* ── Net Banking redirect ── */
+.pay-redirect-container {
+  text-align: center;
+  padding: 100px 0;
+}
+
+.redirect-bank-badge {
+  width: 64px;
+  height: 64px;
+  border-radius: 18px;
+  background: var(--sys-teal-dim);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 8px;
+}
+
+.redirect-progress-track {
+  width: 320px;
+  max-width: 100%;
+  height: 6px;
+  background: var(--sys-border);
+  border-radius: 6px;
+  margin: 0 auto;
+  overflow: hidden;
+}
+
+.redirect-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--sys-teal), var(--sys-teal-hover));
+  border-radius: 6px;
+  transition: width 0.08s linear;
+}
+
+/* ── UPI Waiting ── */
+.pay-upi-waiting-container {
+  text-align: center;
+  padding: 80px 0;
+}
+
+.upi-pulse-wrapper {
+  position: relative;
+  width: 80px;
+  height: 80px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.upi-pulse-ring {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 2px solid var(--sys-teal);
+  opacity: 0;
+  animation: upiPulseAnim 2s ease-out infinite;
+}
+
+.upi-pulse-ring.delay {
+  animation-delay: 1s;
+}
+
+@keyframes upiPulseAnim {
+  0% {
+    transform: scale(0.8);
+    opacity: 0.8;
+  }
+
+  100% {
+    transform: scale(2.2);
+    opacity: 0;
+  }
+}
+
+.upi-phone-icon {
+  position: relative;
+  z-index: 1;
+}
+
+.upi-timer-display {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-family: "Outfit", sans-serif;
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--sys-teal);
+  margin-bottom: 16px;
+}
+
+.upi-timer-display span:last-child {
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.upi-timer-bar {
+  width: 240px;
+  max-width: 100%;
+  height: 4px;
+  background: var(--sys-border);
+  border-radius: 4px;
+  margin: 0 auto;
+  overflow: hidden;
+}
+
+.upi-timer-bar > div {
+  height: 100%;
+  background: var(--sys-teal);
+  border-radius: 4px;
+  transition: width 1s linear;
+}
+
+/* ── Order summary card ── */
+.order-summary {
+  background: var(--sys-card);
+  border: 1px solid var(--sys-border);
+  border-radius: 14px;
+  padding: 28px;
+  position: sticky;
+  top: 24px;
+}

@@ -1,0 +1,430 @@
+/* ── REPORTS HUB (MedAssist Pro) ── */
+
+.reports-container {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  animation: fadeIn 0.4s ease-out;
+  padding-bottom: 60px;
+}
+
+/* KPI Cards Layout */
+.reports-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+
+.report-kpi-card {
+  background: var(--surface);
+  border: 1px solid var(--outline-variant);
+  border-radius: 20px;
+  padding: 24px;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.report-kpi-card:hover {
+  background: var(--surface-container);
+  transform: translateY(-4px);
+  border-color: var(--primary);
+}
+
+.kpi-trend {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.kpi-trend.up {
+  color: var(--success);
+}
+.kpi-trend.down {
+  color: var(--danger);
+}
+
+/* Line Chart Card */
+.line-chart-card {
+  background: var(--surface);
+  border: 1px solid var(--outline-variant);
+  border-radius: 20px;
+  padding: 24px;
+  position: relative;
+}
+
+.chart-period-toggles {
+  display: flex;
+  gap: 8px;
+  background: var(--overlay-03);
+  padding: 4px;
+  border-radius: 8px;
+}
+
+.period-pill {
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 800;
+  cursor: pointer;
+  color: var(--text-muted);
+  border: none;
+  background: none;
+  transition: 0.2s;
+}
+
+.period-pill.active {
+  background: var(--primary);
+  color: var(--bg-dark);
+}
+
+/* Horizontal Bar Chart (Top Medicines) */
+.med-revenue-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.med-name-label {
+  width: 140px;
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.med-bar-bg {
+  flex: 1;
+  height: 12px;
+  background: var(--overlay-03);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.med-bar-fill {
+  height: 100%;
+  background: var(--primary);
+  border-radius: 6px;
+  transition: width 1s ease-out;
+}
+
+/* Donut Chart Simulation */
+.donut-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+}
+
+.donut-visual {
+  width: 140px;
+  height: 140px;
+  border-radius: 50%;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: conic-gradient(
+    var(--primary) 0% 57%,
+    var(--info) 57% 91%,
+    var(--info) 91% 100%
+  );
+}
+
+.donut-visual::after {
+  content: "";
+  width: 100px;
+  height: 100px;
+  background: var(--surface);
+  border-radius: 50%;
+  position: absolute;
+}
+
+.donut-inner-text {
+  position: relative;
+  z-index: 1;
+  text-align: center;
+  font-family: "Outfit", sans-serif;
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.donut-legend {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  width: 100%;
+}
+
+.legend-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.legend-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+/* P&L Summary */
+.pnl-summary-card {
+  background: var(--surface-container);
+  border: 1px solid var(--overlay-07);
+  border-radius: 24px;
+  padding: 32px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 48px;
+}
+
+.pnl-col-left {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.pnl-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.pnl-row.total {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--overlay-10);
+}
+
+.pnl-label {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.pnl-val {
+  font-family: "Outfit", sans-serif;
+  font-weight: 700;
+  font-size: 18px;
+}
+
+.pnl-val.large {
+  font-size: 32px;
+  color: var(--primary);
+}
+
+/* Expiry Report */
+.expiry-urgency-banner {
+  background: rgba(255, 77, 79, 0.1);
+  border: 1px solid rgba(255, 77, 79, 0.25);
+  border-radius: 12px;
+  padding: 16px 20px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 24px;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.expiry-urgency-banner:hover {
+  background: rgba(255, 77, 79, 0.15);
+}
+
+.expiry-row-danger {
+  background: rgba(255, 77, 79, 0.06) !important;
+  border-left: 4px solid var(--danger);
+}
+
+.expiry-row-warning {
+  background: rgba(245, 166, 35, 0.06) !important;
+  border-left: 4px solid var(--warning);
+}
+
+.expiry-row-info {
+  background: rgba(59, 130, 246, 0.04) !important;
+  border-left: 4px solid var(--info);
+}
+
+/* Chart Grids */
+.report-charts-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+}
+
+.expense-categories {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.expense-cat-card {
+  background: var(--overlay-02);
+  border: 1px solid var(--outline-variant);
+  border-radius: 16px;
+  padding: 16px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.cat-icon-box {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ── Action Button Improvements ── */
+.action-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: 0.2s ease;
+}
+
+.action-btn:hover {
+  transform: scale(1.08);
+  background: var(--overlay-05);
+}
+
+.purchase-table tbody tr:hover {
+  background: rgba(79, 219, 200, 0.06);
+  transition: 0.2s;
+}
+
+/* ── Print Styles ── */
+@media print {
+  .header-actions,
+  .purchases-tabs,
+  .micro-btn,
+  .pos-btn,
+  .chart-period-toggles,
+  .report-charts-grid,
+  .filter-pills-row,
+  .table-search-wrapper {
+    display: none !important;
+  }
+
+  .reports-container {
+    background: white !important;
+  }
+
+  .purchase-table {
+    color: black !important;
+    border-collapse: collapse !important;
+    width: 100% !important;
+  }
+
+  .purchase-table th {
+    background: #f5f5f5 !important;
+    color: black !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  .purchase-table td,
+  .purchase-table th {
+    border: 1px solid #ddd !important;
+    padding: 8px !important;
+  }
+
+  .purchase-table-card {
+    box-shadow: none !important;
+    border: 1px solid #ddd !important;
+    break-inside: auto !important;
+  }
+
+  .expiry-urgency-banner {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  .expiry-row-danger,
+  .expiry-row-warning,
+  .expiry-row-info {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  body {
+    background: white !important;
+  }
+
+  .report-kpi-card {
+    border: 1px solid #ddd !important;
+    box-shadow: none !important;
+  }
+
+  .pos-card {
+    border: 1px solid #ddd !important;
+    box-shadow: none !important;
+  }
+
+  .pnl-summary-card {
+    border: 1px solid #ddd !important;
+    box-shadow: none !important;
+  }
+}
+
+/* ── Modal Overlay (stock-modal-* pattern) ── */
+.stock-modal-overlay {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.8);
+  backdrop-filter: blur(8px);
+  z-index: 99999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.stock-modal-content {
+  position: relative;
+  z-index: 100000;
+  background: var(--surface);
+  border: 1px solid var(--outline-variant);
+  border-radius: 28px;
+  width: 520px;
+  max-width: 90%;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 24px 48px rgba(0, 0, 0, 0.5);
+}
+
+.stock-modal-header {
+  padding: 24px 32px;
+  border-bottom: 1px solid var(--outline-variant);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.stock-modal-body {
+  padding: 32px;
+}
+
+.stock-modal-footer {
+  padding: 20px 32px;
+  border-top: 1px solid var(--outline-variant);
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+}
