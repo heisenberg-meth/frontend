@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect, useRef } from "react";
+import { useState, useMemo, useEffect, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../api.js";
 import { API_ROUTES } from "../constants/api.routes.js";
@@ -163,11 +163,11 @@ const normalizeInvoiceItem = (item) => ({
 });
 
 const resolvePaymentMethod = (bill) => {
-  // Try payments array first (from backend relation)
   if (Array.isArray(bill.payments) && bill.payments.length > 0) {
-    return bill.payments[0].paymentMode || bill.payments[0].paymentMethod || "CASH";
+    return (
+      bill.payments[0].paymentMode || bill.payments[0].paymentMethod || "CASH"
+    );
   }
-  // Then fallback to direct fields
   return bill.paymentMode || bill.paymentMethod || "CASH";
 };
 
@@ -190,7 +190,10 @@ const normalizeBill = (bill) => ({
 export default function BillingPOS({ showToast: parentShowToast }) {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const showToast = parentShowToast || (() => {});
+  const showToast = useMemo(
+    () => parentShowToast || (() => {}),
+    [parentShowToast],
+  );
   const [patient, setPatient] = useState(() => {
     try {
       const saved = localStorage.getItem("currentBillingPatient");
@@ -212,9 +215,11 @@ export default function BillingPOS({ showToast: parentShowToast }) {
   const [discount, setDiscount] = useState(0);
   const [showPreview, setShowPreview] = useState(false);
   const [activeInvoice, setActiveInvoice] = useState(null);
-  const [paymentMode] = useState("CASH");
+  const [paymentMode, setPaymentMode] = useState("CASH");
   const [setMedLoading] = useState(false);
   const [setIsDrafting] = useState(false);
+  const [isWalkIn, setIsWalkIn] = useState(false);
+  const barcodeInputRef = useRef(null);
   const [findLoading, setFindLoading] = useState(false);
   const [patientResults, setPatientResults] = useState([]);
   const [showPatientDropdown, setShowPatientDropdown] = useState(false);
@@ -259,7 +264,7 @@ export default function BillingPOS({ showToast: parentShowToast }) {
   useEffect(() => {
     let mounted = true;
 
-      const loadBills = async () => {
+    const loadBills = async () => {
       try {
         const res = await api.get(API_ROUTES.BILLING_INVOICES, {
           params: { status: "PAID" },
@@ -386,7 +391,6 @@ export default function BillingPOS({ showToast: parentShowToast }) {
       ),
     [lineItems],
   );
-  // Discount is percentage-based: input 10 means 10% off subtotal
   const discountAmount = subtotal * (safeNumber(discount) / 100);
   const grandTotal = Math.max(0, subtotal + tax - discountAmount);
 
@@ -406,7 +410,9 @@ export default function BillingPOS({ showToast: parentShowToast }) {
     year: "numeric",
   });
   const returnAmount = useMemo(() => {
-    const items = resolveInvoiceItems(selectedBill || {}).map(normalizeInvoiceItem);
+    const items = resolveInvoiceItems(selectedBill || {}).map(
+      normalizeInvoiceItem,
+    );
     return Object.entries(returnItems).reduce((acc, [idx, qty]) => {
       const item = items[idx];
       return acc + (qty || 0) * (item?.price || 0);
@@ -470,17 +476,17 @@ export default function BillingPOS({ showToast: parentShowToast }) {
     );
   };
 
-  const resetBillForm = () => {
+  const resetBillForm = useCallback(() => {
     setLineItems([]);
     setPatient({ id: null, name: "", phone: "" });
     setDiscount(0);
     setPaymentMode("CASH");
     showToast("Form Reset", "info");
-    // Auto-focus barcode input after reset
-    setTimeout(() => barcodeInputRef.current?.focus(), 100);
-  };
 
-  const handleSaveDraft = async () => {
+    setTimeout(() => barcodeInputRef.current?.focus(), 100);
+  }, [showToast]);
+
+  const handleSaveDraft = useCallback(async () => {
     if (!user?.branchId) {
       setDraftError("Branch context missing");
       showToast("Branch context missing. Cannot create draft.", "error");
@@ -528,7 +534,7 @@ export default function BillingPOS({ showToast: parentShowToast }) {
           ...normalizeInvoice(saved),
           status: "DRAFT",
           time: "Just now",
-          timeline: ["Draft Created"]
+          timeline: ["Draft Created"],
         };
         setBills((prev) => [normalizedDraft, ...prev]);
         showToast(`Draft saved — ${saved.id}`, "success");
@@ -541,58 +547,89 @@ export default function BillingPOS({ showToast: parentShowToast }) {
     } finally {
       setDraftSaving(false);
     }
-  };
+  }, [
+    user,
+    grandTotal,
+    lineItems,
+    patient,
+    isWalkIn,
+    subtotal,
+    cgstAmt,
+    sgstAmt,
+    discount,
+    discountAmount,
+    paymentMode,
+    showToast,
+  ]);
 
-  const handlePrint = (invoice) => {
-    const inv = invoice || activeInvoice;
-    if (!inv) {
-      if (lineItems.length === 0) {
-        showToast("Add at least one medicine to print", "error");
-        return;
+  const handlePrint = useCallback(
+    (invoice) => {
+      const inv = invoice || activeInvoice;
+      if (!inv) {
+        if (lineItems.length === 0) {
+          showToast("Add at least one medicine to print", "error");
+          return;
+        }
+        if (!isWalkIn && !patient.name) {
+          showToast("Please enter patient name", "error");
+          return;
+        }
       }
-      if (!isWalkIn && !patient.name) {
-        showToast("Please enter patient name", "error");
-        return;
-      }
-    }
 
-    setPrintLoading(true);
-    const invData = inv
-      ? { ...inv, items: resolveInvoiceItems(inv) }
-      : {
-          id: generateInvoiceId(),
-          date: new Date().toLocaleDateString("en-IN", {
-            day: "numeric",
-            month: "short",
-            year: "numeric",
-          }),
-          patient: isWalkIn ? "Walk-in Customer" : patient.name,
-          phone: isWalkIn ? "N/A" : patient.phone,
-          items: lineItems,
-          subtotal,
-          cgst: cgstAmt,
-          sgst: sgstAmt,
-          discount,
-          total: grandTotal,
-        };
+      setPrintLoading(true);
+      const invData = inv
+        ? { ...inv, items: resolveInvoiceItems(inv) }
+        : {
+            id: generateInvoiceId(),
+            date: new Date().toLocaleDateString("en-IN", {
+              day: "numeric",
+              month: "short",
+              year: "numeric",
+            }),
+            patient: isWalkIn ? "Walk-in Customer" : patient.name,
+            phone: isWalkIn ? "N/A" : patient.phone,
+            items: lineItems,
+            subtotal,
+            cgst: cgstAmt,
+            sgst: sgstAmt,
+            discount,
+            total: grandTotal,
+          };
 
-    const itemsRows = resolveInvoiceItems(invData).map(normalizeInvoiceItem)
-      .map(
-        (i) =>
-          `<tr><td style="padding:8px;border-bottom:1px solid #eee">${i.name}</td><td style="text-align:center;border-bottom:1px solid #eee">${i.qty}</td><td style="text-align:center;border-bottom:1px solid #eee">₹${safeNumber(i.price).toFixed(2)}</td><td style="text-align:right;border-bottom:1px solid #eee">₹${(safeNumber(i.price) * safeNumber(i.qty)).toFixed(2)}</td></tr>`,
-      )
-      .join("");
+      const itemsRows = resolveInvoiceItems(invData)
+        .map(normalizeInvoiceItem)
+        .map(
+          (i) =>
+            `<tr><td style="padding:8px;border-bottom:1px solid #eee">${i.name}</td><td style="text-align:center;border-bottom:1px solid #eee">${i.qty}</td><td style="text-align:center;border-bottom:1px solid #eee">₹${safeNumber(i.price).toFixed(2)}</td><td style="text-align:right;border-bottom:1px solid #eee">₹${(safeNumber(i.price) * safeNumber(i.qty)).toFixed(2)}</td></tr>`,
+        )
+        .join("");
 
-    const printPatient = resolveInvoiceField(invData, "patientName", "Walk-in Customer");
-    const printPhone = resolveInvoiceField(invData, "patientPhone", "-");
-    const printSubtotal = safeNumber(resolveInvoiceField(invData, "subtotal", 0));
-    const printCgst = safeNumber(resolveInvoiceField(invData, "cgst", 0));
-    const printSgst = safeNumber(resolveInvoiceField(invData, "sgst", 0));
-    const printDiscount = safeNumber(resolveInvoiceField(invData, "discount", 0));
-    const printTotal = safeNumber(resolveInvoiceField(invData, "total", 0));
-    const printDate = resolveInvoiceField(invData, "date", new Date().toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }));
+      const printPatient = resolveInvoiceField(
+        invData,
+        "patientName",
+        "Walk-in Customer",
+      );
+      const printPhone = resolveInvoiceField(invData, "patientPhone", "-");
+      const printSubtotal = safeNumber(
+        resolveInvoiceField(invData, "subtotal", 0),
+      );
+      const printCgst = safeNumber(resolveInvoiceField(invData, "cgst", 0));
+      const printSgst = safeNumber(resolveInvoiceField(invData, "sgst", 0));
+      const printDiscount = safeNumber(
+        resolveInvoiceField(invData, "discount", 0),
+      );
+      const printTotal = safeNumber(resolveInvoiceField(invData, "total", 0));
+      const printDate = resolveInvoiceField(
+        invData,
+        "date",
+        new Date().toLocaleDateString("en-IN", {
+          day: "numeric",
+          month: "short",
+          year: "numeric",
+        }),
+      );
 
-    const html = `<!DOCTYPE html><html><head><title>Invoice ${invData.id}</title>
+      const html = `<!DOCTYPE html><html><head><title>Invoice ${invData.id}</title>
 <style>
 body{font-family:Arial,sans-serif;padding:20px;margin:0;background:#fff;color:#000}
 @media print{.no-print,.invoice-actions{display:none!important}body{margin:0;padding:20px}}
@@ -621,16 +658,29 @@ ${printDiscount > 0 ? `<div style="display:flex;justify-content:space-between"><
 </div>
 </body></html>`;
 
-    const printWindow = window.open("", "_blank");
-    printWindow.document.write(html);
-    printWindow.document.close();
-    printWindow.focus();
-    setTimeout(() => {
-      printWindow.print();
-      printWindow.close();
-      setPrintLoading(false);
-    }, 500);
-  };
+      const printWindow = window.open("", "_blank");
+      printWindow.document.write(html);
+      printWindow.document.close();
+      printWindow.focus();
+      setTimeout(() => {
+        printWindow.print();
+        printWindow.close();
+        setPrintLoading(false);
+      }, 500);
+    },
+    [
+      activeInvoice,
+      lineItems,
+      patient,
+      isWalkIn,
+      subtotal,
+      cgstAmt,
+      sgstAmt,
+      discount,
+      grandTotal,
+      showToast,
+    ],
+  );
 
   const handleSendWhatsApp = () => {
     if (!patient.phone && !isWalkIn) {
@@ -651,7 +701,10 @@ ${printDiscount > 0 ? `<div style="display:flex;justify-content:space-between"><
     const formattedPhone = cleaned ? `91${cleaned}` : "";
 
     const itemsList = lineItems
-      .map((i) => `• ${i.name} x${safeNumber(i.qty)} = ₹${(safeNumber(i.price) * safeNumber(i.qty)).toFixed(2)}`)
+      .map(
+        (i) =>
+          `• ${i.name} x${safeNumber(i.qty)} = ₹${(safeNumber(i.price) * safeNumber(i.qty)).toFixed(2)}`,
+      )
       .join("\n");
     const msg = `*VIYAN MEDASSIST*\nInvoice: ${activeInvoice?.id || "N/A"}\nDate: ${new Date().toLocaleDateString("en-IN")}\nPatient: ${patient.name || "Walk-in Customer"}\n\n*Medicines:*\n${itemsList}\n\nSubtotal: ₹${subtotal.toFixed(2)}\nCGST: ₹${cgstAmt.toFixed(2)}\nSGST: ₹${sgstAmt.toFixed(2)}\n*TOTAL: ₹${grandTotal.toFixed(2)}*\n\nThank you for visiting Viyan MedAssist!`;
 
@@ -723,7 +776,10 @@ ${printDiscount > 0 ? `<div style="display:flex;justify-content:space-between"><
     setBillCardFlash(bill.id);
     setTimeout(() => setBillCardFlash(null), 500);
 
-    const phone = (resolveInvoiceField(bill, "patientPhone", "") || "").replace(/\D/g, "");
+    const phone = (resolveInvoiceField(bill, "patientPhone", "") || "").replace(
+      /\D/g,
+      "",
+    );
     if (!phone || phone === "NA") {
       showToast("No phone number available for this bill", "error");
       return;
@@ -731,11 +787,9 @@ ${printDiscount > 0 ? `<div style="display:flex;justify-content:space-between"><
     const cleaned = phone.replace(/^(91|0)/, "");
     const formattedPhone = `91${cleaned}`;
 
-    const itemsList = resolveInvoiceItems(bill).map(normalizeInvoiceItem)
-      .map(
-        (i) =>
-          `• ${i.name} x${i.qty} = ₹${(i.price * i.qty).toFixed(2)}`,
-      )
+    const itemsList = resolveInvoiceItems(bill)
+      .map(normalizeInvoiceItem)
+      .map((i) => `• ${i.name} x${i.qty} = ₹${(i.price * i.qty).toFixed(2)}`)
       .join("\n");
     const msg = `*VIYAN MEDASSIST*\nInvoice: ${bill.id}\nDate: ${new Date().toLocaleDateString("en-IN")}\nPatient: ${bill.patient}\n\n*Medicines:*\n${itemsList}\n\n*TOTAL: ₹${safeNumber(bill.total).toFixed(2)}*\n\nThank you for visiting Viyan MedAssist!`;
 
@@ -756,7 +810,8 @@ ${printDiscount > 0 ? `<div style="display:flex;justify-content:space-between"><
   const confirmReturn = async () => {
     try {
       const invoiceId = selectedBill.id;
-      const itemsList = resolveInvoiceItems(selectedBill).map(normalizeInvoiceItem);
+      const itemsList =
+        resolveInvoiceItems(selectedBill).map(normalizeInvoiceItem);
       const returnPayload = itemsList
         .map((item, idx) => ({
           idx,
@@ -836,39 +891,33 @@ ${printDiscount > 0 ? `<div style="display:flex;justify-content:space-between"><
     setActiveInvoice(null);
   };
 
-  // Auto-focus barcode input on mount
   useEffect(() => {
     setTimeout(() => barcodeInputRef.current?.focus(), 300);
   }, []);
 
   useEffect(() => {
     const handleKeyDown = (e) => {
-      // F2 = Save Draft
       if (e.key === "F2") {
         e.preventDefault();
         if (lineItems.length > 0) handleSaveDraft();
         return;
       }
-      // F4 = Print
       if (e.key === "F4") {
         e.preventDefault();
         if (lineItems.length > 0 || activeInvoice) handlePrint();
         return;
       }
-      // F8 = Generate Invoice (trigger the generate button click)
       if (e.key === "F8") {
         e.preventDefault();
         const genBtn = document.getElementById("generate-invoice-btn");
         if (genBtn && !genBtn.disabled) genBtn.click();
         return;
       }
-      // Ctrl+F = Focus barcode search
       if ((e.ctrlKey || e.metaKey) && e.key === "f") {
         e.preventDefault();
         barcodeInputRef.current?.focus();
         return;
       }
-      // Escape = close modals or reset form
       if (e.key === "Escape") {
         if (showCloseConfirm) setShowCloseConfirm(false);
         else if (showReturnBillModal) setShowReturnBillModal(false);
@@ -890,6 +939,9 @@ ${printDiscount > 0 ? `<div style="display:flex;justify-content:space-between"><
     showReturnModal,
     lineItems,
     activeInvoice,
+    handleSaveDraft,
+    handlePrint,
+    resetBillForm,
   ]);
 
   return (
@@ -1104,7 +1156,7 @@ ${printDiscount > 0 ? `<div style="display:flex;justify-content:space-between"><
                 >
                   <FileText size={14} /> Link Prescription
                 </button> */}
-               
+
                 {loyaltyProfile?.accountStatus === "BLOCKED" && (
                   <div style={{ marginTop: 4, fontWeight: 800 }}>
                     ⚠️ CREDIT ACCOUNT BLOCKED
@@ -1115,7 +1167,10 @@ ${printDiscount > 0 ? `<div style="display:flex;justify-content:space-between"><
           </div>
 
           <div className="pos-card">
-            <div className="search-wrapper" onClick={(e) => e.stopPropagation()}>
+            <div
+              className="search-wrapper"
+              onClick={(e) => e.stopPropagation()}
+            >
               <Barcode className="barcode-icon" size={24} />
               <input
                 ref={barcodeInputRef}
@@ -1230,7 +1285,11 @@ ${printDiscount > 0 ? `<div style="display:flex;justify-content:space-between"><
                               background: "var(--danger)",
                             }}
                           />
-                          {item.batch?.batchNumber || item.batchNumber || item.batchId || "N/A"} · Exp {item.exp}
+                          {item.batch?.batchNumber ||
+                            item.batchNumber ||
+                            item.batchId ||
+                            "N/A"}{" "}
+                          · Exp {item.exp}
                         </span>
                       </div>
                     </td>
@@ -1282,9 +1341,9 @@ ${printDiscount > 0 ? `<div style="display:flex;justify-content:space-between"><
                       }}
                     >
                       ₹
-                      {(
-                        safeNumber(item.price) * safeNumber(item.qty)
-                      ).toFixed(2)}
+                      {(safeNumber(item.price) * safeNumber(item.qty)).toFixed(
+                        2,
+                      )}
                     </td>
                     <td style={{ textAlign: "right" }}>
                       <button
@@ -1327,8 +1386,12 @@ ${printDiscount > 0 ? `<div style="display:flex;justify-content:space-between"><
                   style={{
                     padding: "8px 16px",
                     borderRadius: "8px",
-                    border: paymentMode === m ? "2px solid var(--primary)" : "1px solid var(--overlay-10)",
-                    background: paymentMode === m ? "var(--primary)" : "transparent",
+                    border:
+                      paymentMode === m
+                        ? "2px solid var(--primary)"
+                        : "1px solid var(--overlay-10)",
+                    background:
+                      paymentMode === m ? "var(--primary)" : "transparent",
                     color: paymentMode === m ? "#000" : "var(--text-main)",
                     fontWeight: 700,
                     fontSize: "12px",
@@ -1356,21 +1419,42 @@ ${printDiscount > 0 ? `<div style="display:flex;justify-content:space-between"><
               </div>
               <div className="summary-row" style={{ alignItems: "center" }}>
                 <span>Discount (%)</span>
-                <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                <div
+                  style={{ display: "flex", alignItems: "center", gap: "6px" }}
+                >
                   <input
                     className="pos-input"
-                    style={{ width: "60px", height: "30px", textAlign: "right" }}
+                    style={{
+                      width: "60px",
+                      height: "30px",
+                      textAlign: "right",
+                    }}
                     value={discount}
                     onChange={(e) => setDiscount(Number(e.target.value))}
                     min="0"
                     max="100"
                     type="number"
                   />
-                  <span style={{ fontSize: "11px", color: "var(--text-muted)" }}>= ₹{discountAmount.toFixed(2)}</span>
+                  <span
+                    style={{ fontSize: "11px", color: "var(--text-muted)" }}
+                  >
+                    = ₹{discountAmount.toFixed(2)}
+                  </span>
                 </div>
               </div>
               <div className="summary-row grand">
-                <span>GRAND TOTAL <span style={{ fontSize: "11px", fontWeight: 400, color: "var(--text-muted)" }}>({lineItems.length} item{lineItems.length !== 1 ? "s" : ""})</span></span>
+                <span>
+                  GRAND TOTAL{" "}
+                  <span
+                    style={{
+                      fontSize: "11px",
+                      fontWeight: 400,
+                      color: "var(--text-muted)",
+                    }}
+                  >
+                    ({lineItems.length} item{lineItems.length !== 1 ? "s" : ""})
+                  </span>
+                </span>
                 <span>₹{grandTotal.toFixed(2)}</span>
               </div>
               <div
@@ -1474,7 +1558,9 @@ ${printDiscount > 0 ? `<div style="display:flex;justify-content:space-between"><
                   try {
                     const payload = {
                       patientId: isWalkIn ? null : patient.id,
-                      patientName: isWalkIn ? "Walk-in Customer" : (patient.name || "Walk-in Customer"),
+                      patientName: isWalkIn
+                        ? "Walk-in Customer"
+                        : patient.name || "Walk-in Customer",
                       patientPhone: isWalkIn ? null : patient.phone,
                       items: lineItems.map((it) => ({
                         medicineId: it.id,
@@ -1495,13 +1581,15 @@ ${printDiscount > 0 ? `<div style="display:flex;justify-content:space-between"><
                     const rawInv = res.data?.data || res.data;
                     const newInv = normalizeInvoice(rawInv);
                     setActiveInvoice(newInv);
-                    // Normalize the new invoice before adding to bills
-                    setBills((prev) => [normalizeBill({
-                      ...newInv,
-                      paymentMethod: paymentMode,
-                      patientName: payload.patientName,
-                      patientPhone: payload.patientPhone,
-                    }), ...prev]);
+                    setBills((prev) => [
+                      normalizeBill({
+                        ...newInv,
+                        paymentMethod: paymentMode,
+                        patientName: payload.patientName,
+                        patientPhone: payload.patientPhone,
+                      }),
+                      ...prev,
+                    ]);
                     setShowPreview(true);
                     showToast(`Invoice generated`, "success");
                     setLineItems([]);
@@ -1511,7 +1599,6 @@ ${printDiscount > 0 ? `<div style="display:flex;justify-content:space-between"><
                     setPaymentMode("CASH");
                     localStorage.removeItem("currentBillingItems");
                     localStorage.removeItem("currentBillingPatient");
-                    // Auto-focus barcode for next bill
                     setTimeout(() => barcodeInputRef.current?.focus(), 300);
                   } catch (err) {
                     console.error(err);
@@ -1556,7 +1643,9 @@ ${printDiscount > 0 ? `<div style="display:flex;justify-content:space-between"><
                   {bills.length}
                 </span>
               </div>
-              <div style={{ display: "flex", gap: "12px", alignItems: "center" }}>
+              <div
+                style={{ display: "flex", gap: "12px", alignItems: "center" }}
+              >
                 <span
                   className="view-all-link"
                   onClick={() => setBills([])}
@@ -1605,12 +1694,23 @@ ${printDiscount > 0 ? `<div style="display:flex;justify-content:space-between"><
                       <span className="result-meta">{bill.time}</span>
                     </div>
                     <div className="bill-card-body">
-                      <div style={{ fontWeight: 600 }}>{bill.patient || resolveInvoiceField(bill, "patientName", "Walk-in Customer")}</div>
-                      <div className="result-meta">{bill.phone || resolveInvoiceField(bill, "patientPhone", "-")}</div>
+                      <div style={{ fontWeight: 600 }}>
+                        {bill.patient ||
+                          resolveInvoiceField(
+                            bill,
+                            "patientName",
+                            "Walk-in Customer",
+                          )}
+                      </div>
+                      <div className="result-meta">
+                        {bill.phone ||
+                          resolveInvoiceField(bill, "patientPhone", "-")}
+                      </div>
                     </div>
                     <div className="bill-card-footer">
                       <div className="result-meta">
-                        {bill.items.length} medicines · ₹{safeNumber(bill.total).toFixed(2)}
+                        {bill.items.length} medicines · ₹
+                        {safeNumber(bill.total).toFixed(2)}
                       </div>
                       <div
                         className={`status-badge ${bill.status === "DRAFT" ? "badge-draft" : bill.status === "RETURNED" ? "badge-returned" : "badge-paid"}`}
@@ -1707,7 +1807,8 @@ ${printDiscount > 0 ? `<div style="display:flex;justify-content:space-between"><
                   col: "var(--primary)",
                   pct:
                     (bills || []).length > 0
-                      ? ((bills || []).filter((b) => (b.paymentMethod) === "CASH").length /
+                      ? ((bills || []).filter((b) => b.paymentMethod === "CASH")
+                          .length /
                           (bills || []).length) *
                         100
                       : 0,
@@ -1725,7 +1826,8 @@ ${printDiscount > 0 ? `<div style="display:flex;justify-content:space-between"><
                   col: "var(--info)",
                   pct:
                     (bills || []).length > 0
-                      ? ((bills || []).filter((b) => (b.paymentMethod) === "UPI").length /
+                      ? ((bills || []).filter((b) => b.paymentMethod === "UPI")
+                          .length /
                           (bills || []).length) *
                         100
                       : 0,
@@ -1743,7 +1845,8 @@ ${printDiscount > 0 ? `<div style="display:flex;justify-content:space-between"><
                   col: "var(--info)",
                   pct:
                     (bills || []).length > 0
-                      ? ((bills || []).filter((b) => (b.paymentMethod) === "CARD").length /
+                      ? ((bills || []).filter((b) => b.paymentMethod === "CARD")
+                          .length /
                           (bills || []).length) *
                         100
                       : 0,
@@ -1845,18 +1948,30 @@ ${printDiscount > 0 ? `<div style="display:flex;justify-content:space-between"><
                     style={{ display: "flex", justifyContent: "space-between" }}
                   >
                     <div>
-                      <b>INVOICE #</b> {resolveInvoiceField(activeInvoice, "invoiceNumber", activeInvoice.id)}
+                      <b>INVOICE #</b>{" "}
+                      {resolveInvoiceField(
+                        activeInvoice,
+                        "invoiceNumber",
+                        activeInvoice.id,
+                      )}
                     </div>
                     <div>
-                      <b>DATE:</b> {resolveInvoiceField(activeInvoice, "date", "")}
+                      <b>DATE:</b>{" "}
+                      {resolveInvoiceField(activeInvoice, "date", "")}
                     </div>
                   </div>
                   <div className="print-line">
                     <div>
-                      <b>PATIENT:</b> {resolveInvoiceField(activeInvoice, "patientName", "Walk-in Customer")}
+                      <b>PATIENT:</b>{" "}
+                      {resolveInvoiceField(
+                        activeInvoice,
+                        "patientName",
+                        "Walk-in Customer",
+                      )}
                     </div>
                     <div>
-                      <b>PHONE:</b> {resolveInvoiceField(activeInvoice, "patientPhone", "-")}
+                      <b>PHONE:</b>{" "}
+                      {resolveInvoiceField(activeInvoice, "patientPhone", "-")}
                     </div>
                   </div>
                   <table
@@ -1877,21 +1992,28 @@ ${printDiscount > 0 ? `<div style="display:flex;justify-content:space-between"><
                       </tr>
                     </thead>
                     <tbody>
-                      {resolveInvoiceItems(activeInvoice).map(normalizeInvoiceItem).map((i, idx) => (
-                        <tr
-                          key={i.id || i.batchId || idx}
-                          style={{ borderBottom: "1px solid #eee" }}
-                        >
-                          <td style={{ padding: "8px" }}>{i.name}</td>
-                          <td style={{ textAlign: "center" }}>{safeNumber(i.qty)}</td>
-                          <td style={{ textAlign: "center" }}>
-                            ₹{safeNumber(i.price).toFixed(2)}
-                          </td>
-                          <td style={{ textAlign: "right" }}>
-                            ₹{(safeNumber(i.price) * safeNumber(i.qty)).toFixed(2)}
-                          </td>
-                        </tr>
-                      ))}
+                      {resolveInvoiceItems(activeInvoice)
+                        .map(normalizeInvoiceItem)
+                        .map((i, idx) => (
+                          <tr
+                            key={i.id || i.batchId || idx}
+                            style={{ borderBottom: "1px solid #eee" }}
+                          >
+                            <td style={{ padding: "8px" }}>{i.name}</td>
+                            <td style={{ textAlign: "center" }}>
+                              {safeNumber(i.qty)}
+                            </td>
+                            <td style={{ textAlign: "center" }}>
+                              ₹{safeNumber(i.price).toFixed(2)}
+                            </td>
+                            <td style={{ textAlign: "right" }}>
+                              ₹
+                              {(
+                                safeNumber(i.price) * safeNumber(i.qty)
+                              ).toFixed(2)}
+                            </td>
+                          </tr>
+                        ))}
                     </tbody>
                   </table>
                   <div
@@ -1908,7 +2030,12 @@ ${printDiscount > 0 ? `<div style="display:flex;justify-content:space-between"><
                       }}
                     >
                       <span>Subtotal</span>
-                      <span>₹{safeNumber(resolveInvoiceField(activeInvoice, "subtotal", 0)).toFixed(2)}</span>
+                      <span>
+                        ₹
+                        {safeNumber(
+                          resolveInvoiceField(activeInvoice, "subtotal", 0),
+                        ).toFixed(2)}
+                      </span>
                     </div>
                     <div
                       style={{
@@ -1926,9 +2053,16 @@ ${printDiscount > 0 ? `<div style="display:flex;justify-content:space-between"><
                       }}
                     >
                       <span>SGST</span>
-                      <span>₹{safeNumber(resolveInvoiceField(activeInvoice, "sgst", 0)).toFixed(2)}</span>
+                      <span>
+                        ₹
+                        {safeNumber(
+                          resolveInvoiceField(activeInvoice, "sgst", 0),
+                        ).toFixed(2)}
+                      </span>
                     </div>
-                    {safeNumber(resolveInvoiceField(activeInvoice, "discount", 0)) > 0 && (
+                    {safeNumber(
+                      resolveInvoiceField(activeInvoice, "discount", 0),
+                    ) > 0 && (
                       <div
                         style={{
                           display: "flex",
@@ -1937,7 +2071,10 @@ ${printDiscount > 0 ? `<div style="display:flex;justify-content:space-between"><
                       >
                         <span>Discount</span>
                         <span>
-                          -₹{safeNumber(resolveInvoiceField(activeInvoice, "discount", 0)).toFixed(2)}
+                          -₹
+                          {safeNumber(
+                            resolveInvoiceField(activeInvoice, "discount", 0),
+                          ).toFixed(2)}
                         </span>
                       </div>
                     )}
@@ -1950,7 +2087,12 @@ ${printDiscount > 0 ? `<div style="display:flex;justify-content:space-between"><
                       }}
                     >
                       <span>TOTAL</span>
-                      <span>₹{safeNumber(resolveInvoiceField(activeInvoice, "total", 0)).toFixed(2)}</span>
+                      <span>
+                        ₹
+                        {safeNumber(
+                          resolveInvoiceField(activeInvoice, "total", 0),
+                        ).toFixed(2)}
+                      </span>
                     </div>
                   </div>
                   <div
@@ -2128,15 +2270,18 @@ ${printDiscount > 0 ? `<div style="display:flex;justify-content:space-between"><
                         .map((bill) => (
                           <tr key={bill.id}>
                             <td style={{ fontWeight: 600 }}>
-                              {resolveInvoiceField(bill, "invoiceNumber", bill.id)}
+                              {resolveInvoiceField(
+                                bill,
+                                "invoiceNumber",
+                                bill.id,
+                              )}
                             </td>
                             <td>{bill.time}</td>
                             <td>{bill.patient}</td>
                             <td>{bill.phone}</td>
                             <td>{bill.items.length}</td>
                             <td style={{ fontWeight: 700 }}>
-                              ₹
-                              {safeNumber(bill.total).toFixed(2)}
+                              ₹{safeNumber(bill.total).toFixed(2)}
                             </td>
                             <td>
                               <span
@@ -2218,10 +2363,19 @@ ${printDiscount > 0 ? `<div style="display:flex;justify-content:space-between"><
                       fontSize: "16px",
                     }}
                   >
-                    {resolveInvoiceField(selectedBill, "invoiceNumber", selectedBill.id)}
+                    {resolveInvoiceField(
+                      selectedBill,
+                      "invoiceNumber",
+                      selectedBill.id,
+                    )}
                   </h3>
                   <span className="result-meta">
-                    {selectedBill.time} · {resolveInvoiceField(selectedBill, "patientName", "Walk-in Customer")}
+                    {selectedBill.time} ·{" "}
+                    {resolveInvoiceField(
+                      selectedBill,
+                      "patientName",
+                      "Walk-in Customer",
+                    )}
                   </span>
                 </div>
                 <button
@@ -2236,12 +2390,18 @@ ${printDiscount > 0 ? `<div style="display:flex;justify-content:space-between"><
                   <div>
                     <span className="stat-label">PATIENT</span>
                     <div style={{ fontWeight: 600 }}>
-                      {resolveInvoiceField(selectedBill, "patientName", "Walk-in Customer")}
+                      {resolveInvoiceField(
+                        selectedBill,
+                        "patientName",
+                        "Walk-in Customer",
+                      )}
                     </div>
                   </div>
                   <div>
                     <span className="stat-label">PHONE</span>
-                    <div style={{ fontWeight: 600 }}>{resolveInvoiceField(selectedBill, "patientPhone", "-")}</div>
+                    <div style={{ fontWeight: 600 }}>
+                      {resolveInvoiceField(selectedBill, "patientPhone", "-")}
+                    </div>
                   </div>
                   <div>
                     <span className="stat-label">PAYMENT</span>
@@ -2264,37 +2424,54 @@ ${printDiscount > 0 ? `<div style="display:flex;justify-content:space-between"><
                     </tr>
                   </thead>
                   <tbody>
-                    {(selectedBill.itemsList || []).map(normalizeInvoiceItem).map((item, idx) => (
-                      <tr key={idx}>
-                        <td>{item.name}</td>
-                        <td>{safeNumber(item.qty)}</td>
-                        <td>₹{safeNumber(item.price).toFixed(2)}</td>
-                        <td style={{ textAlign: "right" }}>
-                          ₹{(safeNumber(item.price) * safeNumber(item.qty)).toFixed(2)}
-                        </td>
-                      </tr>
-                    ))}
+                    {(selectedBill.itemsList || [])
+                      .map(normalizeInvoiceItem)
+                      .map((item, idx) => (
+                        <tr key={idx}>
+                          <td>{item.name}</td>
+                          <td>{safeNumber(item.qty)}</td>
+                          <td>₹{safeNumber(item.price).toFixed(2)}</td>
+                          <td style={{ textAlign: "right" }}>
+                            ₹
+                            {(
+                              safeNumber(item.price) * safeNumber(item.qty)
+                            ).toFixed(2)}
+                          </td>
+                        </tr>
+                      ))}
                   </tbody>
                 </table>
                 <div className="drawer-summary">
                   <div className="summary-row">
                     <span>Subtotal</span>
-                    <span>₹{safeNumber(resolveInvoiceField(selectedBill, "subtotal", 0)).toFixed(2)}</span>
+                    <span>
+                      ₹
+                      {safeNumber(
+                        resolveInvoiceField(selectedBill, "subtotal", 0),
+                      ).toFixed(2)}
+                    </span>
                   </div>
                   <div className="summary-row">
                     <span>CGST</span>
-                    <span>₹{safeNumber(resolveInvoiceField(selectedBill, "cgst", 0)).toFixed(2)}</span>
+                    <span>
+                      ₹
+                      {safeNumber(
+                        resolveInvoiceField(selectedBill, "cgst", 0),
+                      ).toFixed(2)}
+                    </span>
                   </div>
                   <div className="summary-row">
                     <span>SGST</span>
-                    <span>₹{safeNumber(resolveInvoiceField(selectedBill, "sgst", 0)).toFixed(2)}</span>
+                    <span>
+                      ₹
+                      {safeNumber(
+                        resolveInvoiceField(selectedBill, "sgst", 0),
+                      ).toFixed(2)}
+                    </span>
                   </div>
                   <div className="summary-row grand">
                     <span>TOTAL</span>
-                    <span>
-                      ₹
-                      {safeNumber(selectedBill.total).toFixed(2)}
-                    </span>
+                    <span>₹{safeNumber(selectedBill.total).toFixed(2)}</span>
                   </div>
                 </div>
                 <div className="drawer-timeline">
@@ -2359,7 +2536,12 @@ ${printDiscount > 0 ? `<div style="display:flex;justify-content:space-between"><
             >
               <div className="stock-modal-header">
                 <h3 style={{ fontFamily: "Outfit", fontWeight: 700 }}>
-                  Process Return — {resolveInvoiceField(selectedBill, "invoiceNumber", selectedBill.id)}
+                  Process Return —{" "}
+                  {resolveInvoiceField(
+                    selectedBill,
+                    "invoiceNumber",
+                    selectedBill.id,
+                  )}
                 </h3>
                 <button
                   className="micro-btn"
@@ -2379,35 +2561,43 @@ ${printDiscount > 0 ? `<div style="display:flex;justify-content:space-between"><
                     </tr>
                   </thead>
                   <tbody>
-                    {resolveInvoiceItems(selectedBill).map(normalizeInvoiceItem).map((item, idx) => (
-                      <tr key={idx}>
-                        <td>{item.name}</td>
-                        <td>{item.qty}</td>
-                        <td>
-                          <input
-                            className="pos-input return-qty-input"
-                            type="number"
-                            min="0"
-                            max={item.qty}
-                            value={returnItems[idx] || 0}
-                            onChange={(e) =>
-                              setReturnItems((prev) => {
-                                const arr = Array.isArray(prev) ? prev : [];
-                                const next = [...arr];
-                                next[idx] = Math.min(
-                                  item.qty,
-                                  Math.max(0, Number(e.target.value)),
-                                );
-                                return next;
-                              })
-                            }
-                          />
-                        </td>
-                        <td style={{ fontWeight: 700, color: "var(--danger)" }}>
-                          ₹{(safeNumber(returnItems[idx]) * safeNumber(item.price)).toFixed(2)}
-                        </td>
-                      </tr>
-                    ))}
+                    {resolveInvoiceItems(selectedBill)
+                      .map(normalizeInvoiceItem)
+                      .map((item, idx) => (
+                        <tr key={idx}>
+                          <td>{item.name}</td>
+                          <td>{item.qty}</td>
+                          <td>
+                            <input
+                              className="pos-input return-qty-input"
+                              type="number"
+                              min="0"
+                              max={item.qty}
+                              value={returnItems[idx] || 0}
+                              onChange={(e) =>
+                                setReturnItems((prev) => {
+                                  const arr = Array.isArray(prev) ? prev : [];
+                                  const next = [...arr];
+                                  next[idx] = Math.min(
+                                    item.qty,
+                                    Math.max(0, Number(e.target.value)),
+                                  );
+                                  return next;
+                                })
+                              }
+                            />
+                          </td>
+                          <td
+                            style={{ fontWeight: 700, color: "var(--danger)" }}
+                          >
+                            ₹
+                            {(
+                              safeNumber(returnItems[idx]) *
+                              safeNumber(item.price)
+                            ).toFixed(2)}
+                          </td>
+                        </tr>
+                      ))}
                   </tbody>
                 </table>
                 <div className="pos-input-group" style={{ marginTop: "16px" }}>
@@ -2514,12 +2704,22 @@ ${printDiscount > 0 ? `<div style="display:flex;justify-content:space-between"><
                 {!returnModalSelectedBill ? (
                   <div>
                     {(bills || [])
-                      .filter((b) => b.status === "PAID" || b.status === "RETURNED")
+                      .filter(
+                        (b) => b.status === "PAID" || b.status === "RETURNED",
+                      )
                       .filter((b) => {
                         const q = returnSearchQuery.toLowerCase();
                         if (!q) return false;
-                        const inv = resolveInvoiceField(b, "invoiceNumber", b.id).toLowerCase();
-                        const name = resolveInvoiceField(b, "patientName", "").toLowerCase();
+                        const inv = resolveInvoiceField(
+                          b,
+                          "invoiceNumber",
+                          b.id,
+                        ).toLowerCase();
+                        const name = resolveInvoiceField(
+                          b,
+                          "patientName",
+                          "",
+                        ).toLowerCase();
                         return inv.includes(q) || name.includes(q);
                       })
                       .slice(0, 5)
@@ -2527,7 +2727,12 @@ ${printDiscount > 0 ? `<div style="display:flex;justify-content:space-between"><
                         <div
                           key={bill.id}
                           className="patient-result-row"
-                          style={{ cursor: "pointer", padding: "10px", borderRadius: "8px", marginBottom: "4px" }}
+                          style={{
+                            cursor: "pointer",
+                            padding: "10px",
+                            borderRadius: "8px",
+                            marginBottom: "4px",
+                          }}
                           onClick={() => {
                             setReturnModalSelectedBill(bill);
                             setReturnModalItems({});
@@ -2535,40 +2740,80 @@ ${printDiscount > 0 ? `<div style="display:flex;justify-content:space-between"><
                           }}
                         >
                           <span className="patient-result-name">
-                            {resolveInvoiceField(bill, "invoiceNumber", bill.id)}
+                            {resolveInvoiceField(
+                              bill,
+                              "invoiceNumber",
+                              bill.id,
+                            )}
                           </span>
                           <span className="patient-result-phone">
-                            {resolveInvoiceField(bill, "patientName", "Walk-in Customer")}
+                            {resolveInvoiceField(
+                              bill,
+                              "patientName",
+                              "Walk-in Customer",
+                            )}
                           </span>
                           <span className="result-meta">
-                            ₹{safeNumber(resolveInvoiceField(bill, "total", 0)).toFixed(2)}
+                            ₹
+                            {safeNumber(
+                              resolveInvoiceField(bill, "total", 0),
+                            ).toFixed(2)}
                           </span>
                         </div>
                       ))}
-                    {returnSearchQuery && bills.filter((b) => {
-                      const q = returnSearchQuery.toLowerCase();
-                      const inv = resolveInvoiceField(b, "invoiceNumber", b.id).toLowerCase();
-                      const name = resolveInvoiceField(b, "patientName", "").toLowerCase();
-                      return inv.includes(q) || name.includes(q);
-                    }).length === 0 && (
-                      <div style={{ padding: "20px", textAlign: "center", color: "var(--text-muted)" }}>
-                        No matching bills found
-                      </div>
-                    )}
+                    {returnSearchQuery &&
+                      bills.filter((b) => {
+                        const q = returnSearchQuery.toLowerCase();
+                        const inv = resolveInvoiceField(
+                          b,
+                          "invoiceNumber",
+                          b.id,
+                        ).toLowerCase();
+                        const name = resolveInvoiceField(
+                          b,
+                          "patientName",
+                          "",
+                        ).toLowerCase();
+                        return inv.includes(q) || name.includes(q);
+                      }).length === 0 && (
+                        <div
+                          style={{
+                            padding: "20px",
+                            textAlign: "center",
+                            color: "var(--text-muted)",
+                          }}
+                        >
+                          No matching bills found
+                        </div>
+                      )}
                   </div>
                 ) : (
                   <div>
                     <div
                       style={{
- display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px",
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                        marginBottom: "16px",
                       }}
                     >
                       <div>
                         <span style={{ fontWeight: 700 }}>
-                          {resolveInvoiceField(returnModalSelectedBill, "invoiceNumber", returnModalSelectedBill.id)}
+                          {resolveInvoiceField(
+                            returnModalSelectedBill,
+                            "invoiceNumber",
+                            returnModalSelectedBill.id,
+                          )}
                         </span>
-                        <span className="result-meta" style={{ marginLeft: "12px" }}>
-                          {resolveInvoiceField(returnModalSelectedBill, "patientName", "Walk-in Customer")}
+                        <span
+                          className="result-meta"
+                          style={{ marginLeft: "12px" }}
+                        >
+                          {resolveInvoiceField(
+                            returnModalSelectedBill,
+                            "patientName",
+                            "Walk-in Customer",
+                          )}
                         </span>
                       </div>
                       <button
@@ -2586,48 +2831,59 @@ ${printDiscount > 0 ? `<div style="display:flex;justify-content:space-between"><
                         padding: "16px",
                       }}
                     >
-                      {resolveInvoiceItems(returnModalSelectedBill).map(normalizeInvoiceItem).map((item, idx) => (
-                        <div
-                          key={idx}
-                          style={{
-                            display: "flex",
-                            alignItems: "center",
-                            gap: "12px",
-                            marginBottom: "12px",
-                          }}
-                        >
-                          <input
-                            type="checkbox"
-                            checked={returnModalItems[idx]?.checked ?? true}
-                            onChange={(e) =>
-                              setReturnModalItems((prev) => ({
-                                ...prev,
-                                [idx]: { ...prev[idx], checked: e.target.checked },
-                              }))
-                            }
-                          />
-                          <div style={{ flex: 1 }}>{item.name}</div>
-                          <input
-                            className="p-cost-input"
-                            style={{ width: "50px" }}
-                            type="number"
-                            min={0}
-                            max={item.qty}
-                            value={returnModalItems[idx]?.qty ?? 0}
-                            onChange={(e) =>
-                              setReturnModalItems((prev) => ({
-                                ...prev,
-                                [idx]: {
-                                  ...prev[idx],
-                                  qty: Math.min(item.qty, Math.max(0, Number(e.target.value))),
-                                },
-                              }))
-                            }
-                          />
-                        </div>
-                      ))}
+                      {resolveInvoiceItems(returnModalSelectedBill)
+                        .map(normalizeInvoiceItem)
+                        .map((item, idx) => (
+                          <div
+                            key={idx}
+                            style={{
+                              display: "flex",
+                              alignItems: "center",
+                              gap: "12px",
+                              marginBottom: "12px",
+                            }}
+                          >
+                            <input
+                              type="checkbox"
+                              checked={returnModalItems[idx]?.checked ?? true}
+                              onChange={(e) =>
+                                setReturnModalItems((prev) => ({
+                                  ...prev,
+                                  [idx]: {
+                                    ...prev[idx],
+                                    checked: e.target.checked,
+                                  },
+                                }))
+                              }
+                            />
+                            <div style={{ flex: 1 }}>{item.name}</div>
+                            <input
+                              className="p-cost-input"
+                              style={{ width: "50px" }}
+                              type="number"
+                              min={0}
+                              max={item.qty}
+                              value={returnModalItems[idx]?.qty ?? 0}
+                              onChange={(e) =>
+                                setReturnModalItems((prev) => ({
+                                  ...prev,
+                                  [idx]: {
+                                    ...prev[idx],
+                                    qty: Math.min(
+                                      item.qty,
+                                      Math.max(0, Number(e.target.value)),
+                                    ),
+                                  },
+                                }))
+                              }
+                            />
+                          </div>
+                        ))}
                     </div>
-                    <div className="pos-input-group" style={{ marginTop: "24px" }}>
+                    <div
+                      className="pos-input-group"
+                      style={{ marginTop: "24px" }}
+                    >
                       <label>Return Reason</label>
                       <select
                         className="pos-input"
@@ -2662,7 +2918,9 @@ ${printDiscount > 0 ? `<div style="display:flex;justify-content:space-between"><
                       border: "none",
                     }}
                     onClick={async () => {
-                      const items = resolveInvoiceItems(returnModalSelectedBill).map(normalizeInvoiceItem);
+                      const items = resolveInvoiceItems(
+                        returnModalSelectedBill,
+                      ).map(normalizeInvoiceItem);
                       const returnPayload = items
                         .map((item, idx) => ({
                           item,
@@ -2683,18 +2941,36 @@ ${printDiscount > 0 ? `<div style="display:flex;justify-content:space-between"><
                       }
 
                       try {
-                        await api.post(`billing/invoices/${returnModalSelectedBill.id}/refund`, {
-                          items: returnPayload,
-                          reason: returnModalReason,
-                          refundAmount: returnPayload.reduce((acc, r) => acc + r.quantity * (items.find(i => (i.medicineId || i.id) === r.medicineId)?.price || 0), 0),
-                        });
+                        await api.post(
+                          `billing/invoices/${returnModalSelectedBill.id}/refund`,
+                          {
+                            items: returnPayload,
+                            reason: returnModalReason,
+                            refundAmount: returnPayload.reduce(
+                              (acc, r) =>
+                                acc +
+                                r.quantity *
+                                  (items.find(
+                                    (i) =>
+                                      (i.medicineId || i.id) === r.medicineId,
+                                  )?.price || 0),
+                              0,
+                            ),
+                          },
+                        );
                         showToast("Return processed successfully", "success");
                         setShowReturnModal(false);
                         setReturnModalSelectedBill(null);
                         setReturnSearchQuery("");
-                        window.dispatchEvent(new CustomEvent("dashboard:refresh"));
+                        window.dispatchEvent(
+                          new CustomEvent("dashboard:refresh"),
+                        );
                       } catch (err) {
-                        showToast(err.response?.data?.error || "Failed to process return", "error");
+                        showToast(
+                          err.response?.data?.error ||
+                            "Failed to process return",
+                          "error",
+                        );
                       }
                     }}
                   >

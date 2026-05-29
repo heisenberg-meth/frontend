@@ -5,7 +5,7 @@ const getBaseUrl = () => {
   const envUrl = import.meta.env.VITE_API_BASE_URL;
   // Use env var if explicitly set (even to empty string for Vite proxy)
   if (envUrl !== undefined) return envUrl;
-  return "https://synaptical-handlike-betsy.ngrok-free.dev/api";
+  return "https://medassist-backend-hryu.onrender.com";
 };
 
 const api = axios.create({
@@ -131,7 +131,6 @@ api.interceptors.response.use(
       isRefreshing = true;
 
       try {
-        const storedRefreshToken = getRefreshToken();
         const res = await axios.post(
           `${getBaseUrl()}/auth/refresh`,
           {},

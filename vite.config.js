@@ -4,7 +4,7 @@ import tailwindcss from "@tailwindcss/vite";
 
 export default defineConfig(() => {
 
-  const proxyTarget = "https://synaptical-handlike-betsy.ngrok-free.dev";
+  const proxyTarget = "https://medassist-backend-hryu.onrender.com";
 
   console.log(`[Vite] Proxy target: ${proxyTarget}`);
 

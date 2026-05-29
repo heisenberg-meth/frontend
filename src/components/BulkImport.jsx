@@ -243,7 +243,7 @@ export default function BulkImport({ fetchData, showToast }) {
       initScan();
     }
     return () => { active = false; };
-  }, [barcodeOptions, duplicateStrategy, file, getMappedMedicines, selectedSupplier]);
+  }, [barcodeOptions, duplicateStrategy, file, getMappedMedicines, mapping.nameColumn, parsedRows.length, selectedSupplier]);
 
   const onDrop = useCallback(
     async (files) => {

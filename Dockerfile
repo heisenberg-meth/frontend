@@ -9,12 +9,12 @@ COPY . .
 
 RUN npm run build
 
-FROM node:22-alpine AS production
+# ---------- Production Stage ----------
+FROM nginx:alpine AS production
 
-RUN npm install -g serve
+COPY --from=builder /app/dist /usr/share/nginx/html
+COPY nginx.conf /etc/nginx/conf.d/default.conf
 
-COPY --from=builder /app/dist /app/dist
+EXPOSE 80
 
-EXPOSE 5173
-
-CMD ["serve", "-s", "/app/dist", "-l", "5173"]
+CMD ["nginx", "-g", "daemon off;"]

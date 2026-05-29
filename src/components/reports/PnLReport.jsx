@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Loader2, AlertTriangle, Briefcase, Plus, X, UploadCloud } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import api from "../../api.js";
@@ -15,7 +15,7 @@ export default function PnLReport({ from, to, showToast }) {
   const [expenseSaving, setExpenseSaving] = useState(false);
   const [receiptFile, setReceiptFile] = useState(null);
 
-  const fetchPnL = async () => {
+  const fetchPnL = useCallback(async () => {
     setLoading(true);
     setErrorState(null);
     try {
@@ -33,7 +33,7 @@ export default function PnLReport({ from, to, showToast }) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [from, to]);
 
   useEffect(() => {
     let isMounted = true;

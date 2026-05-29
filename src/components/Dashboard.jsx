@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect, useCallback } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -18,9 +18,7 @@ import {
 } from "lucide-react";
 import { differenceInDays, format } from "date-fns";
 import api from "../api";
-import { API_ROUTES } from "../constants/api.routes.js";
 import { normalizeObjectResponse } from "../utils/apiNormalizer";
-import { calculateTotalStockValue } from "../utils/inventoryHelpers";
 import "../styles/IntelligenceHub.css";
 
 /* ─── Helpers ─── */
@@ -49,7 +47,6 @@ export default function Dashboard({
   const [showConfirm, setShowConfirm] = useState(false);
   const [dashboardData, setDashboardData] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [fetchError, setFetchError] = useState(null);
 
   useEffect(() => {
     const fetchDashboard = async () => {

@@ -7,7 +7,6 @@ import {
   Activity,
   Zap,
   Clock,
-  ShieldCheck,
   AlertTriangle,
 } from "lucide-react";
 import api from "../api";
