@@ -109,7 +109,7 @@ export default function PaymentGateway({ user, onPaymentComplete, amount }) {
       setPaymentError(error.response?.data?.error || error.message || "Initialization failed");
       isProcessingRef.current = false;
     }
-  };
+  }, [user, amount, retryCount, status]);
 
   if (status === "success") {
     return (

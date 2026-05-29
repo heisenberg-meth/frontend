@@ -687,9 +687,9 @@ export default function PrescriptionsCRUD({ showToast }) {
   const [modalOpen, setModalOpen] = useState(false);
   const [editTarget, setEditTarget] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
-  const [deleting, setDeleting] = useState(false);
+  const [deleting] = useState(false);
   const [notesEditTarget, setNotesEditTarget] = useState(null);
-  const [notesSaving, setNotesSaving] = useState(false);
+  const [notesSaving] = useState(false);
 
   const loadPrescriptions = useCallback(async () => {
     setLoading(true);
@@ -785,7 +785,7 @@ export default function PrescriptionsCRUD({ showToast }) {
     }
   };
 
-  const handleUpdate = async (form) => {
+  const handleUpdate = async () => {
     showToast("Update not available in current version", "info");
     setModalOpen(false);
     setEditTarget(null);
@@ -849,7 +849,7 @@ export default function PrescriptionsCRUD({ showToast }) {
     }
   };
 
-  const handleSaveNotes = async (id, notes) => {
+  const handleSaveNotes = async () => {
     showToast("Notes update not available in current version", "info");
     setNotesEditTarget(null);
   };
