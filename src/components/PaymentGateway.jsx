@@ -1,6 +1,7 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import api from "../api";
 import { API_ROUTES } from "../constants/api.routes.js";
+import { loadRazorpay } from "../utils/razorpay";
 
 export default function PaymentGateway({ user, onPaymentComplete, amount }) {
   const [status, setStatus] = useState("checkout");
@@ -20,7 +21,7 @@ export default function PaymentGateway({ user, onPaymentComplete, amount }) {
     };
   }, []);
 
-  const handlePay = async () => {
+  const handlePay = useCallback(async () => {
     if (isProcessingRef.current || status === "processing") return;
     if (retryCount >= MAX_RETRIES) {
       setPaymentError("Maximum retry attempts reached.");
@@ -89,6 +90,14 @@ export default function PaymentGateway({ user, onPaymentComplete, amount }) {
       const cleanOptions = Object.fromEntries(
         Object.entries(options).filter(([val]) => val !== undefined)
       );
+
+      const loaded = await loadRazorpay();
+      if (!loaded) {
+        setPaymentError("Failed to load payment gateway. Please try again.");
+        setStatus("checkout");
+        isProcessingRef.current = false;
+        return;
+      }
 
       const rzp = new window.Razorpay(cleanOptions);
       razorpayRef.current = rzp;

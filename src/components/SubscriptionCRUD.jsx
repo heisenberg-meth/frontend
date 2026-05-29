@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import ConfirmModal from "./ConfirmModal";
 import "../styles/SubscriptionCRUD.css";
+import { loadRazorpay } from "../utils/razorpay";
 
 function Spinner({ size = 14 }) {
   return (
@@ -161,6 +162,13 @@ export default function SubscriptionCRUD({ showToast, user }) {
       const cleanOptions = Object.fromEntries(
         Object.entries(options).filter(([v]) => v !== undefined)
       );
+
+      const loaded = await loadRazorpay();
+      if (!loaded) {
+        showToast("Failed to load payment gateway. Please try again.", "error");
+        setUpgrading(false);
+        return;
+      }
 
       const rzp = new window.Razorpay(cleanOptions);
       rzp.on('payment.failed', function (response) {
