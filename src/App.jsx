@@ -165,7 +165,7 @@ function AppContent() {
     )
       return;
     try {
-      const res = await api.get(API_ROUTES.INVENTORY_MEDICINES, { params: { limit: 10000 } });
+      const res = await api.get(API_ROUTES.INVENTORY_MEDICINES, { params: { limit: 100 } });
       setMedicines(normalizeArrayResponse(res, 'medicines'));
       setLastSync(new Date());
     } catch {
