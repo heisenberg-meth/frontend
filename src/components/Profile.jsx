@@ -79,7 +79,7 @@ export default function Profile({
   const handleSync = async () => {
     setSyncing(true);
     try {
-      await updateProfile({
+      await updateProfile(user.id, {
         fullName: formData.fullName,
         shopName: formData.shopName,
         phone: formData.phone,

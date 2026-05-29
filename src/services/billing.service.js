@@ -6,18 +6,18 @@ export const getInvoiceById = (id) => api.get(`billing/invoices/${id}`);
 export const createInvoice = (data) => api.post("billing/invoices", data);
 export const processRefund = (id, data) =>
   api.post(`billing/invoices/${id}/refund`, data);
-export const voidInvoice = (id) => api.post(`billing/invoices/${id}/void`);
+export const voidInvoice = (id) => api.post(`billing/invoices/${id}/cancel`);
 export const scanItem = (barcode) => api.get(`billing/scan/${barcode}`);
 
 /* ─── Draft ─── */
 export const saveDraft = (data) =>
   api.post("billing/invoices", { ...data, isDraft: true });
 export const updateDraft = (id, data) =>
-  api.put(`billing/invoices/${id}`, data);
+  api.post(`billing/invoices/${id}`, { ...data, isDraft: true });
 
 /* ─── Billing Actions ─── */
 export const generateInvoicePDF = (id) =>
-  api.get(`billing/invoices/${id}/pdf`);
+  api.post(`billing/invoices/${id}/pdf`);
 export const sendInvoiceEmail = (id, data) =>
   api.post(`billing/invoices/${id}/email`, data);
 export const sendInvoiceWhatsApp = (id, data) =>
@@ -29,15 +29,15 @@ export const getSaleById = (id) => api.get(`sales/${id}`);
 export const getSalesTrends = (params) =>
   api.get("sales/trends", { params });
 export const getSalesReturns = (params) =>
-  api.get("sales/returns", { params });
+  api.get("billing/returns", { params });
 export const processSalesReturn = (data) =>
-  api.post("sales/returns", data);
-export const getSalesCustomers = () => api.get("sales/patients");
+  api.post("billing/returns", data);
+export const getSalesCustomers = () => api.get("patients");
 export const createSalesCustomer = (data) =>
-  api.post("sales/patients", data);
+  api.post("patients", data);
 export const getSalesCustomerById = (id) =>
-  api.get(`sales/patients/${id}`);
+  api.get(`patients/${id}`);
 export const updateSalesCustomer = (id, data) =>
-  api.put(`sales/patients/${id}`, data);
+  api.put(`patients/${id}`, data);
 export const deleteSalesCustomer = (id) =>
-  api.delete(`sales/patients/${id}`);
+  api.delete(`patients/${id}`);

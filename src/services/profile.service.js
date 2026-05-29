@@ -2,9 +2,9 @@ import api from "../api";
 
 /* ─── Profile / User CRUD ─── */
 export const getProfile = () => api.get("auth/me");
-export const updateProfile = (data) => api.put("users/profile", data);
+export const updateProfile = (id, data) => api.put(`team/${id}`, data);
 export const changePassword = (data) =>
-  api.put("users/profile/password", data);
+  api.put("auth/change-password", data);
 export const uploadAvatar = (file) => {
   const formData = new FormData();
   formData.append("avatar", file);

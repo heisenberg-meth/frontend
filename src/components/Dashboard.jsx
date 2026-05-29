@@ -116,7 +116,7 @@ export default function Dashboard({
   const handleAuthorizeDisposal = async () => {
     setShowConfirm(false);
     try {
-      for (const m of expiring) await api.delete(`inventory/${m.id}`);
+      for (const m of expiring) await api.delete(`inventory/medicines/${m.id}`);
       fetchData();
       showToast("Clinical Disposal Authorized & Executed", "success");
     } catch {

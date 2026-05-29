@@ -25,12 +25,11 @@ import {
   Stethoscope,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import api from "../api";
+import { API_ROUTES } from "../constants/api.routes.js";
 import {
   getPrescriptions,
   createPrescription,
-  updatePrescription,
-  deletePrescription,
-  uploadPrescription,
   verifyPrescription,
   rejectPrescription,
   convertPrescriptionToInvoice,
@@ -167,7 +166,9 @@ function PrescriptionModal({ onClose, onSave, editData, showToast, saving }) {
     try {
       const formData = new FormData();
       formData.append("prescription", file);
-      const res = await uploadPrescription(formData);
+      const res = await api.post(`${API_ROUTES.PRESCRIPTIONS}/upload`, formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
       const uploadedData = res.data.data || res.data;
       showToast("Prescription uploaded successfully", "success");
       onSave({ ...form, ...uploadedData, type: "Scanned" });
@@ -785,18 +786,9 @@ export default function PrescriptionsCRUD({ showToast }) {
   };
 
   const handleUpdate = async (form) => {
-    try {
-      await updatePrescription(editTarget.id, form);
-      showToast("Prescription updated successfully", "success");
-      await loadPrescriptions();
-      setModalOpen(false);
-      setEditTarget(null);
-    } catch (err) {
-      showToast(
-        err.response?.data?.error || "Failed to update prescription",
-        "error",
-      );
-    }
+    showToast("Update not available in current version", "info");
+    setModalOpen(false);
+    setEditTarget(null);
   };
 
   const handleSave = (form) => {
@@ -806,20 +798,8 @@ export default function PrescriptionsCRUD({ showToast }) {
 
   const handleDelete = async () => {
     if (!deleteTarget) return;
-    setDeleting(true);
-    try {
-      await deletePrescription(deleteTarget._id || deleteTarget.id);
-      showToast("Prescription deleted successfully", "success");
-      await loadPrescriptions();
-      setDeleteTarget(null);
-    } catch (err) {
-      showToast(
-        err.response?.data?.error || "Failed to delete prescription",
-        "error",
-      );
-    } finally {
-      setDeleting(false);
-    }
+    showToast("Delete not available in current version", "info");
+    setDeleteTarget(null);
   };
 
   const handleFulfill = async (rx) => {
@@ -870,17 +850,8 @@ export default function PrescriptionsCRUD({ showToast }) {
   };
 
   const handleSaveNotes = async (id, notes) => {
-    setNotesSaving(true);
-    try {
-      await updatePrescription(id, { notes });
-      showToast("Prescription notes updated", "success");
-      await loadPrescriptions();
-      setNotesEditTarget(null);
-    } catch (err) {
-      showToast(err.response?.data?.error || "Failed to update notes", "error");
-    } finally {
-      setNotesSaving(false);
-    }
+    showToast("Notes update not available in current version", "info");
+    setNotesEditTarget(null);
   };
 
   const handleExportCSV = () => {

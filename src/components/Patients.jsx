@@ -233,7 +233,7 @@ export default function Patients({ showToast }) {
                             const formData = new FormData();
                             formData.append("file", file);
                             formData.append("patientId", selectedPatient.id);
-                            await api.post("prescriptions/upload", formData, {
+                            await api.post("prescriptions", formData, {
                               headers: { "Content-Type": "multipart/form-data" },
                             });
                             showToast("Prescription uploaded", "success");

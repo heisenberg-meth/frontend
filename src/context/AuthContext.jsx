@@ -44,7 +44,7 @@ export function AuthProvider({ children }) {
 
   const refreshUser = useCallback(async () => {
     try {
-      const res = await api.get("auth/me");
+      const res = await api.get(API_ROUTES.AUTH_ME);
       const payload = res?.data?.data || res?.data;
 
       if (!payload) {

@@ -482,7 +482,7 @@ export default function ExpiryReport({ showToast }) {
                     setActionLoading(true);
                     try {
                       if (actionType === "Return") {
-                        await api.post("purchase/returns", {
+                        await api.post("billing/returns", {
                           originalInvoiceId: selectedItem?.id,
                           items: [{ batchId: selectedItem.batchId || selectedItem.id, quantity: selectedItem.quantity || 1 }],
                           reason: "Expiry Return: " + actionNotes

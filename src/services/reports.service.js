@@ -14,11 +14,6 @@ export const exportSalesReport = (params) =>
 export const triggerManualAggregation = (data) =>
   api.post("reports/aggregate/manual", data);
 
-/* ─── Analytics ─── */
-export const getAnalytics = (params) => api.get("analytics", { params });
-export const getDashboardData = (params) =>
-  api.get("dashboard", { params });
-
 /* ─── Expiry Intelligence ─── */
 export const getExpiryAlerts = () => api.get("intelligence/alerts");
 export const getCriticalExpiryAlerts = () =>
@@ -39,13 +34,13 @@ export const triggerRecommendationGeneration = () =>
   api.post("intelligence/recommendations/generate");
 
 /* ─── Barcodes ─── */
-export const getBarcodes = (params) => api.get("v1/barcodes", { params });
+export const getBarcodes = (params) => api.get("inventory/barcode/generate", { params });
 export const verifyBarcode = (code) =>
-  api.get(`inventory/barcode/${code}`);
+  api.get(`inventory/medicines/barcode/${code}`);
 
 /* ─── Accounting ─── */
 export const getAccountingData = (params) =>
-  api.get("accounting", { params });
+  api.get("accounting/expenses", { params });
 export const createExpense = (data) =>
   api.post("accounting/expenses", data);
 export const updateExpense = (id, data) =>
@@ -53,14 +48,14 @@ export const updateExpense = (id, data) =>
 export const deleteExpense = (id) =>
   api.delete(`accounting/expenses/${id}`);
 export const getGstReport = (params) =>
-  api.get("accounting/gst", { params });
+  api.get("accounting/tax/gst-summary", { params });
 
 /* ─── Audit Logs ─── */
-export const getAuditLogs = (params) => api.get("audit", { params });
+export const getAuditLogs = (params) => api.get("audit-logs", { params });
 
 /* ─── Notifications ─── */
 export const getNotifications = (params) =>
-  api.get("notifications", { params });
+  api.get("notifications/history", { params });
 export const markNotificationRead = (id) =>
   api.put(`notifications/${id}/read`);
 export const markAllNotificationsRead = () =>
@@ -75,22 +70,12 @@ export const createPaymentOrder = (data) =>
 export const verifyPayment = (data) => api.post("payments/verify", data);
 export const getPaymentHistory = () => api.get("payments/history");
 
-/* ─── Recalls ─── */
-export const getRecalls = (params) => api.get("recalls", { params });
-export const createRecall = (data) => api.post("recalls", data);
-
 /* ─── Refill Reminders ─── */
 export const getRefillReminders = (params) =>
-  api.get("refills", { params });
-export const createRefillReminder = (data) => api.post("refills", data);
+  api.get("refills/upcoming-refills", { params });
 
 /* ─── Import ─── */
 export const bulkImport = (formData) =>
   api.post("import/bulk", formData, {
     headers: { "Content-Type": "multipart/form-data" },
   });
-export const importOCR = (formData) =>
-  api.post("import/ocr", formData, {
-    headers: { "Content-Type": "multipart/form-data" },
-  });
-export const validateGST = (data) => api.post("import/gst-validate", data);

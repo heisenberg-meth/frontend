@@ -2,10 +2,9 @@ import axios from "axios";
 import { getToken, setToken, getRefreshToken, clearAllAuth } from "./utils/authStorage";
 
 const getBaseUrl = () => {
-  const envUrl = import.meta.env.VITE_API_BASE_URL;
-  // Use env var if explicitly set (even to empty string for Vite proxy)
-  if (envUrl !== undefined) return envUrl;
-  return "https://medassist-backend-hryu.onrender.com";
+  const envUrl = import.meta.env.VITE_API_BASE_URL || import.meta.env.VITE_API_URL;
+  if (envUrl !== undefined && envUrl !== null && envUrl !== "") return envUrl;
+  return "https://medassist-backend-hryu.onrender.com/api";
 };
 
 const api = axios.create({

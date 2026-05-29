@@ -18,7 +18,7 @@ export const SubscriptionService = {
   },
 
   async activate() {
-    const res = await api.post(API_ROUTES.SUBSCRIPTIONS_ACTIVATE);
+    const res = await api.post("subscriptions/activate");
     return res.data;
   },
 

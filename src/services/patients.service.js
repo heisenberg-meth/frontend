@@ -14,7 +14,7 @@ export const searchPatientsByName = (name) =>
   api.get("patients", { params: { name } });
 
 /* ─── Patient Sub-resources ─── */
-export const getVipPatients = () => api.get("patients/vips");
+export const getVipPatients = () => api.get("patients/vip");
 export const getInactivePatients = () => api.get("patients/inactive");
 export const getChronicPatients = () => api.get("patients/chronic");
 export const getPatientRecommendations = (id) =>
@@ -29,8 +29,8 @@ export const getPatientRefills = (id) => api.get(`patients/${id}/refills`);
 
 /* ─── Patient Prescriptions ─── */
 export const createPatientPrescription = (data) =>
-  api.post("patients/prescriptions", data);
+  api.post("prescriptions", data);
 export const getCustomerPrescriptions = (patientId) =>
   api.get(`patients/${patientId}/prescriptions`);
 export const getPrescriptionById = (id) =>
-  api.get(`patients/prescriptions/${id}`);
+  api.get(`prescriptions/${id}`);
