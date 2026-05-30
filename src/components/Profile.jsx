@@ -3,14 +3,12 @@ import {
   User,
   Mail,
   Store,
-  Lock,
   ShieldCheck,
   Camera,
   Save,
   Key,
   Phone,
   BadgeCheck,
-  Clock,
   Smartphone,
   ChevronRight,
   LogOut,
@@ -36,7 +34,8 @@ import api from "../api";
 import "../styles/Profile.css";
 
 const getBackendOrigin = () => {
-  const baseURL = api.defaults.baseURL ||
+  const baseURL =
+    api.defaults.baseURL ||
     import.meta.env.VITE_API_BASE_URL ||
     import.meta.env.VITE_API_URL ||
     "https://medassist-backend-hryu.onrender.com/api";
@@ -62,6 +61,10 @@ export default function Profile({
     phone: user?.phone || profileData.phone || "",
     employeeId: user?.employeeId || "VM-2024-089",
   });
+  console.log("PROFILE DATA:", profileData);
+  console.log("USER DATA:", user);
+  console.log("PROFILE AVATAR:", profileData?.avatar);
+  console.log("USER AVATAR:", user?.avatar);
 
   const [activeModals, setActiveModals] = useState({
     photo: false,
@@ -209,7 +212,7 @@ export default function Profile({
               <div className="profile-avatar-large">
                 <img
                   src={
-                    (profileData.avatar || user?.avatar)
+                    profileData.avatar || user?.avatar
                       ? `${getBackendOrigin()}${profileData.avatar || user?.avatar}`
                       : `https://ui-avatars.com/api/?name=${formData.fullName || user?.username || "User"}&background=4FDBC8&color=0A0F1C`
                   }
@@ -245,41 +248,6 @@ export default function Profile({
             <div className="sync-info">
               <RefreshCcw size={12} className={syncing ? "spinning" : ""} />
               <span>Last synchronized: {lastSyncTime}</span>
-            </div>
-          </div>
-
-          <div className="activity-panel-glass">
-            <h3>
-              <Clock size={16} /> Recent Activity
-            </h3>
-            <div className="activity-list">
-              <div className="activity-item">
-                <div className="activity-icon">
-                  <RefreshCcw size={12} />
-                </div>
-                <div className="activity-content">
-                  <p>Profile synchronized</p>
-                  <span>{lastSyncTime}</span>
-                </div>
-              </div>
-              <div className="activity-item">
-                <div className="activity-icon">
-                  <Lock size={12} />
-                </div>
-                <div className="activity-content">
-                  <p>Password updated</p>
-                  <span>Yesterday</span>
-                </div>
-              </div>
-              <div className="activity-item">
-                <div className="activity-icon">
-                  <Smartphone size={12} />
-                </div>
-                <div className="activity-content">
-                  <p>New device verified</p>
-                  <span>3 days ago</span>
-                </div>
-              </div>
             </div>
           </div>
         </div>
@@ -471,7 +439,7 @@ export default function Profile({
               <div className="photo-preview-large">
                 <img
                   src={
-                    (profileData.avatar || user?.avatar)
+                    profileData.avatar || user?.avatar
                       ? `${getBackendOrigin()}${profileData.avatar || user?.avatar}`
                       : `https://ui-avatars.com/api/?name=${formData.fullName}&background=4FDBC8&color=0A0F1C`
                   }
