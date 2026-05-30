@@ -22,7 +22,10 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { getBackendOrigin } from "../api.js";
-import { getNotifications, markAllNotificationsRead } from "../services/notification.service";
+import {
+  getNotifications,
+  markAllNotificationsRead,
+} from "../services/notification.service";
 
 const SEARCH_PATIENTS = [];
 const SEARCH_SUPPLIERS = [];
@@ -153,7 +156,7 @@ export default function Topbar({
   const [selectedIndex, setSelectedIndex] = useState(-1);
   const [isLoading, setIsLoading] = useState(false);
   const [notifications, setNotifications] = useState([]);
-  const [setNotificationsLoading] = useState(false);
+  const [notificationsLoading, setNotificationsLoading] = useState(false);
   const searchTimeoutRef = useRef(null);
 
   console.log("TOPBAR USER:", user);
@@ -168,7 +171,15 @@ export default function Topbar({
       try {
         setNotificationsLoading(true);
         const res = await getNotifications();
-        setNotifications(res.data?.data || res.data || []);
+        console.log("NOTIFICATION RESPONSE", res);
+        setNotifications(
+          Array.isArray(res.data?.data)
+            ? res.data.data
+            : Array.isArray(res.data)
+              ? res.data
+              : [],
+        );
+        console.log("NOTIFICATION DATA", res?.data);
       } catch (err) {
         console.error("Notification fetch failed", err);
       } finally {
@@ -176,7 +187,7 @@ export default function Topbar({
       }
     };
     loadNotifications();
-  }, [setNotificationsLoading]);
+  }, []);
 
   const handleSearchChange = (value) => {
     setSearchQuery(value);
@@ -321,14 +332,14 @@ export default function Topbar({
     });
   }, [searchQuery, activeCategory, allSearchableItems]);
 
-  const unreadCount = notifications.filter((n) => !n.isRead).length;
+  const unreadCount = Array.isArray(notifications)
+    ? notifications.filter((n) => !n.isRead).length
+    : 0;
 
   const handleMarkAllRead = async () => {
     try {
       await markAllNotificationsRead();
-      setNotifications((prev) =>
-        prev.map((n) => ({ ...n, isRead: true })),
-      );
+      setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })));
     } catch (err) {
       console.error("Failed to mark all read", err);
     }
@@ -473,30 +484,27 @@ export default function Topbar({
                       )}
                     </div>
                     <div className="notif-list">
-                      {notifications.length > 0 ? notifications.map((item) => (
-                        <div
-                          key={item.id}
-                          className="notif-item"
-                          onClick={() => {
-                            if (item.path) navigate(item.path);
-                            setShowNotifications(false);
-                          }}
-                        >
+                      {notifications.length > 0 ? (
+                        notifications.map((item) => (
                           <div
-                            className="notif-dot"
-                            style={{
-                              backgroundColor:
-                                item.color || "var(--primary)",
+                            key={item.id}
+                            className="notif-item"
+                            onClick={() => {
+                              if (item.path) navigate(item.path);
+                              setShowNotifications(false);
                             }}
-                          />
-                          <span className="notif-text">
-                            {item.message}
-                          </span>
-                        </div>
-                      )) : (
-                        <div className="notif-empty">
-                          No notifications yet
-                        </div>
+                          >
+                            <div
+                              className="notif-dot"
+                              style={{
+                                backgroundColor: item.color || "var(--primary)",
+                              }}
+                            />
+                            <span className="notif-text">{item.message}</span>
+                          </div>
+                        ))
+                      ) : (
+                        <div className="notif-empty">No notifications yet</div>
                       )}
                     </div>
                     <button

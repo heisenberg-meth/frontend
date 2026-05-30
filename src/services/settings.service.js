@@ -1,10 +1,6 @@
 import api from "../api";
-
-/* ─── Settings CRUD ─── */
 export const getSettings = () => api.get("settings");
 export const updateSettings = (data) => api.put("settings", data);
-
-/* ─── Settings Sub-modules ─── */
 export const getInventorySettings = () => api.get("settings/inventory");
 export const updateInventorySettings = (data) =>
   api.put("settings/inventory", data);
@@ -36,8 +32,6 @@ export const getGstSettings = () => api.get("settings/gst");
 export const updateGstSettings = (data) => api.put("settings/gst", data);
 export const getGstHistory = (category) =>
   api.get(`settings/gst/history/${category}`);
-
-/* ─── Invoice Template ─── */
 export const getInvoiceTemplate = () =>
   api.get("settings/invoice-template");
 export const updateInvoiceTemplate = (data) =>
@@ -50,6 +44,4 @@ export const restoreInvoiceTemplateVersion = (versionId) =>
   api.post(`settings/invoice-template/restore/${versionId}`);
 export const testRenderInvoiceTemplate = (data) =>
   api.post("settings/invoice-template/test-render", data);
-
-/* ─── Audit ─── */
 export const getSettingsAuditLogs = () => api.get("settings/audit");

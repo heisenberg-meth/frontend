@@ -1,7 +1,13 @@
 import api from "../api";
 
-export const getNotifications = () =>
-  api.get("/notifications");
+export const getNotifications = (params) =>
+  api.get("notifications/history", { params });
+
+export const markNotificationRead = (id) =>
+  api.put(`notifications/${id}/read`);
 
 export const markAllNotificationsRead = () =>
-  api.put("/notifications/read-all");
+  api.put("notifications/read-all");
+
+export const deleteNotification = (id) =>
+  api.delete(`notifications/${id}`);

@@ -53,16 +53,6 @@ export const getGstReport = (params) =>
 /* ─── Audit Logs ─── */
 export const getAuditLogs = (params) => api.get("audit-logs", { params });
 
-/* ─── Notifications ─── */
-export const getNotifications = (params) =>
-  api.get("notifications/history", { params });
-export const markNotificationRead = (id) =>
-  api.put(`notifications/${id}/read`);
-export const markAllNotificationsRead = () =>
-  api.put("notifications/read-all");
-export const deleteNotification = (id) =>
-  api.delete(`notifications/${id}`);
-
 /* ─── Subscriptions ─── */
 export const getSubscriptionStatus = () => api.get("subscriptions/status");
 export const createPaymentOrder = (data) =>
