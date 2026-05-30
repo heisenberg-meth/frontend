@@ -27,6 +27,8 @@ import {
   markAllNotificationsRead,
 } from "../services/notification.service";
 
+console.log("getNotifications =", getNotifications);
+console.log("markAllNotificationsRead =", markAllNotificationsRead);
 const SEARCH_PATIENTS = [];
 const SEARCH_SUPPLIERS = [];
 const SEARCH_INVOICES = [];
