@@ -32,7 +32,16 @@ import {
   getActiveSessions,
   terminateSession,
 } from "../services/profile.service";
+import api from "../api";
 import "../styles/Profile.css";
+
+const getBackendOrigin = () => {
+  const baseURL = api.defaults.baseURL ||
+    import.meta.env.VITE_API_BASE_URL ||
+    import.meta.env.VITE_API_URL ||
+    "https://medassist-backend-hryu.onrender.com/api";
+  return baseURL.replace(/\/api\/?$/, "");
+};
 
 function Spinner({ size = 14 }) {
   return (
@@ -133,18 +142,14 @@ export default function Profile({
   const handleAvatarChange = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    if (!file.type.startsWith("image/")) {
-      showToast("Only image files allowed", "error");
-      return;
-    }
-    if (file.size > 2 * 1024 * 1024) {
-      showToast("File must be under 2MB", "error");
-      return;
-    }
+
     try {
       await uploadAvatar(file);
+
       showToast("Avatar updated", "success");
       toggleModal("photo");
+
+      window.location.reload();
     } catch (err) {
       showToast(
         err.response?.data?.error || "Failed to upload avatar",
@@ -204,9 +209,9 @@ export default function Profile({
               <div className="profile-avatar-large">
                 <img
                   src={
-                    profileData.avatar ||
-                    user?.avatar ||
-                    `https://ui-avatars.com/api/?name=${formData.fullName || user?.username || "User"}&background=4FDBC8&color=0A0F1C`
+                    (profileData.avatar || user?.avatar)
+                      ? `${getBackendOrigin()}${profileData.avatar || user?.avatar}`
+                      : `https://ui-avatars.com/api/?name=${formData.fullName || user?.username || "User"}&background=4FDBC8&color=0A0F1C`
                   }
                   alt="Profile"
                 />
@@ -240,20 +245,6 @@ export default function Profile({
             <div className="sync-info">
               <RefreshCcw size={12} className={syncing ? "spinning" : ""} />
               <span>Last synchronized: {lastSyncTime}</span>
-            </div>
-            <div className="security-score-widget">
-              <div className="score-header">
-                <span className="label">Security Score</span>
-                <span className="value">85%</span>
-              </div>
-              <div className="score-bar">
-                <motion.div
-                  className="score-fill"
-                  initial={{ width: 0 }}
-                  animate={{ width: "85%" }}
-                  transition={{ duration: 1, ease: "easeOut" }}
-                />
-              </div>
             </div>
           </div>
 
@@ -480,9 +471,9 @@ export default function Profile({
               <div className="photo-preview-large">
                 <img
                   src={
-                    profileData.avatar ||
-                    user?.avatar ||
-                    `https://ui-avatars.com/api/?name=${formData.fullName}&background=4FDBC8&color=0A0F1C`
+                    (profileData.avatar || user?.avatar)
+                      ? `${getBackendOrigin()}${profileData.avatar || user?.avatar}`
+                      : `https://ui-avatars.com/api/?name=${formData.fullName}&background=4FDBC8&color=0A0F1C`
                   }
                   alt="Preview"
                 />
