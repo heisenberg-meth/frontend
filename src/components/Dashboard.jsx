@@ -1,7 +1,6 @@
 import { useState, useMemo, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-
 import {
   AlertTriangle,
   Clock,
@@ -43,7 +42,9 @@ export default function Dashboard({
   user,
 }) {
   const navigate = useNavigate();
-  const [showBanner, setShowBanner] = useState(user?.subscriptionStatus === "TRIAL");
+  const [showBanner, setShowBanner] = useState(
+    user?.subscriptionStatus === "TRIAL",
+  );
   const [showConfirm, setShowConfirm] = useState(false);
   const [dashboardData, setDashboardData] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -54,7 +55,7 @@ export default function Dashboard({
         setIsLoading(true);
         const [overviewRes, salesRes] = await Promise.all([
           api.get("/dashboard/overview"),
-          api.get("/dashboard/sales-summary")
+          api.get("/dashboard/sales-summary"),
         ]);
         const overview = normalizeObjectResponse(overviewRes);
         const sales = normalizeObjectResponse(salesRes);
@@ -106,7 +107,9 @@ export default function Dashboard({
   }, [medicines, expiryDays, lowStock, dashboardData]);
 
   const expiring = medicines
-    .filter((m) => getStock(m) > 0 && getDays(getExpiry(m)) <= (expiryDays || 30))
+    .filter(
+      (m) => getStock(m) > 0 && getDays(getExpiry(m)) <= (expiryDays || 30),
+    )
     .sort((a, b) => getDays(getExpiry(a)) - getDays(getExpiry(b)));
 
   const needsReorderList = medicines
@@ -137,9 +140,36 @@ export default function Dashboard({
 
   if (isLoading && !dashboardData) {
     return (
-      <div className="reports-loading" style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: "80vh", gap: "16px" }}>
-        <div className="animate-spin" style={{ width: "48px", height: "48px", border: "4px solid var(--primary-container)", borderTopColor: "var(--primary)", borderRadius: "50%" }} />
-        <p style={{ color: "var(--text-muted)", fontFamily: "Outfit", fontWeight: 500 }}>Synchronizing executive insights...</p>
+      <div
+        className="reports-loading"
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          height: "80vh",
+          gap: "16px",
+        }}
+      >
+        <div
+          className="animate-spin"
+          style={{
+            width: "48px",
+            height: "48px",
+            border: "4px solid var(--primary-container)",
+            borderTopColor: "var(--primary)",
+            borderRadius: "50%",
+          }}
+        />
+        <p
+          style={{
+            color: "var(--text-muted)",
+            fontFamily: "Outfit",
+            fontWeight: 500,
+          }}
+        >
+          Synchronizing executive insights...
+        </p>
       </div>
     );
   }
@@ -151,9 +181,7 @@ export default function Dashboard({
         <div className="announcement-banner">
           <div className="banner-left">
             <Zap size={14} className="banner-icon" />
-            <span>
-              FREE TRIAL ACTIVE: Full access to all features.
-            </span>
+            <span>FREE TRIAL ACTIVE: Full access to all features.</span>
           </div>
           <div className="banner-right">
             <button
@@ -209,7 +237,10 @@ export default function Dashboard({
         >
           <IndianRupee size={20} className="text-blue-400" />
           <span>
-            Inventory Value: {stats.inventoryValue >= 100000 ? `₹${(stats.inventoryValue / 100000).toFixed(2)}L` : fmt(stats.inventoryValue)}
+            Inventory Value:{" "}
+            {stats.inventoryValue >= 100000
+              ? `₹${(stats.inventoryValue / 100000).toFixed(2)}L`
+              : fmt(stats.inventoryValue)}
           </span>
         </div>
         <div
@@ -292,7 +323,9 @@ export default function Dashboard({
               <IndianRupee size={14} />
             </div>
           </div>
-          <div className="stat-v2-val teal text-primary">{fmt(revenueToday)}</div>
+          <div className="stat-v2-val teal text-primary">
+            {fmt(revenueToday)}
+          </div>
         </div>
 
         <div
@@ -320,7 +353,9 @@ export default function Dashboard({
               <Zap size={14} />
             </div>
           </div>
-          <div className="stat-v2-val purple text-purple-400">{dashboardData?.alerts?.active ?? 0}</div>
+          <div className="stat-v2-val purple text-purple-400">
+            {dashboardData?.alerts?.active ?? 0}
+          </div>
         </div>
       </div>
 
@@ -333,7 +368,9 @@ export default function Dashboard({
               <div className="flex items-center gap-3">
                 <AlertTriangle size={20} className="text-yellow-500" />
                 <h3 className="bento-title !mb-0">Needs Reorder</h3>
-                {stats.low > 0 && <span className="count-badge warning">{stats.low}</span>}
+                {stats.low > 0 && (
+                  <span className="count-badge warning">{stats.low}</span>
+                )}
               </div>
               <button
                 className="view-all-link text-primary font-bold text-[13px] hover:underline cursor-pointer"
@@ -350,29 +387,31 @@ export default function Dashboard({
                 <span>ACTION</span>
               </div>
               <div className="mini-table-body flex flex-col gap-1">
-                {needsReorderList.length > 0 ? needsReorderList.map((item) => (
-                  <div
-                    key={item.id}
-                    className="mini-table-row"
-                    onClick={() => navigate("/inventory")}
-                  >
-                    <span className="row-med">{item.name}</span>
-                    <span className="row-stock text-yellow-500 font-bold">
-                      {item.stock ?? item.currentStock ?? 0} units
-                    </span>
-                    <span className="row-act">
-                      <button
-                        className="micro-btn-teal"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          navigate("/purchases");
-                        }}
-                      >
-                        Raise PO
-                      </button>
-                    </span>
-                  </div>
-                )) : (
+                {needsReorderList.length > 0 ? (
+                  needsReorderList.map((item) => (
+                    <div
+                      key={item.id}
+                      className="mini-table-row"
+                      onClick={() => navigate("/inventory")}
+                    >
+                      <span className="row-med">{item.name}</span>
+                      <span className="row-stock text-yellow-500 font-bold">
+                        {item.stock ?? item.currentStock ?? 0} units
+                      </span>
+                      <span className="row-act">
+                        <button
+                          className="micro-btn-teal"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            navigate("/purchases");
+                          }}
+                        >
+                          Raise PO
+                        </button>
+                      </span>
+                    </div>
+                  ))
+                ) : (
                   <div className="text-center py-6 text-on-surface-variant text-sm">
                     Inventory levels are healthy.
                   </div>
@@ -419,7 +458,7 @@ export default function Dashboard({
                 ))
               )}
             </div>
-            
+
             {expiring.length > 0 && (
               <button
                 className="authorize-disposal-btn"
