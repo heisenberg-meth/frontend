@@ -61,10 +61,6 @@ export default function Profile({
     phone: user?.phone || profileData.phone || "",
     employeeId: user?.employeeId || "VM-2024-089",
   });
-  console.log("PROFILE DATA:", profileData);
-  console.log("USER DATA:", user);
-  console.log("PROFILE AVATAR:", profileData?.avatar);
-  console.log("USER AVATAR:", user?.avatar);
 
   const [activeModals, setActiveModals] = useState({
     photo: false,
