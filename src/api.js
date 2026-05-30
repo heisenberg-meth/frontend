@@ -1,10 +1,21 @@
 import axios from "axios";
-import { getToken, setToken, getRefreshToken, clearAllAuth } from "./utils/authStorage";
+import {
+  getToken,
+  setToken,
+  getRefreshToken,
+  clearAllAuth,
+} from "./utils/authStorage";
 
 const getBaseUrl = () => {
-  const envUrl = import.meta.env.VITE_API_BASE_URL || import.meta.env.VITE_API_URL;
+  const envUrl =
+    import.meta.env.VITE_API_BASE_URL || import.meta.env.VITE_API_URL;
   if (envUrl !== undefined && envUrl !== null && envUrl !== "") return envUrl;
   return "https://medassist-backend-hryu.onrender.com/api";
+};
+export const getBackendOrigin = () => {
+  const baseUrl = getBaseUrl();
+
+  return baseUrl.replace(/\/api$/, "");
 };
 
 const api = axios.create({
@@ -43,7 +54,10 @@ function dispatchSessionExpired(reason) {
 }
 
 function cyrb128(str) {
-  let h1 = 1779033703, h2 = 3024733165, h3 = 3362453659, h4 = 502493250;
+  let h1 = 1779033703,
+    h2 = 3024733165,
+    h3 = 3362453659,
+    h4 = 502493250;
   for (let i = 0, k; i < str.length; i++) {
     k = str.charCodeAt(i);
     h1 = h2 ^ Math.imul(h1 ^ k, 597399067);
@@ -71,7 +85,12 @@ api.interceptors.request.use(
     }
 
     const idempotentMethods = ["POST", "PUT", "PATCH", "DELETE"];
-    const excludeIdempotencyRoutes = ["auth/login", "auth/register", "auth/refresh", "auth/refresh-token"];
+    const excludeIdempotencyRoutes = [
+      "auth/login",
+      "auth/register",
+      "auth/refresh",
+      "auth/refresh-token",
+    ];
 
     if (
       idempotentMethods.includes(config.method?.toUpperCase()) &&
@@ -113,10 +132,15 @@ api.interceptors.response.use(
     ];
 
     const isExcluded = excludedRoutes.some((route) =>
-      originalRequest?.url?.includes(route)
+      originalRequest?.url?.includes(route),
     );
 
-    if (status === 401 && refreshToken && !originalRequest._retry && !isExcluded) {
+    if (
+      status === 401 &&
+      refreshToken &&
+      !originalRequest._retry &&
+      !isExcluded
+    ) {
       if (isRefreshing) {
         return new Promise((resolve, reject) => {
           failedQueue.push({ resolve, reject });
@@ -133,16 +157,17 @@ api.interceptors.response.use(
         const res = await axios.post(
           `${getBaseUrl()}/auth/refresh`,
           {},
-          { 
-            withCredentials: true, 
+          {
+            withCredentials: true,
             timeout: 10000,
             headers: {
-              "ngrok-skip-browser-warning": "69420"
-            }
+              "ngrok-skip-browser-warning": "69420",
+            },
           },
         );
 
-        const newToken = res.data?.data?.token || res.data?.token || res.data?.accessToken;
+        const newToken =
+          res.data?.data?.token || res.data?.token || res.data?.accessToken;
 
         if (!newToken) {
           throw new Error("No token in refresh response");
@@ -169,7 +194,10 @@ api.interceptors.response.use(
 
     if (status === 403) {
       const errData = error.response?.data;
-      if (errData?.error?.code === "SUBSCRIPTION_EXPIRED" || errData?.code === "SUBSCRIPTION_EXPIRED") {
+      if (
+        errData?.error?.code === "SUBSCRIPTION_EXPIRED" ||
+        errData?.code === "SUBSCRIPTION_EXPIRED"
+      ) {
         window.dispatchEvent(
           new CustomEvent("subscription:expired", {
             detail: errData.error || errData,
@@ -179,7 +207,10 @@ api.interceptors.response.use(
     }
 
     if (status === 409) {
-      console.warn("[API] Conflict:", error.response?.data?.error?.message || "");
+      console.warn(
+        "[API] Conflict:",
+        error.response?.data?.error?.message || "",
+      );
     }
 
     if (status >= 500) {
@@ -201,9 +232,10 @@ api.interceptors.response.use(
     if (error.response?.data?.error?.message) {
       error.message = error.response.data.error.message;
     } else if (error.response?.data?.error) {
-      error.message = typeof error.response.data.error === "string"
-        ? error.response.data.error
-        : error.response.data.error.message || error.message;
+      error.message =
+        typeof error.response.data.error === "string"
+          ? error.response.data.error
+          : error.response.data.error.message || error.message;
     }
 
     return Promise.reject(error);

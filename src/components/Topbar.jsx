@@ -21,6 +21,8 @@ import {
   CreditCard,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { getBackendOrigin } from "../api.js";
+import { getNotifications, markAllNotificationsRead } from "../services/notification.service";
 
 const SEARCH_PATIENTS = [];
 const SEARCH_SUPPLIERS = [];
@@ -150,8 +152,31 @@ export default function Topbar({
   });
   const [selectedIndex, setSelectedIndex] = useState(-1);
   const [isLoading, setIsLoading] = useState(false);
-  const [readNotifIds, setReadNotifIds] = useState([]);
+  const [notifications, setNotifications] = useState([]);
+  const [setNotificationsLoading] = useState(false);
   const searchTimeoutRef = useRef(null);
+
+  console.log("TOPBAR USER:", user);
+  console.log("TOPBAR AVATAR:", user?.avatar);
+  console.log(
+    "TOPBAR AVATAR URL:",
+    user?.avatar ? `${getBackendOrigin()}${user.avatar}` : "NO AVATAR",
+  );
+
+  useEffect(() => {
+    const loadNotifications = async () => {
+      try {
+        setNotificationsLoading(true);
+        const res = await getNotifications();
+        setNotifications(res.data?.data || res.data || []);
+      } catch (err) {
+        console.error("Notification fetch failed", err);
+      } finally {
+        setNotificationsLoading(false);
+      }
+    };
+    loadNotifications();
+  }, [setNotificationsLoading]);
 
   const handleSearchChange = (value) => {
     setSearchQuery(value);
@@ -296,48 +321,17 @@ export default function Topbar({
     });
   }, [searchQuery, activeCategory, allSearchableItems]);
 
-  const NOTIFICATIONS = [
-    {
-      id: "n1",
-      dot: "var(--danger)",
-      text: "8 medicines critically low",
-      tab: "lowstock",
-      time: "5 min ago",
-    },
-    {
-      id: "n2",
-      dot: "var(--warning)",
-      text: "Amoxicillin B-20241 expiring in 15 days",
-      tab: "inventory",
-      time: "1 hour ago",
-    },
-    {
-      id: "n3",
-      dot: "var(--info)",
-      text: "PO-2026-0042 awaiting confirmation",
-      tab: "orders",
-      time: "3 hours ago",
-    },
-    {
-      id: "n4",
-      dot: "var(--primary)",
-      text: "Daily sync completed — 248 SKUs",
-      tab: null,
-      time: "5 hours ago",
-    },
-    {
-      id: "n5",
-      dot: "var(--success)",
-      text: "INV-0089 paid by Ananya Rajesh",
-      tab: "billing",
-      time: "Yesterday",
-    },
-  ];
+  const unreadCount = notifications.filter((n) => !n.isRead).length;
 
-  const unreadCount = NOTIFICATIONS.length - readNotifIds.length;
-
-  const handleMarkAllRead = () => {
-    setReadNotifIds(NOTIFICATIONS.map((n) => n.id));
+  const handleMarkAllRead = async () => {
+    try {
+      await markAllNotificationsRead();
+      setNotifications((prev) =>
+        prev.map((n) => ({ ...n, isRead: true })),
+      );
+    } catch (err) {
+      console.error("Failed to mark all read", err);
+    }
   };
 
   useEffect(() => {
@@ -465,7 +459,10 @@ export default function Topbar({
                     className="notification-dropdown-panel"
                   >
                     <div className="notif-header">
-                      <h3>Notifications{unreadCount > 0 ? ` (${unreadCount})` : ""}</h3>
+                      <h3>
+                        Notifications
+                        {unreadCount > 0 ? ` (${unreadCount})` : ""}
+                      </h3>
                       {unreadCount > 0 && (
                         <button
                           className="mark-read-btn"
@@ -476,35 +473,9 @@ export default function Topbar({
                       )}
                     </div>
                     <div className="notif-list">
-                      {[
-                        {
-                          dot: "var(--danger)",
-                          text: "8 medicines critically low",
-                          path: "/lowstock",
-                        },
-                        {
-                          dot: "var(--warning)",
-                          text: "Amoxicillin B-20241 expiring in 15 days",
-                          path: "/inventory",
-                        },
-                        {
-                          dot: "var(--info)",
-                          text: "PO-2026-0042 awaiting confirmation",
-                          path: "/purchases",
-                        },
-                        {
-                          dot: "var(--primary)",
-                          text: "Daily sync completed — 248 SKUs",
-                          path: null,
-                        },
-                        {
-                          dot: "var(--success)",
-                          text: "INV-0089 paid by Ananya Rajesh",
-                          path: "/billing",
-                        },
-                      ].map((item, i) => (
+                      {notifications.length > 0 ? notifications.map((item) => (
                         <div
-                          key={i}
+                          key={item.id}
                           className="notif-item"
                           onClick={() => {
                             if (item.path) navigate(item.path);
@@ -513,11 +484,20 @@ export default function Topbar({
                         >
                           <div
                             className="notif-dot"
-                            style={{ backgroundColor: item.dot }}
+                            style={{
+                              backgroundColor:
+                                item.color || "var(--primary)",
+                            }}
                           />
-                          <span className="notif-text">{item.text}</span>
+                          <span className="notif-text">
+                            {item.message}
+                          </span>
                         </div>
-                      ))}
+                      )) : (
+                        <div className="notif-empty">
+                          No notifications yet
+                        </div>
+                      )}
                     </div>
                     <button
                       className="notif-footer-btn"
@@ -554,11 +534,12 @@ export default function Topbar({
               <div className="user-avatar-box">
                 <img
                   src={
-                    user?.avatar ||
-                    "https://lh3.googleusercontent.com/aida-public/AB6AXuDOWTd17Gl-b_EvhxP0GeXFk1px5aRS9edSLFf-k5bbLogrEN2yGjKCGGLxCoZNPABWuQ6WkF5_aS6aSYNBoksUikeQzv7CaPt4_LyjhOTV8QnYSkUf-POs5i2xBGCHsBSLSBLwrCi8svtoSHH9zg9k64OlZASXi20fnl6MRsJ5ouZdweM-j8uvCNWquJ5pfVVeiRmoVg5NOqU53_GMI0A9UImQllhc0yVHipNCPCfreNuoiiW59KhFveohAc3xrtL5rB3XFpdGS-NM"
+                    user?.avatar
+                      ? `${getBackendOrigin()}${user.avatar}`
+                      : "https://lh3.googleusercontent.com/aida-public/AB6AXuDOWTd17Gl-b_EvhxP0GeXFk1px5aRS9edSLFf-k5bbLogrEN2yGjKCGGLxCoZNPABWuQ6WkF5_aS6aSYNBoksUikeQzv7CaPt4_LyjhOTV8QnYSkUf-POs5i2xBGCHsBSLSBLwrCi8svtoSHH9zg9k64OlZASXi20fnl6MRsJ5ouZdweM-j8uvCNWquJ5pfVVeiRmoVg5NOqU53_GMI0A9UImQllhc0yVHipNCPCfreNuoiiW59KhFveohAc3xrtL5rB3XFpdGS-NM"
                   }
-                  alt="Profile"
                   className="avatar-img"
+                  alt="Profile"
                 />
                 <div className="avatar-chevron">
                   <ChevronDown size={12} />
@@ -848,4 +829,3 @@ export default function Topbar({
     </>
   );
 }
-
