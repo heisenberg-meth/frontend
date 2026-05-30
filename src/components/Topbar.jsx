@@ -161,19 +161,11 @@ export default function Topbar({
   const [notificationsLoading, setNotificationsLoading] = useState(false);
   const searchTimeoutRef = useRef(null);
 
-  console.log("TOPBAR USER:", user);
-  console.log("TOPBAR AVATAR:", user?.avatar);
-  console.log(
-    "TOPBAR AVATAR URL:",
-    user?.avatar ? `${getBackendOrigin()}${user.avatar}` : "NO AVATAR",
-  );
-
   useEffect(() => {
     const loadNotifications = async () => {
       try {
         setNotificationsLoading(true);
         const res = await getNotifications();
-        console.log("NOTIFICATION RESPONSE", res);
         setNotifications(
           Array.isArray(res.data?.data)
             ? res.data.data
@@ -181,7 +173,6 @@ export default function Topbar({
               ? res.data
               : [],
         );
-        console.log("NOTIFICATION DATA", res?.data);
       } catch (err) {
         console.error("Notification fetch failed", err);
       } finally {

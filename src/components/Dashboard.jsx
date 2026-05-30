@@ -59,8 +59,6 @@ export default function Dashboard({
         ]);
         const overview = normalizeObjectResponse(overviewRes);
         const sales = normalizeObjectResponse(salesRes);
-        console.log("[Dashboard] OVERVIEW:", JSON.stringify(overview, null, 2));
-        console.log("[Dashboard] SALES:", JSON.stringify(sales, null, 2));
         setDashboardData({ ...overview, salesSummary: sales });
       } catch (error) {
         console.error("Dashboard fetch error:", error);
