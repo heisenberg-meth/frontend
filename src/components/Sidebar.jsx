@@ -140,4 +140,3 @@ export default function Sidebar({ user, onSignOut }) {
     </aside>
   );
 }
-

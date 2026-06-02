@@ -158,7 +158,7 @@ export default function Topbar({
   const [selectedIndex, setSelectedIndex] = useState(-1);
   const [isLoading, setIsLoading] = useState(false);
   const [notifications, setNotifications] = useState([]);
-  const [notificationsLoading, setNotificationsLoading] = useState(false);
+  const [setNotificationsLoading] = useState(false);
   const searchTimeoutRef = useRef(null);
 
   useEffect(() => {

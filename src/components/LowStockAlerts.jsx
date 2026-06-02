@@ -463,93 +463,81 @@ export default function LowStockAlerts({ showToast }) {
   const [loading, setLoading] = useState(true);
   const [notificationSettings, setNotificationSettings] = useState(null);
 
- useEffect(() => {
-  let mounted = true;
+  useEffect(() => {
+    let mounted = true;
 
-  const initialize = async () => {
-    try {
-      setLoading(true);
+    const initialize = async () => {
+      try {
+        setLoading(true);
 
-      const [lowStockRes, settingsRes] = await Promise.all([
-        getLowStockMedicines(),
-        getStockAlerts(),
-      ]);
+        const [lowStockRes, settingsRes] = await Promise.all([
+          getLowStockMedicines(),
+          getStockAlerts(),
+        ]);
 
-      if (!mounted) return;
+        if (!mounted) return;
 
-      const lowStockData =
-        lowStockRes.data.data || lowStockRes.data;
+        const lowStockData = lowStockRes.data.data || lowStockRes.data;
 
-      const items = Array.isArray(lowStockData)
-        ? lowStockData
-        : [];
+        const items = Array.isArray(lowStockData) ? lowStockData : [];
 
-      const grouped = {};
+        const grouped = {};
 
-      items.forEach((item) => {
-        const supName =
-          item.supplierName ||
-          item.supplier ||
-          "Unknown Supplier";
+        items.forEach((item) => {
+          const supName =
+            item.supplierName || item.supplier || "Unknown Supplier";
 
-        if (!grouped[supName]) {
-          grouped[supName] = {
-            name: supName,
-            contact: item.supplierPhone || "",
-            email: item.supplierEmail || "",
-            severity: "low",
-            items: [],
-          };
-        }
+          if (!grouped[supName]) {
+            grouped[supName] = {
+              name: supName,
+              contact: item.supplierPhone || "",
+              email: item.supplierEmail || "",
+              severity: "low",
+              items: [],
+            };
+          }
 
-        const currentQty = item.stock ?? 0;
-        const reorderPt = item.reorderLevel ?? 10;
+          const currentQty = item.stock ?? 0;
+          const reorderPt = item.reorderLevel ?? 10;
 
-        const urgency =
-          currentQty === 0 ||
-          currentQty <= reorderPt / 2
-            ? "critical"
-            : "low";
+          const urgency =
+            currentQty === 0 || currentQty <= reorderPt / 2
+              ? "critical"
+              : "low";
 
-        grouped[supName].items.push({
-          ...item,
-          urgency,
+          grouped[supName].items.push({
+            ...item,
+            urgency,
+          });
+
+          if (urgency === "critical") {
+            grouped[supName].severity = "critical";
+          }
         });
 
-        if (urgency === "critical") {
-          grouped[supName].severity = "critical";
+        setLowStockItems(Object.values(grouped));
+
+        const settingsData = settingsRes.data.data || settingsRes.data;
+
+        if (settingsData?.notificationSettings) {
+          setNotificationSettings(settingsData.notificationSettings);
         }
-      });
-
-      setLowStockItems(Object.values(grouped));
-
-      const settingsData =
-        settingsRes.data.data || settingsRes.data;
-
-      if (settingsData?.notificationSettings) {
-        setNotificationSettings(
-          settingsData.notificationSettings
-        );
+      } catch (err) {
+        console.error(err);
+        showToast("Failed to load stock alerts", "error");
+      } finally {
+        if (mounted) {
+          setLoading(false);
+        }
       }
-    } catch (err) {
-      console.error(err);
-      showToast(
-        "Failed to load stock alerts",
-        "error",
-      );
-    } finally {
-      if (mounted) {
-        setLoading(false);
-      }
-    }
-  };
+    };
 
-  initialize();
+    initialize();
 
-  return () => {
-    mounted = false;
-  };
-}, [showToast]);
+    return () => {
+      mounted = false;
+    };
+  }, [showToast]);
 
   const filteredSuppliers = lowStockItems
     .map((s) => ({

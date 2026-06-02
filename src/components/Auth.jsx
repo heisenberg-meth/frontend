@@ -59,7 +59,11 @@ export default function Auth({ onAuth }) {
       setError("Email is required.");
       return;
     }
-    if (loginType === "admin" && !validateEmail(email) && view !== "newPassword") {
+    if (
+      loginType === "admin" &&
+      !validateEmail(email) &&
+      view !== "newPassword"
+    ) {
       setError("Please enter a valid email address.");
       return;
     }
@@ -128,7 +132,9 @@ export default function Auth({ onAuth }) {
           true,
         );
       } else if (view === "forgot") {
-        await api.post(API_ROUTES.AUTH_FORGOT_PASSWORD, { email: email.toLowerCase() });
+        await api.post(API_ROUTES.AUTH_FORGOT_PASSWORD, {
+          email: email.toLowerCase(),
+        });
         setForm((prev) => ({ ...prev, email: email.toLowerCase() }));
         setView("verifyOtp");
         setSuccess("Verification code sent. Check your inbox.");
@@ -148,7 +154,14 @@ export default function Auth({ onAuth }) {
         });
         setView("login");
         setSuccess("Password reset successful. Please sign in.");
-        setForm({ email: "", password: "", otp: "", newPassword: "", confirmPassword: "", resetToken: "" });
+        setForm({
+          email: "",
+          password: "",
+          otp: "",
+          newPassword: "",
+          confirmPassword: "",
+          resetToken: "",
+        });
       }
     } catch (err) {
       const errData = err.response?.data;
@@ -169,11 +182,15 @@ export default function Auth({ onAuth }) {
     setSuccess("");
     setLoading(true);
     try {
-      await api.post(API_ROUTES.AUTH_RESEND_RESET_OTP, { email: form.email.toLowerCase() });
+      await api.post(API_ROUTES.AUTH_RESEND_RESET_OTP, {
+        email: form.email.toLowerCase(),
+      });
       setSuccess("New code sent. Check your inbox.");
     } catch (err) {
       const errData = err.response?.data;
-      setError(errData?.error?.message || errData?.message || "Failed to resend code.");
+      setError(
+        errData?.error?.message || errData?.message || "Failed to resend code.",
+      );
     } finally {
       setLoading(false);
     }
@@ -302,7 +319,9 @@ export default function Auth({ onAuth }) {
 
           {error && (
             <div className="auth-error-alert" role="alert">
-              {typeof error === "string" ? error : error?.message || String(error)}
+              {typeof error === "string"
+                ? error
+                : error?.message || String(error)}
             </div>
           )}
 
@@ -356,7 +375,10 @@ export default function Auth({ onAuth }) {
                 </>
               )}
 
-              {(view === "login" || view === "register" || view === "forgot" || view === "verifyOtp") && (
+              {(view === "login" ||
+                view === "register" ||
+                view === "forgot" ||
+                view === "verifyOtp") && (
                 <div className="control-group">
                   <label className="control-label">
                     {loginType === "admin" ? "WORK EMAIL" : "STAFF ID / EMAIL"}
@@ -486,7 +508,9 @@ export default function Auth({ onAuth }) {
                     </div>
                   </div>
                   <div className="control-group">
-                    <label className="control-label">CONFIRM NEW PASSWORD</label>
+                    <label className="control-label">
+                      CONFIRM NEW PASSWORD
+                    </label>
                     <div className="control-input-wrap">
                       <Lock size={18} className="input-icon-left" />
                       <input
@@ -591,10 +615,7 @@ export default function Auth({ onAuth }) {
             {view === "login" && (
               <>
                 New to Viyan MedAssist?
-                <button
-                  type="button"
-                  onClick={() => navigateTo("register")}
-                >
+                <button type="button" onClick={() => navigateTo("register")}>
                   Create an account
                 </button>
               </>
@@ -602,19 +623,15 @@ export default function Auth({ onAuth }) {
             {view === "register" && (
               <>
                 Already registered?
-                <button
-                  type="button"
-                  onClick={() => navigateTo("login")}
-                >
+                <button type="button" onClick={() => navigateTo("login")}>
                   Sign In to Portal
                 </button>
               </>
             )}
-            {(view === "forgot" || view === "verifyOtp" || view === "newPassword") && (
-              <button
-                type="button"
-                onClick={() => navigateTo("login")}
-              >
+            {(view === "forgot" ||
+              view === "verifyOtp" ||
+              view === "newPassword") && (
+              <button type="button" onClick={() => navigateTo("login")}>
                 Back to Sign In
               </button>
             )}

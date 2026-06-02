@@ -16,8 +16,7 @@ export const updateDraft = (id, data) =>
   api.post(`billing/invoices/${id}`, { ...data, isDraft: true });
 
 /* ─── Billing Actions ─── */
-export const generateInvoicePDF = (id) =>
-  api.post(`billing/invoices/${id}/pdf`);
+export const generateInvoicePDF = (id) => api.post(`billing/invoices/${id}/pdf`);
 export const sendInvoiceEmail = (id, data) =>
   api.post(`billing/invoices/${id}/email`, data);
 export const sendInvoiceWhatsApp = (id, data) =>

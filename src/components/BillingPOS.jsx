@@ -1222,17 +1222,24 @@ ${printDiscount > 0 ? `<div style="display:flex;justify-content:space-between"><
                       >
                         <div className="result-info">
                           <span className="result-name">{res.name}</span>
-                          <span className="result-meta">{res.generic}</span>
+                          <span className="result-meta">
+                            {res.genericName || res.generic}
+                          </span>
                         </div>
                         <div
                           className="result-info"
                           style={{ textAlign: "center" }}
                         >
                           <span className="result-meta">
-                            Batch: {res.batch || res.batchId}
+                            Batch: {res.batchNumber || res.batch || res.batchId}
                           </span>
                           <span className="result-meta">
-                            Exp: {res.exp || res.expiry}
+                            Exp:{" "}
+                            {res.expiryDate
+                              ? new Date(res.expiryDate).toLocaleDateString(
+                                  "en-IN",
+                                )
+                              : res.exp || res.expiry || "N/A"}
                           </span>
                         </div>
                         <div style={{ textAlign: "right" }}>

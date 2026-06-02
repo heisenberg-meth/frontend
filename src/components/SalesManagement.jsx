@@ -29,9 +29,7 @@ import autoTable from "jspdf-autotable";
 import { normalizeArrayResponse } from "../utils/apiNormalizer";
 import "../styles/SalesManagement.css";
 
-export default function SalesManagement({
-  showToast,
-}) {
+export default function SalesManagement({ showToast }) {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("daily");
   const [currentDate, setCurrentDate] = useState(new Date());
@@ -61,10 +59,9 @@ export default function SalesManagement({
   });
 
   const refreshSalesData = async () => {
-  try {
-    setError(null);
-    const [salesRes, returnsRes, trendsRes] =
-      await Promise.all([
+    try {
+      setError(null);
+      const [salesRes, returnsRes, trendsRes] = await Promise.all([
         api.get(API_ROUTES.SALES, {
           params: {
             startDate: dateRange.start,
@@ -80,34 +77,30 @@ export default function SalesManagement({
         api.get(API_ROUTES.SALES_HOURLY),
       ]);
 
-    const salesData = normalizeArrayResponse(salesRes, 'sales');
-    const returnsData = normalizeArrayResponse(returnsRes);
-    const hourly = normalizeArrayResponse(trendsRes);
+      const salesData = normalizeArrayResponse(salesRes, "sales");
+      const returnsData = normalizeArrayResponse(returnsRes);
+      const hourly = normalizeArrayResponse(trendsRes);
 
-    setSales(Array.isArray(salesData) ? salesData : []);
-    setReturns(Array.isArray(returnsData) ? returnsData : []);
-    setHourlyData(Array.isArray(hourly) ? hourly : []);
-  } catch (error) {
-    console.error(error);
-    setError("Failed to fetch sales data");
+      setSales(Array.isArray(salesData) ? salesData : []);
+      setReturns(Array.isArray(returnsData) ? returnsData : []);
+      setHourlyData(Array.isArray(hourly) ? hourly : []);
+    } catch (error) {
+      console.error(error);
+      setError("Failed to fetch sales data");
 
-    showToast(
-      "Failed to fetch sales data",
-      "error"
-    );
-  }
-};
+      showToast("Failed to fetch sales data", "error");
+    }
+  };
 
   useEffect(() => {
-  let mounted = true;
+    let mounted = true;
 
-  const initialize = async () => {
-    try {
-      setLoading(true);
-      setError(null);
+    const initialize = async () => {
+      try {
+        setLoading(true);
+        setError(null);
 
-      const [salesRes, returnsRes, trendsRes] =
-        await Promise.all([
+        const [salesRes, returnsRes, trendsRes] = await Promise.all([
           api.get(API_ROUTES.SALES, {
             params: {
               startDate: dateRange.start,
@@ -123,46 +116,46 @@ export default function SalesManagement({
           api.get(API_ROUTES.SALES_HOURLY),
         ]);
 
-      if (!mounted) return;
+        if (!mounted) return;
 
-      const salesData = normalizeArrayResponse(salesRes, 'sales');
-      const returnsData = normalizeArrayResponse(returnsRes);
-      const hourly = normalizeArrayResponse(trendsRes);
+        const salesData = normalizeArrayResponse(salesRes, "sales");
+        const returnsData = normalizeArrayResponse(returnsRes);
+        const hourly = normalizeArrayResponse(trendsRes);
 
-      setSales(Array.isArray(salesData) ? salesData : []);
-      setReturns(Array.isArray(returnsData) ? returnsData : []);
-      setHourlyData(Array.isArray(hourly) ? hourly : []);
-    } catch (error) {
-      console.error(error);
-      setError("Failed to fetch sales data");
+        setSales(Array.isArray(salesData) ? salesData : []);
+        setReturns(Array.isArray(returnsData) ? returnsData : []);
+        setHourlyData(Array.isArray(hourly) ? hourly : []);
+      } catch (error) {
+        console.error(error);
+        setError("Failed to fetch sales data");
 
-      if (mounted) {
-        showToast(
-          "Failed to fetch sales data",
-          "error"
-        );
+        if (mounted) {
+          showToast("Failed to fetch sales data", "error");
+        }
+      } finally {
+        if (mounted) {
+          setLoading(false);
+        }
       }
-    } finally {
-      if (mounted) {
-        setLoading(false);
-      }
-    }
-  };
+    };
 
-  initialize();
+    initialize();
 
-  return () => {
-    mounted = false;
-  };
-}, [dateRange, showToast]);
+    return () => {
+      mounted = false;
+    };
+  }, [dateRange, showToast]);
 
   /* ── Filter Logic (memoized) ── */
   const filteredSales = useMemo(
     () =>
       sales.filter((sale) => {
-        const patientName = sale.patient?.fullName || sale.patientName || "Walk-in";
+        const patientName =
+          sale.patient?.fullName || sale.patientName || "Walk-in";
         const matchesSearch =
-          (sale.invoiceNumber || sale.id || "").toLowerCase().includes(filters.search.toLowerCase()) ||
+          (sale.invoiceNumber || sale.id || "")
+            .toLowerCase()
+            .includes(filters.search.toLowerCase()) ||
           patientName.toLowerCase().includes(filters.search.toLowerCase());
         const matchesPayment =
           filters.payment === "All Payment Modes" ||
@@ -187,12 +180,16 @@ export default function SalesManagement({
   const filteredReturns = useMemo(
     () =>
       returns.filter((ret) => {
-        const patientName = ret.patient?.fullName || ret.patientName || "Walk-in";
+        const patientName =
+          ret.patient?.fullName || ret.patientName || "Walk-in";
         const matchesSearch =
-          (ret.returnNumber || ret.id || "").toLowerCase().includes(filters.search.toLowerCase()) ||
+          (ret.returnNumber || ret.id || "")
+            .toLowerCase()
+            .includes(filters.search.toLowerCase()) ||
           patientName.toLowerCase().includes(filters.search.toLowerCase());
         const matchesStatus =
-          filters.status === "All Status" || (ret.status || "").toUpperCase() === filters.status;
+          filters.status === "All Status" ||
+          (ret.status || "").toUpperCase() === filters.status;
         return matchesSearch && matchesStatus;
       }),
     [returns, filters],
@@ -242,7 +239,7 @@ export default function SalesManagement({
               quantity: returnQuantities[idx],
               reason: reasonText,
               condition: condition,
-            })
+            }),
           );
         }
       });
@@ -331,7 +328,9 @@ export default function SalesManagement({
         Date: sale.date,
         Time: sale.time,
         Patient: sale.patient,
-        Items: (sale.items || []).map((it) => `${it.name} x${it.qty}`).join("; "),
+        Items: (sale.items || [])
+          .map((it) => `${it.name} x${it.qty}`)
+          .join("; "),
         Discount: sale.disc,
         GST: sale.gst,
         Total: sale.total,
@@ -341,7 +340,9 @@ export default function SalesManagement({
       worksheet.addRows(exportData);
 
       const buffer = await workbook.xlsx.writeBuffer();
-      const data = new Blob([buffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+      const data = new Blob([buffer], {
+        type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      });
       saveAs(data, `sales-report-${Date.now()}.xlsx`);
       showToast("Sales exported successfully", "success");
     } catch (error) {
@@ -426,10 +427,7 @@ export default function SalesManagement({
           <button className="pos-btn outline" onClick={handleExport}>
             <Download size={16} /> Export
           </button>
-          <button
-            className="pos-btn teal"
-            onClick={() => navigate("/billing")}
-          >
+          <button className="pos-btn teal" onClick={() => navigate("/billing")}>
             <Receipt size={18} /> + New Bill
           </button>
         </div>
@@ -440,13 +438,21 @@ export default function SalesManagement({
         {[
           {
             label: "TODAY'S SALES",
-            val: "₹" + dailySales.reduce((sum, s) => sum + (s.totalAmount || s.total || 0), 0).toLocaleString(),
+            val:
+              "₹" +
+              dailySales
+                .reduce((sum, s) => sum + (s.totalAmount || s.total || 0), 0)
+                .toLocaleString(),
             icon: TrendingUp,
             col: "var(--primary)",
           },
           {
             label: "SELECTED RANGE",
-            val: "₹" + filteredSales.reduce((sum, s) => sum + (s.totalAmount || s.total || 0), 0).toLocaleString(),
+            val:
+              "₹" +
+              filteredSales
+                .reduce((sum, s) => sum + (s.totalAmount || s.total || 0), 0)
+                .toLocaleString(),
             icon: Calendar,
             col: "var(--info)",
           },
@@ -458,7 +464,11 @@ export default function SalesManagement({
           },
           {
             label: "RETURNS",
-            val: "₹" + filteredReturns.reduce((sum, r) => sum + (r.refundAmount || r.value || 0), 0).toLocaleString(),
+            val:
+              "₹" +
+              filteredReturns
+                .reduce((sum, r) => sum + (r.refundAmount || r.value || 0), 0)
+                .toLocaleString(),
             icon: ArrowLeft,
             col: "var(--danger)",
           },
@@ -483,198 +493,243 @@ export default function SalesManagement({
       </div>
 
       {loading ? (
-        <div style={{ padding: "40px", textAlign: "center", color: "var(--on-surface-variant)" }}>
+        <div
+          style={{
+            padding: "40px",
+            textAlign: "center",
+            color: "var(--on-surface-variant)",
+          }}
+        >
           Loading live data...
         </div>
       ) : error ? (
-        <div style={{ padding: "40px", textAlign: "center", color: "var(--danger)" }}>
+        <div
+          style={{
+            padding: "40px",
+            textAlign: "center",
+            color: "var(--danger)",
+          }}
+        >
           {error}
         </div>
-      ) : activeTab === "daily" && (
-        <>
-          <div className="date-navigator">
-            <button className="micro-btn" onClick={handlePrevDate}>
-              <ChevronLeft size={18} />
-            </button>
-            <span className="date-display">
-              {format(currentDate, "dd MMM yyyy")}
-            </span>
-            <button className="micro-btn" onClick={handleNextDate}>
-              <ChevronRight size={18} />
-            </button>
-          </div>
-
-          <div className="sales-summary-bar">
-            <div className="summary-stats-left">
-              <span>
-                Total Bills: <b>{dailySales.length}</b>
+      ) : (
+        activeTab === "daily" && (
+          <>
+            <div className="date-navigator">
+              <button className="micro-btn" onClick={handlePrevDate}>
+                <ChevronLeft size={18} />
+              </button>
+              <span className="date-display">
+                {format(currentDate, "dd MMM yyyy")}
               </span>
-              <span>
-                Revenue: <b>₹{dailySales.reduce((sum, s) => sum + (s.totalAmount || s.total || 0), 0)}</b>
-              </span>
+              <button className="micro-btn" onClick={handleNextDate}>
+                <ChevronRight size={18} />
+              </button>
             </div>
-          </div>
 
-          <div className="sales-table-card">
-            <table className="purchase-table">
-              <thead>
-                <tr>
-                  <th>Time</th>
-                  <th>Bill #</th>
-                  <th>Patient</th>
-                  <th>Medicines</th>
-                  <th>Disc</th>
-                  <th>GST</th>
-                  <th>Total</th>
-                  <th>Payment</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {dailySales.length === 0 ? (
-                  <tr>
-                    <td
-                      colSpan="9"
-                      style={{
-                        textAlign: "center",
-                        padding: "30px",
-                        color: "var(--text-muted)",
-                      }}
-                    >
-                      No sales for this date
-                    </td>
-                  </tr>
-                ) : (
-                  dailySales.map((sale) => (
-                    <tr key={sale.id}>
-                      <td className="result-meta">{sale.time || new Date(sale.createdAt).toLocaleTimeString()}</td>
-                      <td style={{ fontWeight: 700 }}>{sale.invoiceNumber || sale.id}</td>
-                      <td>{sale.patient?.fullName || sale.patientName || "Walk-in"}</td>
-                      <td>
-                        {sale.items ? sale.items.length : sale.medicinesCount || 0}{" "}
-                        medicines
-                      </td>
-                      <td>₹{sale.discountAmount || sale.disc || 0}</td>
-                      <td className="result-meta">₹{sale.taxAmount || sale.gst || 0}</td>
-                      <td style={{ fontWeight: 700, color: "var(--primary)" }}>
-                        ₹{sale.totalAmount || sale.total || 0}
-                      </td>
-                      <td>
-                        <div
-                          style={{
-                            display: "flex",
-                            alignItems: "center",
-                            gap: "6px",
-                            fontSize: "11px",
-                            fontWeight: 700,
-                          }}
-                        >
-                          {(sale.paymentMode || sale.payment) === "UPI" && (
-                            <Smartphone size={12} color="var(--info)" />
-                          )}
-                          {(sale.paymentMode || sale.payment) === "CASH" && (
-                            <Banknote size={12} color="var(--primary)" />
-                          )}
-                          {(sale.paymentMode || sale.payment) === "CARD" && (
-                            <CreditCard size={12} color="var(--info)" />
-                          )}
-                          {sale.paymentMode || sale.payment}
-                        </div>
-                      </td>
-                      <td>
-                        <div style={{ display: "flex", gap: "8px" }}>
-                          <button
-                            className="micro-btn"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleOpenDetail(sale);
-                            }}
-                          >
-                            <Eye size={14} />
-                          </button>
-                          <button
-                            className="micro-btn"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handlePrintBill(sale);
-                            }}
-                          >
-                            <Printer size={14} />
-                          </button>
-                          <button
-                            className="micro-btn"
-                            style={{ color: "var(--danger)" }}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleReturn(sale);
-                            }}
-                          >
-                            <RefreshCw size={14} />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
-
-          <div className="chart-card">
-            <div className="chart-header">
-              <div
-                style={{
-                  fontFamily: "Outfit",
-                  fontWeight: 700,
-                  fontSize: "16px",
-                }}
-              >
-                Hourly Revenue
+            <div className="sales-summary-bar">
+              <div className="summary-stats-left">
+                <span>
+                  Total Bills: <b>{dailySales.length}</b>
+                </span>
+                <span>
+                  Revenue:{" "}
+                  <b>
+                    ₹
+                    {dailySales.reduce(
+                      (sum, s) => sum + (s.totalAmount || s.total || 0),
+                      0,
+                    )}
+                  </b>
+                </span>
               </div>
             </div>
-            <div className="bar-chart-container">
-              {hourlyData && hourlyData.length > 0 ? (
-                hourlyData.map((d, i) => (
-                  <div
-                    key={i}
-                    className="chart-bar-wrapper"
-                    onMouseEnter={() => setHoveredBar(i)}
-                    onMouseLeave={() => setHoveredBar(null)}
-                  >
-                    <motion.div
-                      className="chart-bar"
-                      initial={{ height: 0 }}
-                      animate={{ height: `${(d.revenue / (Math.max(...hourlyData.map(h => h.revenue)) || 1)) * 100}%` }}
-                      style={{
-                        background: hoveredBar === i ? "var(--primary)" : "",
-                      }}
-                    />
-                    <span className="chart-label">{d.hour}</span>
-                    {hoveredBar === i && (
-                      <motion.div
-                        className="chart-tooltip"
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
+
+            <div className="sales-table-card">
+              <table className="purchase-table">
+                <thead>
+                  <tr>
+                    <th>Time</th>
+                    <th>Bill #</th>
+                    <th>Patient</th>
+                    <th>Medicines</th>
+                    <th>Disc</th>
+                    <th>GST</th>
+                    <th>Total</th>
+                    <th>Payment</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {dailySales.length === 0 ? (
+                    <tr>
+                      <td
+                        colSpan="9"
+                        style={{
+                          textAlign: "center",
+                          padding: "30px",
+                          color: "var(--text-muted)",
+                        }}
                       >
-                        <b>{d.hour}</b>
-                        <br />
-                        {d.count} bills
-                        <br />
-                        <span style={{ color: "var(--primary)" }}>
-                          ₹{(d.revenue || 0).toLocaleString()}
-                        </span>
-                      </motion.div>
-                    )}
-                  </div>
-                ))
-              ) : (
-                <div style={{ padding: "40px", width: "100%", textAlign: "center", color: "var(--on-surface-variant)" }}>
-                  No hourly data available
-                </div>
-              )}
+                        No sales for this date
+                      </td>
+                    </tr>
+                  ) : (
+                    dailySales.map((sale) => (
+                      <tr key={sale.id}>
+                        <td className="result-meta">
+                          {sale.time ||
+                            new Date(sale.createdAt).toLocaleTimeString()}
+                        </td>
+                        <td style={{ fontWeight: 700 }}>
+                          {sale.invoiceNumber || sale.id}
+                        </td>
+                        <td>
+                          {sale.patient?.fullName ||
+                            sale.patientName ||
+                            "Walk-in"}
+                        </td>
+                        <td>
+                          {sale.items
+                            ? sale.items.length
+                            : sale.medicinesCount || 0}{" "}
+                          medicines
+                        </td>
+                        <td>₹{sale.discountAmount || sale.disc || 0}</td>
+                        <td className="result-meta">
+                          ₹{sale.taxAmount || sale.gst || 0}
+                        </td>
+                        <td
+                          style={{ fontWeight: 700, color: "var(--primary)" }}
+                        >
+                          ₹{sale.totalAmount || sale.total || 0}
+                        </td>
+                        <td>
+                          <div
+                            style={{
+                              display: "flex",
+                              alignItems: "center",
+                              gap: "6px",
+                              fontSize: "11px",
+                              fontWeight: 700,
+                            }}
+                          >
+                            {(sale.paymentMode || sale.payment) === "UPI" && (
+                              <Smartphone size={12} color="var(--info)" />
+                            )}
+                            {(sale.paymentMode || sale.payment) === "CASH" && (
+                              <Banknote size={12} color="var(--primary)" />
+                            )}
+                            {(sale.paymentMode || sale.payment) === "CARD" && (
+                              <CreditCard size={12} color="var(--info)" />
+                            )}
+                            {sale.paymentMode || sale.payment}
+                          </div>
+                        </td>
+                        <td>
+                          <div style={{ display: "flex", gap: "8px" }}>
+                            <button
+                              className="micro-btn"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleOpenDetail(sale);
+                              }}
+                            >
+                              <Eye size={14} />
+                            </button>
+                            <button
+                              className="micro-btn"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handlePrintBill(sale);
+                              }}
+                            >
+                              <Printer size={14} />
+                            </button>
+                            <button
+                              className="micro-btn"
+                              style={{ color: "var(--danger)" }}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleReturn(sale);
+                              }}
+                            >
+                              <RefreshCw size={14} />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
             </div>
-          </div>
-        </>
+
+            <div className="chart-card">
+              <div className="chart-header">
+                <div
+                  style={{
+                    fontFamily: "Outfit",
+                    fontWeight: 700,
+                    fontSize: "16px",
+                  }}
+                >
+                  Hourly Revenue
+                </div>
+              </div>
+              <div className="bar-chart-container">
+                {hourlyData && hourlyData.length > 0 ? (
+                  hourlyData.map((d, i) => (
+                    <div
+                      key={i}
+                      className="chart-bar-wrapper"
+                      onMouseEnter={() => setHoveredBar(i)}
+                      onMouseLeave={() => setHoveredBar(null)}
+                    >
+                      <motion.div
+                        className="chart-bar"
+                        initial={{ height: 0 }}
+                        animate={{
+                          height: `${(d.revenue / (Math.max(...hourlyData.map((h) => h.revenue)) || 1)) * 100}%`,
+                        }}
+                        style={{
+                          background: hoveredBar === i ? "var(--primary)" : "",
+                        }}
+                      />
+                      <span className="chart-label">{d.hour}</span>
+                      {hoveredBar === i && (
+                        <motion.div
+                          className="chart-tooltip"
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                        >
+                          <b>{d.hour}</b>
+                          <br />
+                          {d.count} bills
+                          <br />
+                          <span style={{ color: "var(--primary)" }}>
+                            ₹{(d.revenue || 0).toLocaleString()}
+                          </span>
+                        </motion.div>
+                      )}
+                    </div>
+                  ))
+                ) : (
+                  <div
+                    style={{
+                      padding: "40px",
+                      width: "100%",
+                      textAlign: "center",
+                      color: "var(--on-surface-variant)",
+                    }}
+                  >
+                    No hourly data available
+                  </div>
+                )}
+              </div>
+            </div>
+          </>
+        )
       )}
 
       {!loading && activeTab === "bills" && (
@@ -743,17 +798,34 @@ export default function SalesManagement({
               ) : (
                 filteredSales.map((sale) => (
                   <tr key={sale.id}>
-                    <td>{format(new Date(sale.date || sale.createdAt), "dd MMM yyyy")}</td>
-                    <td style={{ fontWeight: 700 }}>{sale.invoiceNumber || sale.id}</td>
-                    <td>{sale.patient?.fullName || sale.patientName || "Walk-in"}</td>
-                    <td className="result-meta">{sale.patient?.phone || sale.phone || "—"}</td>
                     <td>
-                      {sale.items ? sale.items.length : sale.medicinesCount || 0}
+                      {format(
+                        new Date(sale.date || sale.createdAt),
+                        "dd MMM yyyy",
+                      )}
                     </td>
-                    <td style={{ fontWeight: 700 }}>₹{sale.totalAmount || sale.total || 0}</td>
+                    <td style={{ fontWeight: 700 }}>
+                      {sale.invoiceNumber || sale.id}
+                    </td>
+                    <td>
+                      {sale.patient?.fullName || sale.patientName || "Walk-in"}
+                    </td>
+                    <td className="result-meta">
+                      {sale.patient?.phone || sale.phone || "—"}
+                    </td>
+                    <td>
+                      {sale.items
+                        ? sale.items.length
+                        : sale.medicinesCount || 0}
+                    </td>
+                    <td style={{ fontWeight: 700 }}>
+                      ₹{sale.totalAmount || sale.total || 0}
+                    </td>
                     <td>{sale.paymentMode || sale.payment}</td>
                     <td>
-                      <span className="p-status paid">{(sale.status || "PAID").toUpperCase()}</span>
+                      <span className="p-status paid">
+                        {(sale.status || "PAID").toUpperCase()}
+                      </span>
                     </td>
                     <td>
                       <div style={{ display: "flex", gap: "8px" }}>
@@ -818,10 +890,21 @@ export default function SalesManagement({
               ) : (
                 filteredReturns.map((ret) => (
                   <tr key={ret.id}>
-                    <td>{format(new Date(ret.date || ret.createdAt), "dd MMM yyyy")}</td>
-                    <td style={{ fontWeight: 700 }}>{ret.returnNumber || ret.id}</td>
-                    <td className="result-meta">{ret.sale?.invoiceNumber || ret.origInv || "—"}</td>
-                    <td>{ret.patient?.fullName || ret.patientName || "Walk-in"}</td>
+                    <td>
+                      {format(
+                        new Date(ret.date || ret.createdAt),
+                        "dd MMM yyyy",
+                      )}
+                    </td>
+                    <td style={{ fontWeight: 700 }}>
+                      {ret.returnNumber || ret.id}
+                    </td>
+                    <td className="result-meta">
+                      {ret.sale?.invoiceNumber || ret.origInv || "—"}
+                    </td>
+                    <td>
+                      {ret.patient?.fullName || ret.patientName || "Walk-in"}
+                    </td>
                     <td>{ret.items?.length || ret.itemsCount || 0}</td>
                     <td style={{ fontWeight: 700, color: "var(--danger)" }}>
                       ₹{ret.refundAmount || ret.value || 0}
@@ -838,7 +921,9 @@ export default function SalesManagement({
                       </span>
                     </td>
                     <td>
-                      <span className={`p-status ${(ret.status || "").toLowerCase()}`}>
+                      <span
+                        className={`p-status ${(ret.status || "").toLowerCase()}`}
+                      >
                         {ret.status}
                       </span>
                     </td>
@@ -882,12 +967,17 @@ export default function SalesManagement({
                   <div>
                     <div className="result-meta">Patient</div>
                     <div style={{ fontWeight: 700 }}>
-                      {selectedSale.patient?.fullName || selectedSale.patientName || "Walk-in"}
+                      {selectedSale.patient?.fullName ||
+                        selectedSale.patientName ||
+                        "Walk-in"}
                     </div>
                   </div>
                   <div>
                     <div className="result-meta">Time</div>
-                    <div style={{ fontWeight: 700 }}>{selectedSale.time || new Date(selectedSale.createdAt).toLocaleTimeString()}</div>
+                    <div style={{ fontWeight: 700 }}>
+                      {selectedSale.time ||
+                        new Date(selectedSale.createdAt).toLocaleTimeString()}
+                    </div>
                   </div>
                   <div>
                     <div className="result-meta">Payment</div>
@@ -1067,8 +1157,12 @@ export default function SalesManagement({
               </div>
               <div className="stock-modal-body">
                 <p className="result-meta">
-                  Initiating return for {selectedSale.invoiceNumber || selectedSale.id} (
-                  {selectedSale.patient?.fullName || selectedSale.patientName || "Walk-in"})
+                  Initiating return for{" "}
+                  {selectedSale.invoiceNumber || selectedSale.id} (
+                  {selectedSale.patient?.fullName ||
+                    selectedSale.patientName ||
+                    "Walk-in"}
+                  )
                 </p>
 
                 <div style={{ marginTop: "16px" }}>
@@ -1092,7 +1186,9 @@ export default function SalesManagement({
                           }))
                         }
                       />
-                      <div style={{ flex: 1 }}>{item.medicine?.name || item.name}</div>
+                      <div style={{ flex: 1 }}>
+                        {item.medicine?.name || item.name}
+                      </div>
                       <input
                         className="p-cost-input"
                         style={{ width: "50px" }}
@@ -1103,7 +1199,10 @@ export default function SalesManagement({
                         onChange={(e) =>
                           setReturnQuantities((prev) => ({
                             ...prev,
-                            [idx]: Math.min(item.quantity, Math.max(0, Number(e.target.value))),
+                            [idx]: Math.min(
+                              item.quantity,
+                              Math.max(0, Number(e.target.value)),
+                            ),
                           }))
                         }
                       />
@@ -1213,9 +1312,9 @@ export default function SalesManagement({
                     className="pos-btn outline"
                     style={{ fontSize: "12px", padding: "8px" }}
                     onClick={() =>
-                      setDateRange({ 
-                        start: format(new Date(), "yyyy-MM-dd"), 
-                        end: format(new Date(), "yyyy-MM-dd") 
+                      setDateRange({
+                        start: format(new Date(), "yyyy-MM-dd"),
+                        end: format(new Date(), "yyyy-MM-dd"),
                       })
                     }
                   >
@@ -1225,9 +1324,9 @@ export default function SalesManagement({
                     className="pos-btn outline"
                     style={{ fontSize: "12px", padding: "8px" }}
                     onClick={() =>
-                      setDateRange({ 
-                        start: format(subDays(new Date(), 30), "yyyy-MM-dd"), 
-                        end: format(new Date(), "yyyy-MM-dd") 
+                      setDateRange({
+                        start: format(subDays(new Date(), 30), "yyyy-MM-dd"),
+                        end: format(new Date(), "yyyy-MM-dd"),
                       })
                     }
                   >

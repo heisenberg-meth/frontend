@@ -21,7 +21,7 @@ export const getBackendOrigin = () => {
 const api = axios.create({
   baseURL: getBaseUrl(),
   withCredentials: true,
-  timeout: 15000,
+  timeout: 120000,
   headers: {
     "Content-Type": "application/json",
     "ngrok-skip-browser-warning": "69420",

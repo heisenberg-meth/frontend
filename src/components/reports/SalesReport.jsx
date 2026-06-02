@@ -9,7 +9,7 @@ import {
   FileText,
   Printer,
   Loader2,
-  AlertTriangle
+  AlertTriangle,
 } from "lucide-react";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
@@ -27,7 +27,7 @@ export default function SalesReport({ from, to, showToast }) {
       setErrorState(null);
       try {
         const res = await api.get(API_ROUTES.REPORTS_SALES || "reports/sales", {
-          params: { from, to }
+          params: { from, to },
         });
         if (res.data && res.data.success) {
           setData(res.data.data);
@@ -36,7 +36,11 @@ export default function SalesReport({ from, to, showToast }) {
         }
       } catch (err) {
         console.error("Sales fetch error:", err);
-        setErrorState(err.response?.data?.error || err.message || "Failed to load sales report");
+        setErrorState(
+          err.response?.data?.error ||
+            err.message ||
+            "Failed to load sales report",
+        );
       } finally {
         setLoading(false);
       }
@@ -50,14 +54,14 @@ export default function SalesReport({ from, to, showToast }) {
   const exportCSV = () => {
     if (!data || !data.chart.length) return;
     const headers = ["Date", "Invoices", "Revenue (₹)"];
-    const rows = data.chart.map(item => [
+    const rows = data.chart.map((item) => [
       item.date,
       item.bills,
-      item.revenue
+      item.revenue,
     ]);
     const csvContent = [
       headers.join(","),
-      ...rows.map(r => r.map(v => `"${v}"`).join(","))
+      ...rows.map((r) => r.map((v) => `"${v}"`).join(",")),
     ].join("\n");
 
     const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
@@ -78,13 +82,13 @@ export default function SalesReport({ from, to, showToast }) {
       autoTable(doc, {
         startY: 30,
         head: [["Date", "Invoices Count", "Revenue Amount"]],
-        body: data.chart.map(item => [
+        body: data.chart.map((item) => [
           item.date,
           item.bills,
-          `₹${item.revenue.toLocaleString()}`
+          `₹${item.revenue.toLocaleString()}`,
         ]),
         styles: { fontSize: 10 },
-        headStyles: { fillColor: [79, 219, 200] }
+        headStyles: { fillColor: [79, 219, 200] },
       });
       doc.save(`sales-report-${from}-to-${to}.pdf`);
       showToast("PDF Downloaded", "success");
@@ -138,7 +142,7 @@ export default function SalesReport({ from, to, showToast }) {
     if (!data || !data.chart || data.chart.length === 0) return null;
     const width = 800;
     const height = 200;
-    const revenues = data.chart.map(d => Number(d.revenue || 0));
+    const revenues = data.chart.map((d) => Number(d.revenue || 0));
     const maxRevenue = Math.max(...revenues, 15000);
 
     const points = data.chart
@@ -178,38 +182,94 @@ export default function SalesReport({ from, to, showToast }) {
 
   if (loading) {
     return (
-      <div className="reports-loading" style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", minHeight: "300px", gap: "12px" }}>
+      <div
+        className="reports-loading"
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          minHeight: "300px",
+          gap: "12px",
+        }}
+      >
         <Loader2 className="animate-spin" size={36} color="var(--primary)" />
-        <p style={{ color: "var(--text-muted)", fontSize: "14px" }}>Loading sales intelligence data...</p>
+        <p style={{ color: "var(--text-muted)", fontSize: "14px" }}>
+          Loading sales intelligence data...
+        </p>
       </div>
     );
   }
 
   if (errorState) {
     return (
-      <div className="empty-state-card" style={{ padding: "40px", textAlign: "center", border: "1px solid rgba(220,53,69,0.2)", background: "rgba(220,53,69,0.05)", borderRadius: "8px" }}>
-        <AlertTriangle size={36} color="var(--danger)" style={{ marginBottom: "12px" }} />
-        <h4 style={{ fontWeight: 700, color: "var(--danger)" }}>Sales Report Error</h4>
-        <p style={{ color: "var(--text-muted)", marginTop: "6px" }}>{errorState}</p>
+      <div
+        className="empty-state-card"
+        style={{
+          padding: "40px",
+          textAlign: "center",
+          border: "1px solid rgba(220,53,69,0.2)",
+          background: "rgba(220,53,69,0.05)",
+          borderRadius: "8px",
+        }}
+      >
+        <AlertTriangle
+          size={36}
+          color="var(--danger)"
+          style={{ marginBottom: "12px" }}
+        />
+        <h4 style={{ fontWeight: 700, color: "var(--danger)" }}>
+          Sales Report Error
+        </h4>
+        <p style={{ color: "var(--text-muted)", marginTop: "6px" }}>
+          {errorState}
+        </p>
       </div>
     );
   }
 
   if (!data || !data.chart.length) {
     return (
-      <div className="empty-state-card" style={{ padding: "60px 20px", textAlign: "center" }}>
-        <Receipt size={40} color="var(--text-muted)" style={{ marginBottom: "12px" }} />
+      <div
+        className="empty-state-card"
+        style={{ padding: "60px 20px", textAlign: "center" }}
+      >
+        <Receipt
+          size={40}
+          color="var(--text-muted)"
+          style={{ marginBottom: "12px" }}
+        />
         <h4 style={{ fontWeight: 700 }}>No sales data found</h4>
-        <p style={{ color: "var(--text-muted)", marginTop: "6px" }}>There are no invoices generated in the selected range.</p>
+        <p style={{ color: "var(--text-muted)", marginTop: "6px" }}>
+          There are no invoices generated in the selected range.
+        </p>
       </div>
     );
   }
 
   const { summary, trend, topMedicines, paymentDistribution } = data;
   const paymentMethods = [
-    { method: "Cash", percentage: summary.totalRevenue > 0 ? Math.round((paymentDistribution.cash / summary.totalRevenue) * 100) : 0 },
-    { method: "UPI", percentage: summary.totalRevenue > 0 ? Math.round((paymentDistribution.upi / summary.totalRevenue) * 100) : 0 },
-    { method: "Card", percentage: summary.totalRevenue > 0 ? Math.round((paymentDistribution.card / summary.totalRevenue) * 100) : 0 }
+    {
+      method: "Cash",
+      percentage:
+        summary.totalRevenue > 0
+          ? Math.round((paymentDistribution.cash / summary.totalRevenue) * 100)
+          : 0,
+    },
+    {
+      method: "UPI",
+      percentage:
+        summary.totalRevenue > 0
+          ? Math.round((paymentDistribution.upi / summary.totalRevenue) * 100)
+          : 0,
+    },
+    {
+      method: "Card",
+      percentage:
+        summary.totalRevenue > 0
+          ? Math.round((paymentDistribution.card / summary.totalRevenue) * 100)
+          : 0,
+    },
   ];
 
   return (
@@ -222,7 +282,7 @@ export default function SalesReport({ from, to, showToast }) {
             trend: `${trend.revenueTrend >= 0 ? "+" : ""}${Math.round(trend.revenueTrend)}%`,
             dir: trend.revenueTrend < 0 ? "down" : "up",
             icon: TrendingUp,
-            col: "var(--primary)"
+            col: "var(--primary)",
           },
           {
             label: "TOTAL BILLS",
@@ -230,7 +290,7 @@ export default function SalesReport({ from, to, showToast }) {
             trend: "Overall count",
             dir: "up",
             icon: Receipt,
-            col: "var(--info)"
+            col: "var(--info)",
           },
           {
             label: "AVG BILL VALUE",
@@ -238,8 +298,8 @@ export default function SalesReport({ from, to, showToast }) {
             trend: `${trend.avgBillTrend >= 0 ? "+" : ""}${Math.round(trend.avgBillTrend)}%`,
             dir: trend.avgBillTrend < 0 ? "down" : "up",
             icon: Activity,
-            col: "var(--info)"
-          }
+            col: "var(--info)",
+          },
         ].map((kpi, i) => (
           <div key={i} className="report-kpi-card">
             <div className="stat-card-header">
@@ -266,7 +326,9 @@ export default function SalesReport({ from, to, showToast }) {
 
       <div className="line-chart-card">
         <div className="chart-header">
-          <div style={{ fontFamily: "Outfit", fontWeight: 700, fontSize: "16px" }}>
+          <div
+            style={{ fontFamily: "Outfit", fontWeight: 700, fontSize: "16px" }}
+          >
             Revenue Trend
           </div>
         </div>
@@ -283,24 +345,38 @@ export default function SalesReport({ from, to, showToast }) {
               <div
                 key={idx}
                 className="med-revenue-row"
-                onClick={() => showToast(`Opening detail for ${m.medicineName}`, "info")}
+                onClick={() =>
+                  showToast(`Opening detail for ${m.medicineName}`, "info")
+                }
               >
                 <span className="med-name-label">{m.medicineName}</span>
                 <div className="med-bar-bg">
                   <div
                     className="med-bar-fill"
                     style={{
-                      width: `${(m.revenue / (topMedicines[0]?.revenue || 1)) * 100}%`
+                      width: `${(m.revenue / (topMedicines[0]?.revenue || 1)) * 100}%`,
                     }}
                   />
                 </div>
-                <span style={{ fontWeight: 700, fontSize: "13px", width: "80px", textAlign: "right" }}>
+                <span
+                  style={{
+                    fontWeight: 700,
+                    fontSize: "13px",
+                    width: "80px",
+                    textAlign: "right",
+                  }}
+                >
                   ₹{(m.revenue || 0).toLocaleString()}
                 </span>
               </div>
             ))}
             {topMedicines.length === 0 && (
-              <div className="result-meta" style={{ textAlign: "center", padding: "20px" }}>No top medicines for range.</div>
+              <div
+                className="result-meta"
+                style={{ textAlign: "center", padding: "20px" }}
+              >
+                No top medicines for range.
+              </div>
             )}
           </div>
         </div>
@@ -326,7 +402,7 @@ export default function SalesReport({ from, to, showToast }) {
                           ? "var(--primary)"
                           : idx === 1
                             ? "var(--info)"
-                            : "var(--success)"
+                            : "var(--success)",
                     }}
                   />
                   <span>{pm.method?.toUpperCase()}</span>
@@ -362,13 +438,22 @@ export default function SalesReport({ from, to, showToast }) {
                 <td colSpan={2} style={{ textAlign: "right", fontWeight: 800 }}>
                   TOTAL THIS PERIOD:
                 </td>
-                <td style={{ fontWeight: 800, color: "var(--primary)", fontSize: "16px" }}>
+                <td
+                  style={{
+                    fontWeight: 800,
+                    color: "var(--primary)",
+                    fontSize: "16px",
+                  }}
+                >
                   ₹{(summary.totalRevenue || 0).toLocaleString()}
                 </td>
               </tr>
             </tbody>
           </table>
-          <div style={{ padding: "16px", display: "flex", gap: "12px" }} className="no-print">
+          <div
+            style={{ padding: "16px", display: "flex", gap: "12px" }}
+            className="no-print"
+          >
             <button
               className="pos-btn outline"
               style={{ padding: "6px 12px", fontSize: "12px" }}
