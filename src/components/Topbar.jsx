@@ -158,7 +158,7 @@ export default function Topbar({
   const [selectedIndex, setSelectedIndex] = useState(-1);
   const [isLoading, setIsLoading] = useState(false);
   const [notifications, setNotifications] = useState([]);
-  const [setNotificationsLoading] = useState(false);
+  const [notificationsLoading, setNotificationsLoading] = useState(false);
   const searchTimeoutRef = useRef(null);
 
   useEffect(() => {
@@ -180,7 +180,7 @@ export default function Topbar({
       }
     };
     loadNotifications();
-  }, []);
+  }, [setNotificationsLoading]);
 
   const handleSearchChange = (value) => {
     setSearchQuery(value);
