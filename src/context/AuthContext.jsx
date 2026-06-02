@@ -1,10 +1,4 @@
-import {
-  useMemo,
-  useState,
-  useEffect,
-  useCallback,
-  useRef,
-} from "react";
+import { useMemo, useState, useEffect, useCallback, useRef } from "react";
 import api from "../api";
 import axios from "axios";
 import { API_ROUTES } from "../constants/api.routes.js";
@@ -55,7 +49,7 @@ export function AuthProvider({ children }) {
       const tenantData = payload.tenant || null;
       const subData = payload.subscription || null;
 
-      if (userData && (!userData.id)) {
+      if (userData && !userData.id) {
         clearAuthState();
         return null;
       }
@@ -88,12 +82,20 @@ export function AuthProvider({ children }) {
         {
           timeout: 10000,
           headers: {
-            "ngrok-skip-browser-warning": "69420"
-          }
+            "ngrok-skip-browser-warning": "69420",
+          },
         },
       );
 
-      const newToken = res.data?.data?.token || res.data?.token || res.data?.accessToken;
+      const newToken =
+        res.data?.data?.token || res.data?.token || res.data?.accessToken;
+
+      const newRefreshToken =
+        res.data?.data?.refreshToken || res.data?.refreshToken;
+
+      if (newRefreshToken) {
+        setRefreshToken(newRefreshToken);
+      }
       if (!newToken) {
         throw new Error("Token refresh failed: Invalid response from server.");
       }
@@ -101,7 +103,7 @@ export function AuthProvider({ children }) {
       setToken(newToken);
       return newToken;
     } catch (error) {
-      console.error('[AUTH] Token refresh failed:', error.message || error);
+      console.error("[AUTH] Token refresh failed:", error.message || error);
       clearAuthState();
       return null;
     }
@@ -146,30 +148,46 @@ export function AuthProvider({ children }) {
     };
 
     window.addEventListener("auth:sessionExpired", handleSessionExpired);
-    return () => window.removeEventListener("auth:sessionExpired", handleSessionExpired);
+    return () =>
+      window.removeEventListener("auth:sessionExpired", handleSessionExpired);
   }, [clearAuthState]);
 
-  const login = useCallback(async (credentials) => {
-    const res = await api.post("auth/login", credentials);
-    const payload = res.data?.data || res.data;
+  const login = useCallback(
+    async (credentials) => {
+      const res = await api.post("auth/login", credentials);
+      const payload = res.data?.data || res.data;
 
-    if (!payload || !payload.token) {
-      throw new Error("Login failed: Invalid response from server.");
-    }
+      if (!payload || !payload.token) {
+        throw new Error("Login failed: Invalid response from server.");
+      }
 
-    const { token, refreshToken: newRefreshToken, sessionId, user: userData, subscriptionExpired, redirectTo } = payload;
+      const {
+        token,
+        refreshToken: newRefreshToken,
+        sessionId,
+        user: userData,
+        subscriptionExpired,
+        redirectTo,
+      } = payload;
 
-    setToken(token);
-    if (newRefreshToken) setRefreshToken(newRefreshToken);
-    if (sessionId) setSessionId(sessionId);
-    if (userData) {
-      setUser(userData);
-      setUserState(userData);
-    }
+      setToken(token);
+      if (newRefreshToken) setRefreshToken(newRefreshToken);
+      if (sessionId) setSessionId(sessionId);
+      if (userData) {
+        setUser(userData);
+        setUserState(userData);
+      }
 
-    const context = await refreshUser();
-    return { ...context, isNew: false, subscriptionExpired: !!subscriptionExpired, redirectTo };
-  }, [refreshUser]);
+      const context = await refreshUser();
+      return {
+        ...context,
+        isNew: false,
+        subscriptionExpired: !!subscriptionExpired,
+        redirectTo,
+      };
+    },
+    [refreshUser],
+  );
 
   const register = useCallback(async (userData) => {
     const res = await api.post(API_ROUTES.AUTH_REGISTER, userData);
@@ -181,15 +199,18 @@ export function AuthProvider({ children }) {
     return { isNew: true, userId: payload.userId };
   }, []);
 
-  const logout = useCallback(async (options = {}) => {
-    try {
-      if (!options.silent) {
-        await api.post(API_ROUTES.AUTH_LOGOUT).catch(() => {});
+  const logout = useCallback(
+    async (options = {}) => {
+      try {
+        if (!options.silent) {
+          await api.post(API_ROUTES.AUTH_LOGOUT).catch(() => {});
+        }
+      } finally {
+        clearAuthState();
       }
-    } finally {
-      clearAuthState();
-    }
-  }, [clearAuthState]);
+    },
+    [clearAuthState],
+  );
 
   const updateUser = useCallback((updates) => {
     setUserState((prev) => {
@@ -227,7 +248,22 @@ export function AuthProvider({ children }) {
       refreshUser,
       refreshSubscription,
     }),
-    [user, tenant, subscription, loading, restored, toast, showToast, login, register, logout, updateUser, refreshToken, refreshUser, refreshSubscription],
+    [
+      user,
+      tenant,
+      subscription,
+      loading,
+      restored,
+      toast,
+      showToast,
+      login,
+      register,
+      logout,
+      updateUser,
+      refreshToken,
+      refreshUser,
+      refreshSubscription,
+    ],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

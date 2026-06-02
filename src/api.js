@@ -3,6 +3,7 @@ import {
   getToken,
   setToken,
   getRefreshToken,
+  setRefreshToken,
   clearAllAuth,
 } from "./utils/authStorage";
 
@@ -168,6 +169,13 @@ api.interceptors.response.use(
 
         const newToken =
           res.data?.data?.token || res.data?.token || res.data?.accessToken;
+
+        const newRefreshToken =
+          res.data?.data?.refreshToken || res.data?.refreshToken;
+
+        if (newRefreshToken) {
+          setRefreshToken(newRefreshToken);
+        }
 
         if (!newToken) {
           throw new Error("No token in refresh response");
