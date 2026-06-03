@@ -166,7 +166,7 @@ function AppContent() {
       return;
     try {
       const res = await api.get(API_ROUTES.INVENTORY_MEDICINES, { params: { limit: 100 } });
-      setMedicines(normalizeArrayResponse(res, 'medicines'));
+      setMedicines(normalizeArrayResponse(res));
       setLastSync(new Date());
     } catch {
       showToast("Failed to fetch inventory", "error");

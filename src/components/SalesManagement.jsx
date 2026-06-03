@@ -77,7 +77,7 @@ export default function SalesManagement({ showToast }) {
         api.get(API_ROUTES.SALES_HOURLY),
       ]);
 
-      const salesData = normalizeArrayResponse(salesRes, "sales");
+      const salesData = normalizeArrayResponse(salesRes);
       const returnsData = normalizeArrayResponse(returnsRes);
       const hourly = normalizeArrayResponse(trendsRes);
 
@@ -118,7 +118,7 @@ export default function SalesManagement({ showToast }) {
 
         if (!mounted) return;
 
-        const salesData = normalizeArrayResponse(salesRes, "sales");
+        const salesData = normalizeArrayResponse(salesRes);
         const returnsData = normalizeArrayResponse(returnsRes);
         const hourly = normalizeArrayResponse(trendsRes);
 

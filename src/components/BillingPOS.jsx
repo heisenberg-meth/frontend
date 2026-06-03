@@ -272,7 +272,9 @@ export default function BillingPOS({ showToast: parentShowToast }) {
 
         if (!mounted) return;
 
-        const normalized = normalizeArrayResponse(res).map(normalizeInvoice);
+        const normalized = normalizeArrayResponse(res, "invoices").map(
+          normalizeInvoice,
+        );
         setBills(normalized);
       } catch (err) {
         console.error(err);
@@ -867,7 +869,9 @@ ${printDiscount > 0 ? `<div style="display:flex;justify-content:space-between"><
           status: "PAID",
         },
       });
-      const newBills = (res.data?.data || res.data || []).map(normalizeInvoice);
+      const newBills = normalizeArrayResponse(res, "invoices").map(
+        normalizeInvoice,
+      );
       if (newBills.length === 0) {
         setAllBillsLoaded(true);
       } else {
@@ -1572,7 +1576,14 @@ ${printDiscount > 0 ? `<div style="display:flex;justify-content:space-between"><
                     );
                     const rawInv = res.data?.data || res.data;
                     const newInv = normalizeInvoice(rawInv);
-                    setActiveInvoice(newInv);
+
+                    const invoiceWithPatient = {
+                      ...newInv,
+                      patientName: payload.patientName,
+                      patientPhone: payload.patientPhone,
+                    };
+
+                    setActiveInvoice(invoiceWithPatient);
                     setBills((prev) => [
                       normalizeBill({
                         ...newInv,
