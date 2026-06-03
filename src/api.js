@@ -155,9 +155,11 @@ api.interceptors.response.use(
       isRefreshing = true;
 
       try {
+        // BUG 19 FIX: Send refresh token in body to prevent Safari ITP blocking cross-origin cookies
+        const currentRefreshToken = getRefreshToken ? getRefreshToken() : null;
         const res = await axios.post(
           `${getBaseUrl()}/auth/refresh`,
-          {},
+          { refreshToken: currentRefreshToken },
           {
             withCredentials: true,
             timeout: 10000,

@@ -31,7 +31,6 @@ import { useAuth } from "../hooks/useAuth";
 import { normalizeInvoice } from "../utils/billingNormalizer";
 import "../styles/BillingPOS.css";
 
-/* ─── Number to words helper ── */
 function numberToWords(n) {
   if (n === 0) return "Zero";
   const ones = [
@@ -171,21 +170,25 @@ const resolvePaymentMethod = (bill) => {
   return bill.paymentMode || bill.paymentMethod || "CASH";
 };
 
-const normalizeBill = (bill) => ({
-  ...bill,
-  patient: resolveInvoiceField(bill, "patientName", "Walk-in Customer"),
-  phone: resolveInvoiceField(bill, "patientPhone", "-"),
-  invoiceNumber: resolveInvoiceField(bill, "invoiceNumber", bill.id),
-  itemsList: resolveInvoiceItems(bill),
-  subtotal: safeNumber(resolveInvoiceField(bill, "subtotal", 0)),
-  cgst: safeNumber(resolveInvoiceField(bill, "cgst", 0)),
-  sgst: safeNumber(resolveInvoiceField(bill, "sgst", 0)),
-  discount: safeNumber(resolveInvoiceField(bill, "discount", 0)),
-  total: safeNumber(resolveInvoiceField(bill, "total", 0)),
-  amount: safeNumber(resolveInvoiceField(bill, "total", 0)),
-  date: resolveInvoiceField(bill, "date", ""),
-  paymentMethod: resolvePaymentMethod(bill),
-});
+const normalizeBill = (bill) => {
+  const resolvedItems = resolveInvoiceItems(bill);
+  return {
+    ...bill,
+    patient: resolveInvoiceField(bill, "patientName", "Walk-in Customer"),
+    phone: resolveInvoiceField(bill, "patientPhone", "-"),
+    invoiceNumber: resolveInvoiceField(bill, "invoiceNumber", bill.id),
+    items: resolvedItems,
+    itemsList: resolvedItems,
+    subtotal: safeNumber(resolveInvoiceField(bill, "subtotal", 0)),
+    cgst: safeNumber(resolveInvoiceField(bill, "cgst", 0)),
+    sgst: safeNumber(resolveInvoiceField(bill, "sgst", 0)),
+    discount: safeNumber(resolveInvoiceField(bill, "discount", 0)),
+    total: safeNumber(resolveInvoiceField(bill, "total", 0)),
+    amount: safeNumber(resolveInvoiceField(bill, "total", 0)),
+    date: resolveInvoiceField(bill, "date", ""),
+    paymentMethod: resolvePaymentMethod(bill),
+  };
+};
 
 export default function BillingPOS({ showToast: parentShowToast }) {
   const { user } = useAuth();
@@ -266,8 +269,9 @@ export default function BillingPOS({ showToast: parentShowToast }) {
 
     const loadBills = async () => {
       try {
+        const todayDate = new Date().toISOString().split("T")[0];
         const res = await api.get(API_ROUTES.BILLING_INVOICES, {
-          params: { status: "PAID" },
+          params: { status: "PAID", fromDate: todayDate, toDate: todayDate },
         });
 
         if (!mounted) return;
@@ -336,7 +340,7 @@ export default function BillingPOS({ showToast: parentShowToast }) {
         params: { phone: patient.phone },
       });
 
-      const results = res.data?.data || res.data || [];
+      const results = normalizeArrayResponse(res, "patients");
       if (results.length > 0) {
         setPatientResults(results);
         setShowPatientDropdown(true);
@@ -529,6 +533,7 @@ export default function BillingPOS({ showToast: parentShowToast }) {
         isDraft: true,
         branchId: user.branchId,
       };
+      console.log("[INVOICE PAYLOAD]", JSON.stringify(payload, null, 2));
       const res = await api.post("billing/invoices/draft", payload);
       const saved = res.data?.data || res.data;
       if (saved?.id) {
@@ -694,9 +699,7 @@ ${printDiscount > 0 ? `<div style="display:flex;justify-content:space-between"><
       return;
     }
 
-    const isDraft = activeInvoice?.status === "DRAFT";
-    if (isDraft) setIsDrafting(true);
-    else setInvoiceSaving(true);
+    setWhatsappLoading(true);
 
     const phone = (isWalkIn ? "" : patient.phone).replace(/\D/g, "");
     const cleaned = phone.replace(/^(91|0)/, "");
@@ -977,7 +980,6 @@ ${printDiscount > 0 ? `<div style="display:flex;justify-content:space-between"><
         </div>
       </div>
 
-      {/* ── Stat Cards ── */}
       <div className="pos-stats-row">
         {[
           {
@@ -1129,11 +1131,15 @@ ${printDiscount > 0 ? `<div style="display:flex;justify-content:space-between"><
                       className="patient-result-row"
                       onClick={() => selectPatient(p)}
                     >
-                      <span className="patient-result-name">{p.name}</span>
-                      <span className="patient-result-phone">{p.phone}</span>
-                      <span className="patient-result-visit">
-                        last visit: {p.lastVisit} days ago
+                      <span className="patient-result-name">
+                        {p.fullName || p.name}
                       </span>
+                      <span className="patient-result-phone">{p.phone}</span>
+                      {p.lastVisit != null && (
+                        <span className="patient-result-visit">
+                          last visit: {p.lastVisit} days ago
+                        </span>
+                      )}
                     </div>
                   ))}
                 </motion.div>
@@ -1154,16 +1160,9 @@ ${printDiscount > 0 ? `<div style="display:flex;justify-content:space-between"><
                   gap: "12px",
                 }}
               >
-                {/* <button
-                  className="pos-btn outline"
-                  style={{ padding: "6px 12px", fontSize: "12px" }}
-                >
-                  <FileText size={14} /> Link Prescription
-                </button> */}
-
                 {loyaltyProfile?.accountStatus === "BLOCKED" && (
                   <div style={{ marginTop: 4, fontWeight: 800 }}>
-                    ⚠️ CREDIT ACCOUNT BLOCKED
+                    CREDIT ACCOUNT BLOCKED
                   </div>
                 )}
               </div>
@@ -1270,6 +1269,8 @@ ${printDiscount > 0 ? `<div style="display:flex;justify-content:space-between"><
                   <th>Item</th>
                   <th>Qty</th>
                   <th>MRP</th>
+                  <th>Disc%</th>
+                  <th>GST%</th>
                   <th>Total</th>
                   <th></th>
                 </tr>
@@ -1464,8 +1465,6 @@ ${printDiscount > 0 ? `<div style="display:flex;justify-content:space-between"><
                 {numberToWords(Math.round(grandTotal))}
               </div>
             </div>
-
-            {/* ── Action Buttons ── */}
             <div
               style={{
                 marginTop: "32px",
@@ -1570,6 +1569,10 @@ ${printDiscount > 0 ? `<div style="display:flex;justify-content:space-between"><
                       discountAmount: discountAmount,
                       branchId: user.branchId,
                     };
+                    console.log(
+                      "[INVOICE PAYLOAD]",
+                      JSON.stringify(payload, null, 2),
+                    );
                     const res = await api.post(
                       API_ROUTES.BILLING_INVOICES,
                       payload,
@@ -1651,7 +1654,15 @@ ${printDiscount > 0 ? `<div style="display:flex;justify-content:space-between"><
               >
                 <span
                   className="view-all-link"
-                  onClick={() => setBills([])}
+                  onClick={() => {
+                    if (
+                      window.confirm(
+                        "Clear all loaded bills from view? This will not delete any data.",
+                      )
+                    ) {
+                      setBills([]);
+                    }
+                  }}
                   style={{ color: "var(--danger)" }}
                 >
                   Clear All
@@ -1898,7 +1909,6 @@ ${printDiscount > 0 ? `<div style="display:flex;justify-content:space-between"><
         </div>
       </div>
 
-      {/* --- INVOICE PREVIEW MODAL --- */}
       <AnimatePresence>
         {showPreview && activeInvoice && (
           <div
@@ -2141,7 +2151,6 @@ ${printDiscount > 0 ? `<div style="display:flex;justify-content:space-between"><
         )}
       </AnimatePresence>
 
-      {/* Close confirmation modal */}
       <AnimatePresence>
         {showCloseConfirm && (
           <div
@@ -2197,10 +2206,6 @@ ${printDiscount > 0 ? `<div style="display:flex;justify-content:space-between"><
           </div>
         )}
       </AnimatePresence>
-
-      {/* ═══════════════════════════════════════════════ */}
-      {/* FIX 6: All Bills Modal */}
-      {/* ═══════════════════════════════════════════════ */}
       <AnimatePresence>
         {showAllBillsModal && (
           <div
@@ -2239,13 +2244,18 @@ ${printDiscount > 0 ? `<div style="display:flex;justify-content:space-between"><
                   </button>
                 </div>
                 <div className="filter-pills">
-                  {["All", "Paid", "Draft", "Returned"].map((f) => (
+                  {[
+                    { label: "All", value: "All" },
+                    { label: "Paid", value: "PAID" },
+                    { label: "Draft", value: "DRAFT" },
+                    { label: "Returned", value: "RETURNED" },
+                  ].map((f) => (
                     <button
-                      key={f}
-                      className={`filter-pill ${allBillsFilter === f ? "active" : ""}`}
-                      onClick={() => setAllBillsFilter(f)}
+                      key={f.value}
+                      className={`filter-pill ${allBillsFilter === f.value ? "active" : ""}`}
+                      onClick={() => setAllBillsFilter(f.value)}
                     >
-                      {f}
+                      {f.label}
                     </button>
                   ))}
                 </div>

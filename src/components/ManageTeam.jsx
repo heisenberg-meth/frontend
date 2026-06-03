@@ -35,6 +35,7 @@ import {
   removeTeamMember,
   uploadTeamAvatar,
 } from "../services/profile.service";
+import { getBackendOrigin } from "../api";
 import "../styles/ManageTeam.css";
 
 export default function ManageTeam({ user, showToast }) {
@@ -48,7 +49,6 @@ export default function ManageTeam({ user, showToast }) {
     shift: "Day (7A-3P)",
   });
 
-  /* Modals State */
   const [showAvatarModal, setShowAvatarModal] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [newCredentials, setNewCredentials] = useState(null);
@@ -173,7 +173,6 @@ export default function ManageTeam({ user, showToast }) {
 
   return (
     <div className="team-container-v2">
-      {/* ── Editorial Header ── */}
       <div className="team-header-v2">
         <div className="header-content">
           <div className="clinical-badge-row">
@@ -205,9 +204,7 @@ export default function ManageTeam({ user, showToast }) {
       </div>
 
       <div className="team-grid">
-        {/* ── LEFT: ONBOARDING & SECURITY ── */}
         <div className="team-left-stack">
-          {/* Onboarding Card */}
           <div className="team-card onboard">
             <div className="card-header">
               <div className="header-title">
@@ -281,7 +278,6 @@ export default function ManageTeam({ user, showToast }) {
             </form>
           </div>
 
-          {/* Biometric Status */}
           <div className="team-card security-mfa">
             <div className="security-bg" />
             <div className="security-content">
@@ -301,7 +297,6 @@ export default function ManageTeam({ user, showToast }) {
           </div>
         </div>
 
-        {/* ── CENTER: STAFF REGISTRY ── */}
         <div className="team-card registry">
           <div className="card-header">
             <div className="header-title">
@@ -351,8 +346,9 @@ export default function ManageTeam({ user, showToast }) {
                           >
                             <img
                               src={
-                                m.avatar ||
-                                `https://ui-avatars.com/api/?name=${m.fullName || m.username}&background=4FDBC8&color=0A0F1C`
+                                m.avatar
+                                  ? `${getBackendOrigin()}${m.avatar}`
+                                  : `https://ui-avatars.com/api/?name=${m.fullName || m.username}&background=4FDBC8&color=0A0F1C`
                               }
                               alt=""
                               style={{
@@ -458,7 +454,6 @@ export default function ManageTeam({ user, showToast }) {
         </div>
       </div>
 
-      {/* ── Bottom Section: Logs & Compliance ── */}
       <div className="team-footer-row">
         <div className="team-card logs">
           <div className="card-header">
@@ -517,7 +512,6 @@ export default function ManageTeam({ user, showToast }) {
         </div>
       </div>
 
-      {/* ── Modals ── */}
       <AnimatePresence>
         {showAvatarModal && (
           <div className="modal-overlay">
