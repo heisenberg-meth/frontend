@@ -756,19 +756,13 @@ select.pos-input option {
   flex: 1;
 }
 
-/* ─── No Print Class ─── */
 .no-print {
-  /* Hidden during print via @media print */
 }
 
-/* ─── Confirm Modal ─── */
 .confirm-modal {
   width: 420px !important;
 }
 
-/* ═══════════════════════════════════════════════ */
-/* FIX 6: All Bills Modal */
-/* ═══════════════════════════════════════════════ */
 .all-bills-modal {
   width: 680px !important;
   max-height: 85vh;

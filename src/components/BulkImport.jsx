@@ -57,17 +57,17 @@ export default function BulkImport({ fetchData, showToast }) {
   const [showAddSupplierModal, setShowAddSupplierModal] = useState(false);
   const [showSaveMappingModal, setShowSaveMappingModal] = useState(false);
   const [showLoadMappingModal, setShowLoadMappingModal] = useState(false);
-  const [setImportJobId] = useState(null);
-  const [setImportSummary] = useState(null);
+  const [importJobId, setImportJobId] = useState(null);
+  const [importSummary , setImportSummary] = useState(null);
   const [savedTemplates, setSavedTemplates] = useState(() => {
-  try {
-    const stored = localStorage.getItem("bulkImportTemplates");
-    return stored ? JSON.parse(stored) : [];
-  } catch (err) {
-    console.log(err);
-    return [];
-  }
-});
+    try {
+      const stored = localStorage.getItem("bulkImportTemplates");
+      return stored ? JSON.parse(stored) : [];
+    } catch (err) {
+      console.log(err);
+      return [];
+    }
+  });
   const [templateName, setTemplateName] = useState("");
   const [templateDesc, setTemplateDesc] = useState("");
   const [templateDefault, setTemplateDefault] = useState(false);
@@ -83,39 +83,54 @@ export default function BulkImport({ fetchData, showToast }) {
   const [parsedRows, setParsedRows] = useState([]);
   const [commitResult, setCommitResult] = useState(null);
 
-  const autoMapHeaders = useCallback((fileHeaders) => {
-    const newMapping = {};
-    const usedHeaders = new Set();
-    const fieldKeywords = {
-      nameColumn: ["name", "med", "medicine", "drug", "item"],
-      qtyColumn: ["qty", "quantity", "stock", "units", "count"],
-      expiryColumn: ["expiry", "exp", "date", "valid"],
-      priceColumn: ["price", "rate", "cost", "inr"],
-      batchColumn: ["batch", "lot", "no", "code"],
-      barcodeColumn: ["barcode", "upc", "ean", "sku"]
-    };
+  const autoMapHeaders = useCallback(
+    (fileHeaders) => {
+      const newMapping = {};
+      const usedHeaders = new Set();
+      const fieldKeywords = {
+        nameColumn: ["name", "med", "medicine", "drug", "item"],
+        qtyColumn: ["qty", "quantity", "stock", "units", "count"],
+        expiryColumn: ["expiry", "exp", "date", "valid"],
+        priceColumn: ["price", "rate", "cost", "inr"],
+        batchColumn: ["batch", "lot", "no", "code"],
+        barcodeColumn: ["barcode", "upc", "ean", "sku"],
+      };
 
-    if (fileHeaders.length <= 1) {
-      showToast("Import file has no column delimiters. Use a comma-separated CSV.", "error");
-      return;
-    }
-
-    const fieldOrder = ["nameColumn", "qtyColumn", "expiryColumn", "priceColumn", "batchColumn", "barcodeColumn"];
-
-    fieldOrder.forEach((field) => {
-      const match = fileHeaders.find((header) => {
-        if (usedHeaders.has(header)) return false;
-        const lower = header.toLowerCase();
-        return fieldKeywords[field].some((keyword) => lower.includes(keyword));
-      });
-      if (match) {
-        newMapping[field] = match;
-        usedHeaders.add(match);
+      if (fileHeaders.length <= 1) {
+        showToast(
+          "Import file has no column delimiters. Use a comma-separated CSV.",
+          "error",
+        );
+        return;
       }
-    });
 
-    setMapping(newMapping);
-  }, [showToast]);
+      const fieldOrder = [
+        "nameColumn",
+        "qtyColumn",
+        "expiryColumn",
+        "priceColumn",
+        "batchColumn",
+        "barcodeColumn",
+      ];
+
+      fieldOrder.forEach((field) => {
+        const match = fileHeaders.find((header) => {
+          if (usedHeaders.has(header)) return false;
+          const lower = header.toLowerCase();
+          return fieldKeywords[field].some((keyword) =>
+            lower.includes(keyword),
+          );
+        });
+        if (match) {
+          newMapping[field] = match;
+          usedHeaders.add(match);
+        }
+      });
+
+      setMapping(newMapping);
+    },
+    [showToast],
+  );
 
   const getMappedMedicines = useCallback(() => {
     const result = parsedRows.map((row) => ({
@@ -129,12 +144,15 @@ export default function BulkImport({ fetchData, showToast }) {
 
     if (result.length > 0) {
       const vals = Object.values(result[0]);
-      const uniqueVals = new Set(vals.filter(v => v !== ""));
+      const uniqueVals = new Set(vals.filter((v) => v !== ""));
       if (uniqueVals.size === 1 && result[0].name !== "") {
-        console.error("[BulkImport] CRITICAL: All fields have identical value. Mapping is broken.", {
-          mapping,
-          sampleRow: parsedRows[0],
-        });
+        console.error(
+          "[BulkImport] CRITICAL: All fields have identical value. Mapping is broken.",
+          {
+            mapping,
+            sampleRow: parsedRows[0],
+          },
+        );
       }
     }
 
@@ -154,7 +172,9 @@ export default function BulkImport({ fetchData, showToast }) {
       }
     };
     load();
-    return () => { active = false; };
+    return () => {
+      active = false;
+    };
   }, []);
 
   useEffect(() => {
@@ -176,7 +196,9 @@ export default function BulkImport({ fetchData, showToast }) {
       };
       fetchHist();
     }
-    return () => { active = false; };
+    return () => {
+      active = false;
+    };
   }, [showHistoryDrawer, showToast]);
 
   const [isAnalyzing, setIsAnalyzing] = useState(false);
@@ -193,14 +215,17 @@ export default function BulkImport({ fetchData, showToast }) {
 
     setIsAnalyzing(true);
     const medicines = getMappedMedicines();
-    console.log("[BulkImport] Analyze payload:", JSON.stringify(medicines.slice(0, 2), null, 2));
+    console.log(
+      "[BulkImport] Analyze payload:",
+      JSON.stringify(medicines.slice(0, 2), null, 2),
+    );
     try {
       const res = await api.post("/import/bulk", {
         medicines,
         supplier: selectedSupplier,
         duplicateStrategy,
         barcodeOptions,
-        dryRun: true
+        dryRun: true,
       });
       if (res.data?.success) {
         setDuplicateResults(res.data.summary);
@@ -214,7 +239,15 @@ export default function BulkImport({ fetchData, showToast }) {
     } finally {
       setIsAnalyzing(false);
     }
-  }, [file, getMappedMedicines, selectedSupplier, duplicateStrategy, barcodeOptions, mapping, showToast]);
+  }, [
+    file,
+    getMappedMedicines,
+    selectedSupplier,
+    duplicateStrategy,
+    barcodeOptions,
+    mapping,
+    showToast,
+  ]);
 
   useEffect(() => {
     let active = true;
@@ -222,14 +255,17 @@ export default function BulkImport({ fetchData, showToast }) {
       const initScan = async () => {
         setIsAnalyzing(true);
         const medicines = getMappedMedicines();
-        console.log("[BulkImport] Auto-scan sample:", JSON.stringify(medicines.slice(0, 2), null, 2));
+        console.log(
+          "[BulkImport] Auto-scan sample:",
+          JSON.stringify(medicines.slice(0, 2), null, 2),
+        );
         try {
           const res = await api.post("/import/bulk", {
             medicines,
             supplier: selectedSupplier,
             duplicateStrategy,
             barcodeOptions,
-            dryRun: true
+            dryRun: true,
           });
           if (active && res.data?.success) {
             setDuplicateResults(res.data.summary);
@@ -242,8 +278,18 @@ export default function BulkImport({ fetchData, showToast }) {
       };
       initScan();
     }
-    return () => { active = false; };
-  }, [barcodeOptions, duplicateStrategy, file, getMappedMedicines, mapping.nameColumn, parsedRows.length, selectedSupplier]);
+    return () => {
+      active = false;
+    };
+  }, [
+    barcodeOptions,
+    duplicateStrategy,
+    file,
+    getMappedMedicines,
+    mapping.nameColumn,
+    parsedRows.length,
+    selectedSupplier,
+  ]);
 
   const onDrop = useCallback(
     async (files) => {
@@ -270,14 +316,20 @@ export default function BulkImport({ fetchData, showToast }) {
               });
 
               if (parsedData.length > 10000) {
-                showToast(`Import exceeds maximum supported size (10,000 rows). Your file has ${parsedData.length.toLocaleString()} rows. Please split the file or reduce the size.`, "error");
+                showToast(
+                  `Import exceeds maximum supported size (10,000 rows). Your file has ${parsedData.length.toLocaleString()} rows. Please split the file or reduce the size.`,
+                  "error",
+                );
                 setFile(null);
                 return;
               }
 
               if (parsedHeaders.length <= 1 && parsedData.length > 0) {
                 const val = Object.values(parsedData[0])[0] || "";
-                showToast(`CSV has no column delimiters. Only 1 column detected. Value: "${val.slice(0, 60)}..."`, "error");
+                showToast(
+                  `CSV has no column delimiters. Only 1 column detected. Value: "${val.slice(0, 60)}..."`,
+                  "error",
+                );
                 return;
               }
 
@@ -290,7 +342,7 @@ export default function BulkImport({ fetchData, showToast }) {
             error: (err) => {
               console.error("[BulkImport] PapaParse Error:", err);
               showToast("Failed to parse CSV file", "error");
-            }
+            },
           });
         } else if (f.name.endsWith(".xlsx")) {
           const reader = new FileReader();
@@ -299,10 +351,13 @@ export default function BulkImport({ fetchData, showToast }) {
             const workbook = new ExcelJS.Workbook();
             await workbook.xlsx.load(buffer);
             const worksheet = workbook.getWorksheet(1);
-            
+
             const totalRowsCount = worksheet.rowCount - 1;
             if (totalRowsCount > 10000) {
-              showToast(`Import exceeds maximum supported size (10,000 rows). Your file has ${totalRowsCount.toLocaleString()} rows. Please split the file or reduce the size.`, "error");
+              showToast(
+                `Import exceeds maximum supported size (10,000 rows). Your file has ${totalRowsCount.toLocaleString()} rows. Please split the file or reduce the size.`,
+                "error",
+              );
               setFile(null);
               return;
             }
@@ -312,19 +367,22 @@ export default function BulkImport({ fetchData, showToast }) {
             worksheet.eachRow({ includeEmpty: false }, (row, rowNumber) => {
               if (rowNumber === 1) {
                 row.eachCell({ includeEmpty: true }, (cell) => {
-                  parsedHeaders.push(String(cell.value || '').trim());
+                  parsedHeaders.push(String(cell.value || "").trim());
                 });
               } else {
                 const rowObj = {};
                 parsedHeaders.forEach((header, index) => {
                   const cell = row.getCell(index + 1);
                   let val = cell.value;
-                  if (val && typeof val === 'object') {
+                  if (val && typeof val === "object") {
                     if (val.result !== undefined) val = val.result;
-                    else if (val.richText) val = val.richText.map(t => t.text).join('');
-                    else if (val instanceof Date) val = val.toISOString().split('T')[0];
+                    else if (val.richText)
+                      val = val.richText.map((t) => t.text).join("");
+                    else if (val instanceof Date)
+                      val = val.toISOString().split("T")[0];
                   }
-                  rowObj[header] = val !== null && val !== undefined ? String(val).trim() : '';
+                  rowObj[header] =
+                    val !== null && val !== undefined ? String(val).trim() : "";
                 });
                 parsedData.push(rowObj);
               }
@@ -342,7 +400,7 @@ export default function BulkImport({ fetchData, showToast }) {
         showToast("Failed to parse file", "error");
       }
     },
-    [showToast, autoMapHeaders]
+    [showToast, autoMapHeaders],
   );
 
   const { getRootProps, getInputProps, isDragActive, open } = useDropzone({
@@ -390,11 +448,14 @@ export default function BulkImport({ fetchData, showToast }) {
   };
 
   const handleViewImport = (item) => {
-     showToast(`Viewing ${item?.id || "Import"}`, "info");
+    showToast(`Viewing ${item?.id || "Import"}`, "info");
   };
 
   const handleDownloadImport = (item) => {
-    showToast(`Downloading ${item?.name || item?.fileName || "Report"}`, "success");
+    showToast(
+      `Downloading ${item?.name || item?.fileName || "Report"}`,
+      "success",
+    );
   };
 
   const saveTemplate = () => {
@@ -465,7 +526,7 @@ export default function BulkImport({ fetchData, showToast }) {
         supplier: selectedSupplier,
         duplicateStrategy,
         barcodeOptions,
-        dryRun: false
+        dryRun: false,
       });
 
       if (res.data?.success) {
@@ -474,7 +535,10 @@ export default function BulkImport({ fetchData, showToast }) {
         setCommitResult(res.data.summary || null);
         const imported = res.data.summary?.importedCount ?? 0;
         const skipped = res.data.summary?.skippedCount ?? 0;
-        showToast(`Import complete: ${imported} imported, ${skipped} skipped`, imported > 0 ? "success" : "warning");
+        showToast(
+          `Import complete: ${imported} imported, ${skipped} skipped`,
+          imported > 0 ? "success" : "warning",
+        );
         if (fetchData) fetchData();
       } else {
         throw new Error(res.data?.message || "Failed to commit import");
@@ -547,7 +611,10 @@ export default function BulkImport({ fetchData, showToast }) {
           }
 
           const { processed, total, status, summary } = data;
-          const pct = total > 0 ? Math.min(90, Math.round((processed / total) * 85) + 10) : 50;
+          const pct =
+            total > 0
+              ? Math.min(90, Math.round((processed / total) * 85) + 10)
+              : 50;
           setImportProgress(pct);
 
           if (status === "completed" || status === "complete") {
@@ -557,7 +624,10 @@ export default function BulkImport({ fetchData, showToast }) {
             setImportSummary(summary);
             const imported = summary?.importedCount ?? summary?.created ?? 0;
             const skipped = summary?.skippedCount ?? summary?.skipped ?? 0;
-            showToast(`Import complete: ${imported} imported, ${skipped} skipped`, imported > 0 ? "success" : "warning");
+            showToast(
+              `Import complete: ${imported} imported, ${skipped} skipped`,
+              imported > 0 ? "success" : "warning",
+            );
             resolve();
           } else if (status === "failed" || status === "error") {
             setImportStatus("idle");
@@ -576,7 +646,6 @@ export default function BulkImport({ fetchData, showToast }) {
           }
           setTimeout(poll, 3000);
           console.log(err);
-          
         }
       };
       poll();
@@ -647,13 +716,15 @@ export default function BulkImport({ fetchData, showToast }) {
               <h2>Import Complete!</h2>
               <p>
                 {commitResult?.importedCount ?? 0} records imported
-                {commitResult?.skippedCount > 0 && ` · ${commitResult.skippedCount} skipped`}
-                {commitResult?.newBatchesCount > 0 && ` · ${commitResult.newBatchesCount} new batches`}
+                {commitResult?.skippedCount > 0 &&
+                  ` · ${commitResult.skippedCount} skipped`}
+                {commitResult?.newBatchesCount > 0 &&
+                  ` · ${commitResult.newBatchesCount} new batches`}
               </p>
             </div>
           </div>
 
-          {(commitResult?.errors?.length > 0) && (
+          {commitResult?.errors?.length > 0 && (
             <div className="error-details-section">
               <h3>{commitResult.errors.length} Records Failed</h3>
               <table className="results-table">
@@ -674,7 +745,12 @@ export default function BulkImport({ fetchData, showToast }) {
                       <td>
                         <button
                           className="micro-link"
-                          onClick={() => showToast(`Error on row ${err.row}: ${err.reason}`, "info")}
+                          onClick={() =>
+                            showToast(
+                              `Error on row ${err.row}: ${err.reason}`,
+                              "info",
+                            )
+                          }
                         >
                           Details
                         </button>
@@ -687,10 +763,7 @@ export default function BulkImport({ fetchData, showToast }) {
           )}
 
           <div className="results-actions">
-            <button
-              className="pos-btn teal"
-              onClick={() => navigate("/stock")}
-            >
+            <button className="pos-btn teal" onClick={() => navigate("/stock")}>
               View Stock
             </button>
             <button
@@ -718,7 +791,8 @@ export default function BulkImport({ fetchData, showToast }) {
           </div>
 
           <p className="current-item-text">
-            Processing {parsedRows.length} records ({importProgress}% complete)...
+            Processing {parsedRows.length} records ({importProgress}%
+            complete)...
           </p>
 
           <button
@@ -767,7 +841,10 @@ export default function BulkImport({ fetchData, showToast }) {
 
                       <div className="parse-status">
                         <CheckCircle2 size={14} />
-                        <span>Parsed {parsedRows.length} rows · {headers.length} columns detected</span>
+                        <span>
+                          Parsed {parsedRows.length} rows · {headers.length}{" "}
+                          columns detected
+                        </span>
                       </div>
 
                       <div className="data-preview-wrap">
@@ -795,7 +872,8 @@ export default function BulkImport({ fetchData, showToast }) {
                           </table>
                         </div>
                         <div className="preview-footer">
-                          Showing first {Math.min(5, parsedRows.length)} of {parsedRows.length} rows
+                          Showing first {Math.min(5, parsedRows.length)} of{" "}
+                          {parsedRows.length} rows
                         </div>
                       </div>
                     </div>
@@ -1020,8 +1098,8 @@ export default function BulkImport({ fetchData, showToast }) {
                     Load Template
                   </button>
                 </div>
+              </div>
             </div>
-          </div>
           </div>
 
           {/* ── DUPLICATE DETECTION PANEL ── */}
@@ -1166,35 +1244,76 @@ export default function BulkImport({ fetchData, showToast }) {
                     </button>
                   </div>
                 </div>
-                {duplicateResults.errors && duplicateResults.errors.length > 0 && (
-                  <div className="validation-errors-section" style={{ marginTop: "24px", padding: "16px", border: "1px solid rgba(239, 68, 68, 0.2)", borderRadius: "8px", background: "rgba(239, 68, 68, 0.02)" }}>
-                    <h4 style={{ color: "var(--danger)", display: "flex", alignItems: "center", gap: "8px", marginBottom: "12px" }}>
-                      <X size={16} /> {duplicateResults.errors.length} Validation Errors (These rows will be skipped)
-                    </h4>
-                    <div className="table-overflow" style={{ maxHeight: "200px" }}>
-                      <table className="duplicate-list-table">
-                        <thead>
-                          <tr>
-                            <th>ROW #</th>
-                            <th>MEDICATION NAME</th>
-                            <th>FIELD / COLUMN</th>
-                            <th>ERROR DETAILS</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {duplicateResults.errors.map((err, i) => (
-                            <tr key={i} className="conflict-row">
-                              <td>Row {err.row}</td>
-                              <td className="bold">{err.name || "Unknown"}</td>
-                              <td><span className="match-badge danger" style={{ color: "var(--danger)", background: "rgba(239, 68, 68, 0.1)", padding: "2px 6px", borderRadius: "4px" }}>{err.field}</span></td>
-                              <td className="diff" style={{ color: "var(--danger)" }}>{err.message}</td>
+                {duplicateResults.errors &&
+                  duplicateResults.errors.length > 0 && (
+                    <div
+                      className="validation-errors-section"
+                      style={{
+                        marginTop: "24px",
+                        padding: "16px",
+                        border: "1px solid rgba(239, 68, 68, 0.2)",
+                        borderRadius: "8px",
+                        background: "rgba(239, 68, 68, 0.02)",
+                      }}
+                    >
+                      <h4
+                        style={{
+                          color: "var(--danger)",
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "8px",
+                          marginBottom: "12px",
+                        }}
+                      >
+                        <X size={16} /> {duplicateResults.errors.length}{" "}
+                        Validation Errors (These rows will be skipped)
+                      </h4>
+                      <div
+                        className="table-overflow"
+                        style={{ maxHeight: "200px" }}
+                      >
+                        <table className="duplicate-list-table">
+                          <thead>
+                            <tr>
+                              <th>ROW #</th>
+                              <th>MEDICATION NAME</th>
+                              <th>FIELD / COLUMN</th>
+                              <th>ERROR DETAILS</th>
                             </tr>
-                          ))}
-                        </tbody>
-                      </table>
+                          </thead>
+                          <tbody>
+                            {duplicateResults.errors.map((err, i) => (
+                              <tr key={i} className="conflict-row">
+                                <td>Row {err.row}</td>
+                                <td className="bold">
+                                  {err.name || "Unknown"}
+                                </td>
+                                <td>
+                                  <span
+                                    className="match-badge danger"
+                                    style={{
+                                      color: "var(--danger)",
+                                      background: "rgba(239, 68, 68, 0.1)",
+                                      padding: "2px 6px",
+                                      borderRadius: "4px",
+                                    }}
+                                  >
+                                    {err.field}
+                                  </span>
+                                </td>
+                                <td
+                                  className="diff"
+                                  style={{ color: "var(--danger)" }}
+                                >
+                                  {err.message}
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
                     </div>
-                  </div>
-                )}
+                  )}
               </motion.div>
             )}
           </AnimatePresence>
@@ -1204,14 +1323,20 @@ export default function BulkImport({ fetchData, showToast }) {
             <div className="sticky-import-footer">
               <div className="validation-bar">
                 <div className="val-item green">
-                  <div className="dot" /> <span>{duplicateResults.readyCount} rows ready to import</span>
+                  <div className="dot" />{" "}
+                  <span>
+                    {duplicateResults.readyCount} rows ready to import
+                  </span>
                 </div>
                 <div className="val-item green">
                   <div className="dot" /> <span>Required fields mapped</span>
                 </div>
                 <div className="val-item teal">
                   <div className="dot" />{" "}
-                  <span>{duplicateResults.validBarcodes || 0} valid barcodes · {duplicateResults.autoGenBarcodes || 0} auto-gen</span>
+                  <span>
+                    {duplicateResults.validBarcodes || 0} valid barcodes ·{" "}
+                    {duplicateResults.autoGenBarcodes || 0} auto-gen
+                  </span>
                 </div>
                 <div className="val-item teal">
                   <div className="dot" />{" "}
@@ -1219,19 +1344,33 @@ export default function BulkImport({ fetchData, showToast }) {
                 </div>
                 <div className="val-item orange">
                   <div className="dot" />{" "}
-                  <span>{duplicateResults.duplicates || 0} duplicates — handling: {duplicateStrategy}</span>
+                  <span>
+                    {duplicateResults.duplicates || 0} duplicates — handling:{" "}
+                    {duplicateStrategy}
+                  </span>
                 </div>
                 <div className="val-item red">
                   <div className="dot" />{" "}
-                  <span>{(duplicateResults.errors || []).length} rows with invalid data will be skipped</span>
+                  <span>
+                    {(duplicateResults.errors || []).length} rows with invalid
+                    data will be skipped
+                  </span>
                 </div>
               </div>
 
               <div className="import-action-bar">
                 <div className="estimate-text">
-                  Will import: <span className="green">{duplicateResults.new || 0} new</span> ·{" "}
-                  <span className="gray">{duplicateResults.duplicates || 0} duplicates</span> ·{" "}
-                  <span className="red">{(duplicateResults.errors || []).length} errors</span> = {duplicateResults.new || 0} records
+                  Will import:{" "}
+                  <span className="green">{duplicateResults.new || 0} new</span>{" "}
+                  ·{" "}
+                  <span className="gray">
+                    {duplicateResults.duplicates || 0} duplicates
+                  </span>{" "}
+                  ·{" "}
+                  <span className="red">
+                    {(duplicateResults.errors || []).length} errors
+                  </span>{" "}
+                  = {duplicateResults.new || 0} records
                 </div>
                 <div className="action-btns">
                   <button
@@ -1254,7 +1393,9 @@ export default function BulkImport({ fetchData, showToast }) {
                     title="Upload raw CSV for server-side ETL processing"
                   >
                     <UploadCloud size={18} />
-                    <span>Upload as File (ETL) — {parsedRows.length} Records</span>
+                    <span>
+                      Upload as File (ETL) — {parsedRows.length} Records
+                    </span>
                   </button>
                 </div>
               </div>
@@ -1297,10 +1438,7 @@ export default function BulkImport({ fetchData, showToast }) {
                   <p>Loading history...</p>
                 ) : (
                   importHistory.map((item) => (
-                    <div
-                      key={item.id}
-                      className="history-item-card"
-                    >
+                    <div key={item.id} className="history-item-card">
                       <div className="top-row">
                         <span className="filename">
                           {item.fileName || item.name}

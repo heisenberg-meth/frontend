@@ -216,8 +216,8 @@ export default function BillingPOS({ showToast: parentShowToast }) {
   const [showPreview, setShowPreview] = useState(false);
   const [activeInvoice, setActiveInvoice] = useState(null);
   const [paymentMode, setPaymentMode] = useState("CASH");
-  const [setMedLoading] = useState(false);
-  const [setIsDrafting] = useState(false);
+  const [medLoading, setMedLoading] = useState(false);
+  const [isDrafting, setIsDrafting] = useState(false);
   const [isWalkIn, setIsWalkIn] = useState(false);
   const barcodeInputRef = useRef(null);
   const [findLoading, setFindLoading] = useState(false);
@@ -1363,21 +1363,6 @@ ${printDiscount > 0 ? `<div style="display:flex;justify-content:space-between"><
                     </td>
                   </tr>
                 ))}
-                {lineItems.length === 0 && (
-                  <tr>
-                    <td
-                      colSpan={7}
-                      style={{
-                        textAlign: "center",
-                        padding: "40px",
-                        color: "var(--text-dim)",
-                        fontStyle: "italic",
-                      }}
-                    >
-                      + Click here or scan a medicine to add
-                    </td>
-                  </tr>
-                )}
               </tbody>
             </table>
 
