@@ -95,10 +95,13 @@ function MedicineModal({
     const batchNumber = String(form.batchNumber || "").trim();
 
     if (!name) newErrors.name = "Medicine name is required";
-    if (!genericName)
-      newErrors.genericName = "Generic name is required";
-    const catVal = typeof form.category === "string" ? form.category.trim() : (form.category?.name || "");
-    if (!form.categoryId && !catVal) newErrors.category = "Category is required";
+    if (!genericName) newErrors.genericName = "Generic name is required";
+    const catVal =
+      typeof form.category === "string"
+        ? form.category.trim()
+        : form.category?.name || "";
+    if (!form.categoryId && !catVal)
+      newErrors.category = "Category is required";
     if (!form.mrp || Number(form.mrp) <= 0)
       newErrors.mrp = "MRP must be greater than 0";
     if (!form.quantity || Number(form.quantity) < 0)
@@ -106,8 +109,7 @@ function MedicineModal({
     if (!form.expiryDate) newErrors.expiryDate = "Expiry date is required";
     else if (new Date(form.expiryDate) <= new Date())
       newErrors.expiryDate = "Expiry date must be in the future";
-    if (!batchNumber)
-      newErrors.batchNumber = "Batch number is required";
+    if (!batchNumber) newErrors.batchNumber = "Batch number is required";
 
     const duplicate = existingMedicines.find(
       (m) =>
@@ -316,7 +318,9 @@ function MedicineModal({
                 onChange={(e) => set("gst", e.target.value)}
               >
                 {GST_OPTIONS.map((g) => (
-                  <option key={g} value={g}>{g}%</option>
+                  <option key={g} value={g}>
+                    {g}%
+                  </option>
                 ))}
               </select>
             </div>
@@ -429,7 +433,9 @@ function MedicineViewModal({ medicine, onClose }) {
           {!isExpired && !isLowStock && (
             <span className="inv-badge success">IN STOCK</span>
           )}
-          <span className="inv-badge info">{medicine.scheduleType || medicine.schedule}</span>
+          <span className="inv-badge info">
+            {medicine.scheduleType || medicine.schedule}
+          </span>
         </div>
 
         <div className="inv-view-grid">
@@ -473,7 +479,9 @@ function MedicineViewModal({ medicine, onClose }) {
           </div>
           <div className="inv-detail-item">
             <label>MRP</label>
-            <span className="price">₹{Number(medicine.mrp || 0).toFixed(2)}</span>
+            <span className="price">
+              ₹{Number(medicine.mrp || 0).toFixed(2)}
+            </span>
           </div>
           <div className="inv-detail-item">
             <label>Purchase Cost</label>
@@ -531,10 +539,7 @@ export default function InventoryCRUD({
 }) {
   const { user, tenant } = useAuth();
   const branchId =
-    user?.branchId ||
-    user?.branch?.id ||
-    tenant?.branchId ||
-    null;
+    user?.branchId || user?.branch?.id || tenant?.branchId || null;
   const [medicines, setMedicines] = useState([]);
   const [search, setSearch] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("All");
@@ -562,51 +567,51 @@ export default function InventoryCRUD({
   }, [showToast]);
 
   useEffect(() => {
-  let mounted = true;
+    let mounted = true;
 
-  const initialize = async () => {
-    try {
-      setLoading(true);
+    const initialize = async () => {
+      try {
+        setLoading(true);
 
-      const [medicinesRes, categoriesRes] = await Promise.all([
-        getMedicines({ page: 1, limit: 500 }),
-        getCategories(),
-      ]);
+        const [medicinesRes, categoriesRes] = await Promise.all([
+          getMedicines({ page: 1, limit: 500 }),
+          getCategories(),
+        ]);
 
-      if (!mounted) return;
+        if (!mounted) return;
 
-      const rawMedicines = Array.isArray(
-        medicinesRes.data?.data,
-      )
-        ? medicinesRes.data.data
-        : [];
+        const rawMedicines = Array.isArray(medicinesRes.data?.data)
+          ? medicinesRes.data.data
+          : [];
 
-      setMedicines(rawMedicines.map(normalizeMedicine));
+        setMedicines(rawMedicines.map(normalizeMedicine));
 
-      setCategoriesList(
-        Array.isArray(categoriesRes.data?.data)
-          ? categoriesRes.data.data
-          : [],
-      );
-    } catch (err) {
-      console.error(err);
-      showToast("Failed to load inventory", "error");
-    } finally {
-      if (mounted) {
-        setLoading(false);
+        setCategoriesList(
+          Array.isArray(categoriesRes.data?.data)
+            ? categoriesRes.data.data
+            : [],
+        );
+      } catch (err) {
+        console.error(err);
+        showToast("Failed to load inventory", "error");
+      } finally {
+        if (mounted) {
+          setLoading(false);
+        }
       }
-    }
-  };
+    };
 
-  initialize();
+    initialize();
 
-  return () => {
-    mounted = false;
-  };
-}, [showToast]);
+    return () => {
+      mounted = false;
+    };
+  }, [showToast]);
 
   const categories = useMemo(() => {
-    const cats = new Set(medicines.map((m) => m.category?.name || m.category).filter(Boolean));
+    const cats = new Set(
+      medicines.map((m) => m.category?.name || m.category).filter(Boolean),
+    );
     return ["All", ...cats];
   }, [medicines]);
 
@@ -653,9 +658,7 @@ export default function InventoryCRUD({
       outOfStock: medicines.filter((m) => m.stock === 0).length,
       expired: medicines.filter(
         (m) =>
-          m.stock > 0 &&
-          m.expiryDate &&
-          new Date(m.expiryDate) <= new Date(),
+          m.stock > 0 && m.expiryDate && new Date(m.expiryDate) <= new Date(),
       ).length,
       totalValue: calculateTotalStockValue(medicines),
     }),
@@ -670,7 +673,9 @@ export default function InventoryCRUD({
         gstPercentage: Number(form.gst) || 0,
         reorderPoint: Number(form.reorderLevel) || 10,
         reorderLevel: Number(form.reorderLevel) || 10,
-        ...(form.genericName?.trim() && { genericName: form.genericName.trim() }),
+        ...(form.genericName?.trim() && {
+          genericName: form.genericName.trim(),
+        }),
         ...(form.categoryId && { categoryId: form.categoryId }),
         ...(form.barcode?.trim() && { barcode: form.barcode.trim() }),
         ...(form.hsnCode?.trim() && { hsnCode: form.hsnCode.trim() }),
@@ -679,12 +684,12 @@ export default function InventoryCRUD({
         ...(form.schedule?.trim() && { scheduleType: form.schedule.trim() }),
         ...(form.notes?.trim() && { description: form.notes.trim() }),
         ...(branchId && { branchId: String(branchId) }),
-        ...(form.manufacturer?.trim() && { manufacturer: form.manufacturer.trim() }),
-        ...(typeof form.category === "string" && form.category.trim() && { category: form.category.trim() }),
+        ...(form.manufacturer?.trim() && {
+          manufacturer: form.manufacturer.trim(),
+        }),
+        ...(typeof form.category === "string" &&
+          form.category.trim() && { category: form.category.trim() }),
       };
-
-      console.log("[DEBUG] Form state:", form);
-      console.log("[DEBUG] Payload to send:", payload);
 
       if (editTarget) {
         payload.isActive = form.status === "active";
@@ -704,8 +709,6 @@ export default function InventoryCRUD({
           ...payload,
           initialBatch,
         };
-
-        console.log("[NORMALIZED PAYLOAD]", normalizedPayload);
 
         CreateMedicineSchema.parse(normalizedPayload);
         await createMedicine(normalizedPayload);
@@ -761,8 +764,10 @@ export default function InventoryCRUD({
     const rows = filtered.map((m) => {
       const currentQty = m.stock ?? 0;
       const reorderPt = m.reorderPoint ?? m.reorderLevel ?? 10;
-      const batchNum = m.inventoryBatches?.[0]?.batchNumber || m.batchNumber || "—";
-      const expDate = m.inventoryBatches?.[0]?.expiryDate || m.expiryDate || "—";
+      const batchNum =
+        m.inventoryBatches?.[0]?.batchNumber || m.batchNumber || "—";
+      const expDate =
+        m.inventoryBatches?.[0]?.expiryDate || m.expiryDate || "—";
       const mrp = m.inventoryBatches?.[0]?.mrp || m.mrp || 0;
       const gst = m.gstPercentage ?? m.gst ?? 0;
 
@@ -992,7 +997,7 @@ export default function InventoryCRUD({
                         : "IN STOCK";
 
                   return (
-                     <tr key={m.id}>
+                    <tr key={m.id}>
                       <td>
                         <div className="inv-identity">
                           <div className="inv-avatar">

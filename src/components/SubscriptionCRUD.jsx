@@ -126,7 +126,6 @@ export default function SubscriptionCRUD({ showToast, user }) {
         billingCycle,
       });
 
-      console.log("RAW RESPONSE =", response.data);
       const { key, order } = response.data;
 
       if (!order || !order.id) {
@@ -141,7 +140,6 @@ export default function SubscriptionCRUD({ showToast, user }) {
         description: `Professional Subscription: ${selectedPlan.name}`,
         order_id: order.id,
         handler: async function (rzpResponse) {
-          console.log("PAYMENT SUCCESS =", rzpResponse);
           try {
             await api.post(API_ROUTES.PAYMENTS_VERIFY, rzpResponse);
             showToast("Payment verified. Subscription activated!", "success");
@@ -164,8 +162,6 @@ export default function SubscriptionCRUD({ showToast, user }) {
           color: "#4fdbc8",
         },
       };
-
-      console.log("FULL RAZORPAY OPTIONS", JSON.stringify(options, null, 2));
 
       const cleanOptions = Object.fromEntries(
         Object.entries(options).filter(([v]) => v !== undefined),

@@ -533,7 +533,6 @@ export default function BillingPOS({ showToast: parentShowToast }) {
         isDraft: true,
         branchId: user.branchId,
       };
-      console.log("[INVOICE PAYLOAD]", JSON.stringify(payload, null, 2));
       const res = await api.post("billing/invoices/draft", payload);
       const saved = res.data?.data || res.data;
       if (saved?.id) {
@@ -1569,10 +1568,6 @@ ${printDiscount > 0 ? `<div style="display:flex;justify-content:space-between"><
                       discountAmount: discountAmount,
                       branchId: user.branchId,
                     };
-                    console.log(
-                      "[INVOICE PAYLOAD]",
-                      JSON.stringify(payload, null, 2),
-                    );
                     const res = await api.post(
                       API_ROUTES.BILLING_INVOICES,
                       payload,

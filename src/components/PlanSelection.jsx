@@ -1,16 +1,9 @@
 export default function PlanSelection({ onSelectTrial, onSelectPro }) {
-  console.log("PlanSelection rendered with props:", {
-    onSelectTrial: !!onSelectTrial,
-    onSelectPro: !!onSelectPro,
-  });
-
   const handleTrialClick = () => {
-    console.log("Trial button clicked");
     if (onSelectTrial) onSelectTrial();
   };
 
   const handleProClick = () => {
-    console.log("Pro button clicked");
     if (onSelectPro) onSelectPro();
   };
 

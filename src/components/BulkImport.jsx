@@ -58,13 +58,13 @@ export default function BulkImport({ fetchData, showToast }) {
   const [showSaveMappingModal, setShowSaveMappingModal] = useState(false);
   const [showLoadMappingModal, setShowLoadMappingModal] = useState(false);
   const [importJobId, setImportJobId] = useState(null);
-  const [importSummary , setImportSummary] = useState(null);
+  const [importSummary, setImportSummary] = useState(null);
   const [savedTemplates, setSavedTemplates] = useState(() => {
     try {
       const stored = localStorage.getItem("bulkImportTemplates");
       return stored ? JSON.parse(stored) : [];
     } catch (err) {
-      console.log(err);
+      console.error(err);
       return [];
     }
   });
@@ -215,10 +215,6 @@ export default function BulkImport({ fetchData, showToast }) {
 
     setIsAnalyzing(true);
     const medicines = getMappedMedicines();
-    console.log(
-      "[BulkImport] Analyze payload:",
-      JSON.stringify(medicines.slice(0, 2), null, 2),
-    );
     try {
       const res = await api.post("/import/bulk", {
         medicines,
@@ -255,10 +251,6 @@ export default function BulkImport({ fetchData, showToast }) {
       const initScan = async () => {
         setIsAnalyzing(true);
         const medicines = getMappedMedicines();
-        console.log(
-          "[BulkImport] Auto-scan sample:",
-          JSON.stringify(medicines.slice(0, 2), null, 2),
-        );
         try {
           const res = await api.post("/import/bulk", {
             medicines,
@@ -307,13 +299,6 @@ export default function BulkImport({ fetchData, showToast }) {
             complete: (results) => {
               const parsedHeaders = results.meta.fields || [];
               const parsedData = results.data;
-
-              console.log("[BulkImport] Raw Parse Results:", {
-                headers: parsedHeaders,
-                sampleRows: parsedData.slice(0, 2),
-                totalRows: parsedData.length,
-                errors: results.errors,
-              });
 
               if (parsedData.length > 10000) {
                 showToast(
@@ -645,7 +630,7 @@ export default function BulkImport({ fetchData, showToast }) {
             return;
           }
           setTimeout(poll, 3000);
-          console.log(err);
+          console.error(err);
         }
       };
       poll();
