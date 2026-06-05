@@ -16,7 +16,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import ExcelJS from "exceljs";
 import Papa from "papaparse";
 import api from "../api";
-import { getSuppliers } from "../services/suppliers.service";
+import { getSuppliers, createSupplier } from "../services/suppliers.service.js";
 import "../styles/BulkImport.css";
 
 export default function BulkImport({ fetchData, showToast }) {
@@ -58,6 +58,13 @@ export default function BulkImport({ fetchData, showToast }) {
   useEffect(() => {
     console.log("showAddSupplierModal Changed : ", showAddSupplierModal);
   }, [showAddSupplierModal]);
+  useEffect(() => {
+    console.log("BulkImport mounted");
+
+    return () => {
+      console.log("BulkImport unmounted");
+    };
+  }, []);
   const [showSaveMappingModal, setShowSaveMappingModal] = useState(false);
   const [showLoadMappingModal, setShowLoadMappingModal] = useState(false);
   const [importJobId, setImportJobId] = useState(null);
@@ -474,23 +481,59 @@ export default function BulkImport({ fetchData, showToast }) {
     setShowLoadMappingModal(false);
   };
 
-  const saveSupplier = () => {
+  const saveSupplier = async () => {
+    console.trace("SAVE SUPPLIER CALLED");
+    console.log("SUPPLIER FORM:", supplierForm);
+
     if (!supplierForm.name.trim()) {
       showToast("Supplier name required", "error");
       return;
     }
-    setSelectedSupplier(supplierForm.name);
-    setShowAddSupplierModal(false);
-    setSupplierForm({
-      name: "",
-      contact: "",
-      phone: "",
-      email: "",
-      gst: "",
-      leadTime: "",
-      paymentTerms: "Net 30",
-    });
-    showToast("Supplier added and selected", "success");
+    try {
+      const payload = {
+        name: supplierForm.name,
+        contactperson: supplierForm.contact,
+        phone: supplierForm.phone,
+        email: supplierForm.email,
+        gstNumber: supplierForm.gst,
+        drugCategories: [],
+        paymentTerms: supplierForm.paymentTerms.toLowerCase(),
+        notes: "",
+        status: "ACTIVE",
+      };
+      console.log("BEFORE CREATE SUPPLIER");
+
+      const res = await createSupplier(payload);
+
+      console.log("AFTER CREATE SUPPLIER");
+      console.log("CREATE SUPPLIER RESPONSE", res);
+
+      if (res.data?.success) {
+        await getSuppliers().then((r) => {
+          if (r.data?.success) {
+            setSuppliersList(r.data.data);
+          }
+        });
+        setSelectedSupplier(supplierForm.name);
+        setShowAddSupplierModal(false);
+        setSupplierForm({
+          name: "",
+          contact: "",
+          phone: "",
+          email: "",
+          gst: "",
+          leadTime: "",
+          paymentTerms: "Net 30",
+        });
+        showToast("Supplier Added", "success");
+      }
+    } catch (err) {
+      console.log("SUPPLIER SAVE ERROR", err);
+      showToast(
+        err.response?.data?.message || "Failed to add Supplier",
+        "error",
+      );
+    }
   };
 
   const handleStartImport = async () => {
@@ -1484,7 +1527,7 @@ export default function BulkImport({ fetchData, showToast }) {
         )}
       </AnimatePresence>
 
-      {/* ── ADD SUPPLIER MODAL ── */}
+      {showAddSupplierModal && console.log("MODAL RENDERING")}
       {showAddSupplierModal && (
         <div className="modal-overlay-v2">
           <div className="modal-content-v2">
