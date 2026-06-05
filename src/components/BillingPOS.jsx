@@ -271,7 +271,7 @@ export default function BillingPOS({ showToast: parentShowToast }) {
       try {
         const todayDate = new Date().toISOString().split("T")[0];
         const res = await api.get(API_ROUTES.BILLING_INVOICES, {
-          params: { status: "PAID", fromDate: todayDate, toDate: todayDate },
+          params: { fromDate: todayDate, toDate: todayDate },
         });
 
         if (!mounted) return;
@@ -868,7 +868,6 @@ ${printDiscount > 0 ? `<div style="display:flex;justify-content:space-between"><
         params: {
           skip: bills.length,
           limit: 10,
-          status: "PAID",
         },
       });
       const newBills = normalizeArrayResponse(res, "invoices").map(

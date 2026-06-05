@@ -124,7 +124,6 @@ api.interceptors.response.use(
     const status = error.response.status;
     const refreshToken = getRefreshToken();
 
-    // DO NOT refresh login/register/logout/refresh requests
     const excludedRoutes = [
       "/auth/login",
       "/auth/register",
@@ -155,8 +154,11 @@ api.interceptors.response.use(
       isRefreshing = true;
 
       try {
-        // BUG 19 FIX: Send refresh token in body to prevent Safari ITP blocking cross-origin cookies
         const currentRefreshToken = getRefreshToken ? getRefreshToken() : null;
+
+        console.log("Refreshing token...");
+        console.log("Refresh token: ", currentRefreshToken);
+
         const res = await axios.post(
           `${getBaseUrl()}/auth/refresh`,
           { refreshToken: currentRefreshToken },
@@ -238,7 +240,6 @@ api.interceptors.response.use(
       }
     }
 
-    // Standardize error message for UI
     if (error.response?.data?.error?.message) {
       error.message = error.response.data.error.message;
     } else if (error.response?.data?.error) {
