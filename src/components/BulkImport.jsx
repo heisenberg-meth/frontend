@@ -55,6 +55,9 @@ export default function BulkImport({ fetchData, showToast }) {
   const [historyLoading, setHistoryLoading] = useState(false);
   const [suppliersList, setSuppliersList] = useState([]);
   const [showAddSupplierModal, setShowAddSupplierModal] = useState(false);
+  useEffect(() => {
+    console.log("showAddSupplierModal Changed : ", showAddSupplierModal);
+  }, [showAddSupplierModal]);
   const [showSaveMappingModal, setShowSaveMappingModal] = useState(false);
   const [showLoadMappingModal, setShowLoadMappingModal] = useState(false);
   const [importJobId, setImportJobId] = useState(null);
@@ -911,9 +914,14 @@ export default function BulkImport({ fetchData, showToast }) {
                       className="pos-input"
                       value={selectedSupplier}
                       onChange={(e) => {
-                        if (e.target.value === "ADD_NEW")
+                        console.log("SUPPLIER SELECT:", e.target.value);
+
+                        if (e.target.value === "ADD_NEW") {
+                          console.log("OPENING MODAL");
                           setShowAddSupplierModal(true);
-                        else setSelectedSupplier(e.target.value);
+                        } else {
+                          setSelectedSupplier(e.target.value);
+                        }
                       }}
                     >
                       <option value="None">None — No supplier</option>

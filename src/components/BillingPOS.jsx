@@ -220,7 +220,6 @@ export default function BillingPOS({ showToast: parentShowToast }) {
   const [activeInvoice, setActiveInvoice] = useState(null);
   const [paymentMode, setPaymentMode] = useState("CASH");
   const [medLoading, setMedLoading] = useState(false);
-  const [isDrafting, setIsDrafting] = useState(false);
   const [isWalkIn, setIsWalkIn] = useState(false);
   const barcodeInputRef = useRef(null);
   const [findLoading, setFindLoading] = useState(false);
@@ -246,7 +245,7 @@ export default function BillingPOS({ showToast: parentShowToast }) {
   const [returnModalReason, setReturnModalReason] = useState("Patient Request");
   const [showReturnBillModal, setShowReturnBillModal] = useState(false);
   const [showBillDetailDrawer, setShowBillDetailDrawer] = useState(false);
-  const [allBillsFilter, setAllBillsFilter] = useState("ALL");
+  const [allBillsFilter, setAllBillsFilter] = useState("All");
   const [billCardFlash, setBillCardFlash] = useState(null);
   const [invoiceSaving, setInvoiceSaving] = useState(false);
   const [returnsCount, setReturnsCount] = useState(0);
@@ -269,9 +268,8 @@ export default function BillingPOS({ showToast: parentShowToast }) {
 
     const loadBills = async () => {
       try {
-        const todayDate = new Date().toISOString().split("T")[0];
         const res = await api.get(API_ROUTES.BILLING_INVOICES, {
-          params: { fromDate: todayDate, toDate: todayDate },
+          params: { limit: 50 },
         });
 
         if (!mounted) return;
@@ -2240,7 +2238,7 @@ ${printDiscount > 0 ? `<div style="display:flex;justify-content:space-between"><
                 <div className="filter-pills">
                   {[
                     { label: "All", value: "All" },
-                    { label: "Paid", value: "PAID" },
+                    { label: "Paid", value: "FINALIZED" },
                     { label: "Draft", value: "DRAFT" },
                     { label: "Returned", value: "RETURNED" },
                   ].map((f) => (
@@ -2711,8 +2709,8 @@ ${printDiscount > 0 ? `<div style="display:flex;justify-content:space-between"><
                 {!returnModalSelectedBill ? (
                   <div>
                     {(bills || [])
-                      .filter(
-                        (b) => b.status === "PAID" || b.status === "RETURNED",
+                      .filter((b) =>
+                        ["FINALIZED", "PAID", "RETURNED"].includes(b.status),
                       )
                       .filter((b) => {
                         const q = returnSearchQuery.toLowerCase();
