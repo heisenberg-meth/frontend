@@ -33,13 +33,13 @@ const fmt = (n) =>
 
 /* ─── MAIN DASHBOARD ─── */
 export default function Dashboard({
-  medicines,
-  expiryDays,
-  lowStock,
-  fetchData,
-  showToast,
-  lastSync,
-  user,
+  medicines = [],
+  expiryDays = 30,
+  lowStock = 10,
+  fetchData = () => {},
+  showToast = () => {},
+  lastSync = new Date(),
+  user = null,
 }) {
   const navigate = useNavigate();
   const [showBanner, setShowBanner] = useState(
@@ -84,14 +84,14 @@ export default function Dashboard({
       };
     }
 
-    const total = medicines.length;
-    const expiringCount = medicines.filter(
+    const total = medicines?.length ?? 0;
+    const expiringCount = (medicines || []).filter(
       (m) => getStock(m) > 0 && getDays(getExpiry(m)) <= (expiryDays || 30),
     ).length;
-    const lowCount = medicines.filter(
+    const lowCount = (medicines || []).filter(
       (m) => getStock(m) <= (lowStock || 10),
     ).length;
-    const totalValue = medicines.reduce(
+    const totalValue = (medicines || []).reduce(
       (s, m) => s + Number(getStock(m)) * Number(getPrice(m)),
       0,
     );
@@ -104,13 +104,13 @@ export default function Dashboard({
     };
   }, [medicines, expiryDays, lowStock, dashboardData]);
 
-  const expiring = medicines
+  const expiring = (medicines || [])
     .filter(
       (m) => getStock(m) > 0 && getDays(getExpiry(m)) <= (expiryDays || 30),
     )
     .sort((a, b) => getDays(getExpiry(a)) - getDays(getExpiry(b)));
 
-  const needsReorderList = medicines
+  const needsReorderList = (medicines || [])
     .filter((m) => getStock(m) > 0 && getStock(m) <= (lowStock || 10))
     .slice(0, 5);
 

@@ -35,19 +35,19 @@ export default defineConfig(() => {
         output: {
           manualChunks(id) {
             if (id.includes("node_modules")) {
-              if (id.includes("react")) return "vendor-react";
+              // Group essential react dependencies together
               if (
-                id.includes("lucide-react") ||
-                id.includes("html2canvas") ||
-                id.includes("dompurify")
-              )
-                return "vendor-utils";
-              if (id.includes("exceljs")) return "vendor-exceljs";
-              if (id.includes("jspdf")) return "vendor-pdf";
-              if (id.includes("recharts")) return "vendor-charts";
-              if (id.includes("framer-motion")) return "vendor-motion";
-              if (id.includes("html5-qrcode")) return "vendor-scanner";
-              return "vendor";
+                id.includes("react") ||
+                id.includes("react-dom") ||
+                id.includes("react-router-dom")
+              ) {
+                return "vendor-react";
+              }
+              // Group heavy dependencies
+              if (id.includes("exceljs") || id.includes("jspdf") || id.includes("recharts")) {
+                return "vendor-heavy";
+              }
+              return "vendor"; // all other dependencies
             }
           },
         },

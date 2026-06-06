@@ -1,54 +1,15 @@
-import { useState, useEffect, useCallback, useMemo, Suspense, lazy } from "react";
-import {
-  Routes,
-  Route,
-  Navigate,
-  useNavigate,
-  useLocation,
-} from "react-router-dom";
+import { useState, useEffect, useCallback, useMemo } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
 import { AuthProvider } from "./context/AuthContext";
 import { useAuth } from "./hooks/useAuth";
 import api from "./api";
 import { normalizeArrayResponse } from "./utils/apiNormalizer";
 import { API_ROUTES } from "./constants/api.routes.js";
 import { SubscriptionStatus } from "./constants/enums";
-import Auth from "./components/Auth";
-import DashboardLayout from "./layouts/DashboardLayout";
-import ProtectedRoute from "./guards/ProtectedRoute";
-
-// Lazy load components for better performance
-const Dashboard = lazy(() => import("./components/Dashboard"));
-const BulkImport = lazy(() => import("./components/BulkImport"));
-const ManageTeam = lazy(() => import("./components/ManageTeam"));
-const SystemSettings = lazy(() => import("./components/SystemSettings"));
-const SalesManagement = lazy(() => import("./components/SalesManagement"));
-const ReportsHub = lazy(() => import("./components/ReportsHub"));
-const AuditLogs = lazy(() => import("./components/AuditLogs"));
-const PurchaseManagement = lazy(() => import("./components/PurchaseManagement"));
-const PlanSelection = lazy(() => import("./components/PlanSelection"));
-const PaymentGateway = lazy(() => import("./components/PaymentGateway"));
-const BillingPOS = lazy(() => import("./components/BillingPOS"));
-const LowStockAlerts = lazy(() => import("./components/LowStockAlerts"));
-const ExpiryBatchIntelligence = lazy(() => import("./components/ExpiryBatchIntelligence"));
-const BarcodeEcosystem = lazy(() => import("./components/BarcodeEcosystem"));
-const Profile = lazy(() => import("./components/Profile"));
-const Suppliers = lazy(() => import("./components/Suppliers"));
-const Patients = lazy(() => import("./components/Patients"));
-const PrescriptionsCRUD = lazy(() => import("./components/PrescriptionsCRUD"));
-const InventoryCRUD = lazy(() => import("./components/InventoryCRUD"));
-const SubscriptionCRUD = lazy(() => import("./components/SubscriptionCRUD"));
-const AccountingTax = lazy(() => import("./components/AccountingTax"));
-
-import { ShieldCheck, Sparkles, Lock } from "lucide-react";
+import { ShieldCheck, Sparkles, Lock, ShieldAlert, CheckCircle2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ShieldAlert, CheckCircle2 } from "lucide-react";
-import "./index.css";
-import "./styles/AppShell.css";
-import "./styles/ConfirmModal.css";
-import "./styles/DataTable.css";
-import "./styles/SubscriptionCRUD.css";
-
 import LogoutModal from "./components/LogoutModal";
+import AppRoutes from "./routes/AppRoutes";
 
 function Paywall({ onActivate }) {
   return (
@@ -131,7 +92,7 @@ function AppContent() {
 
   const [medicines, setMedicines] = useState([]);
   const [theme, setTheme] = useState(
-    () => localStorage.getItem("viyan-theme") || "dark",
+    () => localStorage.getItem("viyan-theme") || "dark"
   );
   const [lowStock, setLowStock] = useState(10);
   const [expiryDays, setExpiryDays] = useState(30);
@@ -140,13 +101,14 @@ function AppContent() {
     symbol: "₹",
     rate: 83.5,
   });
+  
   const profileData = useMemo(
     () => ({
       username: user?.username || "",
       email: user?.email || `${user?.username?.toLowerCase() || ""}@viyan.med`,
       fullName: user?.fullName || user?.username || "",
     }),
-    [user],
+    [user]
   );
 
   const [verifyPassword, setVerifyPassword] = useState("");
@@ -183,8 +145,8 @@ function AppContent() {
     try {
       const res = await api.get(API_ROUTES.SETTINGS);
       const { lowStock, expiryDays, theme: backendTheme } = res.data?.data || res.data || {};
-      setLowStock(lowStock);
-      setExpiryDays(expiryDays);
+      setLowStock(lowStock ?? 10);
+      setExpiryDays(expiryDays ?? 30);
       const localTheme = localStorage.getItem("viyan-theme");
       if (!localTheme && backendTheme) {
         setTheme(backendTheme);
@@ -196,29 +158,28 @@ function AppContent() {
     }
   }, [status]);
 
- useEffect(() => {
-   if (!restored) return;
+  useEffect(() => {
+    if (!restored) return;
 
-   if (
-     !user ||
-     (status !== SubscriptionStatus.TRIAL &&
-       status !== SubscriptionStatus.ACTIVE)
-   ) {
-     return;
-   }
+    if (
+      !user ||
+      (status !== SubscriptionStatus.TRIAL &&
+        status !== SubscriptionStatus.ACTIVE)
+    ) {
+      return;
+    }
 
-   const boot = async () => {
-     try {
-       await Promise.all([fetchData(), fetchSettings()]);
-     } catch (err) {
-       console.error("[APP INIT ERROR]", err);
-     }
-   };
+    const boot = async () => {
+      try {
+        await Promise.all([fetchData(), fetchSettings()]);
+      } catch (err) {
+        console.error("[APP INIT ERROR]", err);
+      }
+    };
 
-   boot();
- }, [restored, user, status, fetchData, fetchSettings]);
+    boot();
+  }, [restored, user, status, fetchData, fetchSettings]);
 
-  // Stable Synchronization Interval
   useEffect(() => {
     if (!restored || !user) return;
 
@@ -235,7 +196,7 @@ function AppContent() {
       } catch (err) {
         console.error("[SYNC ERROR]", err);
       }
-    }, 300000); // 5 minutes
+    }, 300000);
 
     return () => clearInterval(syncInterval);
   }, [restored, user, status, fetchSettings, fetchData]);
@@ -249,7 +210,6 @@ function AppContent() {
     document.documentElement.setAttribute("data-theme", theme);
   }, [theme]);
 
-  // Keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (e) => {
       if (e.ctrlKey || e.metaKey) {
@@ -328,7 +288,7 @@ function AppContent() {
     } catch (err) {
       showToast(
         err.response?.data?.message || "Failed to update profile",
-        "error",
+        "error"
       );
     }
   };
@@ -422,239 +382,54 @@ function AppContent() {
     navigate("/dashboard");
   };
 
-  // Show loading state while auth is initializing
   if (!restored || authLoading) {
     return (
-      <div className="auth-loading-screen">
-        <div className="auth-loading-spinner" />
-        <p>Initializing secure session...</p>
+      <div className="auth-loading-screen" style={{
+        display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100vh', width: '100vw', backgroundColor: 'var(--bg-dark)'
+      }}>
+        <motion.div
+          className="auth-loading-spinner"
+          animate={{ rotate: 360 }}
+          transition={{ repeat: Infinity, duration: 1, ease: "linear" }}
+          style={{ width: 40, height: 40, border: '4px solid rgba(79, 219, 200, 0.2)', borderTopColor: 'var(--primary)', borderRadius: '50%', marginBottom: 16 }}
+        />
+        <p style={{ color: 'var(--text-muted)' }}>Initializing secure session...</p>
       </div>
     );
   }
 
-  const subStatus = subscription?.status;
-  const isExpired = subStatus === SubscriptionStatus.EXPIRED;
-  const isPrivileged = user?.role === "owner" || user?.role === "admin";
-  const needsPlanSelection = 
-    !subStatus ||
-    subStatus === SubscriptionStatus.PENDING;
-
-  const trialDaysLeft = subscription ? subscription.daysRemaining : null;
-
   return (
     <>
       <div className="app-shell-root" data-theme={theme}>
-        <Suspense
-          fallback={
-            <div className="auth-loading-screen">
-              <div className="auth-loading-spinner" />
-              <p>Loading clinical module...</p>
-            </div>
-          }
-        >
-          <Routes>
-            {/* Public Routes */}
-            <Route
-              path="/login"
-              element={
-                user ? (
-                  <Navigate to="/dashboard" replace />
-                ) : (
-                  <Auth onAuth={handleAuthSuccess} />
-                )
-              }
-            />
-
-            {/* Guarded Routes */}
-            <Route
-              element={
-                <ProtectedRoute>
-                  {isExpired && isPrivileged ? (
-                    <Paywall onActivate={() => navigate("/plans")} />
-                  ) : needsPlanSelection && isPrivileged && location.pathname !== "/plans" && location.pathname !== "/payment" ? (
-                    <Navigate to="/plans" replace />
-                  ) : (
-                    <DashboardLayout
-                      user={user}
-                      toggleTheme={toggleTheme}
-                      theme={theme}
-                      trialDaysLeft={trialDaysLeft}
-                      setShowLogoutModal={setShowLogoutModal}
-                      medicines={medicines}
-                    />
-                  )}
-                </ProtectedRoute>
-              }
-            >
-              <Route path="/" element={<Navigate to="/dashboard" replace />} />
-              <Route
-                path="/dashboard"
-                element={
-                  <Dashboard
-                    medicines={medicines}
-                    expiryDays={expiryDays}
-                    lowStock={lowStock}
-                    fetchData={fetchData}
-                    showToast={showToast}
-                    currency={currency}
-                    lastSync={lastSync}
-                    user={user}
-                  />
-                }
-              />
-              <Route
-                path="/stock"
-                element={
-                  <InventoryCRUD
-                    showToast={showToast}
-                    title="Stock Management"
-                  />
-                }
-              />
-              <Route
-                path="/inventory"
-                element={
-                  <InventoryCRUD
-                    showToast={showToast}
-                    title="Inventory Management"
-                  />
-                }
-              />
-              <Route
-                path="/import"
-                element={
-                  <BulkImport fetchData={fetchData} showToast={showToast} />
-                }
-              />
-              <Route
-                path="/billing"
-                element={<BillingPOS showToast={showToast} user={user} />}
-              />
-              <Route
-                path="/lowstock"
-                element={<LowStockAlerts showToast={showToast} />}
-              />
-              <Route
-                path="/purchases"
-                element={<PurchaseManagement showToast={showToast} />}
-              />
-              <Route
-                path="/analytics"
-                element={<SalesManagement showToast={showToast} />}
-              />
-              <Route
-                path="/reports"
-                element={<ReportsHub showToast={showToast} />}
-              />
-              <Route
-                path="/expiry"
-                element={<ExpiryBatchIntelligence showToast={showToast} />}
-              />
-              <Route
-                path="/barcode"
-                element={<BarcodeEcosystem showToast={showToast} />}
-              />
-              <Route
-                path="/suppliers"
-                element={<Suppliers showToast={showToast} />}
-              />
-              <Route
-                path="/patients"
-                element={<Patients showToast={showToast} />}
-              />
-              <Route
-                path="/prescriptions"
-                element={<PrescriptionsCRUD showToast={showToast} />}
-              />
-              <Route
-                path="/accounting"
-                element={<AccountingTax showToast={showToast} />}
-              />
-              <Route
-                path="/team"
-                element={
-                  <ProtectedRoute allowedRoles={["OWNER", "ADMIN"]}>
-                    <ManageTeam user={user} showToast={showToast} />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/settings"
-                element={
-                  <ProtectedRoute allowedRoles={["OWNER", "ADMIN"]}>
-                    <SystemSettings
-                      user={user}
-                      lowStock={lowStock}
-                      setLowStock={setLowStock}
-                      expiryDays={expiryDays}
-                      setExpiryDays={setExpiryDays}
-                      theme={theme}
-                      setTheme={setTheme}
-                      onClearAll={handleClearAll}
-                      onSave={handleSaveSettings}
-                      showToast={showToast}
-                      onActivate={handleActivateSubscription}
-                    />
-                  </ProtectedRoute>
-                }
-              />
-              <Route path="/logs" element={<AuditLogs />} />
-              <Route
-                path="/profile"
-                element={
-                  <Profile
-                    user={user}
-                    profileData={profileData}
-                    handleAvatarUpload={handleAvatarUpload}
-                    setShowAuthModal={(updates) => {
-                      setPendingUpdates(updates);
-                      setShowAuthModal(true);
-                    }}
-                    showToast={showToast}
-                  />
-                }
-              />
-              <Route
-                path="/subscription"
-                element={
-                  <SubscriptionCRUD
-                    showToast={showToast}
-                    user={user}
-                    onActivate={handleActivateSubscription}
-                  />
-                }
-              />
-            </Route>
-
-            {/* Special Utility Routes */}
-            <Route
-              path="/plans"
-              element={
-                <ProtectedRoute allowedRoles={["OWNER", "ADMIN"]}>
-                  <PlanSelection
-                    onSelectTrial={handleSelectTrial}
-                    onSelectPro={handleSelectPro}
-                  />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/payment"
-              element={
-                <ProtectedRoute allowedRoles={["OWNER", "ADMIN"]}>
-                  <PaymentGateway
-                    user={user}
-                    amount={1}
-                    onPaymentComplete={handlePaymentComplete}
-                  />
-                </ProtectedRoute>
-              }
-            />
-
-            {/* 404 Redirect */}
-            <Route path="*" element={<Navigate to="/dashboard" replace />} />
-          </Routes>
-        </Suspense>
+        <AppRoutes 
+          user={user}
+          subscription={subscription}
+          theme={theme}
+          medicines={medicines}
+          expiryDays={expiryDays}
+          lowStock={lowStock}
+          currency={currency}
+          lastSync={lastSync}
+          fetchData={fetchData}
+          showToast={showToast}
+          toggleTheme={toggleTheme}
+          handleClearAll={handleClearAll}
+          handleSaveSettings={handleSaveSettings}
+          setLowStock={setLowStock}
+          setExpiryDays={setExpiryDays}
+          setTheme={setTheme}
+          handleActivateSubscription={handleActivateSubscription}
+          handleAuthSuccess={handleAuthSuccess}
+          handleSelectTrial={handleSelectTrial}
+          handleSelectPro={handleSelectPro}
+          handlePaymentComplete={handlePaymentComplete}
+          handleAvatarUpload={handleAvatarUpload}
+          profileData={profileData}
+          setShowAuthModal={setShowAuthModal}
+          setPendingUpdates={setPendingUpdates}
+          setShowLogoutModal={setShowLogoutModal}
+          PaywallComponent={() => <Paywall onActivate={() => navigate("/plans")} />}
+        />
 
         <AnimatePresence>
           {toast && <Toast message={toast.message} type={toast.type} />}
@@ -671,28 +446,17 @@ function AppContent() {
                 style={{ maxWidth: 420 }}
               >
                 <div className="modal-header">
-                  <div
-                    style={{ display: "flex", alignItems: "center", gap: 12 }}
-                  >
+                  <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
                     <ShieldCheck size={24} style={{ color: "#4fdbc8" }} />
                     <h3>Verify Authorization</h3>
                   </div>
                 </div>
                 <div className="modal-body">
-                  <p
-                    style={{
-                      color: "var(--text-muted)",
-                      fontSize: 14,
-                      lineHeight: 1.6,
-                    }}
-                  >
-                    Enter your current password to synchronize changes to your
-                    clinical credentials.
+                  <p style={{ color: "var(--text-muted)", fontSize: 14, lineHeight: 1.6 }}>
+                    Enter your current password to synchronize changes to your clinical credentials.
                   </p>
                   <div className="input-v2" style={{ marginTop: 24 }}>
-                    <label>
-                      <Lock size={12} /> CURRENT PASSWORD
-                    </label>
+                    <label><Lock size={12} /> CURRENT PASSWORD</label>
                     <input
                       type="password"
                       placeholder="Enter current password"
@@ -702,40 +466,17 @@ function AppContent() {
                     />
                   </div>
                 </div>
-                <div
-                  className="modal-actions"
-                  style={{ marginTop: 32, display: "flex", gap: 12 }}
-                >
+                <div className="modal-actions" style={{ marginTop: 32, display: "flex", gap: 12 }}>
                   <button
                     className="modal-btn-outline"
-                    style={{
-                      flex: 1,
-                      background: "none",
-                      border: "1px solid rgba(255,255,255,0.1)",
-                      color: "var(--text-muted)",
-                      borderRadius: 12,
-                      cursor: "pointer",
-                      padding: "12px",
-                    }}
-                    onClick={() => {
-                      setShowAuthModal(false);
-                      setVerifyPassword("");
-                    }}
+                    style={{ flex: 1, background: "none", border: "1px solid rgba(255,255,255,0.1)", color: "var(--text-muted)", borderRadius: 12, cursor: "pointer", padding: "12px" }}
+                    onClick={() => { setShowAuthModal(false); setVerifyPassword(""); }}
                   >
                     Cancel
                   </button>
                   <button
                     className="modal-btn-primary"
-                    style={{
-                      flex: 1,
-                      background: "#4fdbc8",
-                      color: "#031424",
-                      border: "none",
-                      borderRadius: 12,
-                      fontWeight: 800,
-                      cursor: "pointer",
-                      padding: "12px",
-                    }}
+                    style={{ flex: 1, background: "#4fdbc8", color: "#031424", border: "none", borderRadius: 12, fontWeight: 800, cursor: "pointer", padding: "12px" }}
                     onClick={() => handleUpdateProfile(pendingUpdates)}
                     disabled={!verifyPassword}
                   >
