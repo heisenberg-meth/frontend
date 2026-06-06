@@ -70,6 +70,7 @@ export function AuthProvider({ children }) {
   const refreshToken = useCallback(async () => {
     try {
       const storedRefreshToken = getRefreshToken();
+      console.log("Refresh token from AuthContext:", storedRefreshToken);
 
       if (!storedRefreshToken) {
         clearAuthState();

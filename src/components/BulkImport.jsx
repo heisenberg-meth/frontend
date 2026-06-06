@@ -28,6 +28,7 @@ export default function BulkImport({ fetchData, showToast }) {
     qtyColumn: "stock_qty",
     expiryColumn: "expiry_dt",
     priceColumn: "price_inr",
+    categoryColumn: "category",
     batchColumn: "batch_no",
     barcodeColumn: "barcode",
   });
@@ -104,6 +105,7 @@ export default function BulkImport({ fetchData, showToast }) {
         priceColumn: ["price", "rate", "cost", "inr"],
         batchColumn: ["batch", "lot", "no", "code"],
         barcodeColumn: ["barcode", "upc", "ean", "sku"],
+        categoryColumn: ["category", "cat", "type", "group", "classification"],
       };
 
       if (fileHeaders.length <= 1) {
@@ -121,6 +123,7 @@ export default function BulkImport({ fetchData, showToast }) {
         "priceColumn",
         "batchColumn",
         "barcodeColumn",
+        "categoryColumn",
       ];
 
       fieldOrder.forEach((field) => {
@@ -150,6 +153,7 @@ export default function BulkImport({ fetchData, showToast }) {
       price: String(row[mapping.priceColumn] || "0").trim(),
       batch: String(row[mapping.batchColumn] || "").trim(),
       barcode: String(row[mapping.barcodeColumn] || "").trim(),
+      category: String(row[mapping.categoryColumn] || "").trim(),
     }));
 
     if (result.length > 0) {
@@ -491,14 +495,21 @@ export default function BulkImport({ fetchData, showToast }) {
     }
     try {
       const payload = {
-        name: supplierForm.name,
-        contactperson: supplierForm.contact,
-        phone: supplierForm.phone,
-        email: supplierForm.email,
-        gstNumber: supplierForm.gst,
-        drugCategories: [],
-        paymentTerms: supplierForm.paymentTerms.toLowerCase(),
-        notes: "",
+        name: supplierForm.name.trim(),
+        contactPerson: supplierForm.contact.trim(),
+        phone: supplierForm.phone.trim(),
+        email: supplierForm.email.trim(),
+        gstNumber: supplierForm.gst.trim(),
+
+        leadTimeDays: Number(supplierForm.leadTime || 7),
+
+        paymentTermsDays:
+          supplierForm.paymentTerms === "Net 15"
+            ? 15
+            : supplierForm.paymentTerms === "Net 30"
+              ? 30
+              : 0,
+
         status: "ACTIVE",
       };
       console.log("BEFORE CREATE SUPPLIER");
@@ -528,7 +539,8 @@ export default function BulkImport({ fetchData, showToast }) {
         showToast("Supplier Added", "success");
       }
     } catch (err) {
-      console.log("SUPPLIER SAVE ERROR", err);
+      console.log("BACKEND ERROR", JSON.stringify(err.response?.data, null, 2));
+
       showToast(
         err.response?.data?.message || "Failed to add Supplier",
         "error",
@@ -699,11 +711,11 @@ export default function BulkImport({ fetchData, showToast }) {
     { key: "priceColumn", label: "Unit Price (INR)" },
     { key: "batchColumn", label: "Batch Number" },
     { key: "barcodeColumn", label: "Barcode / SKU" },
+    { key: "categoryColumn", label: "Category" },
   ];
 
   return (
     <div className="import-hub-container">
-      {/* ── PAGE HEADER ── */}
       <div className="import-header-v2">
         <div className="header-left">
           <div className="import-pill">
@@ -837,9 +849,7 @@ export default function BulkImport({ fetchData, showToast }) {
       ) : (
         <>
           <div className="import-layout-grid">
-            {/* ── LEFT COLUMN: UPLOAD & CONFIG ── */}
             <div className="layout-col-left">
-              {/* Upload Zone */}
               <div className="dropzone-card-v2">
                 <div
                   {...getRootProps()}
@@ -927,7 +937,6 @@ export default function BulkImport({ fetchData, showToast }) {
                 </div>
               </div>
 
-              {/* Import Configuration */}
               <div className="config-card-v2">
                 <h3>Import Configuration</h3>
 
@@ -1138,7 +1147,6 @@ export default function BulkImport({ fetchData, showToast }) {
             </div>
           </div>
 
-          {/* ── DUPLICATE DETECTION PANEL ── */}
           <AnimatePresence>
             {file && (
               <motion.div
@@ -1354,7 +1362,6 @@ export default function BulkImport({ fetchData, showToast }) {
             )}
           </AnimatePresence>
 
-          {/* ── STICKY VALIDATION SUMMARY ── */}
           {file && (
             <div className="sticky-import-footer">
               <div className="validation-bar">
@@ -1440,7 +1447,6 @@ export default function BulkImport({ fetchData, showToast }) {
         </>
       )}
 
-      {/* ── IMPORT HISTORY DRAWER ── */}
       <AnimatePresence>
         {showHistoryDrawer && (
           <>
@@ -1664,7 +1670,6 @@ export default function BulkImport({ fetchData, showToast }) {
         </div>
       )}
 
-      {/* ── SAVE MAPPING MODAL ── */}
       {showSaveMappingModal && (
         <div className="modal-overlay-v2">
           <div className="modal-content-v2">
@@ -1726,7 +1731,6 @@ export default function BulkImport({ fetchData, showToast }) {
         </div>
       )}
 
-      {/* ── LOAD MAPPING MODAL ── */}
       {showLoadMappingModal && (
         <div className="modal-overlay-v2">
           <div className="modal-content-v2">
