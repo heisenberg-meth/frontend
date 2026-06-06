@@ -59,6 +59,13 @@ export default function Sidebar({ user, onSignOut }) {
             <span>Purchases</span>
           </NavLink>
           <NavLink
+            to="/suppliers"
+            className={({ isActive }) => `nav-link ${isActive ? "active" : ""}`}
+          >
+            <QrCode size={18} />
+            <span>Supplier</span>
+          </NavLink>
+          <NavLink
             to="/import"
             className={({ isActive }) => `nav-link ${isActive ? "active" : ""}`}
           >
