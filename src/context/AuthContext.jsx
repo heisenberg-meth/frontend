@@ -67,7 +67,9 @@ export function AuthProvider({ children }) {
           withCredentials: true,
           timeout: 10000,
           headers: {
-            "ngrok-skip-browser-warning": "69420",
+            ...(import.meta.env.DEV && {
+              "ngrok-skip-browser-warning": "69420",
+            }),
           },
         },
       );

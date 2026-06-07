@@ -5,7 +5,7 @@ const getBaseUrl = () => {
   const envUrl =
     import.meta.env.VITE_API_BASE_URL || import.meta.env.VITE_API_URL;
   if (envUrl !== undefined && envUrl !== null && envUrl !== "") return envUrl;
-  return "https://medassist-backend-hryu.onrender.com/api";
+  return "/api";
 };
 export const getBackendOrigin = () => {
   const baseUrl = getBaseUrl();
@@ -19,7 +19,7 @@ const api = axios.create({
   timeout: 120000,
   headers: {
     "Content-Type": "application/json",
-    "ngrok-skip-browser-warning": "69420",
+    ...(import.meta.env.DEV && { "ngrok-skip-browser-warning": "69420" }),
   },
 });
 
