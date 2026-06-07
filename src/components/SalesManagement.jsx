@@ -27,6 +27,7 @@ import { saveAs } from "file-saver";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import { normalizeArrayResponse } from "../utils/apiNormalizer";
+import { escapeHtml } from "../utils/escapeHtml";
 import "../styles/SalesManagement.css";
 
 export default function SalesManagement({ showToast }) {
@@ -268,14 +269,14 @@ export default function SalesManagement({ showToast }) {
     const itemsHtml = (sale.items || [])
       .map(
         (it) =>
-          `<tr><td>${it.name}</td><td>${it.qty}</td><td>₹${it.price * it.qty}</td></tr>`,
+          `<tr><td>${escapeHtml(it.name)}</td><td>${escapeHtml(it.qty)}</td><td>₹${Number(it.price * it.qty).toFixed(2)}</td></tr>`,
       )
       .join("");
 
     const html = `
       <html>
         <head>
-          <title>${sale.id}</title>
+          <title>${escapeHtml(sale.id)}</title>
           <style>
             body { font-family: Arial; padding: 20px; }
             h2 { margin-bottom: 10px; }
@@ -286,16 +287,16 @@ export default function SalesManagement({ showToast }) {
         </head>
         <body>
           <h2>Viyan MedAssist</h2>
-          <p><b>Invoice:</b> ${sale.id}</p>
-          <p><b>Patient:</b> ${sale.patient}</p>
-          <p><b>Date:</b> ${sale.date}</p>
-          <p><b>Time:</b> ${sale.time}</p>
-          <p><b>Payment:</b> ${sale.payment}</p>
+          <p><b>Invoice:</b> ${escapeHtml(sale.id)}</p>
+          <p><b>Patient:</b> ${escapeHtml(sale.patient)}</p>
+          <p><b>Date:</b> ${escapeHtml(sale.date)}</p>
+          <p><b>Time:</b> ${escapeHtml(sale.time)}</p>
+          <p><b>Payment:</b> ${escapeHtml(sale.payment)}</p>
           <table>
             <thead><tr><th>Medicine</th><th>Qty</th><th>Price</th></tr></thead>
             <tbody>${itemsHtml}</tbody>
           </table>
-          <div class="total">Total: ₹${sale.total}</div>
+          <div class="total">Total: ₹${Number(sale.total || 0).toFixed(2)}</div>
         </body>
       </html>`;
 

@@ -22,6 +22,7 @@ import {
 import { motion, AnimatePresence } from "framer-motion";
 import { searchByBarcode, getMedicines } from "../services/inventory.service";
 import { getBarcodes, verifyBarcode } from "../services/reports.service";
+import { escapeHtml } from "../utils/escapeHtml";
 import "../styles/BarcodeEcosystem.css";
 
 function Spinner({ size = 14 }) {
@@ -31,15 +32,18 @@ function Spinner({ size = 14 }) {
 }
 
 const LABEL_TEMPLATES = {
-  Standard: { width: 100, height: 50, scale: 1, desc: "38×25mm — Thermal Sticker" },
+  Standard: {
+    width: 100,
+    height: 50,
+    scale: 1,
+    desc: "38×25mm — Thermal Sticker",
+  },
   Large: { width: 130, height: 70, scale: 1.3, desc: "50×35mm — Large Label" },
   Strip: { width: 160, height: 28, scale: 0.85, desc: "Strip Label (16×28mm)" },
   Custom: { width: 100, height: 50, scale: 1, desc: "Custom Configuration" },
 };
 
-export default function BarcodeEcosystem({
-  showToast,
-}) {
+export default function BarcodeEcosystem({ showToast }) {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("labels");
   const [labelQty, setLabelQty] = useState(10);
@@ -81,9 +85,7 @@ export default function BarcodeEcosystem({
       .then((res) => {
         const data = res.data.data || res.data;
         const list =
-          Array.isArray(data) && data.length > 0
-            ? data
-            : data.medicines || [];
+          Array.isArray(data) && data.length > 0 ? data : data.medicines || [];
         setMedicines(list);
       })
       .catch(() => {
@@ -120,11 +122,11 @@ export default function BarcodeEcosystem({
   }, []);
 
   const selectMedicine = (med) => {
-  setSelectedMedicine(med);
-  setMedicineSearch(med.name);
-  setPreviewScale(1);
-  setShowMedDropdown(false);
-};
+    setSelectedMedicine(med);
+    setMedicineSearch(med.name);
+    setPreviewScale(1);
+    setShowMedDropdown(false);
+  };
 
   const clearMedicine = () => {
     setSelectedMedicine(null);
@@ -173,40 +175,38 @@ export default function BarcodeEcosystem({
   };
 
   useEffect(() => {
-  if (activeTab !== "history") return;
+    if (activeTab !== "history") return;
 
-  let mounted = true;
+    let mounted = true;
 
-  const loadHistory = async () => {
-    try {
-      setHistoryLoading(true);
+    const loadHistory = async () => {
+      try {
+        setHistoryLoading(true);
 
-      const res = await getBarcodes({ limit: 50 });
+        const res = await getBarcodes({ limit: 50 });
 
-      if (!mounted) return;
+        if (!mounted) return;
 
-      const data = res.data.data || res.data;
+        const data = res.data.data || res.data;
 
-      setScanHistory(
-        Array.isArray(data) ? data : []
-      );
-    } catch {
-      if (mounted) {
-        setScanHistory([]);
+        setScanHistory(Array.isArray(data) ? data : []);
+      } catch {
+        if (mounted) {
+          setScanHistory([]);
+        }
+      } finally {
+        if (mounted) {
+          setHistoryLoading(false);
+        }
       }
-    } finally {
-      if (mounted) {
-        setHistoryLoading(false);
-      }
-    }
-  };
+    };
 
-  loadHistory();
+    loadHistory();
 
-  return () => {
-    mounted = false;
-  };
-}, [activeTab]);
+    return () => {
+      mounted = false;
+    };
+  }, [activeTab]);
 
   const handlePrintLabels = async () => {
     if (!selectedMedicine) {
@@ -215,7 +215,8 @@ export default function BarcodeEcosystem({
     }
     setIsPrinting(true);
     try {
-      const templateInfo = LABEL_TEMPLATES[template] || LABEL_TEMPLATES.Standard;
+      const templateInfo =
+        LABEL_TEMPLATES[template] || LABEL_TEMPLATES.Standard;
       const labelItem = selectedMedicine;
       const expiryStr = labelItem.expiryDate
         ? new Date(labelItem.expiryDate).toLocaleDateString("en-IN", {
@@ -252,9 +253,9 @@ export default function BarcodeEcosystem({
             </style>
           </head>
           <body>
-            ${labelFields.medName ? `<div class="name">${labelItem.name}</div>` : ""}
-            ${labelFields.generic ? `<div class="generic">(${labelItem.genericName || labelItem.name})</div>` : ""}
-            ${labelFields.batch || labelFields.expiry ? `<div class="meta">${labelFields.batch ? `Batch: ${labelItem.batchNumber || "—"}` : ""}${labelFields.expiry ? ` Exp: ${expiryStr}` : ""}</div>` : ""}
+            ${labelFields.medName ? `<div class="name">${escapeHtml(labelItem.name)}</div>` : ""}
+            ${labelFields.generic ? `<div class="generic">(${escapeHtml(labelItem.genericName || labelItem.name)})</div>` : ""}
+            ${labelFields.batch || labelFields.expiry ? `<div class="meta">${labelFields.batch ? `Batch: ${escapeHtml(labelItem.batchNumber || "—")}` : ""}${labelFields.expiry ? ` Exp: ${escapeHtml(expiryStr)}` : ""}</div>` : ""}
             ${labelFields.mrp ? `<div class="mrp">MRP: ₹${(labelItem.mrp || 0).toFixed(2)}/tab</div>` : ""}
             ${labelFields.barcode ? `<div class="barcode"><svg viewBox="0 0 100 18" preserveAspectRatio="none" style="width:100%;height:100%">${Array.from({ length: 30 }, (_, i) => `<rect x="${i * 3.3}" y="0" width="${(i * 7) % 10 > 4 ? 1 : 2}" height="18" fill="black" />`).join("")}</svg></div>` : ""}
             ${labelFields.qr ? `<div class="qr-code">QR</div>` : ""}
@@ -357,7 +358,10 @@ export default function BarcodeEcosystem({
         vibrateOnScan: false,
         savedAt: new Date().toISOString(),
       };
-      localStorage.setItem("barcode_scanner_settings", JSON.stringify(settings));
+      localStorage.setItem(
+        "barcode_scanner_settings",
+        JSON.stringify(settings),
+      );
       setTimeout(() => {
         showToast("Scanner settings saved successfully", "success");
         setIsSaving(false);
@@ -511,9 +515,7 @@ export default function BarcodeEcosystem({
                   ref={dropdownRef}
                 >
                   <label className="p-label">SEARCH MEDICINE</label>
-                  <div
-                    style={{ position: "relative" }}
-                  >
+                  <div style={{ position: "relative" }}>
                     <div
                       style={{
                         display: "flex",
@@ -533,15 +535,38 @@ export default function BarcodeEcosystem({
                         }
                       }}
                     >
-                      <Search size={16} style={{ color: "var(--text-muted)", flexShrink: 0 }} />
+                      <Search
+                        size={16}
+                        style={{ color: "var(--text-muted)", flexShrink: 0 }}
+                      />
                       {selectedMedicine && !showMedDropdown ? (
-                        <div style={{ flex: 1, display: "flex", alignItems: "center", gap: "8px" }}>
+                        <div
+                          style={{
+                            flex: 1,
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "8px",
+                          }}
+                        >
                           <div style={{ flex: 1 }}>
-                            <div style={{ fontWeight: 700, fontSize: "14px", lineHeight: 1.3 }}>
+                            <div
+                              style={{
+                                fontWeight: 700,
+                                fontSize: "14px",
+                                lineHeight: 1.3,
+                              }}
+                            >
                               {selectedMedicine.name}
                             </div>
-                            <div style={{ fontSize: "11px", color: "var(--text-muted)", lineHeight: 1.2 }}>
-                              Batch: {selectedMedicine.batchNumber || "—"} · ₹{(selectedMedicine.mrp || 0).toFixed(2)}
+                            <div
+                              style={{
+                                fontSize: "11px",
+                                color: "var(--text-muted)",
+                                lineHeight: 1.2,
+                              }}
+                            >
+                              Batch: {selectedMedicine.batchNumber || "—"} · ₹
+                              {(selectedMedicine.mrp || 0).toFixed(2)}
                             </div>
                           </div>
                           <button
@@ -551,7 +576,11 @@ export default function BarcodeEcosystem({
                               clearMedicine();
                             }}
                             title="Clear selection"
-                            style={{ flexShrink: 0, width: "24px", height: "24px" }}
+                            style={{
+                              flexShrink: 0,
+                              width: "24px",
+                              height: "24px",
+                            }}
                           >
                             <X size={14} />
                           </button>
@@ -586,7 +615,9 @@ export default function BarcodeEcosystem({
                         style={{
                           color: "var(--text-muted)",
                           flexShrink: 0,
-                          transform: showMedDropdown ? "rotate(180deg)" : "rotate(0deg)",
+                          transform: showMedDropdown
+                            ? "rotate(180deg)"
+                            : "rotate(0deg)",
                           transition: "transform 0.2s",
                         }}
                       />
@@ -624,7 +655,8 @@ export default function BarcodeEcosystem({
                         ) : (
                           filteredMedicines.map((m) => {
                             const isSelected = selectedMedicine?.id === m.id;
-                            const mfgName = m.manufacturer?.name || m.manufacturer || "";
+                            const mfgName =
+                              m.manufacturer?.name || m.manufacturer || "";
 
                             return (
                               <div
@@ -637,29 +669,65 @@ export default function BarcodeEcosystem({
                                   alignItems: "center",
                                   gap: "12px",
                                   borderBottom: "1px solid var(--overlay-05)",
-                                  background: isSelected ? "rgba(79, 219, 200, 0.08)" : "transparent",
+                                  background: isSelected
+                                    ? "rgba(79, 219, 200, 0.08)"
+                                    : "transparent",
                                   transition: "background 0.15s",
                                 }}
                                 onMouseEnter={(e) => {
-                                  if (!isSelected) e.currentTarget.style.background = "var(--overlay-03)";
+                                  if (!isSelected)
+                                    e.currentTarget.style.background =
+                                      "var(--overlay-03)";
                                 }}
                                 onMouseLeave={(e) => {
-                                  if (!isSelected) e.currentTarget.style.background = "transparent";
+                                  if (!isSelected)
+                                    e.currentTarget.style.background =
+                                      "transparent";
                                 }}
                               >
                                 <div style={{ flex: 1 }}>
-                                  <div style={{ fontWeight: 700, fontSize: "13px" }}>
+                                  <div
+                                    style={{
+                                      fontWeight: 700,
+                                      fontSize: "13px",
+                                    }}
+                                  >
                                     {m.name}
                                   </div>
-                                  <div style={{ fontSize: "11px", color: "var(--text-muted)" }}>
-                                    Batch: {m.batchNumber || "—"} · ₹{(m.mrp || 0).toFixed(2)} · {mfgName}
+                                  <div
+                                    style={{
+                                      fontSize: "11px",
+                                      color: "var(--text-muted)",
+                                    }}
+                                  >
+                                    Batch: {m.batchNumber || "—"} · ₹
+                                    {(m.mrp || 0).toFixed(2)} · {mfgName}
                                   </div>
                                 </div>
-                                <div style={{ fontSize: "11px", color: "var(--text-muted)", textAlign: "right" }}>
+                                <div
+                                  style={{
+                                    fontSize: "11px",
+                                    color: "var(--text-muted)",
+                                    textAlign: "right",
+                                  }}
+                                >
                                   <div>Qty: {m.stock ?? 0}</div>
                                   {m.expiryDate && (
-                                    <div style={{ color: new Date(m.expiryDate) < new Date() ? "var(--danger)" : "inherit" }}>
-                                      Exp: {new Date(m.expiryDate).toLocaleDateString("en-IN", { month: "short", year: "2-digit" })}
+                                    <div
+                                      style={{
+                                        color:
+                                          new Date(m.expiryDate) < new Date()
+                                            ? "var(--danger)"
+                                            : "inherit",
+                                      }}
+                                    >
+                                      Exp:{" "}
+                                      {new Date(
+                                        m.expiryDate,
+                                      ).toLocaleDateString("en-IN", {
+                                        month: "short",
+                                        year: "2-digit",
+                                      })}
                                     </div>
                                   )}
                                 </div>
@@ -677,7 +745,8 @@ export default function BarcodeEcosystem({
                               borderTop: "1px solid var(--overlay-05)",
                             }}
                           >
-                            {filteredMedicines.length} of {medicines.length} medicines shown
+                            {filteredMedicines.length} of {medicines.length}{" "}
+                            medicines shown
                           </div>
                         )}
                       </div>
@@ -844,12 +913,17 @@ export default function BarcodeEcosystem({
                       )}
                       {labelFields.generic && (
                         <div className="label-generic">
-                          ({selectedMedicine.genericName || selectedMedicine.name})
+                          (
+                          {selectedMedicine.genericName ||
+                            selectedMedicine.name}
+                          )
                         </div>
                       )}
                       <div className="label-meta">
                         {labelFields.batch && (
-                          <span>Batch: {selectedMedicine.batchNumber || "—"}</span>
+                          <span>
+                            Batch: {selectedMedicine.batchNumber || "—"}
+                          </span>
                         )}
                         {labelFields.expiry && (
                           <span style={{ color: "var(--danger)" }}>
@@ -912,7 +986,10 @@ export default function BarcodeEcosystem({
                       }}
                     >
                       <div style={{ textAlign: "center" }}>
-                        <Printer size={28} style={{ opacity: 0.3, marginBottom: "8px" }} />
+                        <Printer
+                          size={28}
+                          style={{ opacity: 0.3, marginBottom: "8px" }}
+                        />
                         <div style={{ fontSize: "12px", fontWeight: 600 }}>
                           No Medicine Selected
                         </div>

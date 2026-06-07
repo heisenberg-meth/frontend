@@ -101,7 +101,7 @@ export default function Sidebar({ user, onSignOut }) {
             <span>Barcode & QR</span>
           </NavLink>
 
-          {user?.role === "owner" && (
+          {user?.role === "OWNER" && (
             <>
               <NavLink
                 to="/team"

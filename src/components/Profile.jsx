@@ -236,7 +236,7 @@ export default function Profile({
             <div className="profile-meta">
               <h2>{formData.fullName || "Clinical Professional"}</h2>
               <span className="role-tag">
-                {user?.role === "owner"
+                {user?.role === "OWNER"
                   ? "System Administrator"
                   : "Clinical Staff"}
               </span>
@@ -329,7 +329,7 @@ export default function Profile({
                 <input
                   type="text"
                   value={
-                    user?.role === "owner"
+                    user?.role === "OWNER"
                       ? "Head Pharmacist / Owner"
                       : "Clinical Staff"
                   }

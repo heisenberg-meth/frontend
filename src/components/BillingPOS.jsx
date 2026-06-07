@@ -29,6 +29,7 @@ import {
 } from "../utils/apiNormalizer";
 import { useAuth } from "../hooks/useAuth";
 import { normalizeInvoice } from "../utils/billingNormalizer";
+import { escapeHtml } from "../utils/escapeHtml";
 import "../styles/BillingPOS.css";
 
 function numberToWords(n) {
@@ -604,7 +605,7 @@ export default function BillingPOS({ showToast: parentShowToast }) {
         .map(normalizeInvoiceItem)
         .map(
           (i) =>
-            `<tr><td style="padding:8px;border-bottom:1px solid #eee">${i.name}</td><td style="text-align:center;border-bottom:1px solid #eee">${i.qty}</td><td style="text-align:center;border-bottom:1px solid #eee">₹${safeNumber(i.price).toFixed(2)}</td><td style="text-align:right;border-bottom:1px solid #eee">₹${(safeNumber(i.price) * safeNumber(i.qty)).toFixed(2)}</td></tr>`,
+            `<tr><td style="padding:8px;border-bottom:1px solid #eee">${escapeHtml(i.name)}</td><td style="text-align:center;border-bottom:1px solid #eee">${escapeHtml(i.qty)}</td><td style="text-align:center;border-bottom:1px solid #eee">₹${safeNumber(i.price).toFixed(2)}</td><td style="text-align:right;border-bottom:1px solid #eee">₹${(safeNumber(i.price) * safeNumber(i.qty)).toFixed(2)}</td></tr>`,
         )
         .join("");
 
@@ -645,8 +646,8 @@ table{width:100%;border-collapse:collapse}
 <div style="font-size:12px">123, Healthcare Street, Medical Hub, Bangalore</div>
 <div style="font-size:12px">GSTIN: 29ABCDE1234F1Z1 | Ph: +91 98765 43210</div>
 </div>
-<div style="display:flex;justify-content:space-between"><div><b>INVOICE #</b> ${invData.id}</div><div><b>DATE:</b> ${printDate}</div></div>
-<div style="display:flex;justify-content:space-between;margin-top:8px"><div><b>PATIENT:</b> ${printPatient}</div><div><b>PHONE:</b> ${printPhone}</div></div>
+<div style="display:flex;justify-content:space-between"><div><b>INVOICE #</b> ${escapeHtml(invData.id)}</div><div><b>DATE:</b> ${escapeHtml(printDate)}</div></div>
+<div style="display:flex;justify-content:space-between;margin-top:8px"><div><b>PATIENT:</b> ${escapeHtml(printPatient)}</div><div><b>PHONE:</b> ${escapeHtml(printPhone)}</div></div>
 <table><thead><tr style="border-bottom:2px solid #000"><th style="text-align:left;padding:8px">Medicine</th><th>Qty</th><th>MRP</th><th style="text-align:right">Total</th></tr></thead><tbody>${itemsRows}</tbody></table>
 <div style="margin-top:20px;margin-left:auto;width:200px">
 <div style="display:flex;justify-content:space-between"><span>Subtotal</span><span>₹${printSubtotal.toFixed(2)}</span></div>

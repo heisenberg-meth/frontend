@@ -15,6 +15,7 @@ import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import api from "../../api.js";
 import { API_ROUTES } from "../../constants/api.routes.js";
+import { escapeHtml } from "../../utils/escapeHtml";
 
 export default function SalesReport({ from, to, showToast }) {
   const [loading, setLoading] = useState(false);
@@ -124,7 +125,7 @@ export default function SalesReport({ from, to, showToast }) {
         <body>
           <div class="header">
             <h2>Viyan MedAssist - Sales Analytics Report</h2>
-            <p>Period: ${from} to ${to}</p>
+            <p>Period: ${escapeHtml(from)} to ${escapeHtml(to)}</p>
           </div>
           ${section.outerHTML}
         </body>

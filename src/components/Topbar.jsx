@@ -525,7 +525,7 @@ export default function Topbar({
                   {user?.fullName || user?.username || "Admin"}
                 </p>
                 <p className="user-display-role">
-                  {user?.role === "owner"
+                  {user?.role === "OWNER"
                     ? "Chief Pharmacist"
                     : "Staff Pharmacist"}
                 </p>
@@ -557,7 +557,7 @@ export default function Topbar({
                   <div className="dropdown-header">
                     <p className="dropdown-user">{user?.username}</p>
                     <p className="dropdown-email">
-                      {user?.role === "owner"
+                      {user?.role === "OWNER"
                         ? "Administrator"
                         : "Pharmacy Staff"}
                     </p>
