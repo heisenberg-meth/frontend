@@ -15,12 +15,16 @@ const SystemSettings = lazy(() => import("../components/SystemSettings"));
 const SalesManagement = lazy(() => import("../components/SalesManagement"));
 const ReportsHub = lazy(() => import("../components/ReportsHub"));
 const AuditLogs = lazy(() => import("../components/AuditLogs"));
-const PurchaseManagement = lazy(() => import("../components/PurchaseManagement"));
+const PurchaseManagement = lazy(
+  () => import("../components/PurchaseManagement"),
+);
 const PlanSelection = lazy(() => import("../components/PlanSelection"));
 const PaymentGateway = lazy(() => import("../components/PaymentGateway"));
 const BillingPOS = lazy(() => import("../components/BillingPOS"));
 const LowStockAlerts = lazy(() => import("../components/LowStockAlerts"));
-const ExpiryBatchIntelligence = lazy(() => import("../components/ExpiryBatchIntelligence"));
+const ExpiryBatchIntelligence = lazy(
+  () => import("../components/ExpiryBatchIntelligence"),
+);
 const BarcodeEcosystem = lazy(() => import("../components/BarcodeEcosystem"));
 const Profile = lazy(() => import("../components/Profile"));
 const Suppliers = lazy(() => import("../components/Suppliers"));
@@ -57,13 +61,14 @@ export default function AppRoutes({
   setShowAuthModal,
   setPendingUpdates,
   setShowLogoutModal,
-  PaywallComponent
+  PaywallComponent,
 }) {
   const location = useLocation();
   const subStatus = subscription?.status;
   const isExpired = subStatus === SubscriptionStatus.EXPIRED;
-  const isPrivileged = user?.role === "owner" || user?.role === "admin";
-  const needsPlanSelection = !subStatus || subStatus === SubscriptionStatus.PENDING;
+  const isPrivileged = user?.role === "OWNER" || user?.role === "ADMIN";
+  const needsPlanSelection =
+    !subStatus || subStatus === SubscriptionStatus.PENDING;
   const trialDaysLeft = subscription ? subscription.daysRemaining : null;
 
   return (
@@ -87,7 +92,10 @@ export default function AppRoutes({
             <ProtectedRoute>
               {isExpired && isPrivileged ? (
                 <PaywallComponent />
-              ) : needsPlanSelection && isPrivileged && location.pathname !== "/plans" && location.pathname !== "/payment" ? (
+              ) : needsPlanSelection &&
+                isPrivileged &&
+                location.pathname !== "/plans" &&
+                location.pathname !== "/payment" ? (
                 <Navigate to="/plans" replace />
               ) : (
                 <DashboardLayout
@@ -132,7 +140,10 @@ export default function AppRoutes({
             path="/inventory"
             element={
               <PageErrorBoundary>
-                <InventoryCRUD showToast={showToast} title="Inventory Management" />
+                <InventoryCRUD
+                  showToast={showToast}
+                  title="Inventory Management"
+                />
               </PageErrorBoundary>
             }
           />
@@ -264,7 +275,16 @@ export default function AppRoutes({
               </ProtectedRoute>
             }
           />
-          <Route path="/logs" element={<PageErrorBoundary><AuditLogs /></PageErrorBoundary>} />
+          <Route
+            path="/logs"
+            element={
+              <ProtectedRoute allowedRoles={["OWNER", "ADMIN"]}>
+                <PageErrorBoundary>
+                  <AuditLogs />
+                </PageErrorBoundary>
+              </ProtectedRoute>
+            }
+          />
           <Route
             path="/profile"
             element={
@@ -286,7 +306,11 @@ export default function AppRoutes({
             path="/subscription"
             element={
               <PageErrorBoundary>
-                <SubscriptionCRUD showToast={showToast} user={user} onActivate={handleActivateSubscription} />
+                <SubscriptionCRUD
+                  showToast={showToast}
+                  user={user}
+                  onActivate={handleActivateSubscription}
+                />
               </PageErrorBoundary>
             }
           />
@@ -298,7 +322,10 @@ export default function AppRoutes({
           element={
             <ProtectedRoute allowedRoles={["OWNER", "ADMIN"]}>
               <PageErrorBoundary>
-                <PlanSelection onSelectTrial={handleSelectTrial} onSelectPro={handleSelectPro} />
+                <PlanSelection
+                  onSelectTrial={handleSelectTrial}
+                  onSelectPro={handleSelectPro}
+                />
               </PageErrorBoundary>
             </ProtectedRoute>
           }
@@ -308,7 +335,11 @@ export default function AppRoutes({
           element={
             <ProtectedRoute allowedRoles={["OWNER", "ADMIN"]}>
               <PageErrorBoundary>
-                <PaymentGateway user={user} amount={1} onPaymentComplete={handlePaymentComplete} />
+                <PaymentGateway
+                  user={user}
+                  amount={1}
+                  onPaymentComplete={handlePaymentComplete}
+                />
               </PageErrorBoundary>
             </ProtectedRoute>
           }

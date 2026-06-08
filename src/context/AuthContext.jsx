@@ -2,16 +2,7 @@ import { useMemo, useState, useEffect, useCallback, useRef } from "react";
 import api from "../api";
 import axios from "axios";
 import { API_ROUTES } from "../constants/api.routes.js";
-import {
-  getToken,
-  setToken,
-  getRefreshToken,
-  setRefreshToken,
-  setSessionId,
-  clearAllAuth,
-  getStoredUser,
-  setUser,
-} from "../utils/authStorage";
+import { clearAllAuth, getStoredUser, setUser } from "../utils/authStorage";
 import { AuthContext } from "./authContextInstance";
 
 export function AuthProvider({ children }) {
@@ -69,21 +60,16 @@ export function AuthProvider({ children }) {
 
   const refreshToken = useCallback(async () => {
     try {
-      const storedRefreshToken = getRefreshToken();
-      console.log("Refresh token from AuthContext:", storedRefreshToken);
-
-      if (!storedRefreshToken) {
-        clearAuthState();
-        return null;
-      }
-
       const res = await axios.post(
         `${api.defaults.baseURL}/auth/refresh`,
-        { refreshToken: storedRefreshToken },
+        {},
         {
+          withCredentials: true,
           timeout: 10000,
           headers: {
-            "ngrok-skip-browser-warning": "69420",
+            ...(import.meta.env.DEV && {
+              "ngrok-skip-browser-warning": "69420",
+            }),
           },
         },
       );
@@ -91,17 +77,10 @@ export function AuthProvider({ children }) {
       const newToken =
         res.data?.data?.token || res.data?.token || res.data?.accessToken;
 
-      const newRefreshToken =
-        res.data?.data?.refreshToken || res.data?.refreshToken;
-
-      if (newRefreshToken) {
-        setRefreshToken(newRefreshToken);
-      }
       if (!newToken) {
         throw new Error("Token refresh failed: Invalid response from server.");
       }
 
-      setToken(newToken);
       return newToken;
     } catch (error) {
       console.error("[AUTH] Token refresh failed:", error.message || error);
@@ -115,16 +94,6 @@ export function AuthProvider({ children }) {
     restoreAttemptedRef.current = true;
 
     const restoreSession = async () => {
-      const accessToken = getToken();
-      const refreshTokenValue = getRefreshToken();
-
-      if (!accessToken && !refreshTokenValue) {
-        setLoading(false);
-        restoredRef.current = true;
-        setRestored(true);
-        return;
-      }
-
       const newToken = await refreshToken();
       if (!newToken) {
         clearAuthState();
@@ -162,18 +131,8 @@ export function AuthProvider({ children }) {
         throw new Error("Login failed: Invalid response from server.");
       }
 
-      const {
-        token,
-        refreshToken: newRefreshToken,
-        sessionId,
-        user: userData,
-        subscriptionExpired,
-        redirectTo,
-      } = payload;
+      const { user: userData, subscriptionExpired, redirectTo } = payload;
 
-      setToken(token);
-      if (newRefreshToken) setRefreshToken(newRefreshToken);
-      if (sessionId) setSessionId(sessionId);
       if (userData) {
         setUser(userData);
         setUserState(userData);

@@ -1,17 +1,11 @@
 import axios from "axios";
-import {
-  getToken,
-  setToken,
-  getRefreshToken,
-  setRefreshToken,
-  clearAllAuth,
-} from "./utils/authStorage";
+import { clearAllAuth } from "./utils/authStorage";
 
 const getBaseUrl = () => {
   const envUrl =
     import.meta.env.VITE_API_BASE_URL || import.meta.env.VITE_API_URL;
   if (envUrl !== undefined && envUrl !== null && envUrl !== "") return envUrl;
-  return "https://medassist-backend-hryu.onrender.com/api";
+  return "/api";
 };
 export const getBackendOrigin = () => {
   const baseUrl = getBaseUrl();
@@ -25,7 +19,7 @@ const api = axios.create({
   timeout: 120000,
   headers: {
     "Content-Type": "application/json",
-    "ngrok-skip-browser-warning": "69420",
+    ...(import.meta.env.DEV && { "ngrok-skip-browser-warning": "69420" }),
   },
 });
 
@@ -80,11 +74,6 @@ function cyrb128(str) {
 
 api.interceptors.request.use(
   (config) => {
-    const token = getToken();
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
-
     const idempotentMethods = ["POST", "PUT", "PATCH", "DELETE"];
     const excludeIdempotencyRoutes = [
       "auth/login",
@@ -122,7 +111,6 @@ api.interceptors.response.use(
     }
 
     const status = error.response.status;
-    const refreshToken = getRefreshToken();
 
     const excludedRoutes = [
       "/auth/login",
@@ -135,12 +123,7 @@ api.interceptors.response.use(
       originalRequest?.url?.includes(route),
     );
 
-    if (
-      status === 401 &&
-      refreshToken &&
-      !originalRequest._retry &&
-      !isExcluded
-    ) {
+    if (status === 401 && !originalRequest._retry && !isExcluded) {
       if (isRefreshing) {
         return new Promise((resolve, reject) => {
           failedQueue.push({ resolve, reject });
@@ -154,14 +137,9 @@ api.interceptors.response.use(
       isRefreshing = true;
 
       try {
-        const currentRefreshToken = getRefreshToken ? getRefreshToken() : null;
-
-        console.log("Refreshing token...");
-        console.log("Refresh token: ", currentRefreshToken);
-
         const res = await axios.post(
           `${getBaseUrl()}/auth/refresh`,
-          { refreshToken: currentRefreshToken },
+          {},
           {
             withCredentials: true,
             timeout: 10000,
@@ -174,20 +152,11 @@ api.interceptors.response.use(
         const newToken =
           res.data?.data?.token || res.data?.token || res.data?.accessToken;
 
-        const newRefreshToken =
-          res.data?.data?.refreshToken || res.data?.refreshToken;
-
-        if (newRefreshToken) {
-          setRefreshToken(newRefreshToken);
-        }
-
         if (!newToken) {
           throw new Error("No token in refresh response");
         }
 
-        setToken(newToken);
         processQueue(null, newToken);
-        originalRequest.headers.Authorization = `Bearer ${newToken}`;
         return api(originalRequest);
       } catch (refreshError) {
         processQueue(refreshError, null);

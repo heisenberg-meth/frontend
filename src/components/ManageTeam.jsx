@@ -377,7 +377,7 @@ export default function ManageTeam({ user, showToast }) {
                               {m.fullName || m.username}
                             </span>
                             <span className="role">
-                              {m.role === "owner"
+                              {m.role === "OWNER"
                                 ? "System Administrator"
                                 : "Clinical Pharmacist"}
                             </span>
@@ -385,7 +385,7 @@ export default function ManageTeam({ user, showToast }) {
                         </div>
                       </td>
                       <td className="perm-cell">
-                        {m.role === "owner" ? (
+                        {m.role === "OWNER" ? (
                           <CheckCircle2 size={16} className="perm-ok" />
                         ) : (
                           <XCircle size={16} className="perm-no" />
@@ -395,7 +395,7 @@ export default function ManageTeam({ user, showToast }) {
                         <CheckCircle2 size={16} className="perm-ok" />
                       </td>
                       <td className="perm-cell">
-                        {m.role === "owner" ? (
+                        {m.role === "OWNER" ? (
                           <CheckCircle2 size={16} className="perm-ok" />
                         ) : (
                           <XCircle size={16} className="perm-no" />
@@ -421,7 +421,7 @@ export default function ManageTeam({ user, showToast }) {
                           <button className="icon-btn">
                             <MoreVertical size={14} />
                           </button>
-                          {user.role === "owner" && m.id !== user.id && (
+                          {user.role === "OWNER" && m.id !== user.id && (
                             <button
                               className="icon-btn delete"
                               onClick={() => removeMemberFn(m.id)}

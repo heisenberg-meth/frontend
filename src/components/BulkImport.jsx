@@ -29,6 +29,12 @@ export default function BulkImport({ fetchData, showToast }) {
     categoryColumn: "category",
     batchColumn: "batch_no",
     barcodeColumn: "barcode",
+    manufacturerColumn: "manufacturer",
+    genericNameColumn: "generic_name",
+    strengthColumn: "strength",
+    dosageFormColumn: "dosage_form",
+    hsnCodeColumn: "hsn_code",
+    gstPercentageColumn: "gst_percent",
   });
   const [importProgress, setImportProgress] = useState(0);
   const [importStatus, setImportStatus] = useState("idle");
@@ -104,6 +110,19 @@ export default function BulkImport({ fetchData, showToast }) {
         batchColumn: ["batch", "lot", "no", "code"],
         barcodeColumn: ["barcode", "upc", "ean", "sku"],
         categoryColumn: ["category", "cat", "type", "group", "classification"],
+        manufacturerColumn: [
+          "manufacturer",
+          "mfr",
+          "maker",
+          "brand",
+          "company",
+          "vendor",
+        ],
+        genericNameColumn: ["generic", "gen", "salt", "composition"],
+        strengthColumn: ["strength", "mg", "ml", "dose", "concentration"],
+        dosageFormColumn: ["dosage", "form", "type", "drug_form"],
+        hsnCodeColumn: ["hsn", "hsn_code", "hsncode", "sac", "tariff"],
+        gstPercentageColumn: ["gst", "gst%", "tax", "tax_percent"],
       };
 
       if (fileHeaders.length <= 1) {
@@ -122,6 +141,12 @@ export default function BulkImport({ fetchData, showToast }) {
         "batchColumn",
         "barcodeColumn",
         "categoryColumn",
+        "manufacturerColumn",
+        "genericNameColumn",
+        "strengthColumn",
+        "dosageFormColumn",
+        "hsnCodeColumn",
+        "gstPercentageColumn",
       ];
 
       fieldOrder.forEach((field) => {
@@ -152,6 +177,12 @@ export default function BulkImport({ fetchData, showToast }) {
       batch: String(row[mapping.batchColumn] || "").trim(),
       barcode: String(row[mapping.barcodeColumn] || "").trim(),
       category: String(row[mapping.categoryColumn] || "").trim(),
+      manufacturer: String(row[mapping.manufacturerColumn] || "").trim(),
+      genericName: String(row[mapping.genericNameColumn] || "").trim(),
+      strength: String(row[mapping.strengthColumn] || "").trim(),
+      dosageForm: String(row[mapping.dosageFormColumn] || "").trim(),
+      hsnCode: String(row[mapping.hsnCodeColumn] || "").trim(),
+      gstPercentage: String(row[mapping.gstPercentageColumn] || "").trim(),
     }));
 
     if (result.length > 0) {
@@ -426,16 +457,14 @@ export default function BulkImport({ fetchData, showToast }) {
       expiryColumn: "expiry_dt",
       priceColumn: "price_inr",
       batchColumn: "batch_no",
-      brandColumn: "",
-      genericColumn: "",
       categoryColumn: "",
       manufacturerColumn: "",
       barcodeColumn: "barcode",
-      supplierInvColumn: "",
-      reorderColumn: "",
-      mrpColumn: "",
-      hsnColumn: "",
-      gstColumn: "",
+      genericNameColumn: "",
+      strengthColumn: "",
+      dosageFormColumn: "",
+      hsnCodeColumn: "",
+      gstPercentageColumn: "",
     });
     showToast("AI mapping restored", "success");
   };
@@ -562,6 +591,10 @@ export default function BulkImport({ fetchData, showToast }) {
     const medicines = getMappedMedicines();
     try {
       setImportProgress(45);
+
+      console.log("MEDICINES PAYLOAD");
+      console.log(JSON.stringify(medicines, null, 2));
+
       const res = await api.post("/import/bulk", {
         medicines,
         supplier: selectedSupplier,
@@ -584,10 +617,13 @@ export default function BulkImport({ fetchData, showToast }) {
       } else {
         throw new Error(res.data?.message || "Failed to commit import");
       }
-    } catch (err) {
-      console.error(err);
+    } catch (error) {
+      console.log("IMPORT ERROR");
+      console.log(error.response?.data);
+      console.log(error.response?.status);
+      console.log(error.response);
       setImportStatus("idle");
-      showToast(err.message || "Import failed", "error");
+      showToast(error.message || "Import failed", "error");
     }
   };
 
@@ -610,6 +646,7 @@ export default function BulkImport({ fetchData, showToast }) {
         fileContent: text,
         duplicateStrategy,
         barcodeOptions,
+        supplier: selectedSupplier,
       });
 
       if (!res.data?.success) {
@@ -710,6 +747,12 @@ export default function BulkImport({ fetchData, showToast }) {
     { key: "batchColumn", label: "Batch Number" },
     { key: "barcodeColumn", label: "Barcode / SKU" },
     { key: "categoryColumn", label: "Category" },
+    { key: "manufacturerColumn", label: "Manufacturer" },
+    { key: "genericNameColumn", label: "Generic Name" },
+    { key: "strengthColumn", label: "Strength" },
+    { key: "dosageFormColumn", label: "Dosage Form" },
+    { key: "hsnCodeColumn", label: "HSN Code" },
+    { key: "gstPercentageColumn", label: "GST %" },
   ];
 
   return (
