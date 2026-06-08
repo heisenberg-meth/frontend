@@ -26,6 +26,33 @@ const api = axios.create({
 let isRefreshing = false;
 let failedQueue = [];
 let sessionExpiredDispatched = false;
+let csrfToken = null;
+let csrfPromise = null;
+
+async function getCsrfToken() {
+  if (csrfToken) return csrfToken;
+  if (csrfPromise) return csrfPromise;
+
+  csrfPromise = axios
+    .get(`${getBaseUrl()}/csrf-token`, {
+      withCredentials: true,
+      headers: {
+        ...(import.meta.env.DEV && { "ngrok-skip-browser-warning": "69420" }),
+      },
+    })
+    .then((res) => {
+      csrfToken = res.data?.csrfToken || res.data?.data?.csrfToken;
+      csrfPromise = null;
+      return csrfToken;
+    })
+    .catch((err) => {
+      csrfPromise = null;
+      console.error("[CSRF] Failed to fetch CSRF token:", err);
+      return null;
+    });
+
+  return csrfPromise;
+}
 
 function processQueue(error, token = null) {
   failedQueue.forEach((prom) => {
@@ -73,10 +100,23 @@ function cyrb128(str) {
 }
 
 api.interceptors.request.use(
-  (config) => {
+  async (config) => {
     const token = localStorage.getItem("viyan_token");
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
+    }
+
+    const stateChangingMethods = ["POST", "PUT", "PATCH", "DELETE"];
+    const excludeCsrfRoutes = ["csrf-token", "payments/webhook"];
+
+    if (
+      stateChangingMethods.includes(config.method?.toUpperCase()) &&
+      !excludeCsrfRoutes.some((route) => config.url?.includes(route))
+    ) {
+      const activeCsrfToken = await getCsrfToken();
+      if (activeCsrfToken) {
+        config.headers["x-csrf-token"] = activeCsrfToken;
+      }
     }
 
     const idempotentMethods = ["POST", "PUT", "PATCH", "DELETE"];
@@ -129,6 +169,10 @@ api.interceptors.response.use(
     );
 
     if (status === 401 && !originalRequest._retry && !isExcluded) {
+      if (!localStorage.getItem("viyan_user")) {
+        return Promise.reject(error);
+      }
+
       if (isRefreshing) {
         return new Promise((resolve, reject) => {
           failedQueue.push({ resolve, reject });
@@ -142,10 +186,9 @@ api.interceptors.response.use(
       isRefreshing = true;
 
       try {
-        const storedRefreshToken = localStorage.getItem("viyan_refresh_token");
         const res = await axios.post(
           `${getBaseUrl()}/auth/refresh`,
-          { refreshToken: storedRefreshToken },
+          {},
           {
             withCredentials: true,
             timeout: 10000,
@@ -157,22 +200,20 @@ api.interceptors.response.use(
 
         const payload = res.data?.data || res.data;
         const newToken = payload?.token || payload?.accessToken;
-        const newRefreshToken = payload?.refreshToken;
 
         if (!newToken) {
           throw new Error("No token in refresh response");
         }
 
         localStorage.setItem("viyan_token", newToken);
-        if (newRefreshToken) {
-          localStorage.setItem("viyan_refresh_token", newRefreshToken);
-        }
 
         originalRequest.headers.Authorization = `Bearer ${newToken}`;
         processQueue(null, newToken);
         return api(originalRequest);
       } catch (refreshError) {
         processQueue(refreshError, null);
+        csrfToken = null;
+        csrfPromise = null;
         clearAllAuth();
         dispatchSessionExpired("Session expired. Please log in again.");
         return Promise.reject(refreshError);
@@ -182,6 +223,8 @@ api.interceptors.response.use(
     }
 
     if (status === 401 && !isExcluded) {
+      csrfToken = null;
+      csrfPromise = null;
       clearAllAuth();
       dispatchSessionExpired("Session expired. Please log in again.");
     }
