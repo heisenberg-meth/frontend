@@ -18,8 +18,6 @@ import { getLowStockMedicines } from "../services/inventory.service";
 import { getStockAlerts } from "../services/stock.service";
 import { createPurchaseOrder } from "../services/purchases.service";
 import { updateNotificationSettings } from "../services/settings.service";
-import "../styles/LowStockAlerts.css";
-
 function Spinner({ size = 14 }) {
   return (
     <Loader2 size={size} style={{ animation: "spin 0.8s linear infinite" }} />

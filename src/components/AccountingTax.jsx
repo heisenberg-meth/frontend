@@ -22,8 +22,6 @@ import {
   updateExpense,
   deleteExpense,
 } from "../services/reports.service";
-import "../styles/AccountingTax.css";
-
 function Spinner({ size = 14 }) {
   return (
     <Loader2 size={size} style={{ animation: "spin 0.8s linear infinite" }} />

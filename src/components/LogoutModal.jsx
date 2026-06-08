@@ -10,8 +10,6 @@ import {
   Loader2,
   CheckCircle2,
 } from "lucide-react";
-import "../styles/LogoutModal.css";
-
 export default function LogoutModal({
   isOpen,
   onClose,
@@ -45,7 +43,8 @@ export default function LogoutModal({
     await new Promise((resolve) => setTimeout(resolve, 1800));
 
     if (clearSession) {
-      localStorage.clear();
+      localStorage.removeItem("token");
+      localStorage.removeItem("user");
       sessionStorage.clear();
     }
 

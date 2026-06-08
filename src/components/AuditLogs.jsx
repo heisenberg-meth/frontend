@@ -11,8 +11,6 @@ import {
 import { formatDistanceToNow } from "date-fns";
 import api from "../api";
 
-import "../styles/AuditLogs.css";
-
 export default function AuditLogs() {
   const navigate = useNavigate();
   const [logs, setLogs] = useState([]);

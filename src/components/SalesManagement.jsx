@@ -2,6 +2,8 @@ import { useState, useMemo, useEffect } from "react";
 import api from "../api.js";
 import { API_ROUTES } from "../constants/api.routes.js";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "../hooks/useAuth";
+import InvoiceModal from "./invoice/InvoiceModal";
 import {
   Calendar,
   FileText,
@@ -27,10 +29,10 @@ import { saveAs } from "file-saver";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import { normalizeArrayResponse } from "../utils/apiNormalizer";
-import "../styles/SalesManagement.css";
-
 export default function SalesManagement({ showToast }) {
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const [showInvoiceModal, setShowInvoiceModal] = useState(false);
   const [activeTab, setActiveTab] = useState("daily");
   const [currentDate, setCurrentDate] = useState(new Date());
   const [hoveredBar, setHoveredBar] = useState(null);
@@ -151,7 +153,7 @@ export default function SalesManagement({ showToast }) {
     () =>
       sales.filter((sale) => {
         const patientName =
-          sale.patient?.fullName || sale.patientName || "Walk-in";
+          sale.patient?.fullName || sale.patientName || sale.customerName || "Walk-in";
         const matchesSearch =
           (sale.invoiceNumber || sale.id || "")
             .toLowerCase()
@@ -181,7 +183,7 @@ export default function SalesManagement({ showToast }) {
     () =>
       returns.filter((ret) => {
         const patientName =
-          ret.patient?.fullName || ret.patientName || "Walk-in";
+          ret.patient?.fullName || ret.patientName || ret.customerName || "Walk-in";
         const matchesSearch =
           (ret.returnNumber || ret.id || "")
             .toLowerCase()
@@ -427,8 +429,8 @@ export default function SalesManagement({ showToast }) {
           <button className="pos-btn outline" onClick={handleExport}>
             <Download size={16} /> Export
           </button>
-          <button className="pos-btn teal" onClick={() => navigate("/billing")}>
-            <Receipt size={18} /> + New Bill
+          <button className="pos-btn teal" onClick={() => setShowInvoiceModal(true)}>
+            <Receipt size={18} /> Generate Invoice
           </button>
         </div>
       </div>
@@ -587,6 +589,7 @@ export default function SalesManagement({ showToast }) {
                         <td>
                           {sale.patient?.fullName ||
                             sale.patientName ||
+                            sale.customerName ||
                             "Walk-in"}
                         </td>
                         <td>
@@ -808,7 +811,7 @@ export default function SalesManagement({ showToast }) {
                       {sale.invoiceNumber || sale.id}
                     </td>
                     <td>
-                      {sale.patient?.fullName || sale.patientName || "Walk-in"}
+                      {sale.patient?.fullName || sale.patientName || sale.customerName || "Walk-in"}
                     </td>
                     <td className="result-meta">
                       {sale.patient?.phone || sale.phone || "—"}
@@ -969,6 +972,7 @@ export default function SalesManagement({ showToast }) {
                     <div style={{ fontWeight: 700 }}>
                       {selectedSale.patient?.fullName ||
                         selectedSale.patientName ||
+                        selectedSale.customerName ||
                         "Walk-in"}
                     </div>
                   </div>
@@ -1161,6 +1165,7 @@ export default function SalesManagement({ showToast }) {
                   {selectedSale.invoiceNumber || selectedSale.id} (
                   {selectedSale.patient?.fullName ||
                     selectedSale.patientName ||
+                    selectedSale.customerName ||
                     "Walk-in"}
                   )
                 </p>
@@ -1353,6 +1358,15 @@ export default function SalesManagement({ showToast }) {
               </div>
             </motion.div>
           </div>
+        )}
+        {showInvoiceModal && (
+          <InvoiceModal
+            isOpen={showInvoiceModal}
+            onClose={() => setShowInvoiceModal(false)}
+            onSaveSuccess={() => refreshSalesData()}
+            showToast={showToast}
+            user={user}
+          />
         )}
       </AnimatePresence>
     </div>

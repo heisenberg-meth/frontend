@@ -22,8 +22,6 @@ import {
 import { motion, AnimatePresence } from "framer-motion";
 import { searchByBarcode, getMedicines } from "../services/inventory.service";
 import { getBarcodes, verifyBarcode } from "../services/reports.service";
-import "../styles/BarcodeEcosystem.css";
-
 function Spinner({ size = 14 }) {
   return (
     <Loader2 size={size} style={{ animation: "spin 0.8s linear infinite" }} />

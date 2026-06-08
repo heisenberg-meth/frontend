@@ -17,8 +17,6 @@ import ExcelJS from "exceljs";
 import Papa from "papaparse";
 import api from "../api";
 import { getSuppliers, createSupplier } from "../services/suppliers.service.js";
-import "../styles/BulkImport.css";
-
 export default function BulkImport({ fetchData, showToast }) {
   const navigate = useNavigate();
   const [file, setFile] = useState(null);

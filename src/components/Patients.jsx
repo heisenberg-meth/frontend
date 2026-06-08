@@ -16,8 +16,6 @@ import {
   Upload,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import "../styles/Patients.css";
-
 function Spinner({ size = 14 }) {
   return <Loader2 size={size} className="spinner-icon" />;
 }

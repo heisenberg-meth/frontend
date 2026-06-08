@@ -13,8 +13,6 @@ import api from "../api";
 import { useAuth } from "../hooks/useAuth";
 import { API_ROUTES } from "../constants/api.routes.js";
 import SubscriptionCRUD from "./SubscriptionCRUD";
-import "../styles/SystemSettings.css";
-
 export default function SystemSettings({
   user,
   lowStock,

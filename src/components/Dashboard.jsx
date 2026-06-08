@@ -18,8 +18,6 @@ import {
 import { differenceInDays, format } from "date-fns";
 import api from "../api";
 import { normalizeObjectResponse } from "../utils/apiNormalizer";
-import "../styles/IntelligenceHub.css";
-
 /* ─── Helpers ─── */
 const getDays = (d) => {
   try {

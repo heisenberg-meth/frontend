@@ -35,8 +35,6 @@ import {
   convertPrescriptionToInvoice,
 } from "../services/prescriptions.service";
 import ConfirmModal from "./ConfirmModal";
-import "../styles/PrescriptionsCRUD.css";
-
 function Spinner({ size = 14 }) {
   return (
     <Loader2 size={size} style={{ animation: "spin 0.8s linear infinite" }} />

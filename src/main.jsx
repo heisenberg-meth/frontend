@@ -6,6 +6,27 @@ import "./styles/AppShell.css";
 import "./styles/ConfirmModal.css";
 import "./styles/DataTable.css";
 import "./styles/SubscriptionCRUD.css";
+import "./styles/LogoutModal.css";
+import "./styles/BarcodeEcosystem.css";
+import "./styles/Suppliers.css";
+import "./styles/SystemSettings.css";
+import "./styles/AuthSplit.css";
+import "./styles/BulkImport.css";
+import "./styles/PurchaseManagement.css";
+import "./styles/BillingPOS.css";
+import "./styles/SalesManagement.css";
+import "./styles/LowStockAlerts.css";
+import "./styles/Select.css";
+import "./styles/AccountingTax.css";
+import "./styles/AuditLogs.css";
+import "./styles/ExpiryBatchIntelligence.css";
+import "./styles/IntelligenceHub.css";
+import "./styles/InventoryCRUD.css";
+import "./styles/PrescriptionsCRUD.css";
+import "./styles/ManageTeam.css";
+import "./styles/ReportsHub.css";
+import "./styles/Patients.css";
+import "./styles/Profile.css";
 import App from "./App.jsx";
 
 // Global logging to catch chunk load errors and unhandled promise rejections

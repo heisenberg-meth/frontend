@@ -36,8 +36,6 @@ import {
   uploadTeamAvatar,
 } from "../services/profile.service";
 import { getBackendOrigin } from "../api";
-import "../styles/ManageTeam.css";
-
 export default function ManageTeam({ user, showToast }) {
   const [team, setTeam] = useState([]);
   const [loading, setLoading] = useState(false);

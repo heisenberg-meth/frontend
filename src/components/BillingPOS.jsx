@@ -29,8 +29,6 @@ import {
 } from "../utils/apiNormalizer";
 import { useAuth } from "../hooks/useAuth";
 import { normalizeInvoice } from "../utils/billingNormalizer";
-import "../styles/BillingPOS.css";
-
 function numberToWords(n) {
   if (n === 0) return "Zero";
   const ones = [

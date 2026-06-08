@@ -31,8 +31,6 @@ import {
   terminateSession,
 } from "../services/profile.service";
 import api from "../api";
-import "../styles/Profile.css";
-
 const getBackendOrigin = () => {
   const baseURL =
     api.defaults.baseURL ||

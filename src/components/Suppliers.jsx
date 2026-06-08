@@ -25,8 +25,6 @@ import {
   updateSupplier,
   deleteSupplier,
 } from "../services/suppliers.service";
-import "../styles/Suppliers.css";
-
 function Spinner({ size = 14 }) {
   return (
     <Loader2 size={size} style={{ animation: "spin 0.8s linear infinite" }} />

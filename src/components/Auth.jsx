@@ -2,8 +2,6 @@ import { useState } from "react";
 import { Lock, Mail, Shield, Eye, EyeOff, Check, Loader2 } from "lucide-react";
 import api from "../api";
 import { API_ROUTES } from "../constants/api.routes.js";
-import "../styles/AuthSplit.css";
-
 export default function Auth({ onAuth }) {
   const [view, setView] = useState("login");
   const [loginType, setLoginType] = useState("admin");

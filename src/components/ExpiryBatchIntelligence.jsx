@@ -25,8 +25,6 @@ import { motion, AnimatePresence } from "framer-motion";
 import ExcelJS from "exceljs";
 import { saveAs } from "file-saver";
 import api from "../api";
-import "../styles/ExpiryBatchIntelligence.css";
-
 function getDays(expiryDate) {
   const diff = new Date(expiryDate) - new Date();
   return Math.ceil(diff / (1000 * 60 * 60 * 24));

@@ -4,7 +4,6 @@ import { API_ROUTES } from "../constants/api.routes.js";
 import { useAuth } from "../hooks/useAuth";
 import { ShieldCheck, Loader2, Sparkles } from "lucide-react";
 import ConfirmModal from "./ConfirmModal";
-import "../styles/SubscriptionCRUD.css";
 import { loadRazorpay } from "../utils/razorpay";
 
 function Spinner({ size = 14 }) {

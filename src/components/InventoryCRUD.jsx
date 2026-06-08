@@ -31,8 +31,6 @@ import { useAuth } from "../hooks/useAuth";
 import ConfirmModal from "./ConfirmModal";
 import { normalizeMedicine } from "../utils/normalizers";
 import { calculateTotalStockValue } from "../utils/inventoryHelpers";
-import "../styles/InventoryCRUD.css";
-
 function Spinner({ size = 14 }) {
   return (
     <Loader2 size={size} style={{ animation: "spin 0.8s linear infinite" }} />

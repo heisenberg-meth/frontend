@@ -6,8 +6,6 @@ import SalesReport from "./reports/SalesReport";
 import PurchaseReport from "./reports/PurchaseReport";
 import PnLReport from "./reports/PnLReport";
 import ExpiryReport from "./reports/ExpiryReport";
-import "../styles/ReportsHub.css";
-
 const getDatesForPeriod = (period) => {
   const to = new Date();
   const from = new Date();

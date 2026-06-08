@@ -68,7 +68,9 @@ export default function PaymentRecoveryModal({ onRecovered, onClose }) {
 
     setStatus("recovering");
     try {
-      const res = await api.post(`${API_ROUTES.PAYMENTS_RECOVER}/${paymentState.orderId}`);
+      const res = await api.post(
+        `${API_ROUTES.PAYMENTS_RECOVER}/${paymentState.orderId}`,
+      );
       if (res.data?.success) {
         setStatus("recovered");
         sessionStorage.removeItem("pending_payment_order");

@@ -1,5 +1,12 @@
 import { useState, useEffect, useCallback } from "react";
-import { Loader2, AlertTriangle, Briefcase, Plus, X, UploadCloud } from "lucide-react";
+import {
+  Loader2,
+  AlertTriangle,
+  Briefcase,
+  Plus,
+  X,
+  UploadCloud,
+} from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import api from "../../api.js";
 import { API_ROUTES } from "../../constants/api.routes.js";
@@ -19,9 +26,12 @@ export default function PnLReport({ from, to, showToast }) {
     setLoading(true);
     setErrorState(null);
     try {
-      const res = await api.get(API_ROUTES.REPORTS_FINANCE || "reports/finance", {
-        params: { from, to }
-      });
+      const res = await api.get(
+        API_ROUTES.REPORTS_FINANCE || "reports/finance",
+        {
+          params: { from, to },
+        },
+      );
       if (res.data && res.data.success) {
         setData(res.data.data);
       } else {
@@ -29,7 +39,9 @@ export default function PnLReport({ from, to, showToast }) {
       }
     } catch (err) {
       console.error("PnL fetch error:", err);
-      setErrorState(err.response?.data?.error || err.message || "Failed to load PnL report");
+      setErrorState(
+        err.response?.data?.error || err.message || "Failed to load PnL report",
+      );
     } finally {
       setLoading(false);
     }
@@ -44,34 +56,74 @@ export default function PnLReport({ from, to, showToast }) {
       };
       loadData();
     }
-    return () => { isMounted = false; };
+    return () => {
+      isMounted = false;
+    };
   }, [from, to, fetchPnL]);
 
   if (loading) {
     return (
-      <div className="reports-loading" style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", minHeight: "300px", gap: "12px" }}>
+      <div
+        className="reports-loading"
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          minHeight: "300px",
+          gap: "12px",
+        }}
+      >
         <Loader2 className="animate-spin" size={36} color="var(--primary)" />
-        <p style={{ color: "var(--text-muted)", fontSize: "14px" }}>Loading financial intelligence data...</p>
+        <p style={{ color: "var(--text-muted)", fontSize: "14px" }}>
+          Loading financial intelligence data...
+        </p>
       </div>
     );
   }
 
   if (errorState) {
     return (
-      <div className="empty-state-card" style={{ padding: "40px", textAlign: "center", border: "1px solid rgba(220,53,69,0.2)", background: "rgba(220,53,69,0.05)", borderRadius: "8px" }}>
-        <AlertTriangle size={36} color="var(--danger)" style={{ marginBottom: "12px" }} />
-        <h4 style={{ fontWeight: 700, color: "var(--danger)" }}>PnL Report Error</h4>
-        <p style={{ color: "var(--text-muted)", marginTop: "6px" }}>{errorState}</p>
+      <div
+        className="empty-state-card"
+        style={{
+          padding: "40px",
+          textAlign: "center",
+          border: "1px solid rgba(220,53,69,0.2)",
+          background: "rgba(220,53,69,0.05)",
+          borderRadius: "8px",
+        }}
+      >
+        <AlertTriangle
+          size={36}
+          color="var(--danger)"
+          style={{ marginBottom: "12px" }}
+        />
+        <h4 style={{ fontWeight: 700, color: "var(--danger)" }}>
+          PnL Report Error
+        </h4>
+        <p style={{ color: "var(--text-muted)", marginTop: "6px" }}>
+          {errorState}
+        </p>
       </div>
     );
   }
 
-  if (!data || !data.summary || typeof data.summary.revenue !== 'number') {
+  if (!data || !data.summary || typeof data.summary.revenue !== "number") {
     return (
-      <div className="empty-state-card" style={{ padding: "60px 20px", textAlign: "center" }}>
-        <Briefcase size={40} color="var(--text-muted)" style={{ marginBottom: "12px" }} />
+      <div
+        className="empty-state-card"
+        style={{ padding: "60px 20px", textAlign: "center" }}
+      >
+        <Briefcase
+          size={40}
+          color="var(--text-muted)"
+          style={{ marginBottom: "12px" }}
+        />
         <h4 style={{ fontWeight: 700 }}>No financial data found</h4>
-        <p style={{ color: "var(--text-muted)", marginTop: "6px" }}>There are no transactions recorded in this period to aggregate.</p>
+        <p style={{ color: "var(--text-muted)", marginTop: "6px" }}>
+          There are no transactions recorded in this period to aggregate.
+        </p>
         <button
           className="pos-btn teal"
           style={{ padding: "8px 16px", fontSize: "13px", marginTop: "16px" }}
@@ -114,7 +166,11 @@ export default function PnLReport({ from, to, showToast }) {
             <div className="p-form-grid" style={{ gridTemplateColumns: "1fr" }}>
               <div className="pos-input-group">
                 <label className="p-label">CATEGORY</label>
-                <select className="pos-input" value={expenseCategory} onChange={(e) => setExpenseCategory(e.target.value)}>
+                <select
+                  className="pos-input"
+                  value={expenseCategory}
+                  onChange={(e) => setExpenseCategory(e.target.value)}
+                >
                   <option>Salary</option>
                   <option>Rent</option>
                   <option>Utilities</option>
@@ -172,18 +228,20 @@ export default function PnLReport({ from, to, showToast }) {
                     cursor: "pointer",
                     display: "flex",
                     flexDirection: "column",
-                    alignItems: "center"
+                    alignItems: "center",
                   }}
                 >
                   <UploadCloud
                     size={20}
                     style={{
                       color: "var(--primary)",
-                      marginBottom: "4px"
+                      marginBottom: "4px",
                     }}
                   />
                   <div style={{ fontSize: "11px" }}>
-                    {receiptFile ? receiptFile.name : "Drag & Drop or Click Upload"}
+                    {receiptFile
+                      ? receiptFile.name
+                      : "Drag & Drop or Click Upload"}
                   </div>
                 </label>
               </div>
@@ -211,7 +269,7 @@ export default function PnLReport({ from, to, showToast }) {
                   await api.post("accounting/expenses", {
                     category: expenseCategory,
                     amount: Number(expenseAmount),
-                    description: expenseDescription || undefined
+                    description: expenseDescription || undefined,
                   });
                   showToast("Expense Saved", "success");
                   setShowExpenseModal(false);
@@ -220,7 +278,10 @@ export default function PnLReport({ from, to, showToast }) {
                   setReceiptFile(null);
                   fetchPnL();
                 } catch (err) {
-                  showToast(err.response?.data?.error || "Failed to save expense", "error");
+                  showToast(
+                    err.response?.data?.error || "Failed to save expense",
+                    "error",
+                  );
                 } finally {
                   setExpenseSaving(false);
                 }
@@ -256,13 +317,15 @@ export default function PnLReport({ from, to, showToast }) {
               className="pnl-val"
               style={{ color: "var(--success)", fontSize: "20px" }}
             >
-              ₹{(summary.grossProfit || 0).toLocaleString()} ({summary.grossProfitPct || 0}%)
+              ₹{(summary.grossProfit || 0).toLocaleString()} (
+              {summary.grossProfitPct || 0}%)
             </span>
           </div>
           <div className="pnl-row">
             <span className="pnl-label">– Expenses</span>
             <span className="pnl-val" style={{ color: "var(--warning)" }}>
-              ₹{(summary.expenses || 0).toLocaleString()} ({summary.expensePct || 0}%)
+              ₹{(summary.expenses || 0).toLocaleString()} (
+              {summary.expensePct || 0}%)
             </span>
           </div>
           <div className="pnl-row total">
@@ -271,18 +334,31 @@ export default function PnLReport({ from, to, showToast }) {
               ₹{(summary.netProfit || 0).toLocaleString()}
             </span>
           </div>
-          <div style={{ color: "var(--primary)", fontWeight: 800, fontSize: "14px" }}>
+          <div
+            style={{
+              color: "var(--primary)",
+              fontWeight: 800,
+              fontSize: "14px",
+            }}
+          >
             {summary.netMargin || 0}% NET MARGIN
           </div>
         </div>
 
-        <div className="pnl-col-right" style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
+        <div
+          className="pnl-col-right"
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+          }}
+        >
           <div
             className="donut-visual"
             style={{
               background: `conic-gradient(var(--primary) 0% ${Math.max(0, summary.netMargin || 0)}%, var(--info) ${Math.max(0, summary.netMargin || 0)}% ${Math.min(100, (summary.cogsPct || 0) + Math.max(0, summary.netMargin || 0))}%, var(--warning) ${Math.min(100, (summary.cogsPct || 0) + Math.max(0, summary.netMargin || 0))}% ${Math.min(100, (summary.expensePct || 0) + (summary.cogsPct || 0) + Math.max(0, summary.netMargin || 0))}%, var(--success) ${Math.min(100, (summary.expensePct || 0) + (summary.cogsPct || 0) + Math.max(0, summary.netMargin || 0))}% 100%)`,
               width: "180px",
-              height: "180px"
+              height: "180px",
             }}
           >
             <div className="donut-inner-text" style={{ fontSize: "24px" }}>
@@ -295,23 +371,35 @@ export default function PnLReport({ from, to, showToast }) {
               gridTemplateColumns: "1fr 1fr",
               gap: "16px",
               width: "100%",
-              marginTop: "32px"
+              marginTop: "32px",
             }}
           >
             <div className="legend-item">
-              <div className="legend-dot" style={{ background: "var(--primary)" }} />
+              <div
+                className="legend-dot"
+                style={{ background: "var(--primary)" }}
+              />
               <span>Net Profit</span>
             </div>
             <div className="legend-item">
-              <div className="legend-dot" style={{ background: "var(--info)" }} />
+              <div
+                className="legend-dot"
+                style={{ background: "var(--info)" }}
+              />
               <span>COGS</span>
             </div>
             <div className="legend-item">
-              <div className="legend-dot" style={{ background: "var(--warning)" }} />
+              <div
+                className="legend-dot"
+                style={{ background: "var(--warning)" }}
+              />
               <span>Expenses</span>
             </div>
             <div className="legend-item">
-              <div className="legend-dot" style={{ background: "var(--success)" }} />
+              <div
+                className="legend-dot"
+                style={{ background: "var(--success)" }}
+              />
               <span>Gross</span>
             </div>
           </div>
@@ -331,7 +419,10 @@ export default function PnLReport({ from, to, showToast }) {
         </div>
         <div className="expense-categories" style={{ marginTop: "20px" }}>
           {expensesDistribution.length === 0 ? (
-            <div className="result-meta" style={{ textAlign: "center", padding: "40px 0", width: "100%" }}>
+            <div
+              className="result-meta"
+              style={{ textAlign: "center", padding: "40px 0", width: "100%" }}
+            >
               No operational expenses logged for this range.
             </div>
           ) : (
@@ -341,7 +432,7 @@ export default function PnLReport({ from, to, showToast }) {
                   className="cat-icon-box"
                   style={{
                     background: `${c.color || "var(--info)"}15`,
-                    color: c.color || "var(--info)"
+                    color: c.color || "var(--info)",
                   }}
                 >
                   <Briefcase size={18} />
