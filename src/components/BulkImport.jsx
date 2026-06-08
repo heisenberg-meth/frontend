@@ -72,8 +72,8 @@ export default function BulkImport({ fetchData, showToast }) {
   }, []);
   const [showSaveMappingModal, setShowSaveMappingModal] = useState(false);
   const [showLoadMappingModal, setShowLoadMappingModal] = useState(false);
-  const [importJobId, setImportJobId] = useState(null);
-  const [importSummary, setImportSummary] = useState(null);
+  const [, setImportJobId] = useState(null);
+  const [, setImportSummary] = useState(null);
   const [savedTemplates, setSavedTemplates] = useState(() => {
     try {
       const stored = localStorage.getItem("bulkImportTemplates");

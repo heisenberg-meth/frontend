@@ -9,7 +9,6 @@ import InvoicePreviewPanel from "./InvoicePreviewPanel";
 import InvoiceFooterActions from "./InvoiceFooterActions";
 import api from "../../api.js";
 import { API_ROUTES } from "../../constants/api.routes.js";
-import { normalizeInvoice } from "../../utils/billingNormalizer";
 import "../../styles/InvoiceModal.css";
 
 const backdropVariants = {
@@ -24,8 +23,6 @@ const modalVariants = {
 };
 
 export default function InvoiceModal({ isOpen, onClose, onSaveSuccess, showToast, user }) {
-  if (!isOpen) return null;
-
   const [patient, setPatient] = useState({ id: null, name: "", phone: "" });
   const [doctorName, setDoctorName] = useState("");
   const [lineItems, setLineItems] = useState([]);
@@ -36,12 +33,6 @@ export default function InvoiceModal({ isOpen, onClose, onSaveSuccess, showToast
 
   const [savingDraft, setSavingDraft] = useState(false);
   const [savingInvoice, setSavingInvoice] = useState(false);
-
-  useEffect(() => {
-    if (isWalkIn) {
-      setPatient({ id: null, name: "Walk-in Customer", phone: "" });
-    }
-  }, [isWalkIn]);
 
   useEffect(() => {
     if (isOpen) {
@@ -187,6 +178,8 @@ export default function InvoiceModal({ isOpen, onClose, onSaveSuccess, showToast
     }
   };
 
+  if (!isOpen) return null;
+
   return createPortal(
     <motion.div
       className="invoice-overlay"
@@ -196,7 +189,7 @@ export default function InvoiceModal({ isOpen, onClose, onSaveSuccess, showToast
       exit="hidden"
     >
       <motion.div
-        className="invoice-modal"
+        className={`invoice-modal ${showPreview ? "has-preview" : "no-preview"}`}
         variants={modalVariants}
         initial="hidden"
         animate="visible"
@@ -204,29 +197,28 @@ export default function InvoiceModal({ isOpen, onClose, onSaveSuccess, showToast
       >
         {/* Header */}
         <div className="invoice-header flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="p-2.5 bg-[#4fdbc8]/15 rounded-xl border border-[#4fdbc8]/20">
-              <Receipt className="text-[#4fdbc8]" size={24} />
+          <div className="flex items-center gap-2">
+            <div className="p-1.5 bg-[#4fdbc8]/15 rounded-lg border border-[#4fdbc8]/20">
+              <Receipt className="text-[#4fdbc8]" size={16} />
             </div>
             <div>
-              <h2 className="text-xl font-bold text-white tracking-tight">Generate Invoice</h2>
-              <p className="text-xs text-slate-400 mt-0.5">Create patient transaction & instant printed receipt</p>
+              <h2 className="text-base font-bold text-white tracking-tight">New Invoice</h2>
             </div>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
             <button
               type="button"
               onClick={() => setShowPreview(!showPreview)}
-              className="px-4 py-2 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 text-xs text-slate-300 font-semibold flex items-center gap-2 transition-all hover:text-white"
+              className="px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 hover:bg-white/10 text-[11px] text-slate-300 font-semibold flex items-center gap-1.5 transition-all hover:text-white"
             >
-              {showPreview ? <EyeOff size={14} /> : <Eye size={14} />}
-              {showPreview ? "Hide Real-time Preview" : "Show Real-time Preview"}
+              {showPreview ? <EyeOff size={13} /> : <Eye size={13} />}
+              {showPreview ? "Hide Real-time Preview" : "Live Preview Mode"}
             </button>
             <button
               onClick={onClose}
-              className="w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-slate-400 hover:text-white hover:bg-white/10 hover:border-white/20 transition-all focus:outline-none"
+              className="w-8 h-8 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center text-slate-400 hover:text-white hover:bg-white/10 hover:border-white/20 transition-all focus:outline-none"
             >
-              <X size={20} />
+              <X size={16} />
             </button>
           </div>
         </div>

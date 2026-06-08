@@ -103,7 +103,7 @@ export default function Sidebar({ user, onSignOut }) {
 
           {user?.role === "OWNER" && (
             <>
-              <NavLink
+              {/* <NavLink
                 to="/team"
                 className={({ isActive }) =>
                   `nav-link ${isActive ? "active" : ""}`
@@ -111,7 +111,7 @@ export default function Sidebar({ user, onSignOut }) {
               >
                 <Users size={18} />
                 <span>Team Management</span>
-              </NavLink>
+              </NavLink> */}
               <NavLink
                 to="/settings"
                 className={({ isActive }) =>

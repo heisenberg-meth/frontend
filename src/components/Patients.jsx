@@ -28,8 +28,8 @@ export default function Patients({ showToast }) {
   const [showDrawer, setShowDrawer] = useState(false);
   const prescriptionFileRef = useRef(null);
   const [drawerTab, setDrawerTab] = useState("overview");
-  const [showModal, setShowModal] = useState(false);
-  const [modalType, setModalType] = useState("add");
+  const [setShowModal] = useState(false);
+  const [setModalType] = useState("add");
   const [loyaltyProfile, setLoyaltyProfile] = useState(null);
   const [creditLedger, setCreditLedger] = useState([]);
   const [isRelationLoading, setIsRelationLoading] = useState(false);

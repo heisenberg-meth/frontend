@@ -60,8 +60,9 @@ export function AuthProvider({ children }) {
 
   const refreshToken = useCallback(async () => {
     try {
+      const storedRefreshToken = localStorage.getItem("viyan_refresh_token");
       const res = await axios.post(
-        `${getBaseUrl()}/auth/refresh`,
+        `${api.defaults.baseURL}/auth/refresh`,
         {},
         {
           withCredentials: true,
@@ -74,11 +75,17 @@ export function AuthProvider({ children }) {
         },
       );
 
-      const newToken =
-        res.data?.data?.token || res.data?.token || res.data?.accessToken;
+      const payload = res.data?.data || res.data;
+      const newToken = payload?.token || payload?.accessToken;
+      const newRefreshToken = payload?.refreshToken;
 
       if (!newToken) {
         throw new Error("Token refresh failed: Invalid response from server.");
+      }
+
+      localStorage.setItem("viyan_token", newToken);
+      if (newRefreshToken) {
+        localStorage.setItem("viyan_refresh_token", newRefreshToken);
       }
 
       return newToken;
@@ -131,7 +138,14 @@ export function AuthProvider({ children }) {
         throw new Error("Login failed: Invalid response from server.");
       }
 
-      const { user: userData, subscriptionExpired, redirectTo } = payload;
+      const { user: userData, subscriptionExpired, redirectTo, token, refreshToken } = payload;
+
+      if (token) {
+        localStorage.setItem("viyan_token", token);
+      }
+      if (refreshToken) {
+        localStorage.setItem("viyan_refresh_token", refreshToken);
+      }
 
       if (userData) {
         setUser(userData);

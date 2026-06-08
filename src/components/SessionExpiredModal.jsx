@@ -3,7 +3,7 @@ import { ShieldAlert, Clock, LogIn } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 export function SessionExpiredModal({ isOpen, onDismiss, onLogin }) {
-  const [showLogin, setShowLogin] = useState(false);
+  const [, setShowLogin] = useState(false);
 
   if (!isOpen) return null;
 

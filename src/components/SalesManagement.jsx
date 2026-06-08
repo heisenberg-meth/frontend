@@ -1,7 +1,6 @@
 import { useState, useMemo, useEffect } from "react";
 import api from "../api.js";
 import { API_ROUTES } from "../constants/api.routes.js";
-import { useNavigate } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
 import InvoiceModal from "./invoice/InvoiceModal";
 import {
@@ -33,7 +32,6 @@ import { escapeHtml } from "../utils/escapeHtml";
 import "../styles/SalesManagement.css";
 
 export default function SalesManagement({ showToast }) {
-  const navigate = useNavigate();
   const { user } = useAuth();
   const [showInvoiceModal, setShowInvoiceModal] = useState(false);
   const [activeTab, setActiveTab] = useState("daily");
@@ -156,7 +154,10 @@ export default function SalesManagement({ showToast }) {
     () =>
       sales.filter((sale) => {
         const patientName =
-          sale.patient?.fullName || sale.patientName || sale.customerName || "Walk-in";
+          sale.patient?.fullName ||
+          sale.patientName ||
+          sale.customerName ||
+          "Walk-in";
         const matchesSearch =
           (sale.invoiceNumber || sale.id || "")
             .toLowerCase()
@@ -186,7 +187,10 @@ export default function SalesManagement({ showToast }) {
     () =>
       returns.filter((ret) => {
         const patientName =
-          ret.patient?.fullName || ret.patientName || ret.customerName || "Walk-in";
+          ret.patient?.fullName ||
+          ret.patientName ||
+          ret.customerName ||
+          "Walk-in";
         const matchesSearch =
           (ret.returnNumber || ret.id || "")
             .toLowerCase()
@@ -432,7 +436,10 @@ export default function SalesManagement({ showToast }) {
           <button className="pos-btn outline" onClick={handleExport}>
             <Download size={16} /> Export
           </button>
-          <button className="pos-btn teal" onClick={() => setShowInvoiceModal(true)}>
+          <button
+            className="pos-btn teal"
+            onClick={() => setShowInvoiceModal(true)}
+          >
             <Receipt size={18} /> Generate Invoice
           </button>
         </div>
@@ -814,7 +821,10 @@ export default function SalesManagement({ showToast }) {
                       {sale.invoiceNumber || sale.id}
                     </td>
                     <td>
-                      {sale.patient?.fullName || sale.patientName || sale.customerName || "Walk-in"}
+                      {sale.patient?.fullName ||
+                        sale.patientName ||
+                        sale.customerName ||
+                        "Walk-in"}
                     </td>
                     <td className="result-meta">
                       {sale.patient?.phone || sale.phone || "—"}

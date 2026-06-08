@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Search, User, Phone, Clipboard, Calendar, CreditCard, Banknote, Smartphone, Check, Loader2 } from "lucide-react";
+import { User, Phone, Clipboard, Calendar, CreditCard, Banknote, Smartphone, Check, Loader2 } from "lucide-react";
 import api from "../../api.js";
 import { API_ROUTES } from "../../constants/api.routes.js";
 import { normalizeArrayResponse } from "../../utils/apiNormalizer";
@@ -73,11 +73,11 @@ export default function CustomerDetailsSection({
 
   return (
     <div className="customer-section">
-      <div className="flex items-center justify-between border-b border-white/5 pb-4">
-        <h3 className="text-md font-semibold text-white flex items-center gap-2">
-          <User size={18} className="text-[#4fdbc8]" /> Customer Details
+      <div className="flex items-center justify-between pb-1.5 border-b border-white/5 mb-1">
+        <h3 className="text-sm font-bold text-slate-300 flex items-center gap-1.5">
+          <User size={15} className="text-[#4fdbc8]" /> Customer Details
         </h3>
-        <label className="flex items-center gap-2 cursor-pointer text-xs text-slate-400">
+        <label className="flex items-center gap-1.5 cursor-pointer text-[11px] text-slate-400">
           <input
             type="checkbox"
             checked={isWalkIn}
@@ -89,7 +89,7 @@ export default function CustomerDetailsSection({
                 setPatient({ id: null, name: "", phone: "" });
               }
             }}
-            className="rounded border-white/10 bg-slate-800 text-[#4fdbc8] focus:ring-0"
+            className="rounded border-white/10 bg-slate-800 text-[#4fdbc8] focus:ring-0 w-3 h-3"
           />
           Walk-in Customer
         </label>
@@ -100,17 +100,16 @@ export default function CustomerDetailsSection({
         <div className="form-field relative">
           <label>Mobile Number</label>
           <div className="relative">
-            <Phone className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500" size={16} />
             <input
               type="text"
               disabled={isWalkIn}
               value={isWalkIn ? "" : patient.phone}
               onChange={handlePhoneChange}
               placeholder={isWalkIn ? "N/A" : "Enter 10-digit mobile"}
-              className="w-full form-input has-icon disabled:opacity-40 disabled:cursor-not-allowed"
+              className="w-full form-input disabled:opacity-40 disabled:cursor-not-allowed"
             />
             {loadingPatient && (
-              <Loader2 className="absolute right-4 top-1/2 -translate-y-1/2 text-[#4fdbc8] animate-spin" size={16} />
+              <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 text-[#4fdbc8] animate-spin" size={14} />
             )}
           </div>
 
@@ -121,13 +120,13 @@ export default function CustomerDetailsSection({
                   key={p.id}
                   type="button"
                   onClick={() => selectPatient(p)}
-                  className="w-full px-4 py-2 text-left text-sm text-slate-300 hover:bg-[#4fdbc8]/10 hover:text-white flex items-center justify-between transition-colors border-b border-white/5 last:border-0"
+                  className="w-full px-3 py-1.5 text-left text-xs text-slate-300 hover:bg-[#4fdbc8]/10 hover:text-white flex items-center justify-between transition-colors border-b border-white/5 last:border-0"
                 >
                   <div>
                     <div className="font-medium">{p.fullName || p.name}</div>
-                    <div className="text-xs text-slate-500">{p.phone}</div>
+                    <div className="text-[10px] text-slate-500">{p.phone}</div>
                   </div>
-                  <Check size={14} className="text-[#4fdbc8] opacity-0 hover:opacity-100" />
+                  <Check size={12} className="text-[#4fdbc8] opacity-0 hover:opacity-100" />
                 </button>
               ))}
             </div>
@@ -138,14 +137,13 @@ export default function CustomerDetailsSection({
         <div className="form-field">
           <label>Customer Name</label>
           <div className="relative">
-            <User className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500" size={16} />
             <input
               type="text"
               disabled={isWalkIn}
               value={isWalkIn ? "Walk-in Customer" : patient.name}
               onChange={(e) => setPatient(prev => ({ ...prev, name: e.target.value }))}
               placeholder="Enter customer name"
-              className="w-full form-input has-icon disabled:opacity-40 disabled:cursor-not-allowed"
+              className="w-full form-input disabled:opacity-40 disabled:cursor-not-allowed"
             />
           </div>
         </div>
@@ -154,13 +152,12 @@ export default function CustomerDetailsSection({
         <div className="form-field">
           <label>Doctor Name (Optional)</label>
           <div className="relative">
-            <Clipboard className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500" size={16} />
             <input
               type="text"
               value={doctorName}
               onChange={(e) => setDoctorName(e.target.value)}
               placeholder="Enter prescriber's name"
-              className="w-full form-input has-icon"
+              className="w-full form-input"
             />
           </div>
         </div>
@@ -169,20 +166,19 @@ export default function CustomerDetailsSection({
         <div className="form-field">
           <label>Invoice Date</label>
           <div className="relative">
-            <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500" size={16} />
             <input
               type="text"
               readOnly
               disabled
               value={todayStr}
-              className="w-full form-input has-icon select-none cursor-not-allowed opacity-60"
+              className="w-full form-input select-none cursor-not-allowed opacity-60"
             />
           </div>
         </div>
       </div>
 
-      <div className="border-t border-white/5 pt-5">
-        <label className="block text-xs font-medium text-slate-400 mb-3">Payment Method</label>
+      <div className="border-t border-white/5 pt-3 mt-1">
+        <label className="block text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-2">Payment Method</label>
         <div className="payment-grid">
           {paymentModes.map((mode) => {
             const IconComponent = mode.icon;
@@ -194,12 +190,12 @@ export default function CustomerDetailsSection({
                 onClick={() => setPaymentMode(mode.id)}
                 className={`payment-card ${
                   isActive
-                    ? "bg-[#4fdbc8]/10 border-[#4fdbc8] text-[#4fdbc8] shadow-[0_0_15px_rgba(79,219,200,0.25)] scale-[1.02]"
+                    ? "bg-[#4fdbc8]/10 border-[#4fdbc8] text-[#4fdbc8] shadow-[0_0_10px_rgba(79,219,200,0.2)] scale-[1.01]"
                     : "text-slate-400 hover:border-white/10 hover:text-slate-200 hover:bg-slate-900/60"
                 }`}
               >
-                <IconComponent size={18} />
-                <span className="text-xs font-semibold">{mode.label}</span>
+                <IconComponent size={15} />
+                <span className="text-[11px] font-semibold">{mode.label}</span>
               </button>
             );
           })}

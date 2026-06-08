@@ -18,11 +18,7 @@ export default function MedicineTableSection({
 
   // Debounced search for medicines
   useEffect(() => {
-    if (searchQuery.length < 2) {
-      setMedResults([]);
-      setShowDropdown(false);
-      return;
-    }
+    if (searchQuery.length < 2) return;
 
     const delayDebounceFn = setTimeout(async () => {
       setLoading(true);
@@ -123,22 +119,28 @@ export default function MedicineTableSection({
 
   return (
     <div className="medicine-section">
-      <div className="flex items-center justify-between border-b border-white/5 pb-4 mb-5">
-        <h3 className="text-md font-semibold text-white flex items-center gap-2">
-          <Package size={18} className="text-[#4fdbc8]" /> Medicines List
+      <div className="flex items-center justify-between pb-1.5 border-b border-white/5 mb-2 mt-1">
+        <h3 className="text-sm font-bold text-slate-300 flex items-center gap-1.5">
+          <Package size={15} className="text-[#4fdbc8]" /> Medicines List
         </h3>
       </div>
 
       {/* Autocomplete Search Input */}
-      <div className="relative mb-6" ref={dropdownRef}>
+      <div className="relative mb-3.5" ref={dropdownRef}>
         <div className="relative">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500" size={16} />
           <input
             type="text"
             value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+            onChange={(e) => {
+              const val = e.target.value;
+              setSearchQuery(val);
+              if (val.length < 2) {
+                setMedResults([]);
+                setShowDropdown(false);
+              }
+            }}
             placeholder="Search medicine by name or code (min 2 chars)..."
-            className="w-full medicine-search has-icon"
+            className="w-full medicine-search"
           />
           {loading && (
             <Loader2 className="absolute right-4 top-1/2 -translate-y-1/2 text-[#4fdbc8] animate-spin" size={16} />
@@ -173,7 +175,7 @@ export default function MedicineTableSection({
       </div>
 
       {/* Selected Items List */}
-      <div className="flex-1 overflow-y-auto max-h-[300px] pr-1 scrollbar-thin">
+      <div className="flex-1 overflow-y-auto max-h-[150px] pr-1 scrollbar-thin">
         {lineItems.length === 0 ? (
           <div className="empty-state text-slate-500 text-center">
             <Package size={32} className="text-slate-600 mb-2.5" />

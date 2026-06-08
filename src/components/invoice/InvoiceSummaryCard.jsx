@@ -12,8 +12,8 @@ export default function InvoiceSummaryCard({
 
   return (
     <div className="summary-card shadow-lg backdrop-blur-md">
-      <h3 className="text-md font-semibold text-white flex items-center gap-2 border-b border-white/5 pb-4">
-        <Receipt size={18} className="text-[#4fdbc8]" /> Invoice Summary
+      <h3 className="text-xs font-semibold text-slate-300 flex items-center gap-1.5 border-b border-white/5 pb-2">
+        <Receipt size={14} className="text-[#4fdbc8]" /> Invoice Summary
       </h3>
 
       <div className="space-y-3 text-sm">
@@ -57,9 +57,9 @@ export default function InvoiceSummaryCard({
         </div>
 
         {/* Grand Total */}
-        <div className="flex justify-between items-center pt-3">
-          <span className="text-md font-semibold text-white">Grand Total</span>
-          <span className="text-3xl font-bold text-[#4fdbc8] drop-shadow-[0_0_8px_rgba(79,219,200,0.2)]">
+        <div className="flex justify-between items-center pt-2">
+          <span className="text-xs font-semibold text-white">Grand Total</span>
+          <span className="text-xl font-bold text-[#4fdbc8] drop-shadow-[0_0_6px_rgba(79,219,200,0.2)]">
             ₹{grandTotal.toFixed(2)}
           </span>
         </div>

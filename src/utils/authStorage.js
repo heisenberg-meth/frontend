@@ -36,4 +36,10 @@ export function clearUser() {
 
 export function clearAllAuth() {
   clearUser();
+  try {
+    localStorage.removeItem("viyan_token");
+    localStorage.removeItem("viyan_refresh_token");
+  } catch {
+    /* noop */
+  }
 }

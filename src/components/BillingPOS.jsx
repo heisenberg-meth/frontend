@@ -220,7 +220,7 @@ export default function BillingPOS({ showToast: parentShowToast }) {
   const [showPreview, setShowPreview] = useState(false);
   const [activeInvoice, setActiveInvoice] = useState(null);
   const [paymentMode, setPaymentMode] = useState("CASH");
-  const [medLoading, setMedLoading] = useState(false);
+  const [, setMedLoading] = useState(false);
   const [isWalkIn, setIsWalkIn] = useState(false);
   const barcodeInputRef = useRef(null);
   const [findLoading, setFindLoading] = useState(false);

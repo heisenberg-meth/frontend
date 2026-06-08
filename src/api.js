@@ -74,6 +74,11 @@ function cyrb128(str) {
 
 api.interceptors.request.use(
   (config) => {
+    const token = localStorage.getItem("viyan_token");
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+
     const idempotentMethods = ["POST", "PUT", "PATCH", "DELETE"];
     const excludeIdempotencyRoutes = [
       "auth/login",
@@ -137,9 +142,10 @@ api.interceptors.response.use(
       isRefreshing = true;
 
       try {
+        const storedRefreshToken = localStorage.getItem("viyan_refresh_token");
         const res = await axios.post(
           `${getBaseUrl()}/auth/refresh`,
-          {},
+          { refreshToken: storedRefreshToken },
           {
             withCredentials: true,
             timeout: 10000,
@@ -149,13 +155,20 @@ api.interceptors.response.use(
           },
         );
 
-        const newToken =
-          res.data?.data?.token || res.data?.token || res.data?.accessToken;
+        const payload = res.data?.data || res.data;
+        const newToken = payload?.token || payload?.accessToken;
+        const newRefreshToken = payload?.refreshToken;
 
         if (!newToken) {
           throw new Error("No token in refresh response");
         }
 
+        localStorage.setItem("viyan_token", newToken);
+        if (newRefreshToken) {
+          localStorage.setItem("viyan_refresh_token", newRefreshToken);
+        }
+
+        originalRequest.headers.Authorization = `Bearer ${newToken}`;
         processQueue(null, newToken);
         return api(originalRequest);
       } catch (refreshError) {

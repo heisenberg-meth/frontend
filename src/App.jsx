@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { AuthProvider } from "./context/AuthContext";
 import { useAuth } from "./hooks/useAuth";
 import api from "./api";
@@ -75,7 +75,6 @@ function Toast({ message, type }) {
 
 function AppContent() {
   const navigate = useNavigate();
-  const location = useLocation();
   const {
     user,
     subscription,
