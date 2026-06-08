@@ -1,5 +1,5 @@
 import { useMemo, useState, useEffect, useCallback, useRef } from "react";
-import api from "../api";
+import api, { getBaseUrl } from "../api";
 import axios from "axios";
 import { API_ROUTES } from "../constants/api.routes.js";
 import { clearAllAuth, getStoredUser, setUser } from "../utils/authStorage";
@@ -61,7 +61,7 @@ export function AuthProvider({ children }) {
   const refreshToken = useCallback(async () => {
     try {
       const res = await axios.post(
-        `${api.defaults.baseURL}/auth/refresh`,
+        `${getBaseUrl()}/auth/refresh`,
         {},
         {
           withCredentials: true,

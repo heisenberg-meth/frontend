@@ -1,11 +1,11 @@
 import axios from "axios";
 import { clearAllAuth } from "./utils/authStorage";
 
-const getBaseUrl = () => {
-  const envUrl =
-    import.meta.env.VITE_API_BASE_URL || import.meta.env.VITE_API_URL;
-  if (envUrl !== undefined && envUrl !== null && envUrl !== "") return envUrl;
-  return "/api";
+export const getBaseUrl = () => {
+  return (
+    import.meta.env.VITE_API_BASE_URL ||
+    "https://medassist-backend-hryu.onrender.com/api"
+  );
 };
 export const getBackendOrigin = () => {
   const baseUrl = getBaseUrl();
