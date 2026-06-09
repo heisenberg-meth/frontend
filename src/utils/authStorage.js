@@ -29,6 +29,8 @@ export function getStoredUser() {
 export function clearUser() {
   try {
     localStorage.removeItem(USER_KEY);
+    localStorage.removeItem("viyan_token");
+    localStorage.removeItem("viyan_refresh_token");
   } catch {
     /* noop */
   }

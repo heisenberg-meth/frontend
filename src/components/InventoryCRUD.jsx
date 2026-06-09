@@ -1,6 +1,7 @@
 import { useState, useMemo, useEffect, useCallback } from "react";
 import {
   Package,
+  PackageOpen,
   Plus,
   Search,
   Download,
@@ -14,6 +15,8 @@ import {
   Pill,
   DollarSign,
   Calendar,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -26,6 +29,9 @@ import {
   updateMedicine,
   deleteMedicine,
   getCategories,
+  addBatch,
+  updateBatch,
+  getInventorySummary,
 } from "../services/inventory.service";
 import { useAuth } from "../hooks/useAuth";
 import ConfirmModal from "./ConfirmModal";
@@ -90,7 +96,6 @@ function MedicineModal({
     const newErrors = {};
     const name = String(form.name || "").trim();
     const genericName = String(form.genericName || "").trim();
-    const batchNumber = String(form.batchNumber || "").trim();
 
     if (!name) newErrors.name = "Medicine name is required";
     if (!genericName) newErrors.genericName = "Generic name is required";
@@ -100,23 +105,27 @@ function MedicineModal({
         : form.category?.name || "";
     if (!form.categoryId && !catVal)
       newErrors.category = "Category is required";
-    if (!form.mrp || Number(form.mrp) <= 0)
-      newErrors.mrp = "MRP must be greater than 0";
-    if (!form.quantity || Number(form.quantity) < 0)
-      newErrors.quantity = "Quantity must be 0 or more";
-    if (!form.expiryDate) newErrors.expiryDate = "Expiry date is required";
-    else if (new Date(form.expiryDate) <= new Date())
-      newErrors.expiryDate = "Expiry date must be in the future";
-    if (!batchNumber) newErrors.batchNumber = "Batch number is required";
 
-    const duplicate = existingMedicines.find(
-      (m) =>
-        String(m.name || "").toLowerCase() === name.toLowerCase() &&
-        String(m.batchNumber || "") === batchNumber &&
-        (editData ? m.id !== editData.id : true),
-    );
-    if (duplicate)
-      newErrors.name = "Medicine with this name and batch already exists";
+    if (!editData) {
+      const batchNumber = String(form.batchNumber || "").trim();
+      if (!form.mrp || Number(form.mrp) <= 0)
+        newErrors.mrp = "MRP must be greater than 0";
+      if (!form.quantity || Number(form.quantity) < 0)
+        newErrors.quantity = "Quantity must be 0 or more";
+      if (!form.expiryDate) newErrors.expiryDate = "Expiry date is required";
+      else if (new Date(form.expiryDate) <= new Date())
+        newErrors.expiryDate = "Expiry date must be in the future";
+      if (!batchNumber) newErrors.batchNumber = "Batch number is required";
+
+      const duplicate = existingMedicines.find(
+        (m) =>
+          String(m.name || "").toLowerCase() === name.toLowerCase() &&
+          String(m.batchNumber || "") === batchNumber &&
+          (editData ? m.id !== editData.id : true),
+      );
+      if (duplicate)
+        newErrors.name = "Medicine with this name and batch already exists";
+    }
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -235,69 +244,75 @@ function MedicineModal({
             </div>
 
             {/* Batch & Expiry */}
-            <div className="form-group">
-              <label>Batch Number *</label>
-              <input
-                placeholder="e.g. B-20241"
-                value={form.batchNumber || ""}
-                onChange={(e) => set("batchNumber", e.target.value)}
-                className={errors.batchNumber ? "input-error" : ""}
-              />
-              {errors.batchNumber && (
-                <span className="field-error">{errors.batchNumber}</span>
-              )}
-            </div>
-            <div className="form-group">
-              <label>Expiry Date *</label>
-              <input
-                type="date"
-                value={form.expiryDate || ""}
-                onChange={(e) => set("expiryDate", e.target.value)}
-                className={errors.expiryDate ? "input-error" : ""}
-              />
-              {errors.expiryDate && (
-                <span className="field-error">{errors.expiryDate}</span>
-              )}
-            </div>
+            {!editData && (
+              <>
+                <div className="form-group">
+                  <label>Batch Number *</label>
+                  <input
+                    placeholder="e.g. B-20241"
+                    value={form.batchNumber || ""}
+                    onChange={(e) => set("batchNumber", e.target.value)}
+                    className={errors.batchNumber ? "input-error" : ""}
+                  />
+                  {errors.batchNumber && (
+                    <span className="field-error">{errors.batchNumber}</span>
+                  )}
+                </div>
+                <div className="form-group">
+                  <label>Expiry Date *</label>
+                  <input
+                    type="date"
+                    value={form.expiryDate || ""}
+                    onChange={(e) => set("expiryDate", e.target.value)}
+                    className={errors.expiryDate ? "input-error" : ""}
+                  />
+                  {errors.expiryDate && (
+                    <span className="field-error">{errors.expiryDate}</span>
+                  )}
+                </div>
 
-            {/* Pricing */}
-            <div className="form-group">
-              <label>MRP (₹) *</label>
-              <input
-                type="number"
-                step="0.01"
-                placeholder="0.00"
-                value={form.mrp ?? ""}
-                onChange={(e) => set("mrp", e.target.value)}
-                className={errors.mrp ? "input-error" : ""}
-              />
-              {errors.mrp && <span className="field-error">{errors.mrp}</span>}
-            </div>
-            <div className="form-group">
-              <label>Purchase Cost (₹)</label>
-              <input
-                type="number"
-                step="0.01"
-                placeholder="0.00"
-                value={form.purchaseCost ?? ""}
-                onChange={(e) => set("purchaseCost", e.target.value)}
-              />
-            </div>
+                {/* Pricing */}
+                <div className="form-group">
+                  <label>MRP (₹) *</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    placeholder="0.00"
+                    value={form.mrp ?? ""}
+                    onChange={(e) => set("mrp", e.target.value)}
+                    className={errors.mrp ? "input-error" : ""}
+                  />
+                  {errors.mrp && (
+                    <span className="field-error">{errors.mrp}</span>
+                  )}
+                </div>
+                <div className="form-group">
+                  <label>Purchase Cost (₹)</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    placeholder="0.00"
+                    value={form.purchaseCost ?? ""}
+                    onChange={(e) => set("purchaseCost", e.target.value)}
+                  />
+                </div>
 
-            {/* Quantity & Reorder */}
-            <div className="form-group">
-              <label>Stock Quantity *</label>
-              <input
-                type="number"
-                placeholder="0"
-                value={form.quantity ?? ""}
-                onChange={(e) => set("quantity", e.target.value)}
-                className={errors.quantity ? "input-error" : ""}
-              />
-              {errors.quantity && (
-                <span className="field-error">{errors.quantity}</span>
-              )}
-            </div>
+                {/* Quantity & Reorder */}
+                <div className="form-group">
+                  <label>Stock Quantity *</label>
+                  <input
+                    type="number"
+                    placeholder="0"
+                    value={form.quantity ?? ""}
+                    onChange={(e) => set("quantity", e.target.value)}
+                    className={errors.quantity ? "input-error" : ""}
+                  />
+                  {errors.quantity && (
+                    <span className="field-error">{errors.quantity}</span>
+                  )}
+                </div>
+              </>
+            )}
             <div className="form-group">
               <label>Reorder Level</label>
               <input
@@ -389,7 +404,7 @@ function MedicineModal({
   );
 }
 /* ─── View Medicine Modal ─── */
-function MedicineViewModal({ medicine, onClose }) {
+function MedicineViewModal({ medicine, onClose, onEditBatch, onAddBatch }) {
   if (!medicine) return null;
   const isExpiringSoon =
     medicine.expiryDate &&
@@ -403,6 +418,7 @@ function MedicineViewModal({ medicine, onClose }) {
     <div className="inv-modal-overlay" onClick={onClose}>
       <motion.div
         className="inv-modal-content inv-view-modal"
+        style={{ width: "800px" }}
         initial={{ opacity: 0, scale: 0.95, y: 20 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.95, y: 20 }}
@@ -442,50 +458,6 @@ function MedicineViewModal({ medicine, onClose }) {
             <span>{medicine.category?.name || medicine.category || "—"}</span>
           </div>
           <div className="inv-detail-item">
-            <label>Batch Number</label>
-            <span className="mono">{medicine.batchNumber || "—"}</span>
-          </div>
-          <div className="inv-detail-item">
-            <label>Expiry Date</label>
-            <span
-              style={{
-                color: isExpired
-                  ? "var(--danger)"
-                  : isExpiringSoon
-                    ? "var(--warning)"
-                    : "inherit",
-              }}
-            >
-              {medicine.expiryDate &&
-                new Date(medicine.expiryDate).toLocaleDateString("en-IN", {
-                  day: "numeric",
-                  month: "short",
-                  year: "numeric",
-                })}
-            </span>
-          </div>
-          <div className="inv-detail-item">
-            <label>Stock Quantity</label>
-            <span
-              style={{
-                color: isLowStock ? "var(--warning)" : "var(--success)",
-                fontWeight: 800,
-              }}
-            >
-              {medicine.stock ?? 0} units
-            </span>
-          </div>
-          <div className="inv-detail-item">
-            <label>MRP</label>
-            <span className="price">
-              ₹{Number(medicine.mrp || 0).toFixed(2)}
-            </span>
-          </div>
-          <div className="inv-detail-item">
-            <label>Purchase Cost</label>
-            <span>₹{(medicine.purchasePrice || 0).toFixed(2)}</span>
-          </div>
-          <div className="inv-detail-item">
             <label>GST</label>
             <span>{medicine.gstPercentage ?? 12}%</span>
           </div>
@@ -511,6 +483,140 @@ function MedicineViewModal({ medicine, onClose }) {
             <label>Reorder Level</label>
             <span>{medicine.reorderLevel || 10} units</span>
           </div>
+          <div className="inv-detail-item">
+            <label>Total Stock</label>
+            <span
+              style={{
+                color: isLowStock ? "var(--warning)" : "var(--success)",
+                fontWeight: 800,
+              }}
+            >
+              {medicine.stock ?? 0} units
+            </span>
+          </div>
+        </div>
+
+        {/* Batches Section */}
+        <div style={{ padding: "0 32px 24px" }}>
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              marginBottom: "12px",
+            }}
+          >
+            <h4
+              style={{
+                margin: 0,
+                fontFamily: "Outfit, sans-serif",
+                fontSize: "12px",
+                fontWeight: 800,
+                color: "var(--text-muted)",
+                textTransform: "uppercase",
+                letterSpacing: "0.05em",
+              }}
+            >
+              Active Batches
+            </h4>
+            <button
+              className="inv-modal-btn confirm"
+              style={{
+                padding: "6px 12px",
+                borderRadius: "8px",
+                fontSize: "12px",
+              }}
+              onClick={() => onAddBatch(medicine)}
+            >
+              <Plus size={14} /> Add Batch
+            </button>
+          </div>
+          <div
+            className="inv-table-wrapper"
+            style={{
+              maxHeight: "200px",
+              overflowY: "auto",
+              border: "1px solid var(--overlay-06)",
+              borderRadius: "12px",
+            }}
+          >
+            <table className="inv-table" style={{ fontSize: "13px" }}>
+              <thead>
+                <tr>
+                  <th style={{ padding: "10px 16px" }}>Batch</th>
+                  <th style={{ padding: "10px 16px" }}>Expiry</th>
+                  <th style={{ padding: "10px 16px" }}>Quantity</th>
+                  <th style={{ padding: "10px 16px" }}>MRP</th>
+                  <th style={{ padding: "10px 16px" }}>Status</th>
+                  <th style={{ padding: "10px 16px" }}>Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                {medicine.inventoryBatches &&
+                medicine.inventoryBatches.length > 0 ? (
+                  medicine.inventoryBatches.map((batch) => (
+                    <tr key={batch.id}>
+                      <td style={{ padding: "10px 16px" }} className="mono">
+                        {batch.batchNumber}
+                      </td>
+                      <td style={{ padding: "10px 16px" }}>
+                        {batch.expiryDate
+                          ? new Date(batch.expiryDate).toLocaleDateString(
+                              "en-IN",
+                              {
+                                month: "short",
+                                year: "numeric",
+                              },
+                            )
+                          : "—"}
+                      </td>
+                      <td style={{ padding: "10px 16px", fontWeight: 800 }}>
+                        {batch.quantity ?? 0}
+                      </td>
+                      <td style={{ padding: "10px 16px" }}>
+                        ₹{Number(batch.mrp || 0).toFixed(2)}
+                      </td>
+                      <td style={{ padding: "10px 16px" }}>
+                        <span
+                          className={`inv-status-badge ${batch.quantity === 0 ? "out-of-stock" : batch.status === "ACTIVE" ? "in-stock" : "low-stock"}`}
+                          style={{ padding: "4px 8px" }}
+                        >
+                          {batch.status}
+                        </span>
+                      </td>
+                      <td style={{ padding: "10px 16px" }}>
+                        <button
+                          className="inv-row-btn"
+                          style={{
+                            width: "28px",
+                            height: "28px",
+                            borderRadius: "8px",
+                          }}
+                          title="Edit Batch"
+                          onClick={() => onEditBatch(batch, medicine)}
+                        >
+                          <Pencil size={12} />
+                        </button>
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td
+                      colSpan={6}
+                      style={{
+                        textAlign: "center",
+                        padding: "20px",
+                        color: "var(--text-muted)",
+                      }}
+                    >
+                      No batches found. Add a batch to stock this medicine.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
 
         {medicine.description && (
@@ -530,6 +636,221 @@ function MedicineViewModal({ medicine, onClose }) {
   );
 }
 
+/* ─── Add / Edit Batch Modal ─── */
+function BatchModal({
+  onClose,
+  onSave,
+  batchData, // Present if editing
+  medicineData, // The parent medicine object
+  showToast,
+  saving,
+}) {
+  const EMPTY = {
+    batchNumber: "",
+    expiryDate: "",
+    mrp: "",
+    purchasePrice: "",
+    quantity: "",
+    rackLocation: "",
+  };
+
+  const [form, setForm] = useState(
+    batchData
+      ? {
+          batchNumber: batchData.batchNumber || "",
+          expiryDate: batchData.expiryDate
+            ? batchData.expiryDate.split("T")[0]
+            : "",
+          mrp: batchData.mrp ? String(batchData.mrp) : "",
+          purchasePrice: batchData.purchasePrice
+            ? String(batchData.purchasePrice)
+            : "",
+          quantity: batchData.quantity ? String(batchData.quantity) : "",
+          rackLocation: batchData.rackLocation || "",
+        }
+      : EMPTY,
+  );
+
+  const [errors, setErrors] = useState({});
+
+  const set = (key, val) => {
+    setForm((f) => ({ ...f, [key]: val }));
+    if (errors[key]) setErrors((e) => ({ ...e, [key]: null }));
+  };
+
+  const validate = () => {
+    const newErrors = {};
+    const batchNumber = String(form.batchNumber || "").trim();
+
+    if (!batchNumber) newErrors.batchNumber = "Batch number is required";
+    if (!form.expiryDate) newErrors.expiryDate = "Expiry date is required";
+    else if (new Date(form.expiryDate) <= new Date())
+      newErrors.expiryDate = "Expiry date must be in the future";
+
+    if (!form.mrp || Number(form.mrp) <= 0)
+      newErrors.mrp = "MRP must be greater than 0";
+
+    if (form.quantity === "" || Number(form.quantity) < 0)
+      newErrors.quantity = "Quantity must be non-negative";
+    if (form.purchasePrice === "" || Number(form.purchasePrice) < 0)
+      newErrors.purchasePrice = "Purchase price must be non-negative";
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleSave = () => {
+    if (!validate()) {
+      showToast("Please fix the errors in the form", "error");
+      return;
+    }
+    onSave({
+      batchNumber: form.batchNumber.trim(),
+      expiryDate: form.expiryDate,
+      mrp: Number(form.mrp),
+      sellingPrice: Number(form.mrp),
+      rackLocation: form.rackLocation.trim(),
+      quantity: Number(form.quantity),
+      purchasePrice: Number(form.purchasePrice),
+      ...(!batchData && {
+        medicineId: medicineData.id,
+      }),
+    });
+  };
+
+  return (
+    <div className="inv-modal-overlay" onClick={onClose}>
+      <motion.div
+        className="inv-modal-content"
+        style={{ width: "500px" }}
+        initial={{ opacity: 0, scale: 0.95, y: 20 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        exit={{ opacity: 0, scale: 0.95, y: 20 }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="inv-modal-header">
+          <div className="header-title-group">
+            <Package size={20} style={{ color: "var(--primary)" }} />
+            <h3>
+              {batchData ? `Edit Batch: ${batchData.batchNumber}` : `Add Batch`}
+            </h3>
+          </div>
+          <button className="inv-modal-close-btn" onClick={onClose}>
+            <X size={18} />
+          </button>
+        </div>
+        <div className="inv-modal-scroll">
+          <div className="inv-form-grid" style={{ gridTemplateColumns: "1fr" }}>
+            {/* Batch Number */}
+            <div className="form-group">
+              <label>Batch Number *</label>
+              <input
+                placeholder="e.g. B-20241"
+                value={form.batchNumber || ""}
+                onChange={(e) => set("batchNumber", e.target.value)}
+                className={errors.batchNumber ? "input-error" : ""}
+              />
+              {errors.batchNumber && (
+                <span className="field-error">{errors.batchNumber}</span>
+              )}
+            </div>
+
+            {/* Expiry Date */}
+            <div className="form-group">
+              <label>Expiry Date *</label>
+              <input
+                type="date"
+                value={form.expiryDate || ""}
+                onChange={(e) => set("expiryDate", e.target.value)}
+                className={errors.expiryDate ? "input-error" : ""}
+              />
+              {errors.expiryDate && (
+                <span className="field-error">{errors.expiryDate}</span>
+              )}
+            </div>
+
+            {/* MRP */}
+            <div className="form-group">
+              <label>MRP (₹) *</label>
+              <input
+                type="number"
+                step="0.01"
+                placeholder="0.00"
+                value={form.mrp ?? ""}
+                onChange={(e) => set("mrp", e.target.value)}
+                className={errors.mrp ? "input-error" : ""}
+              />
+              {errors.mrp && <span className="field-error">{errors.mrp}</span>}
+            </div>
+
+            {/* Purchase Price */}
+            <div className="form-group">
+              <label>Purchase Price (₹) *</label>
+              <input
+                type="number"
+                step="0.01"
+                placeholder="0.00"
+                value={form.purchasePrice ?? ""}
+                onChange={(e) => set("purchasePrice", e.target.value)}
+                className={errors.purchasePrice ? "input-error" : ""}
+              />
+              {errors.purchasePrice && (
+                <span className="field-error">{errors.purchasePrice}</span>
+              )}
+            </div>
+
+            {/* Quantity */}
+            <div className="form-group">
+              <label>Stock Quantity *</label>
+              <input
+                type="number"
+                placeholder="0"
+                value={form.quantity ?? ""}
+                onChange={(e) => set("quantity", e.target.value)}
+                className={errors.quantity ? "input-error" : ""}
+              />
+              {errors.quantity && (
+                <span className="field-error">{errors.quantity}</span>
+              )}
+            </div>
+
+            {/* Rack Location */}
+            <div className="form-group">
+              <label>Rack Location</label>
+              <input
+                placeholder="e.g. A-12"
+                value={form.rackLocation || ""}
+                onChange={(e) => set("rackLocation", e.target.value)}
+              />
+            </div>
+          </div>
+        </div>
+        <div className="inv-modal-footer">
+          <button className="inv-modal-btn cancel" onClick={onClose}>
+            Cancel
+          </button>
+          <button
+            className="inv-modal-btn confirm"
+            onClick={handleSave}
+            disabled={saving}
+          >
+            {saving ? (
+              <>
+                <Spinner size={16} /> Saving...
+              </>
+            ) : (
+              <>
+                <CheckCircle2 size={16} />{" "}
+                {batchData ? "Update Batch" : "Add Batch"}
+              </>
+            )}
+          </button>
+        </div>
+      </motion.div>
+    </div>
+  );
+}
+
 /* ─── MAIN COMPONENT ─── */
 export default function InventoryCRUD({
   showToast,
@@ -540,6 +861,7 @@ export default function InventoryCRUD({
     user?.branchId || user?.branch?.id || tenant?.branchId || null;
   const [medicines, setMedicines] = useState([]);
   const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("All");
   const [statusFilter, setStatusFilter] = useState("All");
   const [modalOpen, setModalOpen] = useState(false);
@@ -550,19 +872,147 @@ export default function InventoryCRUD({
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [categoriesList, setCategoriesList] = useState([]);
+  const [batchModalOpen, setBatchModalOpen] = useState(false);
+  const [editBatchTarget, setEditBatchTarget] = useState(null);
+  const [activeMedicineForBatch, setActiveMedicineForBatch] = useState(null);
+  const [savingBatch, setSavingBatch] = useState(false);
+
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalItems, setTotalItems] = useState(0);
+  const limit = 50;
+
+  // Summary stats state
+  const [summaryStats, setSummaryStats] = useState({
+    totalProducts: 0,
+    inStock: 0,
+    lowStock: 0,
+    outOfStock: 0,
+    expired: 0,
+    inventoryValue: 0,
+  });
+
+  // Debounce search input
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedSearch(search);
+    }, 400);
+    return () => clearTimeout(handler);
+  }, [search]);
+
+  // Reset page on search or filter change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [debouncedSearch, categoryFilter, statusFilter]);
 
   const loadMedicines = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await getMedicines({ page: 1, limit: 500 });
-      const rawMedicines = Array.isArray(res.data?.data) ? res.data.data : [];
-      setMedicines(rawMedicines.map(normalizeMedicine));
-    } catch {
-      showToast("Failed to load inventory", "error");
+      let categoryId = undefined;
+      if (categoryFilter !== "All") {
+        const catObj = categoriesList.find(
+          (c) => (c.name || c) === categoryFilter,
+        );
+        if (catObj) {
+          categoryId = catObj.id;
+        }
+      }
+
+      let backendStatus = undefined;
+      if (statusFilter === "In Stock") backendStatus = "IN_STOCK";
+      else if (statusFilter === "Low Stock") backendStatus = "LOW_STOCK";
+      else if (statusFilter === "Out of Stock") backendStatus = "OUT_OF_STOCK";
+      else if (statusFilter === "Expiring Soon")
+        backendStatus = "EXPIRING_SOON";
+      else if (statusFilter === "Expired") backendStatus = "EXPIRED";
+
+      const [medicinesRes, summaryRes] = await Promise.all([
+        getMedicines({
+          page: currentPage,
+          limit,
+          search: debouncedSearch,
+          categoryId,
+          status: backendStatus,
+        }),
+        getInventorySummary(),
+      ]);
+
+      const items = Array.isArray(medicinesRes.data?.data?.items)
+        ? medicinesRes.data.data.items
+        : Array.isArray(medicinesRes.data?.data)
+          ? medicinesRes.data.data
+          : [];
+
+      const total = medicinesRes.data?.data?.total ?? items.length;
+      const pages = medicinesRes.data?.data?.totalPages ?? 1;
+
+      const mapped = items.map(normalizeMedicine);
+      setMedicines(mapped);
+      setTotalItems(total);
+      setTotalPages(pages);
+
+      if (viewTarget) {
+        const updatedViewTarget = mapped.find((m) => m.id === viewTarget.id);
+        if (updatedViewTarget) {
+          setViewTarget(updatedViewTarget);
+        }
+      }
+
+      if (summaryRes.data?.success && summaryRes.data?.data) {
+        setSummaryStats(summaryRes.data.data);
+      }
+    } catch (err) {
+      showToast("Failed to load inventory", err);
     } finally {
       setLoading(false);
     }
-  }, [showToast]);
+  }, [
+    currentPage,
+    debouncedSearch,
+    categoryFilter,
+    statusFilter,
+    categoriesList,
+    viewTarget?.id,
+    showToast,
+  ]);
+
+  const handleEditStock = (medicine) => {
+    const batches = medicine.inventoryBatches || [];
+    if (batches.length === 0) {
+      setActiveMedicineForBatch(medicine);
+      setEditBatchTarget(null);
+      setBatchModalOpen(true);
+    } else {
+      setActiveMedicineForBatch(medicine);
+      setEditBatchTarget(batches[0]);
+      setBatchModalOpen(true);
+    }
+  };
+
+  const handleSaveBatch = async (payload) => {
+    setSavingBatch(true);
+    try {
+      if (editBatchTarget) {
+        await updateBatch(editBatchTarget.id, payload);
+        showToast("Batch updated successfully", "success");
+      } else {
+        await addBatch(payload);
+        showToast("Batch created successfully", "success");
+      }
+
+      await loadMedicines();
+      setBatchModalOpen(false);
+      setEditBatchTarget(null);
+      setActiveMedicineForBatch(null);
+    } catch (err) {
+      const errorMessage =
+        err?.response?.data?.message || err?.message || "Failed to save batch";
+      showToast(errorMessage, "error");
+    } finally {
+      setSavingBatch(false);
+    }
+  };
 
   useEffect(() => {
     let mounted = true;
@@ -570,19 +1020,8 @@ export default function InventoryCRUD({
     const initialize = async () => {
       try {
         setLoading(true);
-
-        const [medicinesRes, categoriesRes] = await Promise.all([
-          getMedicines({ page: 1, limit: 500 }),
-          getCategories(),
-        ]);
-
+        const categoriesRes = await getCategories();
         if (!mounted) return;
-
-        const rawMedicines = Array.isArray(medicinesRes.data?.data)
-          ? medicinesRes.data.data
-          : [];
-
-        setMedicines(rawMedicines.map(normalizeMedicine));
 
         setCategoriesList(
           Array.isArray(categoriesRes.data?.data)
@@ -606,61 +1045,27 @@ export default function InventoryCRUD({
     };
   }, [showToast]);
 
+  useEffect(() => {
+    loadMedicines();
+  }, [loadMedicines]);
+
   const categories = useMemo(() => {
-    const cats = new Set(
-      medicines.map((m) => m.category?.name || m.category).filter(Boolean),
-    );
+    const cats = categoriesList.map((c) => c.name || c).filter(Boolean);
     return ["All", ...cats];
-  }, [medicines]);
+  }, [categoriesList]);
 
-  const filtered = useMemo(() => {
-    return medicines.filter((m) => {
-      const matchesSearch =
-        !search ||
-        (m.name || "").toLowerCase().includes(search.toLowerCase()) ||
-        (m.genericName || "").toLowerCase().includes(search.toLowerCase()) ||
-        (m.batchNumber || "").toLowerCase().includes(search.toLowerCase());
-
-      const matchesCategory =
-        categoryFilter === "All" ||
-        (m.category?.name || m.category) === categoryFilter;
-
-      let matchesStatus = true;
-      const expDate = m.expiryDate ? new Date(m.expiryDate) : null;
-
-      if (statusFilter === "In Stock")
-        matchesStatus = m.stock > (m.reorderLevel || 10);
-      else if (statusFilter === "Low Stock")
-        matchesStatus = m.stock > 0 && m.stock <= (m.reorderLevel || 10);
-      else if (statusFilter === "Out of Stock") matchesStatus = m.stock === 0;
-      else if (statusFilter === "Expiring Soon") {
-        matchesStatus =
-          expDate &&
-          expDate > new Date() &&
-          expDate < new Date(new Date().setDate(new Date().getDate() + 30));
-      } else if (statusFilter === "Expired") {
-        matchesStatus = expDate && expDate <= new Date();
-      }
-
-      return matchesSearch && matchesCategory && matchesStatus;
-    });
-  }, [medicines, search, categoryFilter, statusFilter]);
+  const filtered = medicines;
 
   const stats = useMemo(
     () => ({
-      total: medicines.length,
-      inStock: medicines.filter((m) => m.stock > (m.reorderLevel || 10)).length,
-      lowStock: medicines.filter(
-        (m) => m.stock > 0 && m.stock <= (m.reorderLevel || 10),
-      ).length,
-      outOfStock: medicines.filter((m) => m.stock === 0).length,
-      expired: medicines.filter(
-        (m) =>
-          m.stock > 0 && m.expiryDate && new Date(m.expiryDate) <= new Date(),
-      ).length,
-      totalValue: calculateTotalStockValue(medicines),
+      total: summaryStats.totalProducts,
+      inStock: summaryStats.inStock,
+      lowStock: summaryStats.lowStock,
+      outOfStock: summaryStats.outOfStock,
+      expired: summaryStats.expired,
+      totalValue: summaryStats.inventoryValue,
     }),
-    [medicines],
+    [summaryStats],
   );
 
   const handleSave = async (form) => {
@@ -1056,6 +1461,14 @@ export default function InventoryCRUD({
                       <td>
                         <div className="inv-row-actions">
                           <button
+                            className="inv-row-btn edit-stock"
+                            title="Edit Stock"
+                            onClick={() => handleEditStock(m)}
+                          >
+                            <PackageOpen size={14} />
+                            <span>Edit Stock</span>
+                          </button>
+                          <button
                             className="inv-row-btn"
                             title="View Details"
                             onClick={() => setViewTarget(m)}
@@ -1088,6 +1501,67 @@ export default function InventoryCRUD({
             </tbody>
           </table>
         </div>
+
+        {totalPages > 1 && (
+          <div className="inv-pagination">
+            <div className="inv-pagination-info">
+              Showing {(currentPage - 1) * limit + 1} to{" "}
+              {Math.min(currentPage * limit, totalItems)} of {totalItems} items
+            </div>
+            <div className="inv-pagination-controls">
+              <button
+                className="inv-page-btn prev-next"
+                disabled={currentPage === 1}
+                onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+              >
+                <ChevronLeft size={16} /> Prev
+              </button>
+
+              {Array.from({ length: totalPages }, (_, i) => i + 1)
+                .filter((page) => {
+                  return (
+                    page === 1 ||
+                    page === totalPages ||
+                    Math.abs(page - currentPage) <= 2
+                  );
+                })
+                .map((page, idx, arr) => {
+                  const showEllipsis = idx > 0 && page - arr[idx - 1] > 1;
+                  return (
+                    <span key={page}>
+                      {showEllipsis && (
+                        <span
+                          style={{
+                            color: "var(--text-muted)",
+                            paddingLeft: "8px",
+                            paddingRight: "8px",
+                          }}
+                        >
+                          ...
+                        </span>
+                      )}
+                      <button
+                        className={`inv-page-btn ${currentPage === page ? "active" : ""}`}
+                        onClick={() => setCurrentPage(page)}
+                      >
+                        {page}
+                      </button>
+                    </span>
+                  );
+                })}
+
+              <button
+                className="inv-page-btn prev-next"
+                disabled={currentPage === totalPages}
+                onClick={() =>
+                  setCurrentPage((prev) => Math.min(prev + 1, totalPages))
+                }
+              >
+                Next <ChevronRight size={16} />
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Modals */}
@@ -1110,6 +1584,30 @@ export default function InventoryCRUD({
           <MedicineViewModal
             medicine={viewTarget}
             onClose={() => setViewTarget(null)}
+            onAddBatch={(medicine) => {
+              setActiveMedicineForBatch(medicine);
+              setEditBatchTarget(null);
+              setBatchModalOpen(true);
+            }}
+            onEditBatch={(batch, medicine) => {
+              setActiveMedicineForBatch(medicine);
+              setEditBatchTarget(batch);
+              setBatchModalOpen(true);
+            }}
+          />
+        )}
+        {batchModalOpen && (
+          <BatchModal
+            onClose={() => {
+              setBatchModalOpen(false);
+              setEditBatchTarget(null);
+              setActiveMedicineForBatch(null);
+            }}
+            onSave={handleSaveBatch}
+            batchData={editBatchTarget}
+            medicineData={activeMedicineForBatch}
+            showToast={showToast}
+            saving={savingBatch}
           />
         )}
       </AnimatePresence>

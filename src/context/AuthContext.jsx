@@ -61,7 +61,7 @@ export function AuthProvider({ children }) {
   const refreshToken = useCallback(async () => {
     try {
       const res = await axios.post(
-        `${api.defaults.baseURL}/auth/refresh`,
+        `${getBaseUrl()}/auth/refresh`,
         {},
         {
           withCredentials: true,
@@ -76,17 +76,12 @@ export function AuthProvider({ children }) {
 
       const payload = res.data?.data || res.data;
       const newToken = payload?.token || payload?.accessToken;
-      const newRefreshToken = payload?.refreshToken;
 
       if (!newToken) {
         throw new Error("Token refresh failed: Invalid response from server.");
       }
 
       localStorage.setItem("viyan_token", newToken);
-      if (newRefreshToken) {
-        localStorage.setItem("viyan_refresh_token", newRefreshToken);
-      }
-
       return newToken;
     } catch (error) {
       console.error("[AUTH] Token refresh failed:", error.message || error);
@@ -100,6 +95,13 @@ export function AuthProvider({ children }) {
     restoreAttemptedRef.current = true;
 
     const restoreSession = async () => {
+      if (!getStoredUser()) {
+        setLoading(false);
+        restoredRef.current = true;
+        setRestored(true);
+        return;
+      }
+
       const newToken = await refreshToken();
       if (!newToken) {
         clearAuthState();
@@ -142,14 +144,10 @@ export function AuthProvider({ children }) {
         subscriptionExpired,
         redirectTo,
         token,
-        refreshToken,
       } = payload;
 
       if (token) {
         localStorage.setItem("viyan_token", token);
-      }
-      if (refreshToken) {
-        localStorage.setItem("viyan_refresh_token", refreshToken);
       }
 
       if (userData) {

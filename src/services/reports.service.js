@@ -1,8 +1,7 @@
 import api from "../api";
 
 /* ─── Reports ─── */
-export const getSalesReport = (params) =>
-  api.get("reports/sales", { params });
+export const getSalesReport = (params) => api.get("reports/sales", { params });
 export const getPurchaseReport = (params) =>
   api.get("reports/purchases", { params });
 export const getFinanceReport = (params) =>
@@ -16,12 +15,10 @@ export const triggerManualAggregation = (data) =>
 
 /* ─── Expiry Intelligence ─── */
 export const getExpiryAlerts = () => api.get("intelligence/alerts");
-export const getCriticalExpiryAlerts = () =>
-  api.get("intelligence/critical");
+export const getCriticalExpiryAlerts = () => api.get("intelligence/critical");
 export const resolveExpiryAlert = (id) =>
   api.put(`intelligence/alerts/${id}/resolve`);
-export const triggerManualScan = () =>
-  api.post("intelligence/scan/manual");
+export const triggerManualScan = () => api.post("intelligence/scan/manual");
 export const getExpiryBatches = (params) =>
   api.get("intelligence/batches", { params });
 export const getNearExpiryBatches = () =>
@@ -34,19 +31,18 @@ export const triggerRecommendationGeneration = () =>
   api.post("intelligence/recommendations/generate");
 
 /* ─── Barcodes ─── */
-export const getBarcodes = (params) => api.get("inventory/barcode/generate", { params });
+export const getBarcodes = (params) =>
+  api.get("inventory/barcode/generate", { params });
 export const verifyBarcode = (code) =>
   api.get(`inventory/medicines/barcode/${code}`);
 
 /* ─── Accounting ─── */
 export const getAccountingData = (params) =>
   api.get("accounting/expenses", { params });
-export const createExpense = (data) =>
-  api.post("accounting/expenses", data);
+export const createExpense = (data) => api.post("accounting/expenses", data);
 export const updateExpense = (id, data) =>
   api.put(`accounting/expenses/${id}`, data);
-export const deleteExpense = (id) =>
-  api.delete(`accounting/expenses/${id}`);
+export const deleteExpense = (id) => api.delete(`accounting/expenses/${id}`);
 export const getGstReport = (params) =>
   api.get("accounting/tax/gst-summary", { params });
 
