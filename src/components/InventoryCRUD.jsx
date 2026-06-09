@@ -433,8 +433,8 @@ function MedicineViewModal({ medicine, onClose, onEditBatch, onAddBatch }) {
               {medicine.brandName && `(${medicine.brandName})`}
             </span>
           </div>
-          <button 
-            className="inv-modal-close-btn" 
+          <button
+            className="inv-modal-close-btn"
             onClick={onClose}
             style={{ position: "center", top: "24px", right: "24px" }}
           >
@@ -444,192 +444,192 @@ function MedicineViewModal({ medicine, onClose, onEditBatch, onAddBatch }) {
 
         <div style={{ flex: 1, overflowY: "auto" }}>
           <div className="inv-view-badges">
-          {isExpired && <span className="inv-badge danger">EXPIRED</span>}
-          {isExpiringSoon && !isExpired && (
-            <span className="inv-badge warning">EXPIRING SOON</span>
-          )}
-          {isLowStock && <span className="inv-badge warning">LOW STOCK</span>}
-          {!isExpired && !isLowStock && (
-            <span className="inv-badge success">IN STOCK</span>
-          )}
-          <span className="inv-badge info">
-            {medicine.scheduleType || medicine.schedule}
-          </span>
-        </div>
-
-        <div className="inv-view-grid">
-          <div className="inv-detail-item">
-            <label>Category</label>
-            <span>{medicine.category?.name || medicine.category || "—"}</span>
-          </div>
-          <div className="inv-detail-item">
-            <label>GST</label>
-            <span>{medicine.gstPercentage ?? 12}%</span>
-          </div>
-          <div className="inv-detail-item">
-            <label>HSN Code</label>
-            <span className="mono">{medicine.hsnCode || "—"}</span>
-          </div>
-          <div className="inv-detail-item">
-            <label>Barcode</label>
-            <span className="mono">{medicine.barcode || "—"}</span>
-          </div>
-          <div className="inv-detail-item">
-            <label>Manufacturer</label>
-            <span>
-              {medicine.manufacturer?.name || medicine.manufacturer || "—"}
+            {isExpired && <span className="inv-badge danger">EXPIRED</span>}
+            {isExpiringSoon && !isExpired && (
+              <span className="inv-badge warning">EXPIRING SOON</span>
+            )}
+            {isLowStock && <span className="inv-badge warning">LOW STOCK</span>}
+            {!isExpired && !isLowStock && (
+              <span className="inv-badge success">IN STOCK</span>
+            )}
+            <span className="inv-badge info">
+              {medicine.scheduleType || medicine.schedule}
             </span>
           </div>
-          <div className="inv-detail-item">
-            <label>Supplier</label>
-            <span>{medicine.supplier || "—"}</span>
-          </div>
-          <div className="inv-detail-item">
-            <label>Reorder Level</label>
-            <span>{medicine.reorderLevel || 10} units</span>
-          </div>
-          <div className="inv-detail-item">
-            <label>Total Stock</label>
-            <span
-              style={{
-                color: isLowStock ? "var(--warning)" : "var(--success)",
-                fontWeight: 800,
-              }}
-            >
-              {medicine.stock ?? 0} units
-            </span>
-          </div>
-        </div>
 
-        {/* Batches Section */}
-        <div style={{ padding: "0 32px 24px" }}>
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              marginBottom: "12px",
-            }}
-          >
-            <h4
-              style={{
-                margin: 0,
-                fontFamily: "Outfit, sans-serif",
-                fontSize: "12px",
-                fontWeight: 800,
-                color: "var(--text-muted)",
-                textTransform: "uppercase",
-                letterSpacing: "0.05em",
-              }}
-            >
-              Active Batches
-            </h4>
-            <button
-              className="inv-modal-btn confirm"
-              style={{
-                padding: "6px 12px",
-                borderRadius: "8px",
-                fontSize: "12px",
-              }}
-              onClick={() => onAddBatch(medicine)}
-            >
-              <Plus size={14} /> Add Batch
-            </button>
+          <div className="inv-view-grid">
+            <div className="inv-detail-item">
+              <label>Category</label>
+              <span>{medicine.category?.name || medicine.category || "—"}</span>
+            </div>
+            <div className="inv-detail-item">
+              <label>GST</label>
+              <span>{medicine.gstPercentage ?? 12}%</span>
+            </div>
+            <div className="inv-detail-item">
+              <label>HSN Code</label>
+              <span className="mono">{medicine.hsnCode || "—"}</span>
+            </div>
+            <div className="inv-detail-item">
+              <label>Barcode</label>
+              <span className="mono">{medicine.barcode || "—"}</span>
+            </div>
+            <div className="inv-detail-item">
+              <label>Manufacturer</label>
+              <span>
+                {medicine.manufacturer?.name || medicine.manufacturer || "—"}
+              </span>
+            </div>
+            <div className="inv-detail-item">
+              <label>Supplier</label>
+              <span>{medicine.supplier || "—"}</span>
+            </div>
+            <div className="inv-detail-item">
+              <label>Reorder Level</label>
+              <span>{medicine.reorderLevel || 10} units</span>
+            </div>
+            <div className="inv-detail-item">
+              <label>Total Stock</label>
+              <span
+                style={{
+                  color: isLowStock ? "var(--warning)" : "var(--success)",
+                  fontWeight: 800,
+                }}
+              >
+                {medicine.stock ?? 0} units
+              </span>
+            </div>
           </div>
-          <div
-            className="inv-table-wrapper"
-            style={{
-              maxHeight: "200px",
-              overflowY: "auto",
-              border: "1px solid var(--overlay-06)",
-              borderRadius: "12px",
-            }}
-          >
-            <table className="inv-table" style={{ fontSize: "13px" }}>
-              <thead>
-                <tr>
-                  <th style={{ padding: "10px 16px" }}>Batch</th>
-                  <th style={{ padding: "10px 16px" }}>Expiry</th>
-                  <th style={{ padding: "10px 16px" }}>Quantity</th>
-                  <th style={{ padding: "10px 16px" }}>MRP</th>
-                  <th style={{ padding: "10px 16px" }}>Status</th>
-                  <th style={{ padding: "10px 16px" }}>Action</th>
-                </tr>
-              </thead>
-              <tbody>
-                {medicine.inventoryBatches &&
-                medicine.inventoryBatches.length > 0 ? (
-                  medicine.inventoryBatches.map((batch) => (
-                    <tr key={batch.id}>
-                      <td style={{ padding: "10px 16px" }} className="mono">
-                        {batch.batchNumber}
-                      </td>
-                      <td style={{ padding: "10px 16px" }}>
-                        {batch.expiryDate
-                          ? new Date(batch.expiryDate).toLocaleDateString(
-                              "en-IN",
-                              {
-                                month: "short",
-                                year: "numeric",
-                              },
-                            )
-                          : "—"}
-                      </td>
-                      <td style={{ padding: "10px 16px", fontWeight: 800 }}>
-                        {batch.quantity ?? 0}
-                      </td>
-                      <td style={{ padding: "10px 16px" }}>
-                        ₹{Number(batch.mrp || 0).toFixed(2)}
-                      </td>
-                      <td style={{ padding: "10px 16px" }}>
-                        <span
-                          className={`inv-status-badge ${batch.quantity === 0 ? "out-of-stock" : batch.status === "ACTIVE" ? "in-stock" : "low-stock"}`}
-                          style={{ padding: "4px 8px" }}
-                        >
-                          {batch.status}
-                        </span>
-                      </td>
-                      <td style={{ padding: "10px 16px" }}>
-                        <button
-                          className="inv-row-btn"
-                          style={{
-                            width: "28px",
-                            height: "28px",
-                            borderRadius: "8px",
-                          }}
-                          title="Edit Batch"
-                          onClick={() => onEditBatch(batch, medicine)}
-                        >
-                          <Pencil size={12} />
-                        </button>
+
+          {/* Batches Section */}
+          <div style={{ padding: "0 32px 24px" }}>
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                marginBottom: "12px",
+              }}
+            >
+              <h4
+                style={{
+                  margin: 0,
+                  fontFamily: "Outfit, sans-serif",
+                  fontSize: "12px",
+                  fontWeight: 800,
+                  color: "var(--text-muted)",
+                  textTransform: "uppercase",
+                  letterSpacing: "0.05em",
+                }}
+              >
+                Active Batches
+              </h4>
+              <button
+                className="inv-modal-btn confirm"
+                style={{
+                  padding: "6px 12px",
+                  borderRadius: "8px",
+                  fontSize: "12px",
+                }}
+                onClick={() => onAddBatch(medicine)}
+              >
+                <Plus size={14} /> Add Batch
+              </button>
+            </div>
+            <div
+              className="inv-table-wrapper"
+              style={{
+                maxHeight: "200px",
+                overflowY: "auto",
+                border: "1px solid var(--overlay-06)",
+                borderRadius: "12px",
+              }}
+            >
+              <table className="inv-table" style={{ fontSize: "13px" }}>
+                <thead>
+                  <tr>
+                    <th style={{ padding: "10px 16px" }}>Batch</th>
+                    <th style={{ padding: "10px 16px" }}>Expiry</th>
+                    <th style={{ padding: "10px 16px" }}>Quantity</th>
+                    <th style={{ padding: "10px 16px" }}>MRP</th>
+                    <th style={{ padding: "10px 16px" }}>Status</th>
+                    <th style={{ padding: "10px 16px" }}>Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {medicine.inventoryBatches &&
+                  medicine.inventoryBatches.length > 0 ? (
+                    medicine.inventoryBatches.map((batch) => (
+                      <tr key={batch.id}>
+                        <td style={{ padding: "10px 16px" }} className="mono">
+                          {batch.batchNumber}
+                        </td>
+                        <td style={{ padding: "10px 16px" }}>
+                          {batch.expiryDate
+                            ? new Date(batch.expiryDate).toLocaleDateString(
+                                "en-IN",
+                                {
+                                  month: "short",
+                                  year: "numeric",
+                                },
+                              )
+                            : "—"}
+                        </td>
+                        <td style={{ padding: "10px 16px", fontWeight: 800 }}>
+                          {batch.quantity ?? 0}
+                        </td>
+                        <td style={{ padding: "10px 16px" }}>
+                          ₹{Number(batch.mrp || 0).toFixed(2)}
+                        </td>
+                        <td style={{ padding: "10px 16px" }}>
+                          <span
+                            className={`inv-status-badge ${batch.quantity === 0 ? "out-of-stock" : batch.status === "ACTIVE" ? "in-stock" : "low-stock"}`}
+                            style={{ padding: "4px 8px" }}
+                          >
+                            {batch.status}
+                          </span>
+                        </td>
+                        <td style={{ padding: "10px 16px" }}>
+                          <button
+                            className="inv-row-btn"
+                            style={{
+                              width: "28px",
+                              height: "28px",
+                              borderRadius: "8px",
+                            }}
+                            title="Edit Batch"
+                            onClick={() => onEditBatch(batch, medicine)}
+                          >
+                            <Pencil size={12} />
+                          </button>
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td
+                        colSpan={6}
+                        style={{
+                          textAlign: "center",
+                          padding: "20px",
+                          color: "var(--text-muted)",
+                        }}
+                      >
+                        No batches found. Add a batch to stock this medicine.
                       </td>
                     </tr>
-                  ))
-                ) : (
-                  <tr>
-                    <td
-                      colSpan={6}
-                      style={{
-                        textAlign: "center",
-                        padding: "20px",
-                        color: "var(--text-muted)",
-                      }}
-                    >
-                      No batches found. Add a batch to stock this medicine.
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
+                  )}
+                </tbody>
+              </table>
+            </div>
           </div>
-        </div>
 
-        {medicine.description && (
-          <div className="inv-view-notes">
-            <label>Notes</label>
-            <p>{medicine.description}</p>
-          </div>
-        )}
+          {medicine.description && (
+            <div className="inv-view-notes">
+              <label>Notes</label>
+              <p>{medicine.description}</p>
+            </div>
+          )}
         </div>
 
         <div className="inv-view-footer">
@@ -642,12 +642,11 @@ function MedicineViewModal({ medicine, onClose, onEditBatch, onAddBatch }) {
   );
 }
 
-/* ─── Add / Edit Batch Modal ─── */
 function BatchModal({
   onClose,
   onSave,
-  batchData, // Present if editing
-  medicineData, // The parent medicine object
+  batchData,
+  medicineData,
   showToast,
   saving,
 }) {
@@ -889,6 +888,30 @@ export default function InventoryCRUD({
   const [totalItems, setTotalItems] = useState(0);
   const limit = 25;
 
+  const getVisiblePages = () => {
+    if (totalPages <= 7) {
+      return Array.from({ length: totalPages }, (_, i) => i + 1);
+    }
+
+    if (currentPage <= 3) {
+      return [1, 2, 3, "...", totalPages];
+    }
+
+    if (currentPage >= totalPages - 2) {
+      return [1, "...", totalPages - 2, totalPages - 1, totalPages];
+    }
+
+    return [
+      1,
+      "...",
+      currentPage - 1,
+      currentPage,
+      currentPage + 1,
+      "...",
+      totalPages,
+    ];
+  };
+
   // Summary stats state
   const [summaryStats, setSummaryStats] = useState({
     totalProducts: 0,
@@ -902,14 +925,10 @@ export default function InventoryCRUD({
   useEffect(() => {
     const handler = setTimeout(() => {
       setDebouncedSearch(search);
-
-      if (currentPage !== 1) {
-        setCurrentPage(1);
-      }
     }, 400);
 
     return () => clearTimeout(handler);
-  }, [search, currentPage]);
+  }, [search]);
 
   const loadMedicines = useCallback(async () => {
     setLoading(true);
@@ -1547,38 +1566,29 @@ export default function InventoryCRUD({
                 <ChevronLeft size={16} /> Prev
               </button>
 
-              {Array.from({ length: totalPages }, (_, i) => i + 1)
-                .filter((page) => {
-                  return (
-                    page === 1 ||
-                    page === totalPages ||
-                    Math.abs(page - currentPage) <= 2
-                  );
-                })
-                .map((page, idx, arr) => {
-                  const showEllipsis = idx > 0 && page - arr[idx - 1] > 1;
-                  return (
-                    <span key={page}>
-                      {showEllipsis && (
-                        <span
-                          style={{
-                            color: "var(--text-muted)",
-                            paddingLeft: "8px",
-                            paddingRight: "8px",
-                          }}
-                        >
-                          ...
-                        </span>
-                      )}
-                      <button
-                        className={`inv-page-btn ${currentPage === page ? "active" : ""}`}
-                        onClick={() => setCurrentPage(page)}
-                      >
-                        {page}
-                      </button>
-                    </span>
-                  );
-                })}
+              {getVisiblePages().map((page, index) =>
+                page === "..." ? (
+                  <span
+                    key={`ellipsis-${index}`}
+                    className="inv-ellipsis"
+                    style={{
+                      color: "var(--text-muted)",
+                      paddingLeft: "8px",
+                      paddingRight: "8px",
+                    }}
+                  >
+                    ...
+                  </span>
+                ) : (
+                  <button
+                    key={`page-${page}-${index}`}
+                    className={`inv-page-btn ${currentPage === page ? "active" : ""}`}
+                    onClick={() => setCurrentPage(page)}
+                  >
+                    {page}
+                  </button>
+                ),
+              )}
 
               <button
                 className="inv-page-btn prev-next"

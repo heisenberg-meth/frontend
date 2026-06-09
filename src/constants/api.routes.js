@@ -34,6 +34,8 @@ export const API_ROUTES = {
   INVENTORY_BARCODE_GENERATE: "/inventory/barcode/generate",
   BILLING_INVOICES: "/billing/invoices",
   BILLING_RETURNS: "/billing/returns",
+  CUSTOMER_RETURNS: "/billing/returns",
+  CUSTOMER_RETURNS_STATS: "/billing/returns/stats",
   PAYMENTS_CREATE_ORDER: "/payments/create-order",
   PAYMENTS_VERIFY: "/payments/verify",
   PAYMENTS_HISTORY: "/payments/history",
