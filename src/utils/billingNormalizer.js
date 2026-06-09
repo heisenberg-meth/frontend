@@ -1,9 +1,10 @@
 export function normalizeInvoice(invoice) {
   if (!invoice) return null;
 
-  // Use standardized fields if present, otherwise fallback to legacy field names
   const normalizedItems = (invoice.items || invoice.itemsList || invoice.invoiceItems || []).map((item) => ({
     id: item.id || item.medicineId,
+    invoiceItemId: item.id || null,
+    medicineId: item.medicineId || item.medicine?.id || null,
     name: item.name || item.medicineName || item.medicine?.name || "Unknown Medicine",
     qty: Number(item.qty ?? item.quantity ?? 0),
     price: Number(item.price ?? item.unitPrice ?? item.mrp ?? 0),

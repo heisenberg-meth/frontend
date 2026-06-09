@@ -155,6 +155,8 @@ const resolveInvoiceItems = (invoice) => {
 
 const normalizeInvoiceItem = (item) => ({
   ...item,
+  invoiceItemId: item?.invoiceItemId || item?.id || null,
+  medicineId: item?.medicineId || item?.medicine?.id || null,
   name: item?.medicine?.name || item?.medicineName || item?.name || "Unknown",
   qty: item?.quantity ?? item?.qty ?? 0,
   price: item?.unitPrice ?? item?.price ?? item?.mrp ?? 0,
@@ -823,7 +825,8 @@ ${printDiscount > 0 ? `<div style="display:flex;justify-content:space-between"><
         }))
         .filter(({ qty }) => qty > 0)
         .map(({ item, qty }) => ({
-          medicineId: item.medicineId || item.id,
+          invoiceItemId: item.invoiceItemId || item.id,
+          medicineId: item.medicineId || null,
           batchId: item.batchId || null,
           quantity: qty,
           reason: returnReason || "Customer Request",
@@ -2935,7 +2938,8 @@ ${printDiscount > 0 ? `<div style="display:flex;justify-content:space-between"><
                         }))
                         .filter(({ qty, checked }) => checked && qty > 0)
                         .map(({ item, qty }) => ({
-                          medicineId: item.medicineId || item.id,
+                          invoiceItemId: item.invoiceItemId || item.id,
+                          medicineId: item.medicineId || null,
                           batchId: item.batchId || null,
                           quantity: qty,
                           reason: returnModalReason,
