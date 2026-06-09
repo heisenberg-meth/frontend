@@ -623,8 +623,8 @@ export default function ExpiryReport({ showToast }) {
                     setActionLoading(true);
                     try {
                       if (actionType === "Return") {
-                        await api.post("billing/returns", {
-                          originalInvoiceId: selectedItem?.id,
+                        await api.post("purchase/returns", {
+                          supplierId: selectedItem.supplierId,
                           items: [
                             {
                               batchId: selectedItem.batchId || selectedItem.id,

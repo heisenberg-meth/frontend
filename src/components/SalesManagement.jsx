@@ -235,42 +235,53 @@ export default function SalesManagement({ showToast }) {
       setLoading(true);
 
       const reasonText = returnModalReason || "Patient Request";
-      let condition = "sealed";
-      if (reasonText === "Expired Medicine") {
-        condition = "expired";
-      } else if (reasonText === "Damaged Packaging") {
-        condition = "damaged";
-      }
 
-      const returnPromises = [];
+      // Map frontend reason labels to backend enum values
+      const reasonMap = {
+        "Patient Request": "CUSTOMER_RETURN",
+        "Expired Medicine": "EXPIRED_RETURN",
+        "Wrong Medicine": "BILLING_CORRECTION",
+        "Damaged Packaging": "DAMAGED_RETURN",
+      };
+      const backendReason = reasonMap[reasonText] || "CUSTOMER_RETURN";
 
+      // Aggregate all checked items into a single items array
+      const returnItems = [];
       (selectedSale.items || []).forEach((saleItem, idx) => {
-        if (returnChecked[idx] && returnQuantities[idx] > 0) {
-          returnPromises.push(
-            api.post(API_ROUTES.BILLING_RETURNS, {
-              saleItemId: saleItem.id || saleItem.uuid,
-              quantity: returnQuantities[idx],
-              reason: reasonText,
-              condition: condition,
-            }),
-          );
+        const qty = returnQuantities[idx] ?? saleItem.qty ?? saleItem.quantity;
+        const isChecked = returnChecked[idx] ?? true;
+        if (isChecked && qty > 0) {
+          returnItems.push({
+            invoiceItemId: saleItem.id,
+            quantity: qty,
+          });
         }
       });
 
-      if (returnPromises.length === 0) {
+      if (returnItems.length === 0) {
         showToast("Please select at least one item to return", "warning");
         setLoading(false);
         return;
       }
 
-      await Promise.all(returnPromises);
+      // Single bulk POST matching backend createReturnSchema
+      await api.post(API_ROUTES.BILLING_RETURNS, {
+        invoiceId: selectedSale.invoiceId || selectedSale.id,
+        saleId: selectedSale.id,
+        reason: backendReason,
+        items: returnItems,
+      });
 
       showToast("Return processed successfully", "success");
       setShowReturnModal(false);
       await refreshSalesData();
     } catch (error) {
       console.error("Failed to process return:", error);
-      showToast("Failed to process return", "error");
+      const msg =
+        error.response?.data?.error?.message ||
+        error.response?.data?.message ||
+        "Failed to process return";
+      showToast(msg, "error");
     } finally {
       setLoading(false);
     }
