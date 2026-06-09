@@ -3,6 +3,7 @@ import api from "../api.js";
 import { API_ROUTES } from "../constants/api.routes.js";
 import { useAuth } from "../hooks/useAuth";
 import InvoiceModal from "./invoice/InvoiceModal";
+import InvoiceGeneratedModal from "./invoice/InvoiceGeneratedModal";
 import {
   Calendar,
   FileText,
@@ -34,6 +35,9 @@ import "../styles/SalesManagement.css";
 export default function SalesManagement({ showToast }) {
   const { user } = useAuth();
   const [showInvoiceModal, setShowInvoiceModal] = useState(false);
+  const [showGeneratedInvoiceModal, setShowGeneratedInvoiceModal] =
+    useState(false);
+  const [generatedInvoice, setGeneratedInvoice] = useState(null);
   const [activeTab, setActiveTab] = useState("daily");
   const [currentDate, setCurrentDate] = useState(new Date());
   const [hoveredBar, setHoveredBar] = useState(null);
@@ -1376,9 +1380,25 @@ export default function SalesManagement({ showToast }) {
           <InvoiceModal
             isOpen={showInvoiceModal}
             onClose={() => setShowInvoiceModal(false)}
-            onSaveSuccess={() => refreshSalesData()}
+            onSaveSuccess={(inv) => {
+              refreshSalesData();
+              setShowInvoiceModal(false);
+              setGeneratedInvoice(inv);
+              setShowGeneratedInvoiceModal(true);
+            }}
             showToast={showToast}
             user={user}
+          />
+        )}
+        {showGeneratedInvoiceModal && (
+          <InvoiceGeneratedModal
+            isOpen={showGeneratedInvoiceModal}
+            invoice={generatedInvoice}
+            onClose={() => {
+              setShowGeneratedInvoiceModal(false);
+              setGeneratedInvoice(null);
+            }}
+            showToast={showToast}
           />
         )}
       </AnimatePresence>

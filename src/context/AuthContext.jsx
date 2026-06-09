@@ -1,5 +1,5 @@
 import { useMemo, useState, useEffect, useCallback, useRef } from "react";
-import api, { getBaseUrl } from "../api";
+import api from "../api";
 import axios from "axios";
 import { API_ROUTES } from "../constants/api.routes.js";
 import { clearAllAuth, getStoredUser, setUser } from "../utils/authStorage";
@@ -60,7 +60,6 @@ export function AuthProvider({ children }) {
 
   const refreshToken = useCallback(async () => {
     try {
-      const storedRefreshToken = localStorage.getItem("viyan_refresh_token");
       const res = await axios.post(
         `${api.defaults.baseURL}/auth/refresh`,
         {},
@@ -138,7 +137,13 @@ export function AuthProvider({ children }) {
         throw new Error("Login failed: Invalid response from server.");
       }
 
-      const { user: userData, subscriptionExpired, redirectTo, token, refreshToken } = payload;
+      const {
+        user: userData,
+        subscriptionExpired,
+        redirectTo,
+        token,
+        refreshToken,
+      } = payload;
 
       if (token) {
         localStorage.setItem("viyan_token", token);

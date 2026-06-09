@@ -756,9 +756,6 @@ select.pos-input option {
   flex: 1;
 }
 
-.no-print {
-}
-
 .confirm-modal {
   width: 420px !important;
 }

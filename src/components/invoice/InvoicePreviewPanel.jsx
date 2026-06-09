@@ -1,137 +1,267 @@
-import { Eye, FileText, HeartHandshake } from "lucide-react";
-
 export default function InvoicePreviewPanel({
   patient,
   doctorName,
+  prescriptionNo,
+  address,
+  gstNumber,
+  paymentTerms,
+  dueDate,
   lineItems,
   subtotal,
-  discount,
+  discountAmount,
   tax,
   grandTotal,
-  paymentMode,
-  isWalkIn
+  isWalkIn,
+  invoiceNumber,
+  invoiceDate,
 }) {
-  const cgst = tax / 2;
-  const sgst = tax / 2;
-  const discountAmount = subtotal * (discount / 100);
+  const formatDate = (dateVal) => {
+    if (!dateVal) return "—";
+    const d = new Date(dateVal);
+    if (isNaN(d.getTime())) return String(dateVal);
+    const day = String(d.getDate()).padStart(2, "0");
+    const months = [
+      "Jan",
+      "Feb",
+      "Mar",
+      "Apr",
+      "May",
+      "Jun",
+      "Jul",
+      "Aug",
+      "Sep",
+      "Oct",
+      "Nov",
+      "Dec",
+    ];
+    return `${day} ${months[d.getMonth()]} ${d.getFullYear()}`;
+  };
 
-  const todayStr = new Date().toLocaleDateString("en-IN", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric"
-  });
+  const todayStr = invoiceDate
+    ? formatDate(invoiceDate)
+    : formatDate(new Date());
+  const dueDateStr = formatDate(dueDate);
+  const invoiceNo =
+    invoiceNumber ||
+    `INV-${new Date().toISOString().slice(0, 10).replace(/-/g, "")}-XXXX`;
+  const validItems = lineItems.filter((i) => !i.isNew && i.id);
 
   return (
-    <div className="invoice-preview-wrapper">
-      {/* Printable Receipt White Card Container */}
-      <div className="invoice-preview relative flex flex-col justify-between font-sans">
-        
-        {/* Top Header */}
-        <div>
-          <div className="text-center border-b border-dashed border-slate-300 pb-2.5 mb-2.5">
-            <h2 className="text-lg font-extrabold tracking-tight text-slate-800 flex justify-center items-center gap-1.5">
-              <FileText className="text-emerald-600" size={18} />
-              VIYAN MEDASSIST
-            </h2>
-            <p className="text-[9.5px] text-slate-500 mt-0.5 font-medium leading-relaxed">
-              123, Healthcare Street, Medical Hub, Bangalore<br />
-              GSTIN: 29ABCDE1234F1Z1 | Ph: +91 98765 43210
-            </p>
+    <div className="inv-sheet-wrapper">
+      <div className="inv-sheet">
+        {/* ── HEADER ── */}
+        <div className="inv-header">
+          <div className="inv-header-left">
+            <div className="inv-pharmacy-name">VIYAN MEDASSIST</div>
+            <div className="inv-pharmacy-meta">
+              123, Healthcare Street, Medical Hub, Bangalore – 560 001
+              <br />
+              GSTIN: 29ABCDE1234F1Z1 &nbsp;|&nbsp; Ph: +91 98765 43210
+              <br />
+              Email: billing@viyanmedassist.in
+            </div>
+          </div>
+          <div className="inv-header-right">
+            <div className="inv-badge">TAX INVOICE</div>
+            <div className="inv-invoice-meta">
+              <div className="inv-meta-row">
+                <span className="inv-meta-label">Invoice No</span>
+                <span className="inv-meta-value inv-mono">{invoiceNo}</span>
+              </div>
+              <div className="inv-meta-row">
+                <span className="inv-meta-label">Date</span>
+                <span className="inv-meta-value">{todayStr}</span>
+              </div>
+              {dueDateStr && dueDateStr !== "—" && (
+                <div className="inv-meta-row">
+                  <span className="inv-meta-label">Due Date</span>
+                  <span className="inv-meta-value">{dueDateStr}</span>
+                </div>
+              )}
+              <div className="inv-meta-row">
+                <span className="inv-meta-label">Payment</span>
+                <span className="inv-meta-value">
+                  {paymentTerms || "Immediate"}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* ── DIVIDER ── */}
+        <div className="inv-divider" />
+
+        {/* ── BILLING INFO ── */}
+        <div className="inv-billing-row">
+          <div className="inv-bill-to">
+            <div className="inv-section-label">BILLED TO</div>
+            <div className="inv-customer-name">
+              {isWalkIn
+                ? "Walk-in Customer"
+                : patient?.name || "Walk-in Customer"}
+            </div>
+            {patient?.phone && !isWalkIn && (
+              <div className="inv-customer-detail">📞 {patient.phone}</div>
+            )}
+            {address && !isWalkIn && (
+              <div className="inv-customer-detail">{address}</div>
+            )}
           </div>
 
-          {/* Metadata Grid */}
-          <div className="grid grid-cols-2 gap-y-1.5 gap-x-4 text-[10.5px] border-b border-slate-200 pb-2.5 mb-2.5 text-slate-600">
-            <div>
-              <span className="font-semibold text-slate-800">Bill Date:</span> {todayStr}
+          {(doctorName || prescriptionNo) && (
+            <div className="inv-rx-box">
+              {doctorName && (
+                <div className="inv-meta-row">
+                  <span className="inv-meta-label">Doctor</span>
+                  <span className="inv-meta-value">Dr. {doctorName}</span>
+                </div>
+              )}
+              {prescriptionNo && (
+                <div className="inv-meta-row">
+                  <span className="inv-meta-label">Rx No.</span>
+                  <span className="inv-meta-value inv-mono">
+                    {prescriptionNo}
+                  </span>
+                </div>
+              )}
             </div>
-            <div>
-              <span className="font-semibold text-slate-800">Bill Number:</span> <span className="font-mono text-slate-500">INV-PREVIEW</span>
-            </div>
-            <div>
-              <span className="font-semibold text-slate-800">Customer:</span> {isWalkIn ? "Walk-in Customer" : patient.name || "N/A"}
-            </div>
-            {patient.phone && !isWalkIn && (
-              <div>
-                <span className="font-semibold text-slate-800">Contact:</span> {patient.phone}
-              </div>
-            )}
-            {doctorName && (
-              <div className="col-span-2">
-                <span className="font-semibold text-slate-800">Prescribed By:</span> Dr. {doctorName}
-              </div>
-            )}
-          </div>
+          )}
+        </div>
 
-          {/* Items Table */}
-          <table className="w-full text-left text-[10.5px] mb-2.5">
+        {/* ── MEDICINES TABLE ── */}
+        <div className="inv-table-wrap">
+          <table className="inv-table">
             <thead>
-              <tr className="border-b-2 border-slate-300 text-slate-800 font-bold">
-                <th className="py-1">Medicine</th>
-                <th className="py-1 text-center">Qty</th>
-                <th className="py-1 text-right">MRP</th>
-                <th className="py-1 text-right">Total</th>
+              <tr className="inv-table-head">
+                <th className="inv-th inv-th-left inv-col-medicine">
+                  Medicine
+                </th>
+                <th className="inv-th inv-th-center inv-col-batch">
+                  Batch No.
+                </th>
+                <th className="inv-th inv-th-center inv-col-qty">Qty</th>
+                <th className="inv-th inv-th-right inv-col-mrp">MRP ₹</th>
+                <th className="inv-th inv-th-center inv-col-disc">Disc%</th>
+                <th className="inv-th inv-th-center inv-col-gst">GST%</th>
+                <th className="inv-th inv-th-right inv-col-amt">Amount ₹</th>
               </tr>
             </thead>
             <tbody>
-              {lineItems.length === 0 ? (
+              {validItems.length === 0 ? (
                 <tr>
-                  <td colSpan="4" className="text-center py-4 text-slate-400 italic">
-                    Add medicines to populate receipt
+                  <td colSpan="7" className="inv-empty-state">
+                    <div className="inv-empty-icon">💊</div>
+                    <div className="inv-empty-text">No medicines added yet</div>
+                    <div className="inv-empty-sub">
+                      Add items from the left panel to generate invoice
+                    </div>
                   </td>
                 </tr>
               ) : (
-                lineItems.map((item, idx) => (
-                  <tr key={`${item.id}-${item.batchId}-${idx}`} className="border-b border-slate-100 text-slate-700">
-                    <td className="py-1">
-                      <div className="font-semibold text-slate-800">{item.name}</div>
-                      <div className="text-[9px] text-slate-400 font-mono">Batch: {item.batchNumber}</div>
-                    </td>
-                    <td className="py-1 text-center">{item.qty}</td>
-                    <td className="py-1 text-right">₹{item.price.toFixed(2)}</td>
-                    <td className="py-1 text-right">₹{(item.price * item.qty).toFixed(2)}</td>
-                  </tr>
-                ))
+                validItems.map((item, idx) => {
+                  const itemSub = item.price * item.qty;
+                  const itemDisc = itemSub * ((item.discount || 0) / 100);
+                  const amount = itemSub - itemDisc;
+                  return (
+                    <tr
+                      key={idx}
+                      className={`inv-tr ${idx % 2 === 0 ? "" : "inv-tr-alt"}`}
+                    >
+                      <td className="inv-td inv-td-left">
+                        <div className="inv-med-name">{item.name}</div>
+                      </td>
+                      <td className="inv-td inv-td-center inv-mono-sm">
+                        {item.batchNumber || "—"}
+                      </td>
+                      <td className="inv-td inv-td-center">{item.qty}</td>
+                      <td className="inv-td inv-td-right">
+                        {item.price?.toFixed(2)}
+                      </td>
+                      <td className="inv-td inv-td-center">
+                        {item.discount > 0 ? `${item.discount}%` : "—"}
+                      </td>
+                      <td className="inv-td inv-td-center">
+                        {item.gst > 0 ? `${item.gst}%` : "—"}
+                      </td>
+                      <td className="inv-td inv-td-right inv-td-amount">
+                        {amount.toFixed(2)}
+                      </td>
+                    </tr>
+                  );
+                })
               )}
             </tbody>
           </table>
         </div>
 
-        {/* Totals Summary */}
-        <div>
-          <div className="border-t border-slate-200 pt-2 mt-1 space-y-0.5 text-[10.5px] text-slate-600">
-            <div className="flex justify-between">
-              <span>Subtotal</span>
-              <span>₹{subtotal.toFixed(2)}</span>
+        {/* ── TOTALS + NOTES ── */}
+        <div className="inv-footer-row">
+          {/* Left: Terms / Notes */}
+          <div className="inv-notes-col">
+            <div className="inv-section-label" style={{ marginBottom: 6 }}>
+              TERMS & CONDITIONS
             </div>
-            <div className="flex justify-between">
-              <span>CGST ({lineItems.length > 0 ? "9%" : "0%"})</span>
-              <span>₹{cgst.toFixed(2)}</span>
+            <div className="inv-notes-text">
+              1. Goods once sold will not be taken back or exchanged.
+              <br />
+              2. Subject to local jurisdiction only.
+              <br />
+              3. E. &amp; O.E.
             </div>
-            <div className="flex justify-between">
-              <span>SGST ({lineItems.length > 0 ? "9%" : "0%"})</span>
-              <span>₹{sgst.toFixed(2)}</span>
-            </div>
-            {discount > 0 && (
-              <div className="flex justify-between text-emerald-600 font-medium">
-                <span>Discount ({discount}%)</span>
-                <span>-₹{discountAmount.toFixed(2)}</span>
+            {gstNumber && (
+              <div className="inv-gst-tag">
+                Customer GSTIN: <strong>{gstNumber}</strong>
               </div>
             )}
-            <div className="flex justify-between text-slate-800 font-extrabold text-[12px] border-t border-dashed border-slate-300 pt-1 mt-0.5">
-              <span>Grand Total ({paymentMode})</span>
-              <span className="text-slate-900">₹{grandTotal.toFixed(2)}</span>
-            </div>
           </div>
 
-          {/* Footer note */}
-          <div className="text-center text-[9.5px] text-slate-400 mt-4 pt-2.5 border-t border-dashed border-slate-200 flex flex-col items-center justify-center gap-0.5">
-            <div className="flex items-center gap-1 font-medium text-slate-500">
-              <HeartHandshake size={11} className="text-rose-500" /> Get Well Soon!
+          {/* Right: Totals */}
+          <div className="inv-totals-col">
+            <div className="inv-totals-box">
+              <div className="inv-totals-row">
+                <span className="inv-totals-label">Subtotal</span>
+                <span className="inv-totals-val">₹{subtotal.toFixed(2)}</span>
+              </div>
+              {discountAmount > 0 && (
+                <div className="inv-totals-row inv-totals-disc">
+                  <span className="inv-totals-label">Discount</span>
+                  <span className="inv-totals-val">
+                    −₹{discountAmount.toFixed(2)}
+                  </span>
+                </div>
+              )}
+              <div className="inv-totals-row">
+                <span className="inv-totals-label">GST / Tax</span>
+                <span className="inv-totals-val">₹{tax.toFixed(2)}</span>
+              </div>
+              <div className="inv-totals-divider" />
+              <div className="inv-totals-row inv-totals-grand">
+                <span className="inv-totals-grand-label">TOTAL</span>
+                <span className="inv-totals-grand-val">
+                  ₹{grandTotal.toFixed(2)}
+                </span>
+              </div>
             </div>
-            <span>Viyan MedAssist Services</span>
           </div>
         </div>
 
+        {/* ── SIGNATURE ROW ── */}
+        <div className="inv-sig-row">
+          <div className="inv-sig-block">
+            <div className="inv-sig-line" />
+            <div className="inv-sig-caption">Customer Signature</div>
+          </div>
+          <div className="inv-sig-center">
+            <div className="inv-thankyou">
+              ✦ Thank you for choosing Viyan MedAssist ✦
+            </div>
+            <div className="inv-thankyou-sub">Get well soon!</div>
+          </div>
+          <div className="inv-sig-block inv-sig-right">
+            <div className="inv-sig-line" />
+            <div className="inv-sig-caption">Authorised Signatory</div>
+          </div>
+        </div>
       </div>
     </div>
   );

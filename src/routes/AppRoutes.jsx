@@ -137,17 +137,6 @@ export default function AppRoutes({
             }
           />
           <Route
-            path="/inventory"
-            element={
-              <PageErrorBoundary>
-                <InventoryCRUD
-                  showToast={showToast}
-                  title="Inventory Management"
-                />
-              </PageErrorBoundary>
-            }
-          />
-          <Route
             path="/import"
             element={
               <PageErrorBoundary>

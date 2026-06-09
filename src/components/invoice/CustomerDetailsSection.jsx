@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { User, Phone, Clipboard, Calendar, CreditCard, Banknote, Smartphone, Check, Loader2 } from "lucide-react";
+import { User, Phone, Stethoscope, FileText, MapPin, Shield, CreditCard, Calendar, Check, Loader2 } from "lucide-react";
 import api from "../../api.js";
 import { API_ROUTES } from "../../constants/api.routes.js";
 import { normalizeArrayResponse } from "../../utils/apiNormalizer";
@@ -9,8 +9,16 @@ export default function CustomerDetailsSection({
   setPatient,
   doctorName,
   setDoctorName,
-  paymentMode,
-  setPaymentMode,
+  prescriptionNo,
+  setPrescriptionNo,
+  address,
+  setAddress,
+  gstNumber,
+  setGstNumber,
+  paymentTerms,
+  setPaymentTerms,
+  dueDate,
+  setDueDate,
   isWalkIn,
   setIsWalkIn,
   showToast
@@ -55,29 +63,28 @@ export default function CustomerDetailsSection({
       name: p.fullName || p.name,
       phone: p.phone
     });
+    if (p.address) {
+      setAddress(p.address);
+    }
     setShowDropdown(false);
     showToast(`Loaded customer details: ${p.fullName || p.name}`, "success");
   };
 
-  const todayStr = new Date().toLocaleDateString("en-IN", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric"
-  });
-
-  const paymentModes = [
-    { id: "CASH", label: "Cash", icon: Banknote },
-    { id: "UPI", label: "UPI", icon: Smartphone },
-    { id: "CARD", label: "Card", icon: CreditCard }
-  ];
+  const termsOptions = ["Cash", "Credit", "UPI", "Card", "Bank Transfer"];
 
   return (
-    <div className="customer-section">
-      <div className="flex items-center justify-between pb-1.5 border-b border-white/5 mb-1">
-        <h3 className="text-sm font-bold text-slate-300 flex items-center gap-1.5">
-          <User size={15} className="text-[#4fdbc8]" /> Customer Details
-        </h3>
-        <label className="flex items-center gap-1.5 cursor-pointer text-[11px] text-slate-400">
+    <div className="invoice-card">
+      {/* Header */}
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-2">
+          <div className="card-header-icon-wrapper">
+            <User size={14} className="stroke-[2.5]" />
+          </div>
+          <h3 className="card-header-title">
+            Customer & Billing Details
+          </h3>
+        </div>
+        <label className="flex items-center gap-1.5 cursor-pointer text-[11px] font-medium text-slate-500 hover:text-slate-800 transition-colors">
           <input
             type="checkbox"
             checked={isWalkIn}
@@ -85,120 +92,165 @@ export default function CustomerDetailsSection({
               setIsWalkIn(e.target.checked);
               if (e.target.checked) {
                 setPatient({ id: null, name: "Walk-in Customer", phone: "" });
+                setAddress("");
+                setGstNumber("");
               } else {
                 setPatient({ id: null, name: "", phone: "" });
               }
             }}
-            className="rounded border-white/10 bg-slate-800 text-[#4fdbc8] focus:ring-0 w-3 h-3"
+            className="rounded border-slate-300 text-[#0d9488] focus:ring-[#0d9488]/20 w-3.5 h-3.5"
           />
           Walk-in Customer
         </label>
       </div>
 
-      <div className="customer-grid">
-        {/* Mobile Number */}
-        <div className="form-field relative">
-          <label>Mobile Number</label>
+      {/* 12-Column Billing Grid */}
+      <div className="billing-grid">
+        {/* Customer Name (col span 3) */}
+        <div className="form-field billing-col-3">
+          <label>Customer Name</label>
           <div className="relative">
+            <User className="form-field-icon" size={14} />
+            <input
+              type="text"
+              disabled={isWalkIn}
+              value={isWalkIn ? "Walk-in Customer" : patient.name}
+              onChange={(e) => setPatient(prev => ({ ...prev, name: e.target.value }))}
+              placeholder="Patient full name"
+              className="form-input form-input-has-icon disabled:opacity-40 disabled:cursor-not-allowed"
+            />
+          </div>
+        </div>
+
+        {/* Phone Number (col span 3) */}
+        <div className="form-field billing-col-3 relative">
+          <label>Phone Number</label>
+          <div className="relative">
+            <Phone className="form-field-icon" size={14} />
             <input
               type="text"
               disabled={isWalkIn}
               value={isWalkIn ? "" : patient.phone}
               onChange={handlePhoneChange}
-              placeholder={isWalkIn ? "N/A" : "Enter 10-digit mobile"}
-              className="w-full form-input disabled:opacity-40 disabled:cursor-not-allowed"
+              placeholder="Mobile number"
+              className="form-input form-input-has-icon disabled:opacity-40 disabled:cursor-not-allowed"
             />
             {loadingPatient && (
-              <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 text-[#4fdbc8] animate-spin" size={14} />
+              <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 text-[#0d9488] animate-spin" size={14} />
             )}
           </div>
 
           {showDropdown && patientResults.length > 0 && (
-            <div className="absolute z-20 left-0 right-0 mt-1 bg-slate-900 border border-white/10 rounded-lg shadow-xl max-h-48 overflow-y-auto">
+            <div className="absolute z-20 left-0 right-0 mt-1 bg-white border border-slate-200 rounded-lg shadow-lg max-h-48 overflow-y-auto divide-y divide-slate-100">
               {patientResults.map(p => (
                 <button
                   key={p.id}
                   type="button"
                   onClick={() => selectPatient(p)}
-                  className="w-full px-3 py-1.5 text-left text-xs text-slate-300 hover:bg-[#4fdbc8]/10 hover:text-white flex items-center justify-between transition-colors border-b border-white/5 last:border-0"
+                  className="w-full px-3 py-2 text-left text-xs text-slate-700 hover:bg-slate-50 flex items-center justify-between transition-colors"
                 >
                   <div>
-                    <div className="font-medium">{p.fullName || p.name}</div>
+                    <div className="font-semibold text-slate-800">{p.fullName || p.name}</div>
                     <div className="text-[10px] text-slate-500">{p.phone}</div>
                   </div>
-                  <Check size={12} className="text-[#4fdbc8] opacity-0 hover:opacity-100" />
+                  <Check size={12} className="text-[#0d9488]" />
                 </button>
               ))}
             </div>
           )}
         </div>
 
-        {/* Customer Name */}
-        <div className="form-field">
-          <label>Customer Name</label>
+        {/* Doctor Name (col span 3) */}
+        <div className="form-field billing-col-3">
+          <label>Doctor Name</label>
           <div className="relative">
-            <input
-              type="text"
-              disabled={isWalkIn}
-              value={isWalkIn ? "Walk-in Customer" : patient.name}
-              onChange={(e) => setPatient(prev => ({ ...prev, name: e.target.value }))}
-              placeholder="Enter customer name"
-              className="w-full form-input disabled:opacity-40 disabled:cursor-not-allowed"
-            />
-          </div>
-        </div>
-
-        {/* Doctor Name */}
-        <div className="form-field">
-          <label>Doctor Name (Optional)</label>
-          <div className="relative">
+            <Stethoscope className="form-field-icon" size={14} />
             <input
               type="text"
               value={doctorName}
               onChange={(e) => setDoctorName(e.target.value)}
-              placeholder="Enter prescriber's name"
-              className="w-full form-input"
+              placeholder="Prescrib..."
+              className="form-input form-input-has-icon"
             />
           </div>
         </div>
 
-        {/* Invoice Date */}
-        <div className="form-field">
-          <label>Invoice Date</label>
+        {/* Prescription No (col span 3) */}
+        <div className="form-field billing-col-3">
+          <label>Prescription No</label>
           <div className="relative">
+            <FileText className="form-field-icon" size={14} />
             <input
               type="text"
-              readOnly
-              disabled
-              value={todayStr}
-              className="w-full form-input select-none cursor-not-allowed opacity-60"
+              value={prescriptionNo}
+              onChange={(e) => setPrescriptionNo(e.target.value)}
+              placeholder="Rx number"
+              className="form-input form-input-has-icon"
             />
           </div>
         </div>
-      </div>
 
-      <div className="border-t border-white/5 pt-3 mt-1">
-        <label className="block text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-2">Payment Method</label>
-        <div className="payment-grid">
-          {paymentModes.map((mode) => {
-            const IconComponent = mode.icon;
-            const isActive = paymentMode === mode.id;
-            return (
-              <button
-                key={mode.id}
-                type="button"
-                onClick={() => setPaymentMode(mode.id)}
-                className={`payment-card ${
-                  isActive
-                    ? "bg-[#4fdbc8]/10 border-[#4fdbc8] text-[#4fdbc8] shadow-[0_0_10px_rgba(79,219,200,0.2)] scale-[1.01]"
-                    : "text-slate-400 hover:border-white/10 hover:text-slate-200 hover:bg-slate-900/60"
-                }`}
-              >
-                <IconComponent size={15} />
-                <span className="text-[11px] font-semibold">{mode.label}</span>
-              </button>
-            );
-          })}
+        {/* Address (col span 5) */}
+        <div className="form-field billing-col-5">
+          <label>Address</label>
+          <div className="relative">
+            <MapPin className="form-field-icon" size={14} />
+            <input
+              type="text"
+              disabled={isWalkIn}
+              value={isWalkIn ? "" : address}
+              onChange={(e) => setAddress(e.target.value)}
+              placeholder="Patient full home address"
+              className="form-input form-input-has-icon disabled:opacity-40 disabled:cursor-not-allowed"
+            />
+          </div>
+        </div>
+
+        {/* GST Number (col span 2) */}
+        <div className="form-field billing-col-2">
+          <label>GST Number</label>
+          <div className="relative">
+            <Shield className="form-field-icon" size={14} />
+            <input
+              type="text"
+              disabled={isWalkIn}
+              value={isWalkIn ? "" : gstNumber}
+              onChange={(e) => setGstNumber(e.target.value)}
+              placeholder="GSTIN"
+              className="form-input form-input-has-icon disabled:opacity-40 disabled:cursor-not-allowed"
+            />
+          </div>
+        </div>
+
+        {/* Payment Terms (col span 2) */}
+        <div className="form-field billing-col-2">
+          <label>Payment Terms</label>
+          <div className="relative">
+            <CreditCard className="form-field-icon" size={13} />
+            <select
+              value={paymentTerms}
+              onChange={(e) => setPaymentTerms(e.target.value)}
+              className="form-input form-input-has-icon cursor-pointer"
+            >
+              {termsOptions.map(opt => (
+                <option key={opt} value={opt}>{opt}</option>
+              ))}
+            </select>
+          </div>
+        </div>
+
+        {/* Due Date (col span 3) */}
+        <div className="form-field billing-col-3">
+          <label>Due Date</label>
+          <div className="relative">
+            <Calendar className="form-field-icon" size={13} />
+            <input
+              type="date"
+              value={dueDate}
+              onChange={(e) => setDueDate(e.target.value)}
+              className="form-input form-input-has-icon"
+            />
+          </div>
         </div>
       </div>
     </div>

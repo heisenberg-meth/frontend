@@ -2,7 +2,6 @@ import { NavLink } from "react-router-dom";
 import {
   LayoutDashboard,
   UploadCloud,
-  Users,
   LogOut,
   HelpCircle,
   CreditCard,

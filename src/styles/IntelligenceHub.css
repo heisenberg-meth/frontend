@@ -52,6 +52,12 @@
   filter: drop-shadow(0 0 8px rgba(79, 219, 200, 0.5));
 }
 
+.banner-right {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
 .banner-btn {
   background: var(--primary);
   border: none;
@@ -647,5 +653,458 @@
   }
   .hub-bottom-metric-row {
     grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* Urgent Expiries Redesign */
+.urgent-expiries-card {
+  background: var(--bg-surface, #ffffff);
+  border-radius: 24px;
+  padding: 32px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+  max-width: 650px;
+  border: 1px solid var(--overlay-05);
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.urgent-expiries-card:hover {
+  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.08);
+}
+
+.urgent-expiries-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.urgent-icon-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  background: rgba(244, 63, 94, 0.1);
+  border-radius: 12px;
+  color: var(--danger);
+}
+
+.urgent-header-text h3 {
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--text);
+  margin: 0;
+  line-height: 1.2;
+}
+
+.urgent-header-text p {
+  font-size: 14px;
+  color: var(--text-muted);
+  margin: 4px 0 0 0;
+}
+
+.urgent-table {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.urgent-table-head {
+  display: grid;
+  grid-template-columns: 2fr 1.5fr 1.5fr 1fr;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.urgent-table-body {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.urgent-table-row {
+  display: grid;
+  grid-template-columns: 2fr 1.5fr 1.5fr 1fr;
+  align-items: center;
+  padding: 16px;
+  background: var(--overlay-02);
+  border-radius: 12px;
+  border: 1px solid transparent;
+  transition: all 0.2s ease;
+}
+
+.urgent-table-row:hover {
+  background: var(--overlay-04);
+  border-color: var(--overlay-06);
+}
+
+.urgent-med-name {
+  font-weight: 600;
+  color: var(--text);
+}
+
+.urgent-batch {
+  color: var(--text-muted);
+  font-family: monospace;
+}
+
+.urgent-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.urgent-badge.overdue {
+  background: rgba(244, 63, 94, 0.1);
+  color: var(--danger);
+}
+
+.urgent-badge.warning {
+  background: rgba(234, 179, 8, 0.1);
+  color: var(--warning);
+}
+
+.urgent-qty {
+  font-weight: 600;
+  color: var(--text-muted);
+  text-align: right;
+}
+
+.urgent-disposal-btn {
+  width: 100%;
+  height: 48px;
+  border-radius: 12px;
+  background: linear-gradient(90deg, #ff4d6d 0%, #ff2d55 100%);
+  color: white;
+  font-weight: 600;
+  font-size: 14px;
+  border: none;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 14px rgba(255, 77, 109, 0.3);
+}
+
+.urgent-disposal-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(255, 77, 109, 0.4);
+}
+
+/* Disposal Modal Redesign */
+.urgent-disposal-modal {
+  background: var(--bg-surface, #ffffff);
+  border-radius: 20px;
+  padding: 24px;
+  width: 90%;
+  max-width: 620px;
+  max-height: 85vh;
+  overflow-y: auto;
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.1);
+}
+
+.urgent-modal-icon {
+  width: 64px;
+  height: 64px;
+  background: rgba(255, 77, 109, 0.1);
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ff4d6d;
+  margin: 0 auto 24px auto;
+}
+
+.urgent-modal-title {
+  font-size: 24px;
+  font-weight: 700;
+  text-align: center;
+  color: var(--text);
+  margin: 0 0 16px 0;
+}
+
+.urgent-modal-desc {
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 14px;
+  line-height: 1.6;
+  margin-bottom: 24px;
+}
+
+.urgent-modal-desc p {
+  margin: 0 0 16px 0;
+}
+
+.urgent-modal-desc p:last-child {
+  margin-bottom: 0;
+}
+
+.urgent-modal-divider {
+  height: 1px;
+  background: var(--overlay-05);
+  margin: 0 -24px 24px -24px;
+}
+
+.urgent-modal-actions {
+  display: flex;
+  gap: 12px;
+}
+
+.urgent-modal-btn-cancel,
+.urgent-modal-btn-verify {
+  flex: 1;
+  height: 48px;
+  border-radius: 12px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.urgent-modal-btn-cancel {
+  background: var(--bg-surface, #ffffff);
+  border: 1px solid #d0d5dd;
+  color: var(--text);
+}
+
+.urgent-modal-btn-cancel:hover {
+  background: var(--overlay-02);
+}
+
+.urgent-modal-btn-verify {
+  background: linear-gradient(90deg, #ff4d6d 0%, #ff2d55 100%);
+  border: none;
+  color: white;
+  box-shadow: 0 4px 14px rgba(255, 77, 109, 0.3);
+}
+
+.urgent-modal-btn-verify:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(255, 77, 109, 0.4);
+}
+
+/* Disposal Workflow Specifics */
+.disposal-summary-card {
+  background: var(--overlay-02);
+  border: 1px solid var(--overlay-05);
+  border-radius: 16px;
+  padding: 16px 24px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 24px;
+  margin-bottom: 32px;
+}
+
+.disposal-summary-card.compact-summary {
+  padding: 12px;
+  margin-bottom: 16px;
+  gap: 16px;
+}
+
+.disposal-summary-card div {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 14px;
+  color: var(--text-muted);
+}
+
+.disposal-summary-card div b {
+  color: var(--text);
+  font-weight: 600;
+  font-size: 15px;
+}
+
+.disposal-form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  margin-bottom: 32px;
+}
+
+.disposal-form-grid.compact-form {
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.form-group.full-width {
+  grid-column: 1 / -1;
+}
+
+.form-group label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.form-group input,
+.form-group select,
+.form-group textarea {
+  background: var(--bg-surface);
+  border: 1px solid var(--overlay-08);
+  border-radius: 12px;
+  padding: 12px 16px;
+  font-size: 14px;
+  color: var(--text);
+  font-family: inherit;
+  transition: all 0.3s;
+}
+
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+  outline: none;
+  border-color: #ff4d6d;
+  box-shadow: 0 0 0 3px rgba(255, 77, 109, 0.1);
+}
+
+.form-group textarea {
+  min-height: 80px;
+  max-height: 120px;
+  resize: vertical;
+}
+
+.checkbox-group {
+  flex-direction: row;
+  align-items: flex-start;
+  gap: 12px;
+  background: var(--overlay-02);
+  padding: 16px;
+  border-radius: 12px;
+}
+
+.checkbox-group input[type="checkbox"] {
+  width: 20px;
+  height: 20px;
+  margin-top: 2px;
+  accent-color: #ff4d6d;
+}
+
+.checkbox-group label {
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--text);
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.disposal-review-table-container {
+  max-height: 240px;
+  overflow-y: auto;
+  border: 1px solid var(--overlay-05);
+  border-radius: 16px;
+}
+
+.disposal-review-table-container.compact-table-container {
+  max-height: 220px;
+}
+
+.disposal-review-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+}
+
+.disposal-review-table th {
+  position: sticky;
+  top: 0;
+  background: var(--overlay-02);
+  padding: 12px 16px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border-bottom: 1px solid var(--overlay-05);
+  z-index: 10;
+}
+
+.disposal-review-table td {
+  padding: 16px;
+  font-size: 14px;
+  color: var(--text);
+  border-bottom: 1px solid var(--overlay-04);
+}
+
+.disposal-review-table tr:last-child td {
+  border-bottom: none;
+}
+
+.disposal-risk-card {
+  background: rgba(244, 63, 94, 0.05);
+  border: 1px solid rgba(244, 63, 94, 0.2);
+  border-radius: 16px;
+  padding: 16px 20px;
+  margin-bottom: 24px;
+}
+
+.disposal-risk-card.compact-risk {
+  padding: 12px;
+}
+
+.disposal-confirm-input {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 32px;
+}
+
+.disposal-confirm-input.compact-input {
+  margin-bottom: 16px;
+}
+
+.sticky-actions {
+  position: sticky;
+  bottom: 0;
+  background: var(--bg-surface, #ffffff);
+  padding-top: 16px;
+  z-index: 20;
+}
+
+.disposal-confirm-input label {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-align: center;
+}
+
+.disposal-confirm-input input {
+  background: var(--bg-surface);
+  border: 1px solid var(--overlay-08);
+  border-radius: 12px;
+  padding: 12px 16px;
+  font-size: 16px;
+  font-weight: bold;
+  text-align: center;
+  color: var(--text);
+  transition: all 0.3s;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.disposal-confirm-input input:focus {
+  outline: none;
+  border-color: #ff4d6d;
+  box-shadow: 0 0 0 3px rgba(255, 77, 109, 0.1);
+}
+
+@media (max-width: 640px) {
+  .disposal-form-grid {
+    grid-template-columns: 1fr;
   }
 }

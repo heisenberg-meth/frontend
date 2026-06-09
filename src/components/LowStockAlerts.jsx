@@ -641,7 +641,7 @@ export default function LowStockAlerts({ showToast }) {
         <span className="lsa-breadcrumb-sep">/</span>
         <button
           className="lsa-breadcrumb-item"
-          onClick={() => navigate("/inventory")}
+          onClick={() => navigate("/stock")}
         >
           Inventory
         </button>
@@ -781,10 +781,7 @@ export default function LowStockAlerts({ showToast }) {
       <NotifySettings showToast={showToast} settings={notificationSettings} />
 
       <div style={{ display: "flex", gap: 12, marginTop: 12 }}>
-        <button
-          className="lsa-btn-outline"
-          onClick={() => navigate("/inventory")}
-        >
+        <button className="lsa-btn-outline" onClick={() => navigate("/stock")}>
           ← Return to Inventory
         </button>
         <button

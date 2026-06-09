@@ -14,6 +14,8 @@ import {
   CheckCircle,
   Star,
   Users,
+  ShieldCheck,
+  Download,
 } from "lucide-react";
 import { differenceInDays, format } from "date-fns";
 import api from "../api";
@@ -43,7 +45,18 @@ export default function Dashboard({
   const [showBanner, setShowBanner] = useState(
     user?.subscriptionStatus === "TRIAL",
   );
-  const [showConfirm, setShowConfirm] = useState(false);
+  const [disposalStep, setDisposalStep] = useState(0); // 0=hidden, 1=Form, 2=Review, 3=Success
+  const [disposalForm, setDisposalForm] = useState({
+    method: "Incineration",
+    supervisor: "",
+    witness: "",
+    location: "",
+    notes: "",
+    agreed: false,
+  });
+  const [disposalConfirmText, setDisposalConfirmText] = useState("");
+  const [disposalRef, setDisposalRef] = useState("");
+  const [isDisposing, setIsDisposing] = useState(false);
   const [dashboardData, setDashboardData] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -112,14 +125,24 @@ export default function Dashboard({
     .filter((m) => getStock(m) > 0 && getStock(m) <= (lowStock || 10))
     .slice(0, 5);
 
+  const canConfirm = disposalConfirmText.trim().toUpperCase() === "DISPOSE";
+
   const handleAuthorizeDisposal = async () => {
-    setShowConfirm(false);
+    if (!canConfirm) return;
+    setIsDisposing(true);
     try {
       for (const m of expiring) await api.delete(`inventory/medicines/${m.id}`);
       fetchData();
-      showToast("Clinical Disposal Authorized & Executed", "success");
+      /* eslint-disable react-hooks/purity */
+      setDisposalRef(
+        `DSP-${new Date().getFullYear()}-${Math.floor(10000 + Math.random() * 90000)}`,
+      );
+      /* eslint-enable react-hooks/purity */
+      setDisposalStep(3);
     } catch {
-      showToast("Authorization failed", "error");
+      showToast("Disposal failed", "error");
+    } finally {
+      setIsDisposing(false);
     }
   };
 
@@ -228,7 +251,7 @@ export default function Dashboard({
         </div>
         <div
           className="mini-metric-card"
-          onClick={() => navigate("/inventory")}
+          onClick={() => navigate("/stock")}
           onMouseMove={handleMouseMove}
         >
           <IndianRupee size={20} className="text-blue-400" />
@@ -261,7 +284,7 @@ export default function Dashboard({
       <div className="hub-stats-row-v2">
         <div
           className="stat-card-v2"
-          onClick={() => navigate("/inventory")}
+          onClick={() => navigate("/stock")}
           onMouseMove={handleMouseMove}
         >
           <div className="stat-v2-header">
@@ -294,7 +317,7 @@ export default function Dashboard({
 
         <div
           className="stat-card-v2"
-          onClick={() => navigate("/inventory")}
+          onClick={() => navigate("/expiry")}
           onMouseMove={handleMouseMove}
         >
           <div className="stat-v2-header">
@@ -388,7 +411,7 @@ export default function Dashboard({
                     <div
                       key={item.id}
                       className="mini-table-row"
-                      onClick={() => navigate("/inventory")}
+                      onClick={() => navigate("/stock")}
                     >
                       <span className="row-med">{item.name}</span>
                       <span className="row-stock text-yellow-500 font-bold">
@@ -420,89 +443,398 @@ export default function Dashboard({
         {/* RIGHT COLUMN 40% */}
         <div className="col-span-5 flex flex-col gap-6">
           <div
-            className="bento-card"
-            onClick={() => navigate("/inventory")}
+            className="urgent-expiries-card"
+            onClick={() => navigate("/expiry")}
             onMouseMove={handleMouseMove}
           >
-            <div className="flex items-center gap-3 mb-6">
-              <AlertTriangle size={18} className="text-rose-500" />
-              <h3 className="bento-title !text-[12px] !mb-0 !text-rose-500 uppercase tracking-widest">
-                URGENT EXPIRIES
-              </h3>
+            <div className="urgent-expiries-header">
+              <div className="urgent-icon-wrapper">
+                <AlertTriangle size={24} className="text-rose-500" />
+              </div>
+              <div className="urgent-header-text">
+                <h3>Urgent Expiries</h3>
+                <p>{expiring.length} products require disposal</p>
+              </div>
             </div>
 
-            <div className="expiry-list-v2">
-              {expiring.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-10 gap-3 text-on-surface-variant">
-                  <CheckCircle size={32} className="text-primary" />
-                  <span className="font-bold text-[14px]">
-                    No urgent expiries
-                  </span>
-                </div>
-              ) : (
-                expiring.slice(0, 5).map((m) => (
-                  <div key={m.id} className="expiry-row-v2">
-                    <span className="med-name">{m.name}</span>
-                    <span className="batch-id">{m.batchNumber || "B-001"}</span>
-                    <span className="days-left red">
-                      {getDays(getExpiry(m))} days
-                    </span>
-                    <span className="qty text-on-surface-variant">
-                      {getStock(m)} qty
+            <div className="urgent-table">
+              <div className="urgent-table-head">
+                <span>Product</span>
+                <span>Barcode</span>
+                <span>Expired</span>
+                <span>Stock</span>
+              </div>
+              <div className="urgent-table-body">
+                {expiring.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center py-10 gap-3 text-on-surface-variant">
+                    <CheckCircle size={32} className="text-primary" />
+                    <span className="font-bold text-[14px]">
+                      No urgent expiries
                     </span>
                   </div>
-                ))
-              )}
+                ) : (
+                  expiring.slice(0, 5).map((m) => {
+                    const days = getDays(getExpiry(m));
+                    const isOverdue = days <= 0;
+                    const displayDays = isOverdue ? Math.abs(days) : days;
+
+                    return (
+                      <div key={m.id} className="urgent-table-row">
+                        <span className="urgent-med-name">{m.name}</span>
+                        <span className="urgent-batch">
+                          {m.batchNumber || "B-001"}
+                        </span>
+                        <span className="urgent-days">
+                          <div
+                            className={`urgent-badge ${isOverdue ? "overdue" : "warning"}`}
+                          >
+                            {isOverdue
+                              ? `🔴 ${displayDays} Days Overdue`
+                              : `🟠 ${displayDays} Days Left`}
+                          </div>
+                        </span>
+                        <span className="urgent-qty">{getStock(m)} Units</span>
+                      </div>
+                    );
+                  })
+                )}
+              </div>
             </div>
 
             {expiring.length > 0 && (
               <button
-                className="authorize-disposal-btn"
+                className="urgent-disposal-btn"
                 onClick={(e) => {
                   e.stopPropagation();
-                  setShowConfirm(true);
+                  setDisposalStep(1);
+                  setDisposalForm({
+                    method: "Incineration",
+                    supervisor: "",
+                    witness: "",
+                    location: "",
+                    notes: "",
+                    agreed: false,
+                  });
+                  setDisposalConfirmText("");
                 }}
               >
-                AUTHORIZE DISPOSAL
+                Authorize Disposal
               </button>
             )}
           </div>
         </div>
       </div>
 
-      {/* Confirmation Modal */}
+      {/* Disposal Workflow Modals */}
       <AnimatePresence>
-        {showConfirm && (
+        {disposalStep === 1 && (
           <div className="modal-overlay">
             <motion.div
-              className="modal-content !max-w-[440px] p-8"
+              className="urgent-disposal-modal !max-w-[700px]"
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              onClick={(e) => e.stopPropagation()}
             >
-              <div className="w-16 h-16 rounded-2xl bg-rose-500/10 flex items-center justify-center text-rose-500 mb-6 mx-auto">
-                <AlertTriangle size={32} />
+              <div className="urgent-modal-icon !bg-slate-100 !text-slate-800">
+                <ShieldCheck size={32} />
               </div>
-              <h3 className="text-center text-[24px] font-black text-on-surface mb-2">
-                Authorize Disposal?
-              </h3>
-              <p className="text-center text-on-surface-variant text-[14px] font-medium leading-relaxed mb-8">
-                This action will permanently remove {expiring.length} expired
-                items from the digital inventory. Physical disposal must follow
-                clinical waste protocols.
+              <h3 className="urgent-modal-title">Verify Disposal Process</h3>
+              <p className="urgent-modal-desc">
+                Complete disposal verification before removing expired
+                inventory.
               </p>
-              <div className="flex gap-4">
+
+              <div className="disposal-summary-card compact-summary">
+                <div>
+                  <span>Items:</span> <b>{expiring.length}</b>
+                </div>
+                <div>
+                  <span>Units:</span>{" "}
+                  <b>{expiring.reduce((sum, m) => sum + getStock(m), 0)}</b>
+                </div>
+                <div>
+                  <span>Date:</span> <b>Today</b>
+                </div>
+                <div>
+                  <span>Products:</span> <b>{expiring.length}</b>
+                </div>
+              </div>
+
+              <div className="disposal-form-grid compact-form">
+                <div className="form-group">
+                  <label>Disposal Method</label>
+                  <select
+                    value={disposalForm.method}
+                    onChange={(e) =>
+                      setDisposalForm({
+                        ...disposalForm,
+                        method: e.target.value,
+                      })
+                    }
+                  >
+                    <option>Incineration</option>
+                    <option>Bio Medical Waste Vendor</option>
+                    <option>Return To Manufacturer</option>
+                    <option>Destroyed On Site</option>
+                    <option>Other</option>
+                  </select>
+                </div>
+                <div className="form-group">
+                  <label>Disposal Location</label>
+                  <input
+                    placeholder="Waste Storage Room"
+                    value={disposalForm.location}
+                    onChange={(e) =>
+                      setDisposalForm({
+                        ...disposalForm,
+                        location: e.target.value,
+                      })
+                    }
+                  />
+                </div>
+                <div className="form-group">
+                  <label>Disposal Supervisor</label>
+                  <input
+                    placeholder="Supervisor Name"
+                    value={disposalForm.supervisor}
+                    onChange={(e) =>
+                      setDisposalForm({
+                        ...disposalForm,
+                        supervisor: e.target.value,
+                      })
+                    }
+                  />
+                </div>
+                <div className="form-group">
+                  <label>Witness Name</label>
+                  <input
+                    placeholder="Witness Name"
+                    value={disposalForm.witness}
+                    onChange={(e) =>
+                      setDisposalForm({
+                        ...disposalForm,
+                        witness: e.target.value,
+                      })
+                    }
+                  />
+                </div>
+                <div className="form-group full-width">
+                  <label>Disposal Notes</label>
+                  <textarea
+                    placeholder="Enter disposal notes..."
+                    value={disposalForm.notes}
+                    onChange={(e) =>
+                      setDisposalForm({
+                        ...disposalForm,
+                        notes: e.target.value,
+                      })
+                    }
+                  />
+                </div>
+                <div className="form-group full-width checkbox-group">
+                  <input
+                    type="checkbox"
+                    id="compliance-check"
+                    checked={disposalForm.agreed}
+                    onChange={(e) =>
+                      setDisposalForm({
+                        ...disposalForm,
+                        agreed: e.target.checked,
+                      })
+                    }
+                  />
+                  <label htmlFor="compliance-check">
+                    I confirm that all listed products have been physically
+                    removed and disposed according to clinical waste management
+                    regulations.
+                  </label>
+                </div>
+              </div>
+
+              <div className="urgent-modal-divider" />
+
+              <div className="urgent-modal-actions sticky-actions">
                 <button
-                  className="modal-btn cancel flex-1"
-                  onClick={() => setShowConfirm(false)}
+                  className="urgent-modal-btn-cancel"
+                  onClick={() => setDisposalStep(0)}
                 >
                   Cancel
                 </button>
                 <button
-                  className="modal-btn confirm !bg-rose-500 !text-white flex-1"
+                  className="urgent-modal-btn-verify disabled:opacity-50 disabled:cursor-not-allowed"
+                  disabled={
+                    !disposalForm.agreed ||
+                    !disposalForm.supervisor ||
+                    !disposalForm.witness
+                  }
+                  onClick={() => setDisposalStep(2)}
+                >
+                  Continue Review
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+
+        {disposalStep === 2 && (
+          <div className="modal-overlay">
+            <motion.div
+              className="urgent-disposal-modal !max-w-[700px]"
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <h3 className="urgent-modal-title !text-left">
+                Review Disposal Details
+              </h3>
+              <p className="urgent-modal-desc !text-left">
+                Please verify all information before permanently removing
+                inventory.
+              </p>
+
+              <div className="disposal-summary-card compact-summary">
+                <div>
+                  <span>Method:</span>
+                  <b>{disposalForm.method}</b>
+                </div>
+                <div>
+                  <span>Supervisor:</span>
+                  <b>{disposalForm.supervisor}</b>
+                </div>
+                <div>
+                  <span>Witness:</span>
+                  <b>{disposalForm.witness}</b>
+                </div>
+                <div>
+                  <span>Location:</span>
+                  <b>{disposalForm.location || "N/A"}</b>
+                </div>
+              </div>
+
+              <div className="disposal-review-table-container compact-table-container">
+                <table className="disposal-review-table">
+                  <thead>
+                    <tr>
+                      <th>Product</th>
+                      <th>Overdue</th>
+                      <th>Qty</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {expiring.map((m) => (
+                      <tr key={m.id}>
+                        <td>{m.name}</td>
+                        <td>{Math.abs(getDays(getExpiry(m)))} Days</td>
+                        <td>{getStock(m)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              <div className="disposal-risk-card compact-risk">
+                <div className="flex gap-3">
+                  <AlertTriangle className="text-rose-500 shrink-0" size={20} />
+                  <div>
+                    <h4 className="font-bold text-rose-600 mb-1">
+                      This action is irreversible.
+                    </h4>
+                    <p className="text-rose-500/80 text-xs">
+                      Disposed products will be removed from active inventory
+                      and recorded in disposal audit logs.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="disposal-confirm-input compact-input">
+                <label>Type DISPOSE to confirm</label>
+                <input
+                  type="text"
+                  value={disposalConfirmText}
+                  onChange={(e) => setDisposalConfirmText(e.target.value)}
+                  placeholder="DISPOSE"
+                />
+                {!canConfirm && disposalConfirmText.length > 0 && (
+                  <span className="text-[11px] text-rose-500 text-center font-semibold mt-1">
+                    Please type exactly "DISPOSE"
+                  </span>
+                )}
+              </div>
+
+              <div className="urgent-modal-divider" />
+
+              <div className="urgent-modal-actions sticky-actions">
+                <button
+                  className="urgent-modal-btn-cancel"
+                  onClick={() => setDisposalStep(1)}
+                  disabled={isDisposing}
+                >
+                  Back
+                </button>
+                <button
+                  className="urgent-modal-btn-verify flex items-center justify-center gap-2"
+                  style={{
+                    opacity: canConfirm ? 1 : 0.5,
+                    cursor: canConfirm ? "pointer" : "not-allowed",
+                  }}
+                  disabled={!canConfirm || isDisposing}
                   onClick={handleAuthorizeDisposal}
                 >
-                  Verify & Dispose
+                  {isDisposing ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                      Disposing Inventory...
+                    </>
+                  ) : (
+                    "Confirm Disposal"
+                  )}
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+
+        {disposalStep === 3 && (
+          <div className="modal-overlay">
+            <motion.div
+              className="urgent-disposal-modal !max-w-[450px]"
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="urgent-modal-icon !bg-emerald-100 !text-emerald-500 !w-16 !h-16 !mb-4">
+                <CheckCircle size={32} />
+              </div>
+              <h3 className="urgent-modal-title !text-2xl !mb-2">
+                Disposal Completed
+              </h3>
+              <div className="urgent-modal-desc mb-6">
+                <p className="text-emerald-600 font-medium">
+                  {expiring.length} Products Removed
+                </p>
+                <div className="mt-4 bg-slate-50 rounded-xl p-3 border border-slate-200 inline-block px-6">
+                  <span className="text-[10px] uppercase font-bold text-slate-500 block mb-1">
+                    Reference
+                  </span>
+                  <div className="font-mono text-base font-bold text-slate-800">
+                    {disposalRef}
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex gap-3 mt-6">
+                <button className="urgent-modal-btn-cancel flex-1 text-xs">
+                  <Download size={14} className="mr-1 inline" /> Report
+                </button>
+                <button
+                  className="urgent-modal-btn-verify flex-1 text-xs"
+                  onClick={() => setDisposalStep(0)}
+                >
+                  Back To Inventory
                 </button>
               </div>
             </motion.div>
