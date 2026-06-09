@@ -36,7 +36,6 @@ import {
 import { useAuth } from "../hooks/useAuth";
 import ConfirmModal from "./ConfirmModal";
 import { normalizeMedicine } from "../utils/normalizers";
-import { calculateTotalStockValue } from "../utils/inventoryHelpers";
 function Spinner({ size = 14 }) {
   return (
     <Loader2 size={size} style={{ animation: "spin 0.8s linear infinite" }} />
@@ -881,7 +880,7 @@ export default function InventoryCRUD({
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
-  const limit = 50;
+  const limit = 25;
 
   // Summary stats state
   const [summaryStats, setSummaryStats] = useState({
@@ -893,18 +892,17 @@ export default function InventoryCRUD({
     inventoryValue: 0,
   });
 
-  // Debounce search input
   useEffect(() => {
     const handler = setTimeout(() => {
       setDebouncedSearch(search);
-    }, 400);
-    return () => clearTimeout(handler);
-  }, [search]);
 
-  // Reset page on search or filter change
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [debouncedSearch, categoryFilter, statusFilter]);
+      if (currentPage !== 1) {
+        setCurrentPage(1);
+      }
+    }, 400);
+
+    return () => clearTimeout(handler);
+  }, [search, currentPage]);
 
   const loadMedicines = useCallback(async () => {
     setLoading(true);
@@ -938,7 +936,7 @@ export default function InventoryCRUD({
         getInventorySummary(),
       ]);
 
-      if (medicinesRes.status === 'fulfilled') {
+      if (medicinesRes.status === "fulfilled") {
         const items = Array.isArray(medicinesRes.value.data?.data?.items)
           ? medicinesRes.value.data.data.items
           : Array.isArray(medicinesRes.value.data?.data)
@@ -960,26 +958,33 @@ export default function InventoryCRUD({
           }
         }
       } else {
-        console.error('Failed to load medicines', medicinesRes.reason);
+        console.error("Failed to load medicines", medicinesRes.reason);
       }
 
-      if (summaryRes.status === 'fulfilled' && summaryRes.value.data?.success && summaryRes.value.data?.data) {
+      if (
+        summaryRes.status === "fulfilled" &&
+        summaryRes.value.data?.success &&
+        summaryRes.value.data?.data
+      ) {
         setSummaryStats(summaryRes.value.data.data);
-      } else if (summaryRes.status === 'rejected') {
-        console.error('Failed to load inventory summary', summaryRes.reason);
+      } else if (summaryRes.status === "rejected") {
+        console.error("Failed to load inventory summary", summaryRes.reason);
       }
     } catch (err) {
-      showToast("Failed to load inventory", "error");
+      showToast(
+        "Failed to load inventory",
+        err?.response?.data?.error || "error",
+      );
     } finally {
       setLoading(false);
     }
   }, [
-    currentPage,
-    debouncedSearch,
     categoryFilter,
     statusFilter,
+    currentPage,
+    debouncedSearch,
     categoriesList,
-    viewTarget?.id,
+    viewTarget,
     showToast,
   ]);
 
@@ -1052,7 +1057,10 @@ export default function InventoryCRUD({
   }, [showToast]);
 
   useEffect(() => {
-    loadMedicines();
+    const run = async () => {
+      await loadMedicines();
+    };
+    run();
   }, [loadMedicines]);
 
   const categories = useMemo(() => {
@@ -1320,14 +1328,20 @@ export default function InventoryCRUD({
             <input
               placeholder="Search by name, generic, batch..."
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
+              onChange={(e) => {
+                setSearch(e.target.value);
+                setCurrentPage(1);
+              }}
             />
           </div>
           <div className="inv-filter-group">
             <select
               className="inv-select-filter"
               value={categoryFilter}
-              onChange={(e) => setCategoryFilter(e.target.value)}
+              onChange={(e) => {
+                setCategoryFilter(e.target.value);
+                setCurrentPage(1);
+              }}
             >
               {categories.map((c) => (
                 <option key={c}>{c === "All" ? "All Categories" : c}</option>
@@ -1336,7 +1350,10 @@ export default function InventoryCRUD({
             <select
               className="inv-select-filter"
               value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
+              onChange={(e) => {
+                setStatusFilter(e.target.value);
+                setCurrentPage(1);
+              }}
             >
               <option>All Status</option>
               <option>In Stock</option>
