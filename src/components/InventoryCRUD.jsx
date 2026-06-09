@@ -927,7 +927,7 @@ export default function InventoryCRUD({
         backendStatus = "EXPIRING_SOON";
       else if (statusFilter === "Expired") backendStatus = "EXPIRED";
 
-      const [medicinesRes, summaryRes] = await Promise.all([
+      const [medicinesRes, summaryRes] = await Promise.allSettled([
         getMedicines({
           page: currentPage,
           limit,
@@ -938,32 +938,38 @@ export default function InventoryCRUD({
         getInventorySummary(),
       ]);
 
-      const items = Array.isArray(medicinesRes.data?.data?.items)
-        ? medicinesRes.data.data.items
-        : Array.isArray(medicinesRes.data?.data)
-          ? medicinesRes.data.data
-          : [];
+      if (medicinesRes.status === 'fulfilled') {
+        const items = Array.isArray(medicinesRes.value.data?.data?.items)
+          ? medicinesRes.value.data.data.items
+          : Array.isArray(medicinesRes.value.data?.data)
+            ? medicinesRes.value.data.data
+            : [];
 
-      const total = medicinesRes.data?.data?.total ?? items.length;
-      const pages = medicinesRes.data?.data?.totalPages ?? 1;
+        const total = medicinesRes.value.data?.data?.total ?? items.length;
+        const pages = medicinesRes.value.data?.data?.totalPages ?? 1;
 
-      const mapped = items.map(normalizeMedicine);
-      setMedicines(mapped);
-      setTotalItems(total);
-      setTotalPages(pages);
+        const mapped = items.map(normalizeMedicine);
+        setMedicines(mapped);
+        setTotalItems(total);
+        setTotalPages(pages);
 
-      if (viewTarget) {
-        const updatedViewTarget = mapped.find((m) => m.id === viewTarget.id);
-        if (updatedViewTarget) {
-          setViewTarget(updatedViewTarget);
+        if (viewTarget) {
+          const updatedViewTarget = mapped.find((m) => m.id === viewTarget.id);
+          if (updatedViewTarget) {
+            setViewTarget(updatedViewTarget);
+          }
         }
+      } else {
+        console.error('Failed to load medicines', medicinesRes.reason);
       }
 
-      if (summaryRes.data?.success && summaryRes.data?.data) {
-        setSummaryStats(summaryRes.data.data);
+      if (summaryRes.status === 'fulfilled' && summaryRes.value.data?.success && summaryRes.value.data?.data) {
+        setSummaryStats(summaryRes.value.data.data);
+      } else if (summaryRes.status === 'rejected') {
+        console.error('Failed to load inventory summary', summaryRes.reason);
       }
     } catch (err) {
-      showToast("Failed to load inventory", err);
+      showToast("Failed to load inventory", "error");
     } finally {
       setLoading(false);
     }
