@@ -48,3 +48,44 @@ export function normalizeInvoice(invoice) {
     items: normalizedItems
   };
 }
+
+const getNested = (obj, path) => {
+  let val = obj;
+  for (const p of path.split(".")) {
+    if (val == null) return null;
+    val = val[p];
+  }
+  return val;
+};
+
+export const resolveInvoiceField = (invoice, field, fallback) => {
+  const fieldMap = {
+    patientName: [["patient", "fullName"], "patientName", "customerName"],
+    patientPhone: [["patient", "phone"], "patientPhone", "customerPhone"],
+    invoiceNumber: ["invoiceNumber", "billNumber", "id"],
+    date: ["invoiceDate", "createdAt", "date"],
+    subtotal: ["subtotal", "subTotal", "taxableAmount"],
+    total: ["totalAmount", "grandTotal", "total"],
+    sgst: ["sgst", "sgstAmount"],
+    cgst: ["cgst", "cgstAmount"],
+    discount: ["discountAmount", "discount"],
+  };
+  const keys = fieldMap[field] || [field];
+  for (const key of keys) {
+    if (Array.isArray(key)) {
+      const val = getNested(invoice, key.join("."));
+      if (val != null) return val;
+    } else {
+      if (invoice?.[key] != null) return invoice[key];
+    }
+  }
+  return fallback;
+};
+
+export const resolveInvoiceItems = (invoice) => {
+  if (Array.isArray(invoice?.items)) return invoice.items;
+  if (Array.isArray(invoice?.saleItems)) return invoice.saleItems;
+  if (Array.isArray(invoice?.itemsList)) return invoice.itemsList;
+  if (Array.isArray(invoice?.lineItems)) return invoice.lineItems;
+  return [];
+};

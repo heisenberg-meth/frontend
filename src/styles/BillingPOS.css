@@ -38,7 +38,7 @@
   align-items: center;
   justify-content: center;
   gap: 8px;
-  padding: 10px 18px;
+  padding: 8px 16px;
   border-radius: 12px;
   font-weight: 700;
   font-size: 14px;
@@ -49,25 +49,26 @@
 }
 
 .pos-btn.outline {
-  background: var(--overlay-03);
+  background: var(--surface);
   border: 1px solid var(--outline-variant);
   color: var(--text);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
 }
 
 .pos-btn.outline:hover {
-  background: var(--overlay-08);
-  border-color: var(--primary);
+  background: var(--surface-container);
+  border-color: var(--outline-variant);
 }
 
 .pos-btn.teal {
   background: var(--primary);
   color: var(--bg-dark);
-  box-shadow: 0 4px 12px var(--primary-glow);
+  box-shadow: 0 2px 8px rgba(79, 219, 200, 0.3);
 }
 
 .pos-btn.teal:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 20px var(--primary-glow);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(79, 219, 200, 0.4);
 }
 
 /* ─── Button States ─── */
@@ -223,39 +224,28 @@
 }
 
 .pos-input {
-  height: 46px;
+  height: 42px;
   padding: 0 16px;
-  background: linear-gradient(
-    145deg,
-    rgba(13, 20, 40, 0.95),
-    rgba(7, 12, 28, 0.98)
-  );
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  color: #ffffff;
-  border-radius: 14px;
+  background: var(--surface);
+  border: 1px solid var(--outline-variant);
+  color: var(--text);
+  border-radius: 12px;
   font-size: 14px;
   font-weight: 600;
   font-family: "Outfit", sans-serif;
   outline: none;
-  transition: all 0.25s ease;
-  backdrop-filter: blur(12px);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.04),
-    0 4px 20px rgba(0, 0, 0, 0.25);
+  transition: all 0.2s ease;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
 }
 
 .pos-input:hover {
-  border-color: rgba(79, 219, 200, 0.45);
-  box-shadow:
-    0 0 0 4px rgba(79, 219, 200, 0.08),
-    0 10px 25px rgba(0, 0, 0, 0.3);
+  border-color: var(--primary);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 }
 
 .pos-input:focus {
   border-color: var(--primary);
-  box-shadow:
-    0 0 0 4px rgba(79, 219, 200, 0.12),
-    0 10px 30px rgba(79, 219, 200, 0.15);
+  box-shadow: 0 0 0 3px rgba(79, 219, 200, 0.15);
 }
 
 .pos-input:disabled {
@@ -352,12 +342,12 @@ select.pos-input option {
   top: 100%;
   left: 0;
   right: 0;
-  background: var(--surface-container);
-  border: 1px solid var(--primary);
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
   border-radius: 12px;
   z-index: 100;
   overflow: hidden;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
   margin-top: 4px;
 }
 
@@ -367,12 +357,12 @@ select.pos-input option {
   align-items: center;
   gap: 12px;
   cursor: pointer;
-  border-bottom: 1px solid var(--overlay-05);
+  border-bottom: 1px solid var(--outline-variant);
   transition: background 0.15s;
 }
 
 .patient-result-row:hover {
-  background: var(--primary-glow);
+  background: var(--surface-container);
 }
 
 .patient-result-name {
@@ -412,20 +402,21 @@ select.pos-input option {
 
 .barcode-input {
   width: 100%;
-  height: 48px;
-  background: var(--bg-dark);
+  height: 42px;
+  background: var(--surface);
   border: 1px solid var(--outline-variant);
   border-radius: 12px;
   padding: 0 16px 0 48px;
   color: var(--text);
-  font-size: 15px;
+  font-size: 14px;
   outline: none;
   transition: all 0.2s;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
 }
 
 .barcode-input:focus {
   border-color: var(--primary);
-  box-shadow: 0 0 0 4px rgba(79, 219, 200, 0.05);
+  box-shadow: 0 0 0 3px rgba(79, 219, 200, 0.15);
 }
 
 .barcode-icon {
@@ -442,12 +433,12 @@ select.pos-input option {
   top: 56px;
   left: 0;
   right: 0;
-  background: var(--surface-container);
-  border: 1px solid var(--primary);
+  background: var(--surface);
+  border: 1px solid var(--outline-variant);
   border-radius: 12px;
   z-index: 100;
   overflow: hidden;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
 }
 
 .result-row {
@@ -456,11 +447,12 @@ select.pos-input option {
   justify-content: space-between;
   align-items: center;
   cursor: pointer;
-  border-bottom: 1px solid var(--overlay-05);
+  border-bottom: 1px solid var(--outline-variant);
+  color: var(--text);
 }
 
 .result-row:hover {
-  background: rgba(79, 219, 200, 0.05);
+  background: var(--surface-container);
 }
 
 .result-row.oos {
@@ -492,7 +484,7 @@ select.pos-input option {
 
 .line-items-table th {
   text-align: left;
-  padding: 12px 8px;
+  padding: 8px 8px;
   font-size: 11px;
   font-weight: 800;
   color: var(--text-dim);
@@ -501,7 +493,7 @@ select.pos-input option {
 }
 
 .line-items-table td {
-  padding: 12px 8px;
+  padding: 8px 8px;
   border-bottom: 1px solid var(--outline-variant);
   vertical-align: middle;
 }
@@ -510,7 +502,8 @@ select.pos-input option {
   display: flex;
   align-items: center;
   gap: 8px;
-  background: var(--bg-dark);
+  background: var(--surface-container);
+  border: 1px solid var(--outline-variant);
   padding: 4px;
   border-radius: 8px;
   width: fit-content;
@@ -524,7 +517,7 @@ select.pos-input option {
   align-items: center;
   justify-content: center;
   border: none;
-  background: var(--overlay-05);
+  background: var(--surface);
   color: var(--text);
   cursor: pointer;
 }
@@ -543,17 +536,17 @@ select.pos-input option {
 /* Summary Box */
 .bill-summary-v3 {
   width: 320px;
-  align-self: flex-end;
-  background: var(--overlay-02);
-  border-radius: 16px;
-  padding: 20px;
-  margin-top: 16px;
+  background: var(--surface);
+  border: 1px solid var(--outline-variant);
+  border-radius: 12px;
+  padding: 16px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
 }
 
 .summary-row {
   display: flex;
   justify-content: space-between;
-  margin-bottom: 10px;
+  margin-bottom: 8px;
   font-size: 14px;
   color: var(--text-muted);
 }
@@ -571,21 +564,21 @@ select.pos-input option {
 /* Payment Toggles */
 .payment-modes {
   display: flex;
-  gap: 10px;
-  margin-top: 24px;
+  gap: 8px;
 }
 
 .mode-pill {
   flex: 1;
-  padding: 12px;
-  border-radius: 12px;
+  padding: 10px;
+  border-radius: 10px;
   text-align: center;
   font-family: "Outfit", sans-serif;
   font-weight: 700;
   font-size: 13px;
   cursor: pointer;
   transition: all 0.2s;
-  border: 1px solid var(--overlay-15);
+  border: 1px solid var(--outline-variant);
+  background: var(--surface);
   color: var(--text-muted);
 }
 
@@ -593,7 +586,24 @@ select.pos-input option {
   background: var(--primary);
   color: var(--bg-dark);
   border-color: var(--primary);
-  box-shadow: 0 4px 15px var(--primary-glow);
+  box-shadow: 0 2px 8px rgba(79, 219, 200, 0.3);
+}
+
+.table-scroll-container {
+  max-height: 350px;
+  overflow-y: auto;
+  border-bottom: 1px solid var(--overlay-05);
+}
+
+.sticky-bottom-actions {
+  background: var(--surface);
+  padding-bottom: 0px;
+  padding-top: 16px;
+  border-top: 1px solid var(--outline-variant);
+  margin-top: 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
 }
 
 /* Right Column: History */

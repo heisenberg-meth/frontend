@@ -31,6 +31,7 @@ import { useAuth } from "../hooks/useAuth";
 import { normalizeInvoice } from "../utils/billingNormalizer";
 import { escapeHtml } from "../utils/escapeHtml";
 import "../styles/BillingPOS.css";
+import InvoiceGeneratedModal from "./invoice/InvoiceGeneratedModal";
 
 function numberToWords(n) {
   if (n === 0) return "Zero";
@@ -255,6 +256,7 @@ export default function BillingPOS({ showToast: parentShowToast }) {
   const [loadMoreLoading, setLoadMoreLoading] = useState(false);
   const [allBillsLoaded, setAllBillsLoaded] = useState(false);
   const [showCloseConfirm, setShowCloseConfirm] = useState(false);
+  const [showNewBillConfirm, setShowNewBillConfirm] = useState(false);
   const [loyaltyProfile, setLoyaltyProfile] = useState(null);
   const [returnReason, setReturnReason] = useState("Customer Request");
   const [returnNotes, setReturnNotes] = useState("");
@@ -488,6 +490,9 @@ export default function BillingPOS({ showToast: parentShowToast }) {
     setPatient({ id: null, name: "", phone: "" });
     setDiscount(0);
     setPaymentMode("CASH");
+    setSearch("");
+    setMedResults([]);
+    setShowDropdown(false);
     showToast("Form Reset", "info");
 
     setTimeout(() => barcodeInputRef.current?.focus(), 100);
@@ -1263,7 +1268,8 @@ ${printDiscount > 0 ? `<div style="display:flex;justify-content:space-between"><
               </AnimatePresence>
             </div>
 
-            <table className="line-items-table">
+            <div className="table-scroll-container">
+              <table className="line-items-table">
               <thead>
                 <tr>
                   <th>Item</th>
@@ -1369,39 +1375,23 @@ ${printDiscount > 0 ? `<div style="display:flex;justify-content:space-between"><
                   </tr>
                 ))}
               </tbody>
-            </table>
+              </table>
+            </div>
 
-            <div
-              className="payment-mode-selector"
-              style={{ marginTop: 20, display: "flex", gap: 10 }}
-            >
+            <div className="payment-modes" style={{ marginTop: 20 }}>
               {["CASH", "UPI", "CARD"].map((m) => (
                 <button
                   key={m}
-                  className={`pay-mode-btn ${paymentMode === m ? "active" : ""}`}
+                  className={`mode-pill ${paymentMode === m ? "active" : ""}`}
                   onClick={() => setPaymentMode(m)}
-                  style={{
-                    padding: "8px 16px",
-                    borderRadius: "8px",
-                    border:
-                      paymentMode === m
-                        ? "2px solid var(--primary)"
-                        : "1px solid var(--overlay-10)",
-                    background:
-                      paymentMode === m ? "var(--primary)" : "transparent",
-                    color: paymentMode === m ? "#000" : "var(--text-main)",
-                    fontWeight: 700,
-                    fontSize: "12px",
-                    cursor: "pointer",
-                    transition: "all 0.2s ease",
-                  }}
                 >
                   {m}
                 </button>
               ))}
             </div>
 
-            <div className="bill-summary-v3">
+            <div className="sticky-bottom-actions">
+              <div className="bill-summary-v3">
               <div className="summary-row">
                 <span>Subtotal</span>
                 <span>₹{subtotal.toFixed(2)}</span>
@@ -1467,10 +1457,11 @@ ${printDiscount > 0 ? `<div style="display:flex;justify-content:space-between"><
             </div>
             <div
               style={{
-                marginTop: "32px",
+                marginTop: "16px",
                 display: "flex",
                 flexDirection: "column",
                 gap: "12px",
+                width: "320px",
               }}
             >
               <div style={{ display: "flex", gap: "12px" }}>
@@ -1531,7 +1522,7 @@ ${printDiscount > 0 ? `<div style="display:flex;justify-content:space-between"><
               <button
                 id="generate-invoice-btn"
                 className="pos-btn teal"
-                style={{ height: "56px", fontSize: "18px" }}
+                style={{ height: "48px", fontSize: "16px" }}
                 title="Generate Invoice (F8)"
                 onClick={async () => {
                   if (!user?.branchId) {
@@ -1594,13 +1585,7 @@ ${printDiscount > 0 ? `<div style="display:flex;justify-content:space-between"><
                     ]);
                     setShowPreview(true);
                     showToast(`Invoice generated`, "success");
-                    setLineItems([]);
-                    setPatient({ id: null, name: "", phone: "" });
-                    setSearch("");
-                    setDiscount(0);
-                    setPaymentMode("CASH");
-                    localStorage.removeItem("currentBillingItems");
-                    localStorage.removeItem("currentBillingPatient");
+                    // Draft is preserved allowing user to close preview and edit.
                     setTimeout(() => barcodeInputRef.current?.focus(), 300);
                   } catch (err) {
                     console.error(err);
@@ -1627,6 +1612,7 @@ ${printDiscount > 0 ? `<div style="display:flex;justify-content:space-between"><
               {draftError && (
                 <div className="draft-error-text">{draftError}</div>
               )}
+            </div>
             </div>
           </div>
         </div>
@@ -1907,240 +1893,73 @@ ${printDiscount > 0 ? `<div style="display:flex;justify-content:space-between"><
 
       <AnimatePresence>
         {showPreview && activeInvoice && (
+          <InvoiceGeneratedModal
+            isOpen={showPreview}
+            onClose={() => handleCloseInvoiceModal()}
+            invoice={activeInvoice}
+            showToast={showToast}
+            onNewBill={() => {
+              setShowNewBillConfirm(true);
+            }}
+          />
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {showNewBillConfirm && (
           <div
             className="stock-modal-overlay"
-            onClick={(e) => {
-              if (e.target === e.currentTarget) handleCloseInvoiceModal();
-            }}
+            onClick={() => setShowNewBillConfirm(false)}
           >
             <motion.div
-              className="stock-modal-content invoice-modal-wide"
+              className="stock-modal-content confirm-modal"
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.9 }}
               onClick={(e) => e.stopPropagation()}
             >
-              <div className="stock-modal-header">
-                <div
-                  style={{ display: "flex", alignItems: "center", gap: "12px" }}
-                >
-                  <CheckCircle2 size={32} style={{ color: "var(--primary)" }} />
-                  <h3 style={{ fontFamily: "Outfit", fontWeight: 700 }}>
-                    Invoice Generated!
-                  </h3>
-                </div>
-                <button className="micro-btn" onClick={handleCloseInvoiceModal}>
-                  <X size={20} />
-                </button>
-              </div>
-              <div className="stock-modal-body">
-                <div id="invoice-content" className="invoice-print-area">
-                  <div style={{ textAlign: "center", marginBottom: "32px" }}>
-                    <div
-                      style={{
-                        fontFamily: "Outfit",
-                        fontSize: "24px",
-                        fontWeight: 800,
-                      }}
-                    >
-                      VIYAN MEDASSIST
-                    </div>
-                    <div style={{ fontSize: "12px" }}>
-                      123, Healthcare Street, Medical Hub, Bangalore
-                    </div>
-                    <div style={{ fontSize: "12px" }}>
-                      GSTIN: 29ABCDE1234F1Z1 | Ph: +91 98765 43210
-                    </div>
-                  </div>
-                  <div
-                    className="print-line"
-                    style={{ display: "flex", justifyContent: "space-between" }}
-                  >
-                    <div>
-                      <b>INVOICE #</b>{" "}
-                      {resolveInvoiceField(
-                        activeInvoice,
-                        "invoiceNumber",
-                        activeInvoice.id,
-                      )}
-                    </div>
-                    <div>
-                      <b>DATE:</b>{" "}
-                      {resolveInvoiceField(activeInvoice, "date", "")}
-                    </div>
-                  </div>
-                  <div className="print-line">
-                    <div>
-                      <b>PATIENT:</b>{" "}
-                      {resolveInvoiceField(
-                        activeInvoice,
-                        "patientName",
-                        "Walk-in Customer",
-                      )}
-                    </div>
-                    <div>
-                      <b>PHONE:</b>{" "}
-                      {resolveInvoiceField(activeInvoice, "patientPhone", "-")}
-                    </div>
-                  </div>
-                  <table
-                    style={{
-                      width: "100%",
-                      borderCollapse: "collapse",
-                      marginTop: "20px",
-                    }}
-                  >
-                    <thead>
-                      <tr style={{ borderBottom: "2px solid black" }}>
-                        <th style={{ textAlign: "left", padding: "8px" }}>
-                          Medicine
-                        </th>
-                        <th>Qty</th>
-                        <th>MRP</th>
-                        <th style={{ textAlign: "right" }}>Total</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {resolveInvoiceItems(activeInvoice)
-                        .map(normalizeInvoiceItem)
-                        .map((i, idx) => (
-                          <tr
-                            key={i.id || i.batchId || idx}
-                            style={{ borderBottom: "1px solid #eee" }}
-                          >
-                            <td style={{ padding: "8px" }}>{i.name}</td>
-                            <td style={{ textAlign: "center" }}>
-                              {safeNumber(i.qty)}
-                            </td>
-                            <td style={{ textAlign: "center" }}>
-                              ₹{safeNumber(i.price).toFixed(2)}
-                            </td>
-                            <td style={{ textAlign: "right" }}>
-                              ₹
-                              {(
-                                safeNumber(i.price) * safeNumber(i.qty)
-                              ).toFixed(2)}
-                            </td>
-                          </tr>
-                        ))}
-                    </tbody>
-                  </table>
-                  <div
-                    style={{
-                      marginTop: "20px",
-                      marginLeft: "auto",
-                      width: "200px",
-                    }}
-                  >
-                    <div
-                      style={{
-                        display: "flex",
-                        justifyContent: "space-between",
-                      }}
-                    >
-                      <span>Subtotal</span>
-                      <span>
-                        ₹
-                        {safeNumber(
-                          resolveInvoiceField(activeInvoice, "subtotal", 0),
-                        ).toFixed(2)}
-                      </span>
-                    </div>
-                    <div
-                      style={{
-                        display: "flex",
-                        justifyContent: "space-between",
-                      }}
-                    >
-                      <span>CGST</span>
-                      <span>₹{safeNumber(activeInvoice.cgst).toFixed(2)}</span>
-                    </div>
-                    <div
-                      style={{
-                        display: "flex",
-                        justifyContent: "space-between",
-                      }}
-                    >
-                      <span>SGST</span>
-                      <span>
-                        ₹
-                        {safeNumber(
-                          resolveInvoiceField(activeInvoice, "sgst", 0),
-                        ).toFixed(2)}
-                      </span>
-                    </div>
-                    {safeNumber(
-                      resolveInvoiceField(activeInvoice, "discount", 0),
-                    ) > 0 && (
-                      <div
-                        style={{
-                          display: "flex",
-                          justifyContent: "space-between",
-                        }}
-                      >
-                        <span>Discount</span>
-                        <span>
-                          -₹
-                          {safeNumber(
-                            resolveInvoiceField(activeInvoice, "discount", 0),
-                          ).toFixed(2)}
-                        </span>
-                      </div>
-                    )}
-                    <div
-                      style={{
-                        display: "flex",
-                        justifyContent: "space-between",
-                        borderTop: "1px solid black",
-                        fontWeight: 800,
-                      }}
-                    >
-                      <span>TOTAL</span>
-                      <span>
-                        ₹
-                        {safeNumber(
-                          resolveInvoiceField(activeInvoice, "total", 0),
-                        ).toFixed(2)}
-                      </span>
-                    </div>
-                  </div>
-                  <div
-                    style={{
-                      marginTop: "40px",
-                      fontSize: "12px",
-                      textAlign: "center",
-                      borderTop: "1px solid black",
-                      paddingTop: "20px",
-                    }}
-                  >
-                    Thank you for visiting! Get well soon.
-                  </div>
-                </div>
-              </div>
-              <div id="invoice-actions" className="stock-modal-footer no-print">
-                <button
-                  className="pos-btn outline"
-                  onClick={() => handlePrint(activeInvoice)}
-                >
-                  <Printer size={16} /> Print Invoice
-                </button>
-                <button
-                  className="pos-btn outline"
-                  id="download-btn"
-                  onClick={handleDownloadPDF}
-                >
-                  <Download size={16} /> Download PDF
-                </button>
-                <button
-                  className="pos-btn teal"
-                  onClick={() => {
-                    setShowPreview(false);
-                    resetBillForm();
-                    setActiveInvoice(null);
+              <div
+                className="stock-modal-body"
+                style={{ padding: "32px", textAlign: "center" }}
+              >
+                <h3 style={{ fontSize: "18px", fontWeight: 700, marginBottom: "12px" }}>
+                  Start New Bill?
+                </h3>
+                <p
+                  style={{
+                    fontSize: "15px",
+                    fontWeight: 500,
+                    marginBottom: "24px",
+                    color: "var(--text-secondary)"
                   }}
                 >
-                  + New Bill
-                </button>
+                  This will clear the current invoice and begin a new billing session.
+                </p>
+                <div
+                  style={{
+                    display: "flex",
+                    gap: "12px",
+                    justifyContent: "center",
+                  }}
+                >
+                  <button
+                    className="pos-btn secondary"
+                    onClick={() => setShowNewBillConfirm(false)}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    className="pos-btn primary"
+                    onClick={() => {
+                      setShowNewBillConfirm(false);
+                      setShowPreview(false);
+                      resetBillForm();
+                      setActiveInvoice(null);
+                    }}
+                  >
+                    Start New Bill
+                  </button>
+                </div>
               </div>
             </motion.div>
           </div>

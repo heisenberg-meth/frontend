@@ -1,4 +1,4 @@
-export default function InvoicePreviewPanel({
+export default function InvoicePreview({
   patient,
   doctorName,
   prescriptionNo,

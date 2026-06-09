@@ -7,12 +7,11 @@ import {
   Download,
   MessageCircle,
   X,
-  Mail,
 } from "lucide-react";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
 import api from "../../api.js";
-import InvoicePreviewPanel from "./InvoicePreviewPanel";
+import InvoicePreview from "../common/InvoicePreview";
 import "../../styles/InvoiceModal.css";
 
 const backdropVariants = {
@@ -36,15 +35,11 @@ export default function InvoiceGeneratedModal({
   onClose,
   invoice,
   showToast,
+  onNewBill,
 }) {
   const [theme, setTheme] = useState(() => 
     typeof document !== 'undefined' ? (document.documentElement.getAttribute("data-theme") || "light") : "light"
   );
-  const [showEmailModal, setShowEmailModal] = useState(false);
-  const [emailAddress, setEmailAddress] = useState(
-    invoice?.patientEmail || invoice?.patient?.email || ""
-  );
-  const [sendingEmail, setSendingEmail] = useState(false);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -192,20 +187,6 @@ export default function InvoiceGeneratedModal({
     if (showToast) showToast("WhatsApp opened", "success");
   };
 
-  const handleSendEmail = async (e) => {
-    e.preventDefault();
-    if (!emailAddress) return;
-    setSendingEmail(true);
-    try {
-      await api.post(`billing/invoices/${invoice.id}/email`, { email: emailAddress });
-      if (showToast) showToast("Email sent", "success");
-      setShowEmailModal(false);
-    } catch {
-      if (showToast) showToast("Failed to send email", "error");
-    } finally {
-      setSendingEmail(false);
-    }
-  };
 
   return createPortal(
     <motion.div
@@ -229,7 +210,7 @@ export default function InvoiceGeneratedModal({
           {/* Left Side: Preview (70%) */}
           <div className="igm-preview-pane">
             <div className="igm-preview-container" id="invoice-preview-capture" data-theme="light">
-              <InvoicePreviewPanel {...previewProps} />
+              <InvoicePreview {...previewProps} />
             </div>
           </div>
 
@@ -266,86 +247,31 @@ export default function InvoiceGeneratedModal({
               >
                 <MessageCircle size={18} /> WhatsApp
               </button>
-              <button
-                className="igm-btn secondary"
-                onClick={() => setShowEmailModal(true)}
-              >
-                <Mail size={18} /> Send Email
-              </button>
+
             </div>
 
-            <div className="igm-footer">
-              <button className="igm-btn close" onClick={onClose}>
-                <X size={18} /> Close & New Bill
+            <div className="igm-footer" style={{ display: 'flex', gap: '12px' }}>
+              <button 
+                className="igm-btn close" 
+                onClick={onClose} 
+                style={{ height: '48px', flex: 1, justifyContent: 'center' }}
+              >
+                Close Preview
               </button>
+              {onNewBill && (
+                <button 
+                  className="igm-btn primary" 
+                  onClick={onNewBill} 
+                  style={{ height: '48px', flex: 1, justifyContent: 'center' }}
+                >
+                  New Bill
+                </button>
+              )}
             </div>
           </div>
         </div>
 
-        {/* Email Modal */}
-        <AnimatePresence>
-          {showEmailModal && (
-            <motion.div
-              className="invoice-overlay"
-              style={{ zIndex: 10002, background: "rgba(0,0,0,0.5)" }}
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-            >
-              <motion.div
-                className="invoice-modal-container"
-                style={{ maxWidth: 400, padding: 24 }}
-                initial={{ scale: 0.95, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                exit={{ scale: 0.95, opacity: 0 }}
-              >
-                {/* <div className="modal-header">
-                  <h3 className="modal-title">Send Email</h3>
-                  <button className="close-btn" onClick={() => setShowEmailModal(false)}>
-                    <X size={20} />
-                  </button>
-                </div> */}
-                <form onSubmit={handleSendEmail} style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginTop: '16px' }}>
-                  <div className="form-group">
-                    <label>Email Address</label>
-                    <input
-                      type="email"
-                      className="form-input"
-                      value={emailAddress}
-                      onChange={(e) => setEmailAddress(e.target.value)}
-                      placeholder="patient@example.com"
-                      required
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label>Subject</label>
-                    <input
-                      type="text"
-                      className="form-input"
-                      value={`Invoice ${invoice.invoiceNumber || invoice.id}`}
-                      readOnly
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label>Message</label>
-                    <textarea
-                      className="form-input"
-                      style={{ resize: 'none', height: 80 }}
-                      value="Please find attached your invoice for your recent visit to Viyan MedAssist."
-                      readOnly
-                    />
-                  </div>
-                  <div className="form-row" style={{ marginTop: '8px' }}>
-                    <button type="button" className="btn btn-secondary" onClick={() => setShowEmailModal(false)}>Cancel</button>
-                    <button type="submit" className="btn btn-primary" disabled={sendingEmail}>
-                      {sendingEmail ? "Sending..." : "Send Email"}
-                    </button>
-                  </div>
-                </form>
-              </motion.div>
-            </motion.div>
-          )}
-        </AnimatePresence>
+
       </motion.div>
     </motion.div>,
     document.body,

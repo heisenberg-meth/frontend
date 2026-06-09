@@ -6,6 +6,7 @@ import {
   Search,
   Download,
   X,
+  BadgeX,
   Pencil,
   Trash2,
   Eye,
@@ -433,12 +434,17 @@ function MedicineViewModal({ medicine, onClose, onEditBatch, onAddBatch }) {
               {medicine.brandName && `(${medicine.brandName})`}
             </span>
           </div>
-          <button className="inv-modal-close-btn" onClick={onClose}>
-            <X size={20} />
+          <button 
+            className="inv-modal-close-btn" 
+            onClick={onClose}
+            style={{ position: "center", top: "24px", right: "24px" }}
+          >
+            <BadgeX size={30} />
           </button>
         </div>
 
-        <div className="inv-view-badges">
+        <div style={{ flex: 1, overflowY: "auto" }}>
+          <div className="inv-view-badges">
           {isExpired && <span className="inv-badge danger">EXPIRED</span>}
           {isExpiringSoon && !isExpired && (
             <span className="inv-badge warning">EXPIRING SOON</span>
@@ -625,6 +631,7 @@ function MedicineViewModal({ medicine, onClose, onEditBatch, onAddBatch }) {
             <p>{medicine.description}</p>
           </div>
         )}
+        </div>
 
         <div className="inv-view-footer">
           <button className="inv-modal-btn cancel" onClick={onClose}>

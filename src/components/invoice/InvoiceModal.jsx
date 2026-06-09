@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 import { X, Receipt, Eye, EyeOff, FileText, FolderOpen } from "lucide-react";
 import CustomerDetailsSection from "./CustomerDetailsSection";
 import MedicineTableSection from "./MedicineTableSection";
-import InvoicePreviewPanel from "./InvoicePreviewPanel";
+import InvoicePreview from "../common/InvoicePreview";
 import api from "../../api.js";
 import { API_ROUTES } from "../../constants/api.routes.js";
 import "../../styles/InvoiceModal.css";
@@ -417,7 +417,7 @@ export default function InvoiceModal({
           {/* Right Panel */}
           {showPreview && (
             <div className="invoice-right">
-              <InvoicePreviewPanel
+              <InvoicePreview
                 patient={patient}
                 doctorName={doctorName}
                 prescriptionNo={prescriptionNo}

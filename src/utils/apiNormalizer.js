@@ -49,3 +49,14 @@ export function normalizeObjectResponse(response) {
   if (data.success && data.data) return data.data;
   return data;
 }
+
+export const normalizeInvoiceItem = (item = {}) => {
+  return {
+    id: item.id || item._id || "",
+    name: item.name || item.medicineName || "",
+    qty: Number(item.qty || item.quantity || 0),
+    price: Number(item.price || item.mrp || 0),
+    total: Number(item.total || 0),
+    batchId: item.batchId || item.batch || "",
+  };
+};

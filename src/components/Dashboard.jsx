@@ -11,6 +11,7 @@ import {
   Zap,
   Calendar,
   X,
+  BadgeX,
   CheckCircle,
   Star,
   Users,
@@ -213,7 +214,7 @@ export default function Dashboard({
               className="banner-dismiss"
               onClick={() => setShowBanner(false)}
             >
-              <X size={14} />
+              <BadgeX size={24} />
             </button>
           </div>
         </div>
@@ -380,8 +381,8 @@ export default function Dashboard({
 
       {/* 5. MAIN GRID */}
       <div className="hub-main-grid">
-        {/* LEFT COLUMN 60% */}
-        <div className="col-span-7 flex flex-col gap-6">
+        {/* LEFT COLUMN 40% */}
+        <div className="col-span-5 flex flex-col gap-6">
           <div className="bento-card" onMouseMove={handleMouseMove}>
             <div className="flex justify-between items-center mb-6">
               <div className="flex items-center gap-3">
@@ -440,8 +441,8 @@ export default function Dashboard({
           </div>
         </div>
 
-        {/* RIGHT COLUMN 40% */}
-        <div className="col-span-5 flex flex-col gap-6">
+        {/* RIGHT COLUMN 60% */}
+        <div className="col-span-7 flex flex-col gap-6">
           <div
             className="urgent-expiries-card"
             onClick={() => navigate("/expiry")}
@@ -536,7 +537,7 @@ export default function Dashboard({
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
               onClick={(e) => e.stopPropagation()}
             >
-              <div className="urgent-modal-icon !bg-slate-100 !text-slate-800">
+              <div className="urgent-modal-icon">
                 <ShieldCheck size={32} />
               </div>
               <h3 className="urgent-modal-title">Verify Disposal Process</h3>

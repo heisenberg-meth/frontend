@@ -658,11 +658,11 @@
 
 /* Urgent Expiries Redesign */
 .urgent-expiries-card {
-  background: var(--bg-surface, #ffffff);
+  background: var(--surface, #ffffff);
   border-radius: 24px;
   padding: 32px;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
-  max-width: 650px;
+  max-width: 100%;
   border: 1px solid var(--overlay-05);
   transition: all 0.3s ease;
   cursor: pointer;
@@ -719,6 +719,11 @@
   color: var(--text-muted);
   text-transform: uppercase;
   letter-spacing: 0.05em;
+  padding: 0 16px;
+}
+
+.urgent-table-head span:nth-child(4) {
+  text-align: right;
 }
 
 .urgent-table-body {
@@ -760,6 +765,7 @@
   border-radius: 8px;
   font-size: 12px;
   font-weight: 600;
+  white-space: nowrap;
 }
 
 .urgent-badge.overdue {
@@ -799,7 +805,7 @@
 
 /* Disposal Modal Redesign */
 .urgent-disposal-modal {
-  background: var(--bg-surface, #ffffff);
+  background: var(--surface, #ffffff);
   border-radius: 20px;
   padding: 24px;
   width: 90%;
@@ -871,7 +877,7 @@
 }
 
 .urgent-modal-btn-cancel {
-  background: var(--bg-surface, #ffffff);
+  background: var(--surface, #ffffff);
   border: 1px solid #d0d5dd;
   color: var(--text);
 }
@@ -955,7 +961,7 @@
 .form-group input,
 .form-group select,
 .form-group textarea {
-  background: var(--bg-surface);
+  background: var(--surface);
   border: 1px solid var(--overlay-08);
   border-radius: 12px;
   padding: 12px 16px;
@@ -963,6 +969,11 @@
   color: var(--text);
   font-family: inherit;
   transition: all 0.3s;
+}
+
+.form-group select option {
+  background: var(--surface);
+  color: var(--text);
 }
 
 .form-group input:focus,
@@ -1023,7 +1034,7 @@
 .disposal-review-table th {
   position: sticky;
   top: 0;
-  background: var(--overlay-02);
+  background: var(--surface);
   padding: 12px 16px;
   font-size: 12px;
   font-weight: 600;
@@ -1071,7 +1082,7 @@
 .sticky-actions {
   position: sticky;
   bottom: 0;
-  background: var(--bg-surface, #ffffff);
+  background: var(--surface, #ffffff);
   padding-top: 16px;
   z-index: 20;
 }
@@ -1084,7 +1095,7 @@
 }
 
 .disposal-confirm-input input {
-  background: var(--bg-surface);
+  background: var(--surface);
   border: 1px solid var(--overlay-08);
   border-radius: 12px;
   padding: 12px 16px;

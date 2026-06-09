@@ -1373,7 +1373,7 @@ body.modal-open {
 
 /* ── INVOICE GENERATED MODAL ── */
 .invoice-generated-modal {
-  background: var(--bg-surface, #f8fafc);
+  background: var(--surface, #f8fafc);
   width: 90%;
   max-width: 900px;
   max-height: 85vh;
@@ -1400,7 +1400,7 @@ body.modal-open {
 
 .igm-preview-pane {
   flex: 0 0 70%;
-  background: var(--bg-surface, #f8fafc);
+  background: var(--surface, #f8fafc);
   border-right: 1px solid var(--border-color, #e2e8f0);
   padding: 24px;
   overflow-y: auto;
@@ -1412,7 +1412,7 @@ body.modal-open {
 }
 
 .igm-preview-container {
-  background: var(--bg-surface, #f8fafc);
+  background: var(--surface, #f8fafc);
   border: 1px solid var(--border-color, #e2e8f0);
   border-radius: 12px;
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);

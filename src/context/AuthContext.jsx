@@ -4,6 +4,7 @@ import axios from "axios";
 import { API_ROUTES } from "../constants/api.routes.js";
 import { clearAllAuth, getStoredUser, setUser } from "../utils/authStorage";
 import { AuthContext } from "./authContextInstance";
+import { getBaseUrl } from "../api";
 
 export function AuthProvider({ children }) {
   const [user, setUserState] = useState(() => getStoredUser());
