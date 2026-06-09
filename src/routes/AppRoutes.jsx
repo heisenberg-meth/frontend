@@ -33,6 +33,7 @@ const PrescriptionsCRUD = lazy(() => import("../components/PrescriptionsCRUD"));
 const InventoryCRUD = lazy(() => import("../components/InventoryCRUD"));
 const SubscriptionCRUD = lazy(() => import("../components/SubscriptionCRUD"));
 const AccountingTax = lazy(() => import("../components/AccountingTax"));
+const Notifications = lazy(() => import("../pages/Notifications"));
 
 export default function AppRoutes({
   user,
@@ -300,6 +301,14 @@ export default function AppRoutes({
                   user={user}
                   onActivate={handleActivateSubscription}
                 />
+              </PageErrorBoundary>
+            }
+          />
+          <Route
+            path="/notifications"
+            element={
+              <PageErrorBoundary>
+                <Notifications showToast={showToast} />
               </PageErrorBoundary>
             }
           />

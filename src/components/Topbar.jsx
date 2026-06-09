@@ -13,10 +13,12 @@ import {
   X,
   ArrowRight,
   Package,
+  PackageX,
   FileText,
   Truck,
   TrendingUp,
   Activity,
+  AlertTriangle,
   Command,
   CreditCard,
 } from "lucide-react";
@@ -125,6 +127,27 @@ function getItemIcon(type) {
       return <Settings size={16} />;
     default:
       return <Search size={16} />;
+  }
+}
+
+function getNotifDropdownIcon(type) {
+  switch (type?.toLowerCase()) {
+    case "billing":
+    case "sale":
+      return <CreditCard size={16} className="text-blue-500" />;
+    case "inventory":
+    case "stock":
+      return <Package size={16} className="text-emerald-500" />;
+    case "expiry":
+    case "expiry alerts":
+      return <PackageX size={16} className="text-amber-500" />;
+    case "system":
+      return <Activity size={16} className="text-purple-500" />;
+    case "alert":
+    case "warning":
+      return <AlertTriangle size={16} className="text-rose-500" />;
+    default:
+      return <Bell size={16} className="text-primary" />;
   }
 }
 
@@ -461,10 +484,10 @@ export default function Topbar({
                     className="notification-dropdown-panel"
                   >
                     <div className="notif-header">
-                      <h3>
-                        Notifications
-                        {unreadCount > 0 ? ` (${unreadCount})` : ""}
-                      </h3>
+                      <div className="notif-header-left">
+                        <h3>Notifications</h3>
+                        {unreadCount > 0 && <span className="notif-badge">{unreadCount} new</span>}
+                      </div>
                       {unreadCount > 0 && (
                         <button
                           className="mark-read-btn"
@@ -476,31 +499,42 @@ export default function Topbar({
                     </div>
                     <div className="notif-list">
                       {notifications.length > 0 ? (
-                        notifications.map((item) => (
+                        notifications.slice(0, 5).map((item) => (
                           <div
                             key={item.id}
-                            className="notif-item"
+                            className={`notif-item ${!item.isRead ? "unread" : ""}`}
                             onClick={() => {
-                              if (item.path) navigate(item.path);
+                              navigate("/notifications");
                               setShowNotifications(false);
                             }}
                           >
-                            <div
-                              className="notif-dot"
-                              style={{
-                                backgroundColor: item.color || "var(--primary)",
-                              }}
-                            />
-                            <span className="notif-text">{item.message}</span>
+                            {!item.isRead && <div className="notif-unread-dot" />}
+                            <div className="notif-item-icon">
+                              {getNotifDropdownIcon(item.type)}
+                            </div>
+                            <div className="notif-item-content">
+                              <h4 className="notif-item-title">{item.title || item.type || "Notification"}</h4>
+                              <p className="notif-item-desc">{item.message}</p>
+                              <span className="notif-item-time">Just now</span>
+                            </div>
                           </div>
                         ))
                       ) : (
-                        <div className="notif-empty">No notifications yet</div>
+                        <div className="notif-dropdown-empty">
+                          <div className="notif-empty-icon">
+                            <Bell size={24} />
+                          </div>
+                          <h4>You're all caught up</h4>
+                          <p>No new alerts or updates.</p>
+                        </div>
                       )}
                     </div>
                     <button
                       className="notif-footer-btn"
-                      onClick={() => navigate("/logs")}
+                      onClick={() => {
+                        navigate("/notifications");
+                        setShowNotifications(false);
+                      }}
                     >
                       View all notifications →
                     </button>

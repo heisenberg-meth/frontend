@@ -1410,6 +1410,11 @@ export default function SalesManagement({ showToast }) {
               setGeneratedInvoice(null);
             }}
             showToast={showToast}
+            onNewBill={() => {
+              setShowGeneratedInvoiceModal(false);
+              setGeneratedInvoice(null);
+              setShowInvoiceModal(true);
+            }}
           />
         )}
       </AnimatePresence>

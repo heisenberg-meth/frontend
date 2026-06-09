@@ -18,7 +18,6 @@ import {
   Printer,
   MessageCircle,
   Save,
-  Download,
   Eye,
   Loader2,
 } from "lucide-react";
@@ -255,7 +254,6 @@ export default function BillingPOS({ showToast: parentShowToast }) {
   const [returnsCount, setReturnsCount] = useState(0);
   const [loadMoreLoading, setLoadMoreLoading] = useState(false);
   const [allBillsLoaded, setAllBillsLoaded] = useState(false);
-  const [showCloseConfirm, setShowCloseConfirm] = useState(false);
   const [showNewBillConfirm, setShowNewBillConfirm] = useState(false);
   const [loyaltyProfile, setLoyaltyProfile] = useState(null);
   const [returnReason, setReturnReason] = useState("Customer Request");
@@ -734,42 +732,6 @@ ${printDiscount > 0 ? `<div style="display:flex;justify-content:space-between"><
     }, 800);
   };
 
-  const handleDownloadPDF = () => {
-    const inv = activeInvoice;
-    if (!inv) return;
-
-    const btn = document.getElementById("download-btn");
-    if (btn) {
-      btn.textContent = "⏳ Generating...";
-      btn.disabled = true;
-    }
-
-    const actions = document.getElementById("invoice-actions");
-    if (actions) actions.style.display = "none";
-
-    const invoiceDiv = document.getElementById("invoice-content");
-    if (!invoiceDiv) return;
-
-    const printWindow = window.open("", "_blank");
-    printWindow.document
-      .write(`<!DOCTYPE html><html><head><title>Invoice-${inv.id}</title>
-<style>body{font-family:Arial,sans-serif;padding:20px;margin:0;background:#fff;color:#000}@media print{@page{margin:10mm}}</style></head><body>${invoiceDiv.innerHTML}</body></html>`);
-    printWindow.document.close();
-    printWindow.focus();
-
-    setTimeout(() => {
-      printWindow.print();
-      printWindow.close();
-      if (actions) actions.style.display = "";
-      if (btn) {
-        btn.textContent = "✓ Downloaded!";
-        setTimeout(() => {
-          btn.textContent = "";
-          btn.disabled = false;
-        }, 1500);
-      }
-    }, 500);
-  };
 
   const openBillDetail = (bill) => {
     setSelectedBill(bill);
@@ -894,13 +856,7 @@ ${printDiscount > 0 ? `<div style="display:flex;justify-content:space-between"><
   };
 
   const handleCloseInvoiceModal = () => {
-    setShowCloseConfirm(true);
-  };
-
-  const confirmCloseInvoice = () => {
     setShowPreview(false);
-    setShowCloseConfirm(false);
-    setActiveInvoice(null);
   };
 
   useEffect(() => {
@@ -931,11 +887,13 @@ ${printDiscount > 0 ? `<div style="display:flex;justify-content:space-between"><
         return;
       }
       if (e.key === "Escape") {
-        if (showCloseConfirm) setShowCloseConfirm(false);
+        e.preventDefault();
+        if (showNewBillConfirm) setShowNewBillConfirm(false);
+        else if (showPreview) setShowPreview(false);
+
         else if (showReturnBillModal) setShowReturnBillModal(false);
         else if (showBillDetailDrawer) setShowBillDetailDrawer(false);
         else if (showAllBillsModal) setShowAllBillsModal(false);
-        else if (showPreview) setShowCloseConfirm(true);
         else if (showReturnModal) setShowReturnModal(false);
         else resetBillForm();
       }
@@ -943,12 +901,12 @@ ${printDiscount > 0 ? `<div style="display:flex;justify-content:space-between"><
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [
-    showCloseConfirm,
     showReturnBillModal,
     showBillDetailDrawer,
     showAllBillsModal,
     showPreview,
     showReturnModal,
+    showNewBillConfirm,
     lineItems,
     activeInvoice,
     handleSaveDraft,
@@ -1899,7 +1857,9 @@ ${printDiscount > 0 ? `<div style="display:flex;justify-content:space-between"><
             invoice={activeInvoice}
             showToast={showToast}
             onNewBill={() => {
-              setShowNewBillConfirm(true);
+              setShowPreview(false);
+              resetBillForm();
+              setActiveInvoice(null);
             }}
           />
         )}
@@ -1966,61 +1926,7 @@ ${printDiscount > 0 ? `<div style="display:flex;justify-content:space-between"><
         )}
       </AnimatePresence>
 
-      <AnimatePresence>
-        {showCloseConfirm && (
-          <div
-            className="stock-modal-overlay"
-            onClick={() => setShowCloseConfirm(false)}
-          >
-            <motion.div
-              className="stock-modal-content confirm-modal"
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.9 }}
-            >
-              <div
-                className="stock-modal-body"
-                style={{ padding: "32px", textAlign: "center" }}
-              >
-                <p
-                  style={{
-                    fontSize: "15px",
-                    fontWeight: 600,
-                    marginBottom: "24px",
-                  }}
-                >
-                  Close without saving? The invoice is already generated.
-                </p>
-                <div
-                  style={{
-                    display: "flex",
-                    gap: "12px",
-                    justifyContent: "center",
-                  }}
-                >
-                  <button
-                    className="pos-btn outline"
-                    onClick={() => setShowCloseConfirm(false)}
-                  >
-                    Stay
-                  </button>
-                  <button
-                    className="pos-btn outline"
-                    style={{
-                      background: "var(--danger)",
-                      color: "white",
-                      border: "none",
-                    }}
-                    onClick={confirmCloseInvoice}
-                  >
-                    Close
-                  </button>
-                </div>
-              </div>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
+
       <AnimatePresence>
         {showAllBillsModal && (
           <div

@@ -10,7 +10,6 @@ import {
   Receipt,
   Zap,
   Calendar,
-  X,
   BadgeX,
   CheckCircle,
   Star,
@@ -21,7 +20,9 @@ import {
 import { differenceInDays, format } from "date-fns";
 import api from "../api";
 import { normalizeObjectResponse } from "../utils/apiNormalizer";
-/* ─── Helpers ─── */
+import InventoryAnalyticsModal from "./inventory/InventoryAnalyticsModal";
+
+/* 🛠️ Helpers 🛠️ */
 const getDays = (d) => {
   try {
     return differenceInDays(new Date(d), new Date());
@@ -59,6 +60,7 @@ export default function Dashboard({
   const [disposalRef, setDisposalRef] = useState("");
   const [isDisposing, setIsDisposing] = useState(false);
   const [dashboardData, setDashboardData] = useState(null);
+  const [showAnalyticsModal, setShowAnalyticsModal] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -251,9 +253,10 @@ export default function Dashboard({
           <span>Analytics Dashboard</span>
         </div>
         <div
-          className="mini-metric-card"
-          onClick={() => navigate("/stock")}
+          className="mini-metric-card cursor-pointer hover:shadow-lg transition-transform hover:-translate-y-1"
+          onClick={() => setShowAnalyticsModal(true)}
           onMouseMove={handleMouseMove}
+          title="Click to view detailed inventory analytics"
         >
           <IndianRupee size={20} className="text-blue-400" />
           <span>
@@ -842,6 +845,11 @@ export default function Dashboard({
           </div>
         )}
       </AnimatePresence>
+
+      <InventoryAnalyticsModal 
+        isOpen={showAnalyticsModal} 
+        onClose={() => setShowAnalyticsModal(false)} 
+      />
     </div>
   );
 }

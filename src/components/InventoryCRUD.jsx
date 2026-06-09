@@ -36,6 +36,7 @@ import {
 } from "../services/inventory.service";
 import { useAuth } from "../hooks/useAuth";
 import ConfirmModal from "./ConfirmModal";
+import InventoryAnalyticsModal from "./inventory/InventoryAnalyticsModal";
 import { normalizeMedicine } from "../utils/normalizers";
 function Spinner({ size = 14 }) {
   return (
@@ -882,6 +883,7 @@ export default function InventoryCRUD({
   const [editBatchTarget, setEditBatchTarget] = useState(null);
   const [activeMedicineForBatch, setActiveMedicineForBatch] = useState(null);
   const [savingBatch, setSavingBatch] = useState(false);
+  const [showAnalyticsModal, setShowAnalyticsModal] = useState(false);
 
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
@@ -1311,10 +1313,15 @@ export default function InventoryCRUD({
           </div>
           <div className="inv-stat-value text-danger">{stats.expired}</div>
         </div>
-        <div className="inv-stat-card" onMouseMove={handleMouseMove}>
-          <div className="inv-stat-header">
-            <span className="inv-stat-label">INVENTORY VALUE</span>
-            <div className="inv-stat-icon bg-primary">
+          <div 
+            className="inv-stat-card cursor-pointer hover:shadow-lg transition-transform hover:-translate-y-1" 
+            onMouseMove={handleMouseMove}
+            onClick={() => setShowAnalyticsModal(true)}
+            title="Click to view detailed inventory analytics"
+          >
+            <div className="inv-stat-header">
+              <span className="inv-stat-label">INVENTORY VALUE</span>
+              <div className="inv-stat-icon bg-primary">
               <DollarSign size={14} />
             </div>
           </div>
@@ -1651,6 +1658,11 @@ export default function InventoryCRUD({
         confirmText="Delete Medicine"
         loading={deleting}
         icon={Trash2}
+      />
+
+      <InventoryAnalyticsModal 
+        isOpen={showAnalyticsModal} 
+        onClose={() => setShowAnalyticsModal(false)} 
       />
     </div>
   );
