@@ -20,8 +20,10 @@ export const getLowStockMedicines = () =>
   api.get(API_ROUTES.INVENTORY_LOW_STOCK);
 export const getNearExpiryMedicines = () =>
   api.get(API_ROUTES.INVENTORY_EXPIRY_NEAR);
-export const getExpirySummary = () => api.get(API_ROUTES.INVENTORY_EXPIRY_SUMMARY);
-
+export const getExpirySummary = () =>
+  api.get(API_ROUTES.INVENTORY_EXPIRY_SUMMARY);
+export const getInventorySummary = (params) =>
+  api.get(API_ROUTES.INVENTORY_SUMMARY, { params });
 
 /* ─── Categories ─── */
 export const getCategories = () => api.get(API_ROUTES.INVENTORY_CATEGORIES);
@@ -33,7 +35,8 @@ export const deleteCategory = (id) =>
   api.delete(`${API_ROUTES.INVENTORY_CATEGORIES}/${id}`);
 
 /* ─── Manufacturers ─── */
-export const getManufacturers = () => api.get(API_ROUTES.INVENTORY_MANUFACTURERS);
+export const getManufacturers = () =>
+  api.get(API_ROUTES.INVENTORY_MANUFACTURERS);
 export const createManufacturer = (data) =>
   api.post(API_ROUTES.INVENTORY_MANUFACTURERS, data);
 export const updateManufacturer = (id, data) =>
@@ -49,9 +52,9 @@ export const deleteBatch = (batchId) =>
   api.delete(`${API_ROUTES.INVENTORY_BATCHES}/${batchId}`);
 
 /* ─── Barcode ─── */
-export const generateBarcode = () => api.get(API_ROUTES.INVENTORY_BARCODE_GENERATE);
-
+export const generateBarcode = () =>
+  api.get(API_ROUTES.INVENTORY_BARCODE_GENERATE);
 
 /* ─── Bulk Import ─── */
-export const bulkImportMedicines = (data) => api.post(API_ROUTES.IMPORT_BULK, data);
-
+export const bulkImportMedicines = (data) =>
+  api.post(API_ROUTES.IMPORT_BULK, data);

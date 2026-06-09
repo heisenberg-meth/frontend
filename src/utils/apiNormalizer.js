@@ -5,6 +5,7 @@ export function normalizeArrayResponse(response, fallbackKey = null) {
   if (!data) return [];
 
   if (Array.isArray(data.data)) return data.data;
+  if (data.data && Array.isArray(data.data.items)) return data.data.items;
 
   if (fallbackKey && Array.isArray(data[fallbackKey])) return data[fallbackKey];
   if (fallbackKey && data.data && Array.isArray(data.data[fallbackKey]))

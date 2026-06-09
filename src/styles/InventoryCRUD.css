@@ -357,6 +357,15 @@
   border-color: rgba(239, 68, 68, 0.2);
 }
 
+.inv-row-btn.edit-stock {
+  width: auto;
+  padding: 0 12px;
+  gap: 6px;
+  font-size: 13px;
+  font-family: 'Outfit', sans-serif;
+  font-weight: 500;
+}
+
 /* Modal */
 .inv-modal-overlay {
   position: fixed;
@@ -688,4 +697,68 @@
 
 [data-theme="light"] .inv-modal-overlay {
   background: rgba(0, 0, 0, 0.4);
+}
+
+/* Pagination controls */
+.inv-pagination {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 24px;
+  border-top: 1px solid var(--overlay-06);
+  background: var(--overlay-02);
+  border-bottom-left-radius: 20px;
+  border-bottom-right-radius: 20px;
+}
+
+.inv-pagination-info {
+  color: var(--text-muted);
+  font-size: 14px;
+  font-family: "Manrope", sans-serif;
+}
+
+.inv-pagination-controls {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.inv-page-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  border: 1px solid var(--overlay-06);
+  background: var(--overlay-03);
+  color: var(--text);
+  cursor: pointer;
+  font-family: "Outfit", sans-serif;
+  font-weight: 600;
+  font-size: 14px;
+  transition: all 0.2s ease;
+}
+
+.inv-page-btn:hover:not(:disabled) {
+  border-color: var(--primary);
+  color: var(--primary);
+  background: var(--overlay-05);
+}
+
+.inv-page-btn.active {
+  background: var(--primary);
+  color: var(--bg-dark);
+  border-color: var(--primary);
+}
+
+.inv-page-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.inv-page-btn.prev-next {
+  width: auto;
+  padding: 0 12px;
+  gap: 6px;
 }

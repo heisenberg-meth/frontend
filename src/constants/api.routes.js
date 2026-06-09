@@ -21,6 +21,7 @@ export const API_ROUTES = {
   TEAM_BILLING_PERFORMANCE: "/team/billing-performance",
   INVENTORY_MEDICINES: "/inventory/medicines",
   INVENTORY_SEARCH: "/inventory/medicines/search",
+  INVENTORY_SUMMARY: "/inventory/summary",
   INVENTORY_CATEGORIES: "/inventory/categories",
   INVENTORY_MANUFACTURERS: "/inventory/manufacturers",
   INVENTORY_BATCHES: "/inventory/batches",
