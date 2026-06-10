@@ -144,7 +144,7 @@ export default function PlanSelection({ onSelectTrial, onSelectPro }) {
             <div className="mt-auto pt-6 border-t border-[var(--surface)]">
               <div className="mb-5">
                 <span className="text-3xl font-extrabold text-on-surface">
-                  ₹299
+                  ₹499
                 </span>
                 <span className="text-on-surface-variant text-xs ml-2">
                   / month
@@ -211,7 +211,7 @@ export default function PlanSelection({ onSelectTrial, onSelectPro }) {
             <div className="mt-auto pt-6 border-t border-primary/20">
               <div className="mb-5">
                 <span className="text-3xl font-extrabold text-on-surface">
-                  ₹499
+                  ₹999
                 </span>
                 <span className="text-on-surface-variant text-xs ml-2">
                   / month

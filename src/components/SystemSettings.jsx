@@ -252,7 +252,7 @@ export default function SystemSettings({
             address,
             state: gstState,
             filingFrequency: filingFreq,
-          }
+          },
         }),
       ]);
       showToast("Global facility configuration synchronized", "success");

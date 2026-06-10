@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect, useCallback, useRef } from "react";
+import { useState, useMemo, useEffect, useCallback, useRef } from "react";
 import {
   Package,
   PackageOpen,
@@ -39,19 +39,24 @@ function CustomDropdown({ value, onChange, options, placeholder = "Select" }) {
 
   return (
     <div className="custom-dropdown-container" ref={dropdownRef}>
-      <button 
-        className="custom-dropdown-trigger" 
+      <button
+        className="custom-dropdown-trigger"
         onClick={() => setIsOpen(!isOpen)}
         aria-haspopup="listbox"
         aria-expanded={isOpen}
       >
-        <span>{value === "All" || value === "All Status" ? placeholder : value}</span>
-        <ChevronDown size={16} className={`dropdown-icon ${isOpen ? "open" : ""}`} />
+        <span>
+          {value === "All" || value === "All Status" ? placeholder : value}
+        </span>
+        <ChevronDown
+          size={16}
+          className={`dropdown-icon ${isOpen ? "open" : ""}`}
+        />
       </button>
 
       <AnimatePresence>
         {isOpen && (
-          <motion.div 
+          <motion.div
             className="custom-dropdown-menu"
             initial={{ opacity: 0, y: -10, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -63,7 +68,7 @@ function CustomDropdown({ value, onChange, options, placeholder = "Select" }) {
               const optValue = typeof opt === "object" ? opt.value : opt;
               const optLabel = typeof opt === "object" ? opt.label : opt;
               return (
-                <div 
+                <div
                   key={optValue}
                   className={`custom-dropdown-item ${value === optValue ? "selected" : ""}`}
                   onClick={() => {
@@ -74,7 +79,9 @@ function CustomDropdown({ value, onChange, options, placeholder = "Select" }) {
                   aria-selected={value === optValue}
                 >
                   <span>{optLabel}</span>
-                  {value === optValue && <Check size={14} className="check-icon" />}
+                  {value === optValue && (
+                    <Check size={14} className="check-icon" />
+                  )}
                 </div>
               );
             })}
@@ -1071,15 +1078,7 @@ export default function InventoryCRUD({
     } finally {
       setLoading(false);
     }
-  }, [
-    categoryFilter,
-    statusFilter,
-    currentPage,
-    debouncedSearch,
-    categoriesList,
-    viewTarget,
-    showToast,
-  ]);
+  }, [medicines.length, categoryFilter, statusFilter, currentPage, debouncedSearch, categoriesList, viewTarget, showToast]);
 
   const handleEditStock = (medicine) => {
     const batches = medicine.inventoryBatches || [];
@@ -1165,13 +1164,16 @@ export default function InventoryCRUD({
     return medicines.filter((m) => {
       // 1. Search Filter
       const term = search.toLowerCase().trim();
-      const matchSearch = !term || 
+      const matchSearch =
+        !term ||
         (m.name || "").toLowerCase().includes(term) ||
         (m.genericName || "").toLowerCase().includes(term) ||
         (m.batchNumber || "").toLowerCase().includes(term);
 
       // 2. Category Filter
-      const matchCat = categoryFilter === "All" || categoryFilter === "All Categories" ||
+      const matchCat =
+        categoryFilter === "All" ||
+        categoryFilter === "All Categories" ||
         (m.category?.name || m.category) === categoryFilter;
 
       // 3. Status Filter
@@ -1188,12 +1190,19 @@ export default function InventoryCRUD({
           matchStatus = qty > reorderPt && !isExpired;
         } else if (statusFilter === "Low Stock") {
           matchStatus = isLow && !isExpired;
-        } else if (statusFilter === "Out of Stock" || statusFilter === "Out Of Stock") {
+        } else if (
+          statusFilter === "Out of Stock" ||
+          statusFilter === "Out Of Stock"
+        ) {
           matchStatus = isOut;
         } else if (statusFilter === "Expired") {
           matchStatus = isExpired;
         } else if (statusFilter === "Expiring Soon") {
-          const daysToExpiry = expDate ? Math.ceil((new Date(expDate) - new Date()) / (1000 * 60 * 60 * 24)) : 999;
+          const daysToExpiry = expDate
+            ? Math.ceil(
+                (new Date(expDate) - new Date()) / (1000 * 60 * 60 * 24),
+              )
+            : 999;
           matchStatus = daysToExpiry > 0 && daysToExpiry <= 90 && !isExpired;
         }
       }
@@ -1436,15 +1445,15 @@ export default function InventoryCRUD({
           </div>
           <div className="inv-stat-value text-danger">{stats.expired}</div>
         </div>
-          <div 
-            className="inv-stat-card cursor-pointer hover:shadow-lg transition-transform hover:-translate-y-1" 
-            onMouseMove={handleMouseMove}
-            onClick={() => setShowAnalyticsModal(true)}
-            title="Click to view detailed inventory analytics"
-          >
-            <div className="inv-stat-header">
-              <span className="inv-stat-label">INVENTORY VALUE</span>
-              <div className="inv-stat-icon bg-primary">
+        <div
+          className="inv-stat-card cursor-pointer hover:shadow-lg transition-transform hover:-translate-y-1"
+          onMouseMove={handleMouseMove}
+          onClick={() => setShowAnalyticsModal(true)}
+          title="Click to view detailed inventory analytics"
+        >
+          <div className="inv-stat-header">
+            <span className="inv-stat-label">INVENTORY VALUE</span>
+            <div className="inv-stat-icon bg-primary">
               <DollarSign size={14} />
             </div>
           </div>
@@ -1480,7 +1489,7 @@ export default function InventoryCRUD({
               }}
               options={categories.map((c) => ({
                 value: c,
-                label: c === "All" ? "All Categories" : c
+                label: c === "All" ? "All Categories" : c,
               }))}
               placeholder="All Categories"
             />
@@ -1496,7 +1505,7 @@ export default function InventoryCRUD({
                 "Low Stock",
                 "Out of Stock",
                 "Expiring Soon",
-                "Expired"
+                "Expired",
               ]}
               placeholder="All Status"
             />
@@ -1775,9 +1784,9 @@ export default function InventoryCRUD({
         icon={Trash2}
       />
 
-      <InventoryAnalyticsModal 
-        isOpen={showAnalyticsModal} 
-        onClose={() => setShowAnalyticsModal(false)} 
+      <InventoryAnalyticsModal
+        isOpen={showAnalyticsModal}
+        onClose={() => setShowAnalyticsModal(false)}
       />
     </div>
   );

@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import api from "../api.js";
 import { API_ROUTES } from "../constants/api.routes.js";
 import { receiveGoods } from "../services/purchases.service.js";
+import { getMedicines } from "../services/inventory.service";
 import {
   ShoppingCart,
   Clock,
@@ -57,15 +58,13 @@ export default function PurchaseManagement({ showToast }) {
   const [medicines, setMedicines] = useState([]);
   const [suppliers, setSuppliers] = useState([]);
   const [orders, setOrders] = useState([]);
+  const [loadingMedicines, setLoadingMedicines] = useState(false);
   const [returns, setReturns] = useState([]);
   const [invoices, setInvoices] = useState([]);
   const [loading, setLoading] = useState(false);
   const refreshData = async () => {
     try {
       const results = await Promise.allSettled([
-        api.get(API_ROUTES.INVENTORY_MEDICINES, {
-          params: { limit: 100 },
-        }),
         api.get(API_ROUTES.SUPPLIERS),
         api.get(API_ROUTES.PURCHASES_ORDERS),
         api.get(API_ROUTES.PURCHASES_RETURNS),
@@ -74,11 +73,10 @@ export default function PurchaseManagement({ showToast }) {
         }),
       ]);
 
-      setMedicines(safeData(results[0], "medicines", "data"));
-      setSuppliers(safeData(results[1], "data"));
-      setOrders(safeData(results[2], "data"));
-      setReturns(safeData(results[3], "data"));
-      setInvoices(safeData(results[4], "data"));
+      setSuppliers(safeData(results[0], "data"));
+      setOrders(safeData(results[1], "data"));
+      setReturns(safeData(results[2], "data"));
+      setInvoices(safeData(results[3], "data"));
     } catch (err) {
       console.error("[FETCH DATA ERROR]", err);
 
@@ -94,9 +92,6 @@ export default function PurchaseManagement({ showToast }) {
         setLoading(true);
 
         const results = await Promise.allSettled([
-          api.get(API_ROUTES.INVENTORY_MEDICINES, {
-            params: { limit: 100 },
-          }),
           api.get(API_ROUTES.SUPPLIERS),
           api.get(API_ROUTES.PURCHASES_ORDERS),
           api.get(API_ROUTES.PURCHASES_RETURNS),
@@ -107,11 +102,10 @@ export default function PurchaseManagement({ showToast }) {
 
         if (!mounted) return;
 
-        setMedicines(safeData(results[0], "medicines", "data"));
-        setSuppliers(safeData(results[1], "data"));
-        setOrders(safeData(results[2], "data"));
-        setReturns(safeData(results[3], "data"));
-        setInvoices(safeData(results[4], "data"));
+        setSuppliers(safeData(results[0], "data"));
+        setOrders(safeData(results[1], "data"));
+        setReturns(safeData(results[2], "data"));
+        setInvoices(safeData(results[3], "data"));
 
         const failed = results.filter((r) => r.status === "rejected");
         if (failed.length > 0) {
@@ -138,6 +132,28 @@ export default function PurchaseManagement({ showToast }) {
       mounted = false;
     };
   }, [showToast]);
+
+  const loadMedicines = async () => {
+    try {
+      setLoadingMedicines(true);
+      const response = await getMedicines({
+        page: 1,
+        limit: 1000,
+      });
+      const items = response?.data?.data?.items || response?.data?.data || [];
+      setMedicines(items);
+    } catch (error) {
+      console.error("Failed to load medicines", error);
+    } finally {
+      setLoadingMedicines(false);
+    }
+  };
+
+  useEffect(() => {
+    if (drawer === "new-purchase" || drawer === "edit-purchase") {
+      loadMedicines();
+    }
+  }, [drawer]);
 
   useEffect(() => {
     if (drawer || showReturnModal || showReceiveModal) {
@@ -196,6 +212,8 @@ export default function PurchaseManagement({ showToast }) {
         qty: 1,
         purchasePrice: medicine.purchasePrice || 0,
         gstPercentage: medicine.gstPercentage || 12,
+        batchNumber: "",
+        expiryDate: "",
       },
     ]);
     setMedicineSearch("");
@@ -204,7 +222,18 @@ export default function PurchaseManagement({ showToast }) {
   const updateItem = (id, field, value) => {
     setPurchaseItems((prev) =>
       prev.map((item) =>
-        item.id === id ? { ...item, [field]: Number(value) } : item,
+        item.id === id
+          ? {
+              ...item,
+              [field]:
+                field === "qty" ||
+                field === "purchasePrice" ||
+                field === "sellingPrice" ||
+                field === "gstPercentage"
+                  ? Number(value)
+                  : value,
+            }
+          : item,
       ),
     );
   };
@@ -237,6 +266,18 @@ export default function PurchaseManagement({ showToast }) {
       showToast("Enter supplier invoice number", "error");
       return;
     }
+    if (
+      purchaseItems.some(
+        (item) => !item.batchNumber || !item.batchNumber.trim(),
+      )
+    ) {
+      showToast("Please enter batch number for all medicines", "error");
+      return;
+    }
+    if (purchaseItems.some((item) => !item.expiryDate)) {
+      showToast("Please enter expiry date for all medicines", "error");
+      return;
+    }
     setSaving(true);
     try {
       const payload = {
@@ -247,11 +288,11 @@ export default function PurchaseManagement({ showToast }) {
           medicineId: item.id,
           quantity: Number(item.qty),
           purchasePrice: Number(item.purchasePrice || 0),
-          sellingPrice: Number(item.sellingPrice || 0),
-          batchNumber: item.batchNumber || `BATCH-${crypto.randomUUID()}`,
-          expiryDate:
-            item.expiryDate ||
-            new Date(Date.now() + 365 * 86400000).toISOString(),
+          sellingPrice: Number(
+            item.sellingPrice || item.mrp || item.purchasePrice || 0,
+          ),
+          batchNumber: item.batchNumber.trim(),
+          expiryDate: new Date(item.expiryDate).toISOString(),
         })),
         subtotal,
         gstAmount: gstTotal,
@@ -1050,6 +1091,8 @@ export default function PurchaseManagement({ showToast }) {
                         <thead>
                           <tr>
                             <th>Medicine</th>
+                            <th>Batch #</th>
+                            <th>Expiry</th>
                             <th>Qty</th>
                             <th>Cost</th>
                             <th style={{ textAlign: "right" }}>Total</th>
@@ -1060,7 +1103,7 @@ export default function PurchaseManagement({ showToast }) {
                           <tbody>
                             <tr>
                               <td
-                                colSpan={5}
+                                colSpan={7}
                                 style={{
                                   textAlign: "center",
                                   padding: "24px",
@@ -1082,6 +1125,36 @@ export default function PurchaseManagement({ showToast }) {
                                   <div className="result-meta">
                                     GST: {item.gstPercentage}%
                                   </div>
+                                </td>
+                                <td>
+                                  <input
+                                    className="p-cost-input"
+                                    style={{ width: "80px" }}
+                                    placeholder="Batch..."
+                                    value={item.batchNumber || ""}
+                                    onChange={(e) =>
+                                      updateItem(
+                                        item.id,
+                                        "batchNumber",
+                                        e.target.value,
+                                      )
+                                    }
+                                  />
+                                </td>
+                                <td>
+                                  <input
+                                    className="p-cost-input"
+                                    type="date"
+                                    style={{ width: "125px" }}
+                                    value={item.expiryDate || ""}
+                                    onChange={(e) =>
+                                      updateItem(
+                                        item.id,
+                                        "expiryDate",
+                                        e.target.value,
+                                      )
+                                    }
+                                  />
                                 </td>
                                 <td>
                                   <input
