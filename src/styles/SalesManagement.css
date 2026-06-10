@@ -210,3 +210,24 @@
   color: #ffffff;
   padding: 12px;
 }
+
+/* Micro Action Buttons */
+.micro-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s;
+  background: transparent;
+  color: var(--text-muted);
+}
+
+.micro-btn:hover {
+  background: var(--overlay-05);
+  color: var(--primary);
+  transform: scale(1.1);
+}

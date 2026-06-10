@@ -859,6 +859,15 @@ ${printDiscount > 0 ? `<div style="display:flex;justify-content:space-between"><
 
   const handleCloseInvoiceModal = () => {
     setShowPreview(false);
+    setLineItems([]);
+    setPatient({ id: null, name: "", phone: "" });
+    setDiscount(0);
+    setPaymentMode("CASH");
+    setSearch("");
+    setMedResults([]);
+    setShowDropdown(false);
+    setActiveInvoice(null);
+    setTimeout(() => barcodeInputRef.current?.focus(), 100);
   };
 
   useEffect(() => {

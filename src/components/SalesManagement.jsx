@@ -294,37 +294,61 @@ export default function SalesManagement({ showToast, storeProfile }) {
 
   const handlePrintBill = (sale) => {
     const printWindow = window.open("", "_blank");
+    if (!printWindow) return;
+
     const itemsHtml = (sale.items || [])
       .map(
         (it) =>
-          `<tr><td>${escapeHtml(it.name)}</td><td>${escapeHtml(it.qty)}</td><td>₹${Number(it.price * it.qty).toFixed(2)}</td></tr>`,
+          `<tr>
+            <td>${escapeHtml(it.medicine?.name || it.name || "Unknown")}</td>
+            <td>${escapeHtml(String(it.quantity || it.qty || 1))}</td>
+            <td>₹${Number(it.unitPrice || it.price || 0).toFixed(2)}</td>
+            <td>₹${Number((it.quantity || it.qty || 1) * (it.unitPrice || it.price || 0)).toFixed(2)}</td>
+          </tr>`,
       )
       .join("");
+
+    const shopName = storeProfile?.shopName || "Viyan MedAssist";
+    const address = storeProfile?.address || "";
+    const phone = storeProfile?.phone || "";
+    const email = storeProfile?.email || "";
+    const gstin = storeProfile?.gstin || "";
+
+    const invoiceNum = sale.invoiceNumber || sale.id;
+    const patientName = sale.patient?.fullName || sale.patientName || sale.customerName || sale.patient || "Walk-in";
+    const dateStr = sale.date || sale.createdAt ? format(new Date(sale.date || sale.createdAt), "dd MMM yyyy") : "";
+    const timeStr = sale.time || (sale.createdAt ? format(new Date(sale.createdAt), "hh:mm a") : "");
 
     const html = `
       <html>
         <head>
-          <title>${escapeHtml(sale.id)}</title>
+          <title>${escapeHtml(invoiceNum)}</title>
           <style>
             body { font-family: Arial; padding: 20px; }
-            h2 { margin-bottom: 10px; }
+            h2 { margin-bottom: 5px; }
+            p { margin: 3px 0; }
             table { width: 100%; border-collapse: collapse; margin-top: 20px; }
             td, th { border: 1px solid #ddd; padding: 8px; text-align: left; }
             .total { margin-top: 20px; font-size: 20px; font-weight: bold; }
           </style>
         </head>
         <body>
-          <h2>Viyan MedAssist</h2>
-          <p><b>Invoice:</b> ${escapeHtml(sale.id)}</p>
-          <p><b>Patient:</b> ${escapeHtml(sale.patient)}</p>
-          <p><b>Date:</b> ${escapeHtml(sale.date)}</p>
-          <p><b>Time:</b> ${escapeHtml(sale.time)}</p>
-          <p><b>Payment:</b> ${escapeHtml(sale.payment)}</p>
+          <h2>${escapeHtml(shopName)}</h2>
+          ${address ? `<p>${escapeHtml(address)}</p>` : ""}
+          <p>${phone ? `<b>Phone:</b> ${escapeHtml(phone)}` : ""} ${email ? `| <b>Email:</b> ${escapeHtml(email)}` : ""}</p>
+          ${gstin ? `<p><b>GSTIN:</b> ${escapeHtml(gstin)}</p>` : ""}
+          <hr style="margin: 20px 0;"/>
+          
+          <h3 style="margin-bottom:10px;">INVOICE</h3>
+          <p><b>Invoice No:</b> ${escapeHtml(invoiceNum)}</p>
+          <p><b>Date:</b> ${escapeHtml(dateStr)} ${escapeHtml(timeStr)}</p>
+          <p><b>Patient:</b> ${escapeHtml(patientName)}</p>
+          <p><b>Payment:</b> ${escapeHtml(sale.paymentMode || sale.payment || "Cash")}</p>
           <table>
-            <thead><tr><th>Medicine</th><th>Qty</th><th>Price</th></tr></thead>
+            <thead><tr><th>Medicine</th><th>Qty</th><th>Unit Price</th><th>Total</th></tr></thead>
             <tbody>${itemsHtml}</tbody>
           </table>
-          <div class="total">Total: ₹${Number(sale.total || 0).toFixed(2)}</div>
+          <div class="total">Total Amount: ₹${Number(sale.totalAmount || sale.total || 0).toFixed(2)}</div>
         </body>
       </html>`;
 
@@ -393,26 +417,82 @@ export default function SalesManagement({ showToast, storeProfile }) {
 
   const downloadInvoicePDF = (sale) => {
     const doc = new jsPDF();
-    doc.setFontSize(18);
-    doc.text("Viyan MedAssist", 14, 20);
-    doc.setFontSize(12);
-    doc.text(`Invoice: ${sale.id}`, 14, 35);
-    doc.text(`Patient: ${sale.patient}`, 14, 43);
-    doc.text(`Date: ${sale.date}`, 14, 51);
+    
+    // Store Profile
+    const shopName = storeProfile?.shopName || "Viyan MedAssist";
+    const address = storeProfile?.address || "";
+    const phone = storeProfile?.phone || "";
+    const email = storeProfile?.email || "";
+    const gstin = storeProfile?.gstin || "";
 
+    doc.setFontSize(22);
+    doc.setFont("helvetica", "bold");
+    doc.text(shopName, 14, 20);
+    
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "normal");
+    let y = 28;
+    if (address) {
+      doc.text(address, 14, y);
+      y += 6;
+    }
+    if (phone || email) {
+      doc.text(`${phone ? `Phone: ${phone}` : ""} ${email ? `| Email: ${email}` : ""}`, 14, y);
+      y += 6;
+    }
+    if (gstin) {
+      doc.text(`GSTIN: ${gstin}`, 14, y);
+      y += 6;
+    }
+
+    doc.setLineWidth(0.5);
+    doc.line(14, y, 196, y);
+    y += 10;
+
+    // Invoice Details
+    doc.setFontSize(12);
+    doc.setFont("helvetica", "bold");
+    doc.text("INVOICE", 14, y);
+    y += 8;
+
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "normal");
+    
+    const invoiceNum = sale.invoiceNumber || sale.id;
+    const patientName = sale.patient?.fullName || sale.patientName || sale.customerName || sale.patient || "Walk-in";
+    const dateStr = sale.date || sale.createdAt ? format(new Date(sale.date || sale.createdAt), "dd MMM yyyy") : "";
+    const timeStr = sale.time || (sale.createdAt ? format(new Date(sale.createdAt), "hh:mm a") : "");
+
+    doc.text(`Invoice No: ${invoiceNum}`, 14, y);
+    doc.text(`Date: ${dateStr} ${timeStr}`, 120, y);
+    y += 8;
+    doc.text(`Patient: ${patientName}`, 14, y);
+    doc.text(`Payment: ${sale.paymentMode || sale.payment || "Cash"}`, 120, y);
+    y += 12;
+
+    // Table
     autoTable(doc, {
-      startY: 60,
-      head: [["Medicine", "Qty", "Price"]],
+      startY: y,
+      head: [["Medicine", "Qty", "Unit Price", "Total"]],
       body: (sale.items || []).map((it) => [
-        it.name,
-        String(it.qty),
-        `₹${it.price * it.qty}`,
+        it.medicine?.name || it.name || "Unknown",
+        String(it.quantity || it.qty || 1),
+        `Rs. ${Number(it.unitPrice || it.price || 0).toFixed(2)}`,
+        `Rs. ${Number((it.quantity || it.qty || 1) * (it.unitPrice || it.price || 0)).toFixed(2)}`,
       ]),
+      headStyles: { fillColor: [41, 128, 185], textColor: 255 },
+      alternateRowStyles: { fillColor: [245, 245, 245] },
+      margin: { top: 10, left: 14, right: 14 }
     });
 
-    const finalY = doc.lastAutoTable.finalY + 10;
-    doc.text(`Total: ₹${sale.total}`, 14, finalY);
-    doc.save(`${sale.id}.pdf`);
+    const finalY = doc.lastAutoTable.finalY + 15;
+    
+    doc.setFontSize(12);
+    doc.setFont("helvetica", "bold");
+    const totalAmount = sale.totalAmount || sale.total || 0;
+    doc.text(`Total Amount: Rs. ${Number(totalAmount).toFixed(2)}`, 140, finalY);
+    
+    doc.save(`Invoice_${invoiceNum}.pdf`);
     showToast("PDF downloaded", "success");
   };
 
@@ -660,7 +740,7 @@ export default function SalesManagement({ showToast, storeProfile }) {
                           </div>
                         </td>
                         <td>
-                          <div style={{ display: "flex", gap: "8px" }}>
+                          <div style={{ display: "flex", gap: "12px" }}>
                             <button
                               className="micro-btn"
                               onClick={(e) => {
@@ -864,7 +944,7 @@ export default function SalesManagement({ showToast, storeProfile }) {
                       </span>
                     </td>
                     <td>
-                      <div style={{ display: "flex", gap: "8px" }}>
+                      <div style={{ display: "flex", gap: "12px" }}>
                         <button
                           className="micro-btn"
                           style={{ color: "var(--success)" }}
