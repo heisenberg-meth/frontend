@@ -4,7 +4,6 @@ import { motion } from "framer-motion";
 import { CheckCircle2, Printer, Download, MessageCircle } from "lucide-react";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
-
 import InvoicePreview from "../common/InvoicePreview";
 import "../../styles/InvoiceModal.css";
 

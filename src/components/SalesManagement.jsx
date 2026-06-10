@@ -170,9 +170,13 @@ export default function SalesManagement({ showToast }) {
         const matchesPayment =
           filters.payment === "All Payment Modes" ||
           (sale.paymentMode || sale.payment) === filters.payment;
+        
+        // Extract yyyy-MM-dd part of the sale date safely
+        const saleDateOnly = sale.date ? sale.date.split("T")[0] : "";
         const matchesDate =
-          (!dateRange.start || sale.date >= dateRange.start) &&
-          (!dateRange.end || sale.date <= dateRange.end);
+          (!dateRange.start || saleDateOnly >= dateRange.start) &&
+          (!dateRange.end || saleDateOnly <= dateRange.end);
+          
         return matchesSearch && matchesPayment && matchesDate;
       }),
     [sales, filters, dateRange],
@@ -182,7 +186,8 @@ export default function SalesManagement({ showToast }) {
     () =>
       filteredSales.filter((sale) => {
         const formattedTarget = format(currentDate, "yyyy-MM-dd");
-        return (sale.date || "").startsWith(formattedTarget);
+        const saleDateOnly = sale.date ? sale.date.split("T")[0] : "";
+        return saleDateOnly === formattedTarget;
       }),
     [filteredSales, currentDate],
   );
