@@ -30,6 +30,10 @@ export default function SystemSettings({
   const [saving, setSaving] = useState(false);
   const [gstin, setGstin] = useState("");
   const [bizName, setBizName] = useState("");
+  const [shopName, setShopName] = useState("");
+  const [phone, setPhone] = useState("");
+  const [email, setEmail] = useState("");
+  const [address, setAddress] = useState("");
   const [gstState, setGstState] = useState("");
   const [filingFreq, setFilingFreq] = useState("Monthly");
   const [invPrefix, setInvPrefix] = useState("INV-");
@@ -127,6 +131,10 @@ export default function SystemSettings({
             if (s.storeProfile.gstin) setGstin(s.storeProfile.gstin);
             if (s.storeProfile.businessName)
               setBizName(s.storeProfile.businessName);
+            if (s.storeProfile.shopName) setShopName(s.storeProfile.shopName);
+            if (s.storeProfile.phone) setPhone(s.storeProfile.phone);
+            if (s.storeProfile.email) setEmail(s.storeProfile.email);
+            if (s.storeProfile.address) setAddress(s.storeProfile.address);
             if (s.storeProfile.state) setGstState(s.storeProfile.state);
             if (s.storeProfile.filingFrequency)
               setFilingFreq(s.storeProfile.filingFrequency);
@@ -234,11 +242,17 @@ export default function SystemSettings({
           logoUrl: logoUrl || null,
           footerText: footerMsg,
         }),
-        api.put(API_ROUTES.SETTINGS_STORE_PROFILE, {
-          gstin: gstin || null,
-          businessName: bizName,
-          state: gstState,
-          filingFrequency: filingFreq,
+        api.put(API_ROUTES.SETTINGS, {
+          storeProfile: {
+            gstin: gstin || null,
+            businessName: bizName,
+            shopName,
+            phone,
+            email,
+            address,
+            state: gstState,
+            filingFrequency: filingFreq,
+          }
         }),
       ]);
       showToast("Global facility configuration synchronized", "success");
@@ -489,11 +503,50 @@ export default function SystemSettings({
               />
             </div>
             <div className="sys-form-group">
-              <label className="sys-label">BUSINESS NAME</label>
+              <label className="sys-label">LEGAL BUSINESS NAME</label>
               <input
                 className="sys-input"
                 value={bizName}
                 onChange={(e) => setBizName(e.target.value)}
+              />
+            </div>
+          </div>
+
+          <div className="sys-card">
+            <div className="sys-card-header">
+              <h3 className="sys-card-title">🏪 Shop & Invoice Details</h3>
+            </div>
+            <div className="sys-form-group">
+              <label className="sys-label">DISPLAY SHOP NAME</label>
+              <input
+                className="sys-input"
+                value={shopName}
+                onChange={(e) => setShopName(e.target.value)}
+              />
+            </div>
+            <div className="sys-form-group">
+              <label className="sys-label">PHONE NUMBER</label>
+              <input
+                className="sys-input"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+              />
+            </div>
+            <div className="sys-form-group">
+              <label className="sys-label">EMAIL ADDRESS</label>
+              <input
+                className="sys-input"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+              />
+            </div>
+            <div className="sys-form-group">
+              <label className="sys-label">SHOP ADDRESS</label>
+              <textarea
+                className="sys-input"
+                rows="3"
+                value={address}
+                onChange={(e) => setAddress(e.target.value)}
               />
             </div>
           </div>

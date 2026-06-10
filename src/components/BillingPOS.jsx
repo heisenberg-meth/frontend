@@ -193,7 +193,10 @@ const normalizeBill = (bill) => {
   };
 };
 
-export default function BillingPOS({ showToast: parentShowToast }) {
+export default function BillingPOS({
+  showToast: parentShowToast,
+  storeProfile,
+}) {
   const { user } = useAuth();
   const navigate = useNavigate();
   const showToast = useMemo(
@@ -1449,7 +1452,7 @@ ${printDiscount > 0 ? `<div style="display:flex;justify-content:space-between"><
                       </>
                     )}
                   </button>
-                  <button
+                  {/* <button
                     className={`pos-btn outline ${printLoading ? "btn-loading" : ""}`}
                     style={{ flex: 1 }}
                     onClick={() => handlePrint()}
@@ -1465,9 +1468,9 @@ ${printDiscount > 0 ? `<div style="display:flex;justify-content:space-between"><
                         <Printer size={16} /> Print
                       </>
                     )}
-                  </button>
+                  </button> */}
                 </div>
-                <button
+                {/* <button
                   className={`pos-btn outline ${whatsappLoading ? "btn-loading" : ""}`}
                   onClick={handleSendWhatsApp}
                   disabled={whatsappLoading}
@@ -1481,7 +1484,7 @@ ${printDiscount > 0 ? `<div style="display:flex;justify-content:space-between"><
                       <MessageCircle size={16} /> Send WhatsApp
                     </>
                   )}
-                </button>
+                </button> */}
                 <button
                   id="generate-invoice-btn"
                   className="pos-btn teal"
@@ -1866,6 +1869,7 @@ ${printDiscount > 0 ? `<div style="display:flex;justify-content:space-between"><
               resetBillForm();
               setActiveInvoice(null);
             }}
+            storeProfile={storeProfile}
           />
         )}
       </AnimatePresence>

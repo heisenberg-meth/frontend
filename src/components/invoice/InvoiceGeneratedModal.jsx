@@ -29,6 +29,7 @@ export default function InvoiceGeneratedModal({
   invoice,
   showToast,
   onNewBill,
+  storeProfile,
 }) {
   const [theme, setTheme] = useState(() =>
     typeof document !== "undefined"
@@ -81,6 +82,7 @@ export default function InvoiceGeneratedModal({
       : !invoice.patientName || invoice.patientName === "Walk-in Customer",
     invoiceNumber: invoice.invoiceNumber || invoice.id,
     invoiceDate: invoice.date || invoice.createdAt,
+    storeProfile,
   };
 
   const getNormalizedSale = () => ({
@@ -186,7 +188,9 @@ export default function InvoiceGeneratedModal({
       )
       .join("\n");
 
-    const text = `VIYAN MEDASSIST\n\nInvoice: ${invNo}\nDate: ${dateStr}\nPatient: ${patName}\n\nMedicines:\n\n${itemsText}\n\nSubtotal: ₹${Number(sale.subtotal || sale.total || 0).toFixed(2)}\nCGST: ₹${Number(sale.cgst || sale.tax / 2 || 0).toFixed(2)}\nSGST: ₹${Number(sale.sgst || sale.tax / 2 || 0).toFixed(2)}\nTOTAL: ₹${Number(sale.total || 0).toFixed(2)}\n\nThank you for visiting Viyan MedAssist!`;
+    const shopName =
+      storeProfile?.shopName || storeProfile?.businessName || "VIYAN MEDASSIST";
+    const text = `${shopName}\n\nInvoice: ${invNo}\nDate: ${dateStr}\nPatient: ${patName}\n\nMedicines:\n\n${itemsText}\n\nSubtotal: ₹${Number(sale.subtotal || sale.total || 0).toFixed(2)}\nCGST: ₹${Number(sale.cgst || sale.tax / 2 || 0).toFixed(2)}\nSGST: ₹${Number(sale.sgst || sale.tax / 2 || 0).toFixed(2)}\nTOTAL: ₹${Number(sale.total || 0).toFixed(2)}\n\nThank you for visiting ${shopName}!`;
     const url = `https://wa.me/?text=${encodeURIComponent(text)}`;
     window.open(url, "_blank");
     if (showToast) showToast("WhatsApp opened", "success");

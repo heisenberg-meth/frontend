@@ -14,6 +14,7 @@ export default function InvoicePreview({
   isWalkIn,
   invoiceNumber,
   invoiceDate,
+  storeProfile,
 }) {
   const formatDate = (dateVal) => {
     if (!dateVal) return "—";
@@ -52,13 +53,18 @@ export default function InvoicePreview({
         {/* ── HEADER ── */}
         <div className="inv-header">
           <div className="inv-header-left">
-            <div className="inv-pharmacy-name">VIYAN MEDASSIST</div>
+            <div className="inv-pharmacy-name">
+              {storeProfile?.shopName ||
+                storeProfile?.businessName ||
+                "Your Shop Name"}
+            </div>
             <div className="inv-pharmacy-meta">
-              123, Healthcare Street, Medical Hub, Bangalore – 560 001
+              {storeProfile?.address || "Your Address"}
               <br />
-              GSTIN: 29ABCDE1234F1Z1 &nbsp;|&nbsp; Ph: +91 98765 43210
+              GSTIN: {storeProfile?.gstin || "N/A"} &nbsp;|&nbsp; Ph:{" "}
+              {storeProfile?.phone || "N/A"}
               <br />
-              Email: billing@viyanmedassist.in
+              Email: {storeProfile?.email || "N/A"}
             </div>
           </div>
           <div className="inv-header-right">

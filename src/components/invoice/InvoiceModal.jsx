@@ -31,6 +31,7 @@ export default function InvoiceModal({
   onSaveSuccess,
   showToast,
   user,
+  storeProfile,
 }) {
   const [theme, setTheme] = useState("light");
   const [patient, setPatient] = useState({ id: null, name: "", phone: "" });
@@ -431,6 +432,7 @@ export default function InvoiceModal({
                 tax={tax}
                 grandTotal={grandTotal}
                 isWalkIn={isWalkIn}
+                storeProfile={storeProfile}
               />
             </div>
           )}

@@ -32,7 +32,7 @@ import { normalizeArrayResponse } from "../utils/apiNormalizer";
 import { escapeHtml } from "../utils/escapeHtml";
 import "../styles/SalesManagement.css";
 
-export default function SalesManagement({ showToast }) {
+export default function SalesManagement({ showToast, storeProfile }) {
   const { user } = useAuth();
   const [showInvoiceModal, setShowInvoiceModal] = useState(false);
   const [showGeneratedInvoiceModal, setShowGeneratedInvoiceModal] =
@@ -170,13 +170,13 @@ export default function SalesManagement({ showToast }) {
         const matchesPayment =
           filters.payment === "All Payment Modes" ||
           (sale.paymentMode || sale.payment) === filters.payment;
-        
+
         // Extract yyyy-MM-dd part of the sale date safely
         const saleDateOnly = sale.date ? sale.date.split("T")[0] : "";
         const matchesDate =
           (!dateRange.start || saleDateOnly >= dateRange.start) &&
           (!dateRange.end || saleDateOnly <= dateRange.end);
-          
+
         return matchesSearch && matchesPayment && matchesDate;
       }),
     [sales, filters, dateRange],
@@ -1404,6 +1404,7 @@ export default function SalesManagement({ showToast }) {
             }}
             showToast={showToast}
             user={user}
+            storeProfile={storeProfile}
           />
         )}
         {showGeneratedInvoiceModal && (
@@ -1415,6 +1416,7 @@ export default function SalesManagement({ showToast }) {
               setGeneratedInvoice(null);
             }}
             showToast={showToast}
+            storeProfile={storeProfile}
             onNewBill={() => {
               setShowGeneratedInvoiceModal(false);
               setGeneratedInvoice(null);

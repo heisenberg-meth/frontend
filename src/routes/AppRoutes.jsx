@@ -62,6 +62,7 @@ export default function AppRoutes({
   handlePaymentComplete,
   handleAvatarUpload,
   profileData,
+  storeProfile,
   setShowAuthModal,
   setPendingUpdates,
   setShowLogoutModal,
@@ -160,7 +161,11 @@ export default function AppRoutes({
             path="/billing"
             element={
               <PageErrorBoundary>
-                <BillingPOS showToast={showToast} user={user} />
+                <BillingPOS
+                  showToast={showToast}
+                  user={user}
+                  storeProfile={storeProfile}
+                />
               </PageErrorBoundary>
             }
           />
@@ -184,7 +189,10 @@ export default function AppRoutes({
             path="/analytics"
             element={
               <PageErrorBoundary>
-                <SalesManagement showToast={showToast} />
+                <SalesManagement
+                  showToast={showToast}
+                  storeProfile={storeProfile}
+                />
               </PageErrorBoundary>
             }
           />
@@ -267,6 +275,7 @@ export default function AppRoutes({
                     setExpiryDays={setExpiryDays}
                     theme={theme}
                     setTheme={setTheme}
+                    storeProfile={storeProfile}
                     onClearAll={handleClearAll}
                     onSave={handleSaveSettings}
                     showToast={showToast}

@@ -101,6 +101,7 @@ function AppContent() {
   );
   const [lowStock, setLowStock] = useState(10);
   const [expiryDays, setExpiryDays] = useState(30);
+  const [storeProfile, setStoreProfile] = useState(null);
   const [currency] = useState({
     code: "INR",
     symbol: "₹",
@@ -155,9 +156,11 @@ function AppContent() {
         lowStock,
         expiryDays,
         theme: backendTheme,
+        storeProfile,
       } = res.data?.data || res.data || {};
       setLowStock(lowStock ?? 10);
       setExpiryDays(expiryDays ?? 30);
+      setStoreProfile(storeProfile || {});
       const localTheme = localStorage.getItem("viyan-theme");
       if (!localTheme && backendTheme) {
         setTheme(backendTheme);
@@ -279,6 +282,7 @@ function AppContent() {
     try {
       await api.put("settings", settings);
       showToast("Configuration saved and synchronized", "success");
+      await fetchSettings();
     } catch {
       showToast("Failed to save settings", "error");
     }
@@ -436,6 +440,8 @@ function AppContent() {
     );
   }
 
+  console.log("STORE PROFILE:", storeProfile);
+
   return (
     <>
       <div className="app-shell-root" data-theme={theme}>
@@ -443,6 +449,7 @@ function AppContent() {
           user={user}
           subscription={subscription}
           theme={theme}
+          storeProfile={storeProfile}
           medicines={medicines}
           expiryDays={expiryDays}
           lowStock={lowStock}
@@ -458,9 +465,6 @@ function AppContent() {
           setTheme={setTheme}
           handleActivateSubscription={handleActivateSubscription}
           handleAuthSuccess={handleAuthSuccess}
-          handleSelectTrial={handleSelectTrial}
-          handleSelectPro={handleSelectPro}
-          handlePaymentComplete={handlePaymentComplete}
           handleAvatarUpload={handleAvatarUpload}
           profileData={profileData}
           setShowAuthModal={setShowAuthModal}
