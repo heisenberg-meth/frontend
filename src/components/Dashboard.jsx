@@ -846,9 +846,9 @@ export default function Dashboard({
         )}
       </AnimatePresence>
 
-      <InventoryAnalyticsModal 
-        isOpen={showAnalyticsModal} 
-        onClose={() => setShowAnalyticsModal(false)} 
+      <InventoryAnalyticsModal
+        isOpen={showAnalyticsModal}
+        onClose={() => setShowAnalyticsModal(false)}
       />
     </div>
   );
