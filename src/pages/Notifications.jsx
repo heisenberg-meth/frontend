@@ -13,13 +13,13 @@ import {
   Trash2,
   Calendar,
   X,
-  Filter
+  Filter,
 } from "lucide-react";
 import {
   getNotifications,
   markNotificationRead,
   markAllNotificationsRead,
-  deleteNotification
+  deleteNotification,
 } from "../services/notification.service";
 import "../styles/Notifications.css";
 
@@ -29,7 +29,7 @@ const NOTIFICATION_TABS = [
   "Inventory",
   "Expiry Alerts",
   "System",
-  "Users"
+  "Users",
 ];
 
 function getNotificationIcon(type) {
@@ -72,13 +72,13 @@ export default function Notifications({ showToast }) {
       const data = Array.isArray(res.data?.data)
         ? res.data.data
         : Array.isArray(res.data)
-        ? res.data
-        : [];
-      
+          ? res.data
+          : [];
+
       // Ensure date strings are parseable or keep them as is if valid
-      const processedData = data.map(n => ({
+      const processedData = data.map((n) => ({
         ...n,
-        type: n.type || "System"
+        type: n.type || "System",
       }));
       setNotifications(processedData);
     } catch (err) {
@@ -92,8 +92,8 @@ export default function Notifications({ showToast }) {
   const handleMarkRead = async (id) => {
     try {
       await markNotificationRead(id);
-      setNotifications(prev =>
-        prev.map(n => (n.id === id ? { ...n, isRead: true } : n))
+      setNotifications((prev) =>
+        prev.map((n) => (n.id === id ? { ...n, isRead: true } : n)),
       );
     } catch (err) {
       console.error("Failed to mark read:", err);
@@ -103,7 +103,7 @@ export default function Notifications({ showToast }) {
   const handleMarkAllRead = async () => {
     try {
       await markAllNotificationsRead();
-      setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
+      setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })));
       showToast?.("All notifications marked as read", "success");
     } catch (err) {
       showToast?.("Failed to mark all as read", "error");
@@ -113,7 +113,7 @@ export default function Notifications({ showToast }) {
   const handleDelete = async (id) => {
     try {
       await deleteNotification(id);
-      setNotifications(prev => prev.filter(n => n.id !== id));
+      setNotifications((prev) => prev.filter((n) => n.id !== id));
       showToast?.("Notification deleted", "success");
     } catch (err) {
       showToast?.("Failed to delete notification", "error");
@@ -121,11 +121,12 @@ export default function Notifications({ showToast }) {
   };
 
   const handleClearAll = async () => {
-    if (!window.confirm("Are you sure you want to clear all notifications?")) return;
+    if (!window.confirm("Are you sure you want to clear all notifications?"))
+      return;
     try {
       // Assuming deleteNotification works with 'all' or we do it iteratively
       // For this UI, we'll just mock it if bulk delete isn't available
-      // await deleteNotification('all'); 
+      // await deleteNotification('all');
       setNotifications([]);
       showToast?.("All notifications cleared", "success");
     } catch (err) {
@@ -134,12 +135,14 @@ export default function Notifications({ showToast }) {
   };
 
   const filteredNotifications = useMemo(() => {
-    return notifications.filter(n => {
-      const matchTab = activeTab === "All" || n.type?.toLowerCase() === activeTab.toLowerCase() || 
+    return notifications.filter((n) => {
+      const matchTab =
+        activeTab === "All" ||
+        n.type?.toLowerCase() === activeTab.toLowerCase() ||
         (activeTab === "Expiry Alerts" && n.type?.toLowerCase() === "expiry");
-      
+
       if (!matchTab) return false;
-      
+
       if (searchQuery) {
         const query = searchQuery.toLowerCase();
         return (
@@ -151,10 +154,10 @@ export default function Notifications({ showToast }) {
     });
   }, [notifications, activeTab, searchQuery]);
 
-  const unreadCount = notifications.filter(n => !n.isRead).length;
+  const unreadCount = notifications.filter((n) => !n.isRead).length;
 
   const renderEmptyState = () => (
-    <motion.div 
+    <motion.div
       initial={{ opacity: 0, scale: 0.95 }}
       animate={{ opacity: 1, scale: 1 }}
       className="notif-page-empty"
@@ -172,9 +175,11 @@ export default function Notifications({ showToast }) {
       <div className="notif-page-header">
         <div className="notif-header-title">
           <h2>Notifications center</h2>
-          {unreadCount > 0 && <span className="notif-badge">{unreadCount} new</span>}
+          {unreadCount > 0 && (
+            <span className="notif-badge">{unreadCount} new</span>
+          )}
         </div>
-        
+
         <div className="notif-header-actions">
           <div className="notif-search-box">
             <Search size={16} className="search-icon" />
@@ -185,12 +190,18 @@ export default function Notifications({ showToast }) {
               onChange={(e) => setSearchQuery(e.target.value)}
             />
             {searchQuery && (
-              <button className="clear-search" onClick={() => setSearchQuery("")}>
+              <button
+                className="clear-search"
+                onClick={() => setSearchQuery("")}
+              >
                 <X size={14} />
               </button>
             )}
           </div>
-          <button className="notif-action-btn primary" onClick={handleMarkAllRead}>
+          <button
+            className="notif-action-btn primary"
+            onClick={handleMarkAllRead}
+          >
             <CheckCircle size={16} /> Mark All Read
           </button>
           <button className="notif-action-btn danger" onClick={handleClearAll}>
@@ -200,7 +211,7 @@ export default function Notifications({ showToast }) {
       </div>
 
       <div className="notif-tabs">
-        {NOTIFICATION_TABS.map(tab => (
+        {NOTIFICATION_TABS.map((tab) => (
           <button
             key={tab}
             className={`notif-tab ${activeTab === tab ? "active" : ""}`}
@@ -232,27 +243,33 @@ export default function Notifications({ showToast }) {
                   onClick={() => !notif.isRead && handleMarkRead(notif.id)}
                 >
                   {!notif.isRead && <div className="unread-dot"></div>}
-                  
+
                   <div className="notif-card-icon-wrap">
                     {getNotificationIcon(notif.type)}
                   </div>
-                  
+
                   <div className="notif-card-content">
                     <div className="notif-card-header">
-                      <h4 className="notif-card-title">{notif.title || notif.message}</h4>
+                      <h4 className="notif-card-title">
+                        {notif.title || notif.message}
+                      </h4>
                       <span className="notif-card-time">
                         <Calendar size={12} className="inline mr-1" />
-                        {new Date(notif.createdAt || Date.now()).toLocaleDateString()}
+                        {new Date(
+                          notif.createdAt || Date.now(),
+                        ).toLocaleDateString()}
                       </span>
                     </div>
-                    {notif.title && <p className="notif-card-desc">{notif.message}</p>}
-                    
+                    {notif.title && (
+                      <p className="notif-card-desc">{notif.message}</p>
+                    )}
+
                     <div className="notif-card-footer">
                       <span className="notif-type-badge">{notif.type}</span>
                     </div>
                   </div>
 
-                  <button 
+                  <button
                     className="notif-delete-btn"
                     onClick={(e) => {
                       e.stopPropagation();

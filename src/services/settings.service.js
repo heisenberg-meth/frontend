@@ -9,8 +9,7 @@ export const updateBillingSettings = (data) =>
   api.put("settings/billing", data);
 export const getTaxSettings = () => api.get("settings/tax");
 export const updateTaxSettings = (data) => api.put("settings/tax", data);
-export const getNotificationSettings = () =>
-  api.get("settings/notifications");
+export const getNotificationSettings = () => api.get("settings/notifications");
 export const updateNotificationSettings = (data) =>
   api.put("settings/notifications", data);
 export const getLoyaltySettings = () => api.get("settings/loyalty");
@@ -20,8 +19,7 @@ export const getSecuritySettings = () => api.get("settings/security");
 export const updateSecuritySettings = (data) =>
   api.put("settings/security", data);
 export const getAlertThresholds = () => api.get("settings/alerts");
-export const updateAlertThresholds = (data) =>
-  api.put("settings/alerts", data);
+export const updateAlertThresholds = (data) => api.put("settings/alerts", data);
 export const getStoreProfile = () => api.get("settings/store-profile");
 export const updateStoreProfile = (data) =>
   api.put("settings/store-profile", data);
@@ -32,8 +30,7 @@ export const getGstSettings = () => api.get("settings/gst");
 export const updateGstSettings = (data) => api.put("settings/gst", data);
 export const getGstHistory = (category) =>
   api.get(`settings/gst/history/${category}`);
-export const getInvoiceTemplate = () =>
-  api.get("settings/invoice-template");
+export const getInvoiceTemplate = () => api.get("settings/invoice-template");
 export const updateInvoiceTemplate = (data) =>
   api.put("settings/invoice-template", data);
 export const previewInvoiceTemplate = (data) =>

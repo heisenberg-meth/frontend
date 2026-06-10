@@ -36,8 +36,13 @@ window.addEventListener("unhandledrejection", (event) => {
 
 window.addEventListener("error", (event) => {
   const msg = event.message || "";
-  if (msg.includes("Failed to fetch dynamically imported module") || msg.includes("ChunkLoadError")) {
-    console.error("[Global Error] Chunk Load Error detected. Reloading page...");
+  if (
+    msg.includes("Failed to fetch dynamically imported module") ||
+    msg.includes("ChunkLoadError")
+  ) {
+    console.error(
+      "[Global Error] Chunk Load Error detected. Reloading page...",
+    );
     const lastReload = sessionStorage.getItem("chunk_reload");
     if (!lastReload || Date.now() - parseInt(lastReload) > 10000) {
       sessionStorage.setItem("chunk_reload", Date.now().toString());
@@ -59,5 +64,5 @@ createRoot(document.getElementById("root")).render(
     >
       <App />
     </ErrorBoundary>
-  </BrowserRouter>
+  </BrowserRouter>,
 );

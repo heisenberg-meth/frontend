@@ -886,7 +886,7 @@ body.modal-open {
 }
 
 /* ── HEADER ── */
-.inv-header {
+.inv-sheet .inv-header {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
@@ -1039,7 +1039,7 @@ body.modal-open {
   width: 100%;
 }
 
-.inv-table {
+.inv-sheet .inv-table {
   width: 100%;
   border-collapse: collapse;
   table-layout: auto;

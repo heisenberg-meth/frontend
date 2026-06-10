@@ -6,7 +6,13 @@ import api from "./api";
 import { normalizeArrayResponse } from "./utils/apiNormalizer";
 import { API_ROUTES } from "./constants/api.routes.js";
 import { SubscriptionStatus } from "./constants/enums";
-import { ShieldCheck, Sparkles, Lock, ShieldAlert, CheckCircle2 } from "lucide-react";
+import {
+  ShieldCheck,
+  Sparkles,
+  Lock,
+  ShieldAlert,
+  CheckCircle2,
+} from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import LogoutModal from "./components/LogoutModal";
 import AppRoutes from "./routes/AppRoutes";
@@ -25,8 +31,8 @@ function Paywall({ onActivate }) {
         </div>
         <h2>Access Restricted</h2>
         <p>
-          Your trial has concluded. Upgrade to a paid plan to continue
-          using all features.
+          Your trial has concluded. Upgrade to a paid plan to continue using all
+          features.
         </p>
 
         <div className="paywall-features">
@@ -91,7 +97,7 @@ function AppContent() {
 
   const [medicines, setMedicines] = useState([]);
   const [theme, setTheme] = useState(
-    () => localStorage.getItem("viyan-theme") || "dark"
+    () => localStorage.getItem("viyan-theme") || "dark",
   );
   const [lowStock, setLowStock] = useState(10);
   const [expiryDays, setExpiryDays] = useState(30);
@@ -100,14 +106,14 @@ function AppContent() {
     symbol: "₹",
     rate: 83.5,
   });
-  
+
   const profileData = useMemo(
     () => ({
       username: user?.username || "",
       email: user?.email || `${user?.username?.toLowerCase() || ""}@viyan.med`,
       fullName: user?.fullName || user?.username || "",
     }),
-    [user]
+    [user],
   );
 
   const [verifyPassword, setVerifyPassword] = useState("");
@@ -126,7 +132,9 @@ function AppContent() {
     )
       return;
     try {
-      const res = await api.get(API_ROUTES.INVENTORY_MEDICINES, { params: { limit: 100 } });
+      const res = await api.get(API_ROUTES.INVENTORY_MEDICINES, {
+        params: { limit: 100 },
+      });
       setMedicines(normalizeArrayResponse(res));
       setLastSync(new Date());
     } catch {
@@ -143,7 +151,11 @@ function AppContent() {
       return;
     try {
       const res = await api.get(API_ROUTES.SETTINGS);
-      const { lowStock, expiryDays, theme: backendTheme } = res.data?.data || res.data || {};
+      const {
+        lowStock,
+        expiryDays,
+        theme: backendTheme,
+      } = res.data?.data || res.data || {};
       setLowStock(lowStock ?? 10);
       setExpiryDays(expiryDays ?? 30);
       const localTheme = localStorage.getItem("viyan-theme");
@@ -199,7 +211,7 @@ function AppContent() {
 
     return () => clearInterval(syncInterval);
   }, [restored, user, status, fetchSettings, fetchData]);
-  
+
   useEffect(() => {
     const saved = localStorage.getItem("viyan-theme");
     if (saved) document.documentElement.setAttribute("data-theme", saved);
@@ -287,7 +299,7 @@ function AppContent() {
     } catch (err) {
       showToast(
         err.response?.data?.message || "Failed to update profile",
-        "error"
+        "error",
       );
     }
   };
@@ -316,11 +328,17 @@ function AppContent() {
     const handleSubscriptionExpired = (e) => {
       refreshUser();
       navigate("/subscription");
-      showToast(e.detail?.message || "Subscription expired. Please renew.", "error");
+      showToast(
+        e.detail?.message || "Subscription expired. Please renew.",
+        "error",
+      );
     };
 
     const handleSessionExpired = async (e) => {
-      showToast(e.detail?.reason || "Session expired. Please log in again.", "warning");
+      showToast(
+        e.detail?.reason || "Session expired. Please log in again.",
+        "warning",
+      );
       setShowLogoutModal(false);
       await logout({ silent: true });
       navigate("/login", { replace: true });
@@ -329,7 +347,10 @@ function AppContent() {
     window.addEventListener("subscription:expired", handleSubscriptionExpired);
     window.addEventListener("auth:sessionExpired", handleSessionExpired);
     return () => {
-      window.removeEventListener("subscription:expired", handleSubscriptionExpired);
+      window.removeEventListener(
+        "subscription:expired",
+        handleSubscriptionExpired,
+      );
       window.removeEventListener("auth:sessionExpired", handleSessionExpired);
     };
   }, [refreshUser, showToast, navigate, logout]);
@@ -383,16 +404,34 @@ function AppContent() {
 
   if (!restored || authLoading) {
     return (
-      <div className="auth-loading-screen" style={{
-        display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100vh', width: '100vw', backgroundColor: 'var(--bg-dark)'
-      }}>
+      <div
+        className="auth-loading-screen"
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          height: "100vh",
+          width: "100vw",
+          backgroundColor: "var(--bg-dark)",
+        }}
+      >
         <motion.div
           className="auth-loading-spinner"
           animate={{ rotate: 360 }}
           transition={{ repeat: Infinity, duration: 1, ease: "linear" }}
-          style={{ width: 40, height: 40, border: '4px solid rgba(79, 219, 200, 0.2)', borderTopColor: 'var(--primary)', borderRadius: '50%', marginBottom: 16 }}
+          style={{
+            width: 40,
+            height: 40,
+            border: "4px solid rgba(79, 219, 200, 0.2)",
+            borderTopColor: "var(--primary)",
+            borderRadius: "50%",
+            marginBottom: 16,
+          }}
         />
-        <p style={{ color: 'var(--text-muted)' }}>Initializing secure session...</p>
+        <p style={{ color: "var(--text-muted)" }}>
+          Initializing secure session...
+        </p>
       </div>
     );
   }
@@ -400,7 +439,7 @@ function AppContent() {
   return (
     <>
       <div className="app-shell-root" data-theme={theme}>
-        <AppRoutes 
+        <AppRoutes
           user={user}
           subscription={subscription}
           theme={theme}
@@ -427,7 +466,9 @@ function AppContent() {
           setShowAuthModal={setShowAuthModal}
           setPendingUpdates={setPendingUpdates}
           setShowLogoutModal={setShowLogoutModal}
-          PaywallComponent={() => <Paywall onActivate={() => navigate("/plans")} />}
+          PaywallComponent={() => (
+            <Paywall onActivate={() => navigate("/plans")} />
+          )}
         />
 
         <AnimatePresence>
@@ -445,17 +486,28 @@ function AppContent() {
                 style={{ maxWidth: 420 }}
               >
                 <div className="modal-header">
-                  <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                  <div
+                    style={{ display: "flex", alignItems: "center", gap: 12 }}
+                  >
                     <ShieldCheck size={24} style={{ color: "#4fdbc8" }} />
                     <h3>Verify Authorization</h3>
                   </div>
                 </div>
                 <div className="modal-body">
-                  <p style={{ color: "var(--text-muted)", fontSize: 14, lineHeight: 1.6 }}>
-                    Enter your current password to synchronize changes to your clinical credentials.
+                  <p
+                    style={{
+                      color: "var(--text-muted)",
+                      fontSize: 14,
+                      lineHeight: 1.6,
+                    }}
+                  >
+                    Enter your current password to synchronize changes to your
+                    clinical credentials.
                   </p>
                   <div className="input-v2" style={{ marginTop: 24 }}>
-                    <label><Lock size={12} /> CURRENT PASSWORD</label>
+                    <label>
+                      <Lock size={12} /> CURRENT PASSWORD
+                    </label>
                     <input
                       type="password"
                       placeholder="Enter current password"
@@ -465,17 +517,40 @@ function AppContent() {
                     />
                   </div>
                 </div>
-                <div className="modal-actions" style={{ marginTop: 32, display: "flex", gap: 12 }}>
+                <div
+                  className="modal-actions"
+                  style={{ marginTop: 32, display: "flex", gap: 12 }}
+                >
                   <button
                     className="modal-btn-outline"
-                    style={{ flex: 1, background: "none", border: "1px solid rgba(255,255,255,0.1)", color: "var(--text-muted)", borderRadius: 12, cursor: "pointer", padding: "12px" }}
-                    onClick={() => { setShowAuthModal(false); setVerifyPassword(""); }}
+                    style={{
+                      flex: 1,
+                      background: "none",
+                      border: "1px solid rgba(255,255,255,0.1)",
+                      color: "var(--text-muted)",
+                      borderRadius: 12,
+                      cursor: "pointer",
+                      padding: "12px",
+                    }}
+                    onClick={() => {
+                      setShowAuthModal(false);
+                      setVerifyPassword("");
+                    }}
                   >
                     Cancel
                   </button>
                   <button
                     className="modal-btn-primary"
-                    style={{ flex: 1, background: "#4fdbc8", color: "#031424", border: "none", borderRadius: 12, fontWeight: 800, cursor: "pointer", padding: "12px" }}
+                    style={{
+                      flex: 1,
+                      background: "#4fdbc8",
+                      color: "#031424",
+                      border: "none",
+                      borderRadius: 12,
+                      fontWeight: 800,
+                      cursor: "pointer",
+                      padding: "12px",
+                    }}
                     onClick={() => handleUpdateProfile(pendingUpdates)}
                     disabled={!verifyPassword}
                   >

@@ -1,12 +1,7 @@
 import { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { motion } from "framer-motion";
-import {
-  CheckCircle2,
-  Printer,
-  Download,
-  MessageCircle,
-} from "lucide-react";
+import { CheckCircle2, Printer, Download, MessageCircle } from "lucide-react";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
 
@@ -36,8 +31,10 @@ export default function InvoiceGeneratedModal({
   showToast,
   onNewBill,
 }) {
-  const [theme, setTheme] = useState(() => 
-    typeof document !== 'undefined' ? (document.documentElement.getAttribute("data-theme") || "light") : "light"
+  const [theme, setTheme] = useState(() =>
+    typeof document !== "undefined"
+      ? document.documentElement.getAttribute("data-theme") || "light"
+      : "light",
   );
 
   useEffect(() => {
@@ -112,9 +109,9 @@ export default function InvoiceGeneratedModal({
     if (theme === "dark") {
       setTheme("light");
       // Wait for React to apply classes and DOM to repaint
-      await new Promise((resolve) => setTimeout(resolve, 150)); 
+      await new Promise((resolve) => setTimeout(resolve, 150));
     }
-    
+
     try {
       await exportFn();
     } finally {
@@ -127,14 +124,20 @@ export default function InvoiceGeneratedModal({
   const handlePrint = () => {
     exportAsLightMode(() => {
       return new Promise((resolve) => {
-        const content = document.getElementById("invoice-preview-capture").innerHTML;
+        const content = document.getElementById(
+          "invoice-preview-capture",
+        ).innerHTML;
         const printWindow = window.open("", "_blank");
         printWindow.document.write("<html><head><title>Print Invoice</title>");
-        const styles = document.querySelectorAll("style, link[rel='stylesheet']");
+        const styles = document.querySelectorAll(
+          "style, link[rel='stylesheet']",
+        );
         styles.forEach((s) => {
           printWindow.document.write(s.outerHTML);
         });
-        printWindow.document.write("</head><body class='invoice-overlay' data-theme='light' style='background: white; padding: 0;'>");
+        printWindow.document.write(
+          "</head><body class='invoice-overlay' data-theme='light' style='background: white; padding: 0;'>",
+        );
         printWindow.document.write(content);
         printWindow.document.write("</body></html>");
         printWindow.document.close();
@@ -153,7 +156,11 @@ export default function InvoiceGeneratedModal({
     exportAsLightMode(async () => {
       try {
         const element = document.getElementById("invoice-preview-capture");
-        const canvas = await html2canvas(element, { scale: 2, useCORS: true, backgroundColor: "#ffffff" });
+        const canvas = await html2canvas(element, {
+          scale: 2,
+          useCORS: true,
+          backgroundColor: "#ffffff",
+        });
         const imgData = canvas.toDataURL("image/png");
         const pdf = new jsPDF("p", "mm", "a4");
         const pdfWidth = pdf.internal.pageSize.getWidth();
@@ -172,11 +179,11 @@ export default function InvoiceGeneratedModal({
     const invNo = sale.id;
     const dateStr = sale.date;
     const patName = sale.patient;
-    
+
     let itemsText = (sale.items || [])
       .map(
         (it) =>
-          `• ${it.name} ${it.qty > 1 ? `x${it.qty}` : ''} = ₹${Number(it.price * it.qty).toFixed(2)}`
+          `• ${it.name} ${it.qty > 1 ? `x${it.qty}` : ""} = ₹${Number(it.price * it.qty).toFixed(2)}`,
       )
       .join("\n");
 
@@ -185,7 +192,6 @@ export default function InvoiceGeneratedModal({
     window.open(url, "_blank");
     if (showToast) showToast("WhatsApp opened", "success");
   };
-
 
   return createPortal(
     <motion.div
@@ -208,7 +214,11 @@ export default function InvoiceGeneratedModal({
         <div className="igm-layout">
           {/* Left Side: Preview (70%) */}
           <div className="igm-preview-pane">
-            <div className="igm-preview-container" id="invoice-preview-capture" data-theme="light">
+            <div
+              className="igm-preview-container"
+              id="invoice-preview-capture"
+              data-theme="light"
+            >
               <InvoicePreview {...previewProps} />
             </div>
           </div>
@@ -228,40 +238,33 @@ export default function InvoiceGeneratedModal({
             </div>
 
             <div className="igm-actions-list">
-              <button
-                className="igm-btn primary"
-                onClick={handlePrint}
-              >
+              <button className="igm-btn primary" onClick={handlePrint}>
                 <Printer size={18} /> Print Invoice
               </button>
-              <button
-                className="igm-btn secondary"
-                onClick={handleDownloadPdf}
-              >
+              <button className="igm-btn secondary" onClick={handleDownloadPdf}>
                 <Download size={18} /> Download PDF
               </button>
-              <button
-                className="igm-btn whatsapp"
-                onClick={handleWhatsApp}
-              >
+              <button className="igm-btn whatsapp" onClick={handleWhatsApp}>
                 <MessageCircle size={18} /> WhatsApp
               </button>
-
             </div>
 
-            <div className="igm-footer" style={{ display: 'flex', gap: '12px' }}>
-              <button 
-                className="igm-btn close" 
-                onClick={onClose} 
-                style={{ height: '48px', flex: 1, justifyContent: 'center' }}
+            <div
+              className="igm-footer"
+              style={{ display: "flex", gap: "12px" }}
+            >
+              <button
+                className="igm-btn close"
+                onClick={onClose}
+                style={{ height: "48px", flex: 1, justifyContent: "center" }}
               >
                 Close Preview
               </button>
               {onNewBill && (
-                <button 
-                  className="igm-btn primary" 
-                  onClick={onNewBill} 
-                  style={{ height: '48px', flex: 1, justifyContent: 'center' }}
+                <button
+                  className="igm-btn primary"
+                  onClick={onNewBill}
+                  style={{ height: "48px", flex: 1, justifyContent: "center" }}
                 >
                   New Bill
                 </button>
@@ -269,8 +272,6 @@ export default function InvoiceGeneratedModal({
             </div>
           </div>
         </div>
-
-
       </motion.div>
     </motion.div>,
     document.body,

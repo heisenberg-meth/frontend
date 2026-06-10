@@ -11,17 +11,16 @@ export default function DashboardLayout({
 }) {
   return (
     <div className="app-shell" data-theme={theme}>
-      <Sidebar
-        user={user}
-        onSignOut={() => setShowLogoutModal(true)}
-      />
+      <Sidebar user={user} onSignOut={() => setShowLogoutModal(true)} />
 
       <div className="main-area">
         <Topbar
           user={user}
           toggleTheme={toggleTheme}
           theme={theme}
-          trialDays={user?.subscriptionStatus === "TRIAL" ? trialDaysLeft : null}
+          trialDays={
+            user?.subscriptionStatus === "TRIAL" ? trialDaysLeft : null
+          }
           onSignOut={() => setShowLogoutModal(true)}
         />
 

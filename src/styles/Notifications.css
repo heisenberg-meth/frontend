@@ -206,7 +206,9 @@
 }
 
 @keyframes spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .notif-grid {
@@ -393,26 +395,26 @@
   .notifications-page {
     padding: 20px;
   }
-  
+
   .notif-page-header {
     flex-direction: column;
     align-items: flex-start;
   }
-  
+
   .notif-header-actions {
     width: 100%;
     flex-wrap: wrap;
   }
-  
+
   .notif-search-box {
     flex: 1;
     min-width: 100%;
   }
-  
+
   .notif-card {
     padding: 16px;
   }
-  
+
   .notif-card-header {
     flex-direction: column;
     gap: 4px;

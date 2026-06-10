@@ -38,17 +38,17 @@ export default function ExpiryReport({ showToast }) {
     try {
       const res = await api.get(API_ROUTES.REPORTS_EXPIRY || "reports/expiry");
       if (res.data && res.data.success) {
-        setExpiryStock(res.data.data || []);
+        const apiData = res.data.data;
+        setExpiryStock(Array.isArray(apiData) ? apiData : []);
       } else {
         setErrorState("Invalid API response format");
       }
     } catch (err) {
       console.error("Expiry fetch error:", err);
-      setErrorState(
-        err.response?.data?.error ||
-          err.message ||
-          "Failed to load expiry report",
-      );
+      const apiError = err.response?.data?.error;
+      const errorMsg =
+        typeof apiError === "object" ? apiError.message : apiError;
+      setErrorState(errorMsg || err.message || "Failed to load expiry report");
     } finally {
       setLoading(false);
     }
@@ -87,7 +87,9 @@ export default function ExpiryReport({ showToast }) {
     };
   };
 
-  const processedStock = expiryStock.map(processStockItem);
+  const processedStock = (Array.isArray(expiryStock) ? expiryStock : []).map(
+    processStockItem,
+  );
   const expiredCount = processedStock.filter((i) => i.daysLeft <= 0).length;
   const expiring30DaysCount = processedStock.filter(
     (i) => i.daysLeft > 0 && i.daysLeft <= 30,
@@ -272,7 +274,7 @@ export default function ExpiryReport({ showToast }) {
           Expiry Report Error
         </h4>
         <p style={{ color: "var(--text-muted)", marginTop: "6px" }}>
-          {errorState}
+          {errorState?.message || String(errorState)}
         </p>
       </div>
     );

@@ -4,7 +4,8 @@ import { API_ROUTES } from "../constants/api.routes.js";
 /* ─── Prescription CRUD ─── */
 export const getPrescriptions = (params) =>
   api.get(API_ROUTES.PRESCRIPTIONS, { params });
-export const getPrescriptionById = (id) => api.get(`${API_ROUTES.PRESCRIPTIONS}/${id}`);
+export const getPrescriptionById = (id) =>
+  api.get(`${API_ROUTES.PRESCRIPTIONS}/${id}`);
 export const createPrescription = (data) =>
   api.post(API_ROUTES.PRESCRIPTIONS, data);
 

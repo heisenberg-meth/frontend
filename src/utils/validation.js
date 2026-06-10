@@ -20,8 +20,11 @@ export const validatePhone = (value) => {
 
 export const validateGST = (value) => {
   if (!value) return null;
-  const regex = /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[A-Z0-9]{1}[Z]{1}[A-Z0-9]{1}$/;
-  return regex.test(value) ? null : "Invalid GSTIN format (e.g., 27AAPFC1234M1ZL)";
+  const regex =
+    /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[A-Z0-9]{1}[Z]{1}[A-Z0-9]{1}$/;
+  return regex.test(value)
+    ? null
+    : "Invalid GSTIN format (e.g., 27AAPFC1234M1ZL)";
 };
 
 export const validateNumber = (value, fieldName, min = 0, max = Infinity) => {
@@ -37,7 +40,8 @@ export const validateDate = (value, fieldName, futureOnly = false) => {
   if (!value) return null;
   const date = new Date(value);
   if (isNaN(date.getTime())) return `${fieldName} must be a valid date`;
-  if (futureOnly && date < new Date()) return `${fieldName} must be in the future`;
+  if (futureOnly && date < new Date())
+    return `${fieldName} must be in the future`;
   return null;
 };
 
@@ -51,7 +55,9 @@ export const validateExpiryDate = (value) => {
 
 export const validateDuplicate = (value, list, field, fieldName) => {
   if (!value) return null;
-  const exists = list.some((item) => item[field]?.toLowerCase() === value.toLowerCase());
+  const exists = list.some(
+    (item) => item[field]?.toLowerCase() === value.toLowerCase(),
+  );
   return exists ? `${fieldName} already exists` : null;
 };
 

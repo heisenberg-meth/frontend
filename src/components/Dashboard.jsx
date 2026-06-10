@@ -477,7 +477,7 @@ export default function Dashboard({
                     </span>
                   </div>
                 ) : (
-                  expiring.slice(0, 5).map((m) => {
+                  expiring.map((m) => {
                     const days = getDays(getExpiry(m));
                     const isOverdue = days <= 0;
                     const displayDays = isOverdue ? Math.abs(days) : days;
@@ -846,9 +846,9 @@ export default function Dashboard({
         )}
       </AnimatePresence>
 
-      <InventoryAnalyticsModal 
-        isOpen={showAnalyticsModal} 
-        onClose={() => setShowAnalyticsModal(false)} 
+      <InventoryAnalyticsModal
+        isOpen={showAnalyticsModal}
+        onClose={() => setShowAnalyticsModal(false)}
       />
     </div>
   );

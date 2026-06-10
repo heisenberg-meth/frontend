@@ -28,24 +28,25 @@ function Spinner({ size = 14 }) {
 const formatDate = (date) => {
   if (!date) return "-";
   const parsed = new Date(date);
-  return Number.isNaN(parsed.getTime()) ? "-" : parsed.toLocaleDateString("en-IN");
+  return Number.isNaN(parsed.getTime())
+    ? "-"
+    : parsed.toLocaleDateString("en-IN");
 };
 
 const safeData = (result, ...keys) => {
-  if (result.status !== 'fulfilled') return [];
+  if (result.status !== "fulfilled") return [];
   let val = result.value?.data;
   for (const key of keys) {
-    if (val && typeof val === 'object' && key in val) {
+    if (val && typeof val === "object" && key in val) {
       val = val[key];
     }
   }
   if (Array.isArray(val)) return val;
-  if (val && typeof val === 'object') {
+  if (val && typeof val === "object") {
     if (Array.isArray(val.data)) return val.data;
   }
   return [];
 };
-
 
 export default function PurchaseManagement({ showToast }) {
   const [activeTab, setActiveTab] = useState("invoices");
@@ -68,21 +69,20 @@ export default function PurchaseManagement({ showToast }) {
         api.get(API_ROUTES.SUPPLIERS),
         api.get(API_ROUTES.PURCHASES_ORDERS),
         api.get(API_ROUTES.PURCHASES_RETURNS),
-        api.get(API_ROUTES.PURCHASES_ORDERS, { params: { status: 'RECEIVED' } }),
+        api.get(API_ROUTES.PURCHASES_ORDERS, {
+          params: { status: "RECEIVED" },
+        }),
       ]);
 
-      setMedicines(safeData(results[0], 'medicines', 'data'));
-      setSuppliers(safeData(results[1], 'data'));
-      setOrders(safeData(results[2], 'data'));
-      setReturns(safeData(results[3], 'data'));
-      setInvoices(safeData(results[4], 'data'));
+      setMedicines(safeData(results[0], "medicines", "data"));
+      setSuppliers(safeData(results[1], "data"));
+      setOrders(safeData(results[2], "data"));
+      setReturns(safeData(results[3], "data"));
+      setInvoices(safeData(results[4], "data"));
     } catch (err) {
       console.error("[FETCH DATA ERROR]", err);
 
-      showToast(
-        "Failed to load live data",
-        "error",
-      );
+      showToast("Failed to load live data", "error");
     }
   };
 
@@ -100,29 +100,30 @@ export default function PurchaseManagement({ showToast }) {
           api.get(API_ROUTES.SUPPLIERS),
           api.get(API_ROUTES.PURCHASES_ORDERS),
           api.get(API_ROUTES.PURCHASES_RETURNS),
-          api.get(API_ROUTES.PURCHASES_ORDERS, { params: { status: 'RECEIVED' } }),
+          api.get(API_ROUTES.PURCHASES_ORDERS, {
+            params: { status: "RECEIVED" },
+          }),
         ]);
 
         if (!mounted) return;
 
-        setMedicines(safeData(results[0], 'medicines', 'data'));
-        setSuppliers(safeData(results[1], 'data'));
-        setOrders(safeData(results[2], 'data'));
-        setReturns(safeData(results[3], 'data'));
-        setInvoices(safeData(results[4], 'data'));
+        setMedicines(safeData(results[0], "medicines", "data"));
+        setSuppliers(safeData(results[1], "data"));
+        setOrders(safeData(results[2], "data"));
+        setReturns(safeData(results[3], "data"));
+        setInvoices(safeData(results[4], "data"));
 
-        const failed = results.filter(r => r.status === 'rejected');
+        const failed = results.filter((r) => r.status === "rejected");
         if (failed.length > 0) {
-          console.warn(`[PURCHASE] ${failed.length} API(s) failed, using partial data`);
+          console.warn(
+            `[PURCHASE] ${failed.length} API(s) failed, using partial data`,
+          );
         }
       } catch (err) {
         console.error(err);
 
         if (mounted) {
-          showToast(
-            "Failed to load live data",
-            "error",
-          );
+          showToast("Failed to load live data", "error");
         }
       } finally {
         if (mounted) {
@@ -179,7 +180,8 @@ export default function PurchaseManagement({ showToast }) {
     0,
   );
   const gstTotal = purchaseItems.reduce(
-    (acc, i) => acc + (i.qty * (i.purchasePrice || 0) * (i.gstPercentage || 0)) / 100,
+    (acc, i) =>
+      acc + (i.qty * (i.purchasePrice || 0) * (i.gstPercentage || 0)) / 100,
     0,
   );
   const grandTotal = subtotal + gstTotal;
@@ -187,14 +189,22 @@ export default function PurchaseManagement({ showToast }) {
   const addMedicine = (medicine) => {
     const exists = purchaseItems.find((i) => i.id === medicine.id);
     if (exists) return;
-    setPurchaseItems([...purchaseItems, { ...medicine, qty: 1, purchasePrice: medicine.purchasePrice || 0, gstPercentage: medicine.gstPercentage || 12 }]);
+    setPurchaseItems([
+      ...purchaseItems,
+      {
+        ...medicine,
+        qty: 1,
+        purchasePrice: medicine.purchasePrice || 0,
+        gstPercentage: medicine.gstPercentage || 12,
+      },
+    ]);
     setMedicineSearch("");
   };
 
   const updateItem = (id, field, value) => {
     setPurchaseItems((prev) =>
       prev.map((item) =>
-        (item.id === id) ? { ...item, [field]: Number(value) } : item,
+        item.id === id ? { ...item, [field]: Number(value) } : item,
       ),
     );
   };
@@ -239,7 +249,9 @@ export default function PurchaseManagement({ showToast }) {
           purchasePrice: Number(item.purchasePrice || 0),
           sellingPrice: Number(item.sellingPrice || 0),
           batchNumber: item.batchNumber || `BATCH-${crypto.randomUUID()}`,
-          expiryDate: item.expiryDate || new Date(Date.now() + 365 * 86400000).toISOString(),
+          expiryDate:
+            item.expiryDate ||
+            new Date(Date.now() + 365 * 86400000).toISOString(),
         })),
         subtotal,
         gstAmount: gstTotal,
@@ -251,7 +263,10 @@ export default function PurchaseManagement({ showToast }) {
       await refreshData();
     } catch (err) {
       console.error("[PURCHASE] Save failed:", err);
-      showToast(err.response?.data?.error || err.message || "Failed to save purchase", "error");
+      showToast(
+        err.response?.data?.error || err.message || "Failed to save purchase",
+        "error",
+      );
     } finally {
       setSaving(false);
     }
@@ -309,7 +324,8 @@ export default function PurchaseManagement({ showToast }) {
 
   /* ── Filtered Data Logic ── */
   const filteredInvoices = invoices.filter((inv) => {
-    const supplierName = inv.supplier?.name || inv.supplierName || inv.supplier || "";
+    const supplierName =
+      inv.supplier?.name || inv.supplierName || inv.supplier || "";
     const matchesSupplier =
       filters.supplier === "All Suppliers" || supplierName === filters.supplier;
     const matchesStatus =
@@ -318,35 +334,44 @@ export default function PurchaseManagement({ showToast }) {
     const matchesSearch =
       (inv.id || "").toLowerCase().includes(filters.search.toLowerCase()) ||
       supplierName.toLowerCase().includes(filters.search.toLowerCase());
-    const matchesDate = !filters.date || (inv.date || inv.createdAt || "").includes(filters.date);
+    const matchesDate =
+      !filters.date || (inv.date || inv.createdAt || "").includes(filters.date);
     return matchesSupplier && matchesStatus && matchesSearch && matchesDate;
   });
 
   const filteredOrders = orders.filter((po) => {
-    const supplierName = po.supplier?.name || po.supplierName || po.supplier || "";
+    const supplierName =
+      po.supplier?.name || po.supplierName || po.supplier || "";
     const matchesSupplier =
       filters.supplier === "All Suppliers" || supplierName === filters.supplier;
     const matchesStatus =
       filters.status === "All Status" ||
       (po.status || "").toLowerCase() === filters.status.toLowerCase();
     const matchesSearch =
-      (po.id || po.poNumber || "").toLowerCase().includes(filters.search.toLowerCase()) ||
+      (po.id || po.poNumber || "")
+        .toLowerCase()
+        .includes(filters.search.toLowerCase()) ||
       supplierName.toLowerCase().includes(filters.search.toLowerCase());
-    const matchesDate = !filters.date || (po.date || po.createdAt || "").includes(filters.date);
+    const matchesDate =
+      !filters.date || (po.date || po.createdAt || "").includes(filters.date);
     return matchesSupplier && matchesStatus && matchesSearch && matchesDate;
   });
 
   const filteredReturns = returns.filter((ret) => {
-    const supplierName = ret.supplier?.name || ret.supplierName || ret.supplier || "";
+    const supplierName =
+      ret.supplier?.name || ret.supplierName || ret.supplier || "";
     const matchesSupplier =
       filters.supplier === "All Suppliers" || supplierName === filters.supplier;
     const matchesStatus =
       filters.status === "All Status" ||
       (ret.status || "").toLowerCase() === filters.status.toLowerCase();
     const matchesSearch =
-      (ret.id || ret.returnNumber || "").toLowerCase().includes(filters.search.toLowerCase()) ||
+      (ret.id || ret.returnNumber || "")
+        .toLowerCase()
+        .includes(filters.search.toLowerCase()) ||
       supplierName.toLowerCase().includes(filters.search.toLowerCase());
-    const matchesDate = !filters.date || (ret.date || ret.createdAt || "").includes(filters.date);
+    const matchesDate =
+      !filters.date || (ret.date || ret.createdAt || "").includes(filters.date);
     return matchesSupplier && matchesStatus && matchesSearch && matchesDate;
   });
 
@@ -355,7 +380,7 @@ export default function PurchaseManagement({ showToast }) {
       showToast("Receiving order...", "info");
       await api.post(API_ROUTES.PURCHASES_RECEIVE, {
         orderId: selectedRow.id,
-        items: selectedRow.items || []
+        items: selectedRow.items || [],
       });
       showToast("Order Received & Inventory Updated", "success");
       setShowReceiveModal(false);
@@ -373,7 +398,7 @@ export default function PurchaseManagement({ showToast }) {
         originalInvoiceId: selectedRow.id,
         items: selectedRow.items || [],
         reason: "Quality Issue",
-        supplierId: selectedRow.supplierId || selectedRow.supplier?.id
+        supplierId: selectedRow.supplierId || selectedRow.supplier?.id,
       });
       showToast("Return Submitted Successfully", "success");
       setShowReturnModal(false);
@@ -388,7 +413,9 @@ export default function PurchaseManagement({ showToast }) {
     return (
       <div style={{ padding: "80px", textAlign: "center" }}>
         <Spinner size={32} />
-        <p style={{ marginTop: 16, color: "var(--text-muted)" }}>Loading purchase management...</p>
+        <p style={{ marginTop: 16, color: "var(--text-muted)" }}>
+          Loading purchase management...
+        </p>
       </div>
     );
   }
@@ -398,11 +425,14 @@ export default function PurchaseManagement({ showToast }) {
       {/* ── Page Header ── */}
       <div className="purchases-header">
         <div>
-          <h1 style={{ fontFamily: "Outfit", fontSize: "28px", fontWeight: 700 }}>
+          <h1
+            style={{ fontFamily: "Outfit", fontSize: "28px", fontWeight: 700 }}
+          >
             Purchase Management
           </h1>
           <p className="result-meta">
-            Supplier invoices, purchase orders, and supplier returns — all in one place.
+            Supplier invoices, purchase orders, and supplier returns — all in
+            one place.
           </p>
 
           <div className="purchases-tabs">
@@ -438,19 +468,32 @@ export default function PurchaseManagement({ showToast }) {
         {[
           {
             label: "THIS MONTH PURCHASES",
-            val: "₹" + invoices.reduce((sum, inv) => sum + (inv.totalAmount || inv.total || 0), 0).toLocaleString(),
+            val:
+              "₹" +
+              invoices
+                .reduce(
+                  (sum, inv) => sum + (inv.totalAmount || inv.total || 0),
+                  0,
+                )
+                .toLocaleString(),
             icon: ShoppingCart,
             col: "var(--info)",
           },
           {
             label: "PENDING POs",
-            val: orders.filter(o => o.status === "PENDING" || o.status === "SENT").length,
+            val: orders.filter(
+              (o) => o.status === "PENDING" || o.status === "SENT",
+            ).length,
             icon: Clock,
             col: "var(--warning)",
           },
           {
             label: "SUPPLIER RETURNS",
-            val: "₹" + returns.reduce((sum, r) => sum + (r.refundAmount || r.value || 0), 0).toLocaleString(),
+            val:
+              "₹" +
+              returns
+                .reduce((sum, r) => sum + (r.refundAmount || r.value || 0), 0)
+                .toLocaleString(),
             icon: ArrowLeft,
             col: "var(--danger)",
           },
@@ -491,11 +534,15 @@ export default function PurchaseManagement({ showToast }) {
           <select
             className="filter-input"
             value={filters.supplier}
-            onChange={(e) => setFilters({ ...filters, supplier: e.target.value })}
+            onChange={(e) =>
+              setFilters({ ...filters, supplier: e.target.value })
+            }
           >
             <option>All Suppliers</option>
-            {suppliers.map(s => (
-              <option key={s.id} value={s.name}>{s.name}</option>
+            {suppliers.map((s) => (
+              <option key={s.id} value={s.name}>
+                {s.name}
+              </option>
             ))}
           </select>
           <select
@@ -527,87 +574,106 @@ export default function PurchaseManagement({ showToast }) {
         </div>
 
         {loading ? (
-          <div style={{ padding: "40px", textAlign: "center", color: "var(--on-surface-variant)" }}>
+          <div
+            style={{
+              padding: "40px",
+              textAlign: "center",
+              color: "var(--on-surface-variant)",
+            }}
+          >
             Loading live data...
           </div>
-        ) : activeTab === "invoices" && (
-          <table className="purchase-table">
-            <thead>
-              <tr>
-                <th>Date</th>
-                <th>Inv #</th>
-                <th>Supplier</th>
-                <th>Medicines</th>
-                <th>Total ₹</th>
-                <th>GST ₹</th>
-                <th>Payment</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredInvoices.map((inv) => (
-                <tr
-                  key={inv.id}
-                  onClick={() => handleOpenDrawer("invoice-detail", inv)}
-                >
-                  <td>{inv.date || formatDate(inv.createdAt)}</td>
-                  <td style={{ fontWeight: 700 }}>{inv.invoiceNumber || inv.id}</td>
-                  <td>{inv.supplier?.name || inv.supplierName || inv.supplier}</td>
-                  <td>{inv.items?.length || inv.medicines || 0} items</td>
-                  <td style={{ fontWeight: 700 }}>
-                    ₹{(inv.totalAmount || inv.total || 0).toLocaleString()}
-                  </td>
-                  <td className="result-meta">₹{inv.gstAmount || 0}</td>
-                  <td>
-                    <span
-                      className={`p-status ${(inv.status || "").toLowerCase().replace(" ", "")}`}
-                    >
-                      {inv.status || "PAID"}
-                    </span>
-                  </td>
-                  <td>
-                    <div style={{ display: "flex", gap: "8px" }}>
-                      <button
-                        className="micro-btn"
-                        title="View"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleOpenDrawer("invoice-detail", inv);
-                        }}
-                      >
-                        <Eye size={14} />
-                      </button>
-                      <button
-                        className="micro-btn"
-                        title="Edit"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleOpenDrawer("edit-purchase", inv);
-                        }}
-                      >
-                        <Edit2 size={14} />
-                      </button>
-                      <button
-                        className="micro-btn"
-                        title="Return"
-                        style={{ color: "var(--danger)" }}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setSelectedRow(inv);
-                          setShowReturnModal(true);
-                        }}
-                      >
-                        <ArrowLeft size={14} />
-                      </button>
-                    </div>
-                  </td>
+        ) : (
+          activeTab === "invoices" && (
+            <table className="purchase-table">
+              <thead>
+                <tr>
+                  <th>Date</th>
+                  <th>Inv #</th>
+                  <th>Supplier</th>
+                  <th>Medicines</th>
+                  <th>Total ₹</th>
+                  <th>GST ₹</th>
+                  <th>Payment</th>
+                  <th>Actions</th>
                 </tr>
-              ))}
-              {filteredInvoices.length === 0 && (
-                <tr><td colSpan="8" style={{textAlign: "center", padding: "20px"}}>No invoices found.</td></tr>
-              )}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {filteredInvoices.map((inv) => (
+                  <tr
+                    key={inv.id}
+                    onClick={() => handleOpenDrawer("invoice-detail", inv)}
+                  >
+                    <td>{inv.date || formatDate(inv.createdAt)}</td>
+                    <td style={{ fontWeight: 700 }}>
+                      {inv.invoiceNumber || inv.id}
+                    </td>
+                    <td>
+                      {inv.supplier?.name || inv.supplierName || inv.supplier}
+                    </td>
+                    <td>{inv.items?.length || inv.medicines || 0} items</td>
+                    <td style={{ fontWeight: 700 }}>
+                      ₹{(inv.totalAmount || inv.total || 0).toLocaleString()}
+                    </td>
+                    <td className="result-meta">₹{inv.gstAmount || 0}</td>
+                    <td>
+                      <span
+                        className={`p-status ${(inv.status || "").toLowerCase().replace(" ", "")}`}
+                      >
+                        {inv.status || "PAID"}
+                      </span>
+                    </td>
+                    <td>
+                      <div style={{ display: "flex", gap: "8px" }}>
+                        <button
+                          className="micro-btn"
+                          title="View"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleOpenDrawer("invoice-detail", inv);
+                          }}
+                        >
+                          <Eye size={14} />
+                        </button>
+                        <button
+                          className="micro-btn"
+                          title="Edit"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleOpenDrawer("edit-purchase", inv);
+                          }}
+                        >
+                          <Edit2 size={14} />
+                        </button>
+                        <button
+                          className="micro-btn"
+                          title="Return"
+                          style={{ color: "var(--danger)" }}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSelectedRow(inv);
+                            setShowReturnModal(true);
+                          }}
+                        >
+                          <ArrowLeft size={14} />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+                {filteredInvoices.length === 0 && (
+                  <tr>
+                    <td
+                      colSpan="8"
+                      style={{ textAlign: "center", padding: "20px" }}
+                    >
+                      No invoices found.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          )
         )}
 
         {!loading && activeTab === "orders" && (
@@ -639,7 +705,9 @@ export default function PurchaseManagement({ showToast }) {
                   </td>
                   <td>{po.deliveryDate || po.delivery || "-"}</td>
                   <td>
-                    <span className={`p-status ${(po.status || "").toLowerCase()}`}>
+                    <span
+                      className={`p-status ${(po.status || "").toLowerCase()}`}
+                    >
                       {po.status || "PENDING"}
                     </span>
                   </td>
@@ -673,7 +741,14 @@ export default function PurchaseManagement({ showToast }) {
                 </tr>
               ))}
               {filteredOrders.length === 0 && (
-                <tr><td colSpan="8" style={{textAlign: "center", padding: "20px"}}>No orders found.</td></tr>
+                <tr>
+                  <td
+                    colSpan="8"
+                    style={{ textAlign: "center", padding: "20px" }}
+                  >
+                    No orders found.
+                  </td>
+                </tr>
               )}
             </tbody>
           </table>
@@ -701,9 +776,15 @@ export default function PurchaseManagement({ showToast }) {
                   onClick={() => handleOpenDrawer("invoice-detail", ret)}
                 >
                   <td>{ret.date || formatDate(ret.createdAt)}</td>
-                  <td style={{ fontWeight: 700 }}>{ret.returnNumber || ret.id}</td>
-                  <td>{ret.supplier?.name || ret.supplierName || ret.supplier}</td>
-                  <td className="result-meta">{ret.originalInvoiceId || ret.origInv}</td>
+                  <td style={{ fontWeight: 700 }}>
+                    {ret.returnNumber || ret.id}
+                  </td>
+                  <td>
+                    {ret.supplier?.name || ret.supplierName || ret.supplier}
+                  </td>
+                  <td className="result-meta">
+                    {ret.originalInvoiceId || ret.origInv}
+                  </td>
                   <td>{ret.items?.length || ret.items || 0}</td>
                   <td style={{ fontWeight: 700, color: "var(--danger)" }}>
                     ₹{(ret.refundAmount || ret.value || 0).toLocaleString()}
@@ -720,7 +801,9 @@ export default function PurchaseManagement({ showToast }) {
                     </span>
                   </td>
                   <td>
-                    <span className={`p-status ${(ret.status || "").toLowerCase()}`}>
+                    <span
+                      className={`p-status ${(ret.status || "").toLowerCase()}`}
+                    >
                       {ret.status || "PROCESSED"}
                     </span>
                   </td>
@@ -739,7 +822,14 @@ export default function PurchaseManagement({ showToast }) {
                 </tr>
               ))}
               {filteredReturns.length === 0 && (
-                <tr><td colSpan="9" style={{textAlign: "center", padding: "20px"}}>No returns found.</td></tr>
+                <tr>
+                  <td
+                    colSpan="9"
+                    style={{ textAlign: "center", padding: "20px" }}
+                  >
+                    No returns found.
+                  </td>
+                </tr>
               )}
             </tbody>
           </table>
@@ -755,8 +845,20 @@ export default function PurchaseManagement({ showToast }) {
           }}
         >
           <div className="result-meta">
-            Total this period: <b style={{ color: "var(--text)" }}>₹{filteredInvoices.reduce((s,i)=>s+(i.totalAmount||0),0).toLocaleString()}</b> |
-            GST input credit: <b style={{ color: "var(--primary)" }}>₹{filteredInvoices.reduce((s,i)=>s+(i.gstAmount||0),0).toLocaleString()}</b>
+            Total this period:{" "}
+            <b style={{ color: "var(--text)" }}>
+              ₹
+              {filteredInvoices
+                .reduce((s, i) => s + (i.totalAmount || 0), 0)
+                .toLocaleString()}
+            </b>{" "}
+            | GST input credit:{" "}
+            <b style={{ color: "var(--primary)" }}>
+              ₹
+              {filteredInvoices
+                .reduce((s, i) => s + (i.gstAmount || 0), 0)
+                .toLocaleString()}
+            </b>
           </div>
         </div>
       </div>
@@ -790,7 +892,9 @@ export default function PurchaseManagement({ showToast }) {
                       ? "New Purchase Entry"
                       : drawer === "edit-purchase"
                         ? "Edit Purchase"
-                        : selectedRow?.invoiceNumber || selectedRow?.poNumber || selectedRow?.id}
+                        : selectedRow?.invoiceNumber ||
+                          selectedRow?.poNumber ||
+                          selectedRow?.id}
                   </h2>
                   {drawer === "invoice-detail" && (
                     <span
@@ -817,7 +921,8 @@ export default function PurchaseManagement({ showToast }) {
                           value={selectedSupplier?.name || ""}
                           onChange={(e) => {
                             const s = suppliers.find(
-                              (s) => (s.name || s.supplierName) === e.target.value,
+                              (s) =>
+                                (s.name || s.supplierName) === e.target.value,
                             );
                             setSelectedSupplier(s);
                           }}
@@ -869,14 +974,20 @@ export default function PurchaseManagement({ showToast }) {
                     <div className="p-form-card">
                       <span className="p-label">ADD MEDICINES</span>
                       <div className="medicine-toolbar">
-                        <div className="medicine-search-wrapper" style={{ position: "relative" }}>
+                        <div
+                          className="medicine-search-wrapper"
+                          style={{ position: "relative" }}
+                        >
                           <input
                             className="pos-input medicine-search-input"
                             placeholder="Search medicine to add..."
                             value={medicineSearch}
                             onChange={(e) => setMedicineSearch(e.target.value)}
                             onKeyDown={(e) => {
-                              if (e.key === "Enter" && filteredMedicines.length > 0) {
+                              if (
+                                e.key === "Enter" &&
+                                filteredMedicines.length > 0
+                              ) {
                                 addMedicine(filteredMedicines[0]);
                               }
                             }}
@@ -890,7 +1001,12 @@ export default function PurchaseManagement({ showToast }) {
                                   onClick={() => addMedicine(m)}
                                 >
                                   <span>{m.name}</span>
-                                  <span style={{ color: "var(--primary)", fontWeight: 600 }}>
+                                  <span
+                                    style={{
+                                      color: "var(--primary)",
+                                      fontWeight: 600,
+                                    }}
+                                  >
                                     ₹{m.purchasePrice}
                                   </span>
                                 </div>
@@ -898,11 +1014,17 @@ export default function PurchaseManagement({ showToast }) {
                             </div>
                           )}
                         </div>
-                        <button className="medicine-tool-btn" title="Scan Barcode">
+                        <button
+                          className="medicine-tool-btn"
+                          title="Scan Barcode"
+                        >
                           <ScanLine size={16} />
                           Scan
                         </button>
-                        <button className="medicine-tool-btn" title="Add Manually">
+                        <button
+                          className="medicine-tool-btn"
+                          title="Add Manually"
+                        >
                           <Plus size={16} />
                           Manual
                         </button>
@@ -913,7 +1035,7 @@ export default function PurchaseManagement({ showToast }) {
                         <div className="recent-medicines-list">
                           {medicines.slice(0, 4).map((m) => (
                             <button
-                               key={m.id}
+                              key={m.id}
                               className="recent-medicine-chip"
                               onClick={() => addMedicine(m)}
                             >
@@ -937,8 +1059,17 @@ export default function PurchaseManagement({ showToast }) {
                         {purchaseItems.length === 0 ? (
                           <tbody>
                             <tr>
-                              <td colSpan={5} style={{ textAlign: "center", padding: "24px", color: "rgba(255,255,255,0.25)", fontSize: "13px" }}>
-                                No medicines added yet. Search and add from above.
+                              <td
+                                colSpan={5}
+                                style={{
+                                  textAlign: "center",
+                                  padding: "24px",
+                                  color: "rgba(255,255,255,0.25)",
+                                  fontSize: "13px",
+                                }}
+                              >
+                                No medicines added yet. Search and add from
+                                above.
                               </td>
                             </tr>
                           </tbody>
@@ -948,7 +1079,9 @@ export default function PurchaseManagement({ showToast }) {
                               <tr key={item.id}>
                                 <td style={{ fontSize: "12px" }}>
                                   <b>{item.name}</b>
-                                  <div className="result-meta">GST: {item.gstPercentage}%</div>
+                                  <div className="result-meta">
+                                    GST: {item.gstPercentage}%
+                                  </div>
                                 </td>
                                 <td>
                                   <input
@@ -966,12 +1099,19 @@ export default function PurchaseManagement({ showToast }) {
                                     style={{ width: "65px" }}
                                     value={item.purchasePrice}
                                     onChange={(e) =>
-                                      updateItem(item.id, "purchasePrice", e.target.value)
+                                      updateItem(
+                                        item.id,
+                                        "purchasePrice",
+                                        e.target.value,
+                                      )
                                     }
                                   />
                                 </td>
                                 <td
-                                  style={{ textAlign: "right", fontWeight: 700 }}
+                                  style={{
+                                    textAlign: "right",
+                                    fontWeight: 700,
+                                  }}
                                 >
                                   ₹{(item.qty * item.purchasePrice).toFixed(2)}
                                 </td>
@@ -996,10 +1136,20 @@ export default function PurchaseManagement({ showToast }) {
                           <span>₹{subtotal.toFixed(2)}</span>
                         </div>
                         {purchaseItems.map((item) => {
-                          const itemGst = (item.qty * item.purchasePrice * item.gstPercentage) / 100;
+                          const itemGst =
+                            (item.qty *
+                              item.purchasePrice *
+                              item.gstPercentage) /
+                            100;
                           return (
-                            <div key={item.id} className="summary-row result-meta" style={{ fontSize: "11px" }}>
-                              <span>{item.name} (GST {item.gstPercentage}%)</span>
+                            <div
+                              key={item.id}
+                              className="summary-row result-meta"
+                              style={{ fontSize: "11px" }}
+                            >
+                              <span>
+                                {item.name} (GST {item.gstPercentage}%)
+                              </span>
                               <span>₹{itemGst.toFixed(2)}</span>
                             </div>
                           );
@@ -1059,7 +1209,10 @@ export default function PurchaseManagement({ showToast }) {
                           <div style={{ fontWeight: 700, fontSize: "13px" }}>
                             {uploadedFile.name}
                           </div>
-                          <div className="result-meta" style={{ fontSize: "10px" }}>
+                          <div
+                            className="result-meta"
+                            style={{ fontSize: "10px" }}
+                          >
                             {(uploadedFile.size / 1024).toFixed(1)} KB
                           </div>
                           <button
@@ -1081,12 +1234,17 @@ export default function PurchaseManagement({ showToast }) {
                         <>
                           <UploadCloud
                             size={32}
-                            style={{ color: "var(--primary)", marginBottom: "8px" }}
+                            style={{
+                              color: "var(--primary)",
+                              marginBottom: "8px",
+                            }}
                           />
                           <div>
                             <b>Click or Drag</b> to upload invoice PDF
                           </div>
-                          <div style={{ fontSize: "10px" }}>Max file size: 5MB</div>
+                          <div style={{ fontSize: "10px" }}>
+                            Max file size: 5MB
+                          </div>
                         </>
                       )}
                     </div>
@@ -1102,11 +1260,18 @@ export default function PurchaseManagement({ showToast }) {
                       </div>
                       <div className="detail-item">
                         <span className="detail-label">DATE</span>
-                        <span className="detail-value">{selectedRow.date || formatDate(selectedRow.createdAt)}</span>
+                        <span className="detail-value">
+                          {selectedRow.date ||
+                            formatDate(selectedRow.createdAt)}
+                        </span>
                       </div>
                       <div className="detail-item">
                         <span className="detail-label">REF #</span>
-                        <span className="detail-value">{selectedRow.referenceNumber || selectedRow.ref || "-"}</span>
+                        <span className="detail-value">
+                          {selectedRow.referenceNumber ||
+                            selectedRow.ref ||
+                            "-"}
+                        </span>
                       </div>
                     </div>
 
@@ -1127,11 +1292,19 @@ export default function PurchaseManagement({ showToast }) {
                               <td>{item.medicine?.name || item.name}</td>
                               <td>{item.quantity}</td>
                               <td>₹{item.purchasePrice}</td>
-                              <td style={{ textAlign: "right" }}>₹{Number(item.total || (item.quantity * item.price) || 0).toFixed(2)}</td>
+                              <td style={{ textAlign: "right" }}>
+                                ₹
+                                {Number(
+                                  item.total || item.quantity * item.price || 0,
+                                ).toFixed(2)}
+                              </td>
                             </tr>
                           ))}
-                          {(!selectedRow.items || selectedRow.items.length === 0) && (
-                            <tr><td colSpan="4">No item details available.</td></tr>
+                          {(!selectedRow.items ||
+                            selectedRow.items.length === 0) && (
+                            <tr>
+                              <td colSpan="4">No item details available.</td>
+                            </tr>
                           )}
                         </tbody>
                       </table>
@@ -1145,7 +1318,16 @@ export default function PurchaseManagement({ showToast }) {
                           marginBottom: "8px",
                         }}
                       >
-                        <span>Subtotal</span> <span>₹{Number(selectedRow?.subtotal || selectedRow?.totalAmount || selectedRow?.total || 0).toFixed(2)}</span>
+                        <span>Subtotal</span>{" "}
+                        <span>
+                          ₹
+                          {Number(
+                            selectedRow?.subtotal ||
+                              selectedRow?.totalAmount ||
+                              selectedRow?.total ||
+                              0,
+                          ).toFixed(2)}
+                        </span>
                       </div>
                       <div
                         style={{
@@ -1154,7 +1336,10 @@ export default function PurchaseManagement({ showToast }) {
                           marginBottom: "8px",
                         }}
                       >
-                        <span>GST</span> <span>₹{Number(selectedRow?.gstAmount || 0).toFixed(2)}</span>
+                        <span>GST</span>{" "}
+                        <span>
+                          ₹{Number(selectedRow?.gstAmount || 0).toFixed(2)}
+                        </span>
                       </div>
                       <div
                         style={{
@@ -1167,7 +1352,13 @@ export default function PurchaseManagement({ showToast }) {
                           color: "var(--primary)",
                         }}
                       >
-                        <span>TOTAL</span> <span>₹{Number(selectedRow?.totalAmount || selectedRow?.total || 0).toFixed(2)}</span>
+                        <span>TOTAL</span>{" "}
+                        <span>
+                          ₹
+                          {Number(
+                            selectedRow?.totalAmount || selectedRow?.total || 0,
+                          ).toFixed(2)}
+                        </span>
                       </div>
                     </div>
                   </div>
@@ -1227,7 +1418,12 @@ export default function PurchaseManagement({ showToast }) {
               <div className="stock-modal-body">
                 <div className="pos-input-group">
                   <label>Original Invoice</label>
-                  <input className="pos-input" value={selectedRow.invoiceNumber || selectedRow.id} disabled style={{ width: "100%" }} />
+                  <input
+                    className="pos-input"
+                    value={selectedRow.invoiceNumber || selectedRow.id}
+                    disabled
+                    style={{ width: "100%" }}
+                  />
                 </div>
                 <div style={{ marginTop: "20px" }}>
                   {(selectedRow.items || []).map((item, idx) => (
@@ -1313,7 +1509,8 @@ export default function PurchaseManagement({ showToast }) {
               </div>
               <div className="stock-modal-body">
                 <p className="result-meta" style={{ marginBottom: "16px" }}>
-                  Please confirm the quantities received for {selectedRow.poNumber || selectedRow.id}.
+                  Please confirm the quantities received for{" "}
+                  {selectedRow.poNumber || selectedRow.id}.
                 </p>
 
                 <table className="p-line-table">
@@ -1345,15 +1542,14 @@ export default function PurchaseManagement({ showToast }) {
                           />
                         </td>
                         <td>
-                          <input
-                            className="p-cost-input"
-                            type="date"
-                          />
+                          <input className="p-cost-input" type="date" />
                         </td>
                       </tr>
                     ))}
                     {(!selectedRow.items || selectedRow.items.length === 0) && (
-                      <tr><td colSpan="5">No items to receive.</td></tr>
+                      <tr>
+                        <td colSpan="5">No items to receive.</td>
+                      </tr>
                     )}
                   </tbody>
                 </table>
@@ -1365,10 +1561,7 @@ export default function PurchaseManagement({ showToast }) {
                 >
                   Cancel
                 </button>
-                <button
-                  className="pos-btn teal"
-                  onClick={handleReceiveOrder}
-                >
+                <button className="pos-btn teal" onClick={handleReceiveOrder}>
                   Confirm Receipt
                 </button>
               </div>

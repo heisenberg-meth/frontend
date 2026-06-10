@@ -231,7 +231,7 @@
 }
 
 .sup-table th {
-  padding: 18px 32px;
+  padding: 16px 24px;
   text-align: left;
   font-family: "Outfit", sans-serif;
   font-size: 11px;
@@ -243,7 +243,7 @@
 }
 
 .sup-table td {
-  padding: 20px 32px;
+  padding: 16px 24px;
   border-bottom: 1px solid var(--overlay-03);
   vertical-align: middle;
 }
@@ -362,4 +362,284 @@
   .sup-stats-row {
     grid-template-columns: repeat(2, 1fr);
   }
+}
+
+/* Table Action Buttons */
+.sup-row-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.sup-row-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--overlay-02);
+  color: var(--text-muted);
+  border: 1px solid var(--overlay-04);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.sup-row-btn:hover {
+  background: var(--overlay-05);
+  color: var(--primary);
+  border-color: var(--overlay-08);
+}
+
+.sup-row-btn.active:hover {
+  background: rgba(59, 130, 246, 0.1);
+  color: #3b82f6;
+  border-color: rgba(59, 130, 246, 0.3);
+}
+
+.sup-row-btn.danger:hover {
+  background: rgba(244, 63, 94, 0.1);
+  color: #f43f5e;
+  border-color: rgba(244, 63, 94, 0.3);
+}
+
+/* Modal Form Grid */
+.sup-form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  padding: 24px 32px;
+}
+
+.form-group.full {
+  grid-column: 1 / -1;
+}
+
+.form-group label {
+  display: block;
+  font-family: "Outfit", sans-serif;
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin-bottom: 8px;
+}
+
+.form-group input,
+.form-group select,
+.form-group textarea {
+  width: 100%;
+  background: var(--overlay-02);
+  border: 1px solid var(--overlay-06);
+  border-radius: 12px;
+  padding: 12px 16px;
+  color: var(--text);
+  font-family: "Manrope", sans-serif;
+  font-size: 14px;
+  transition: all 0.3s;
+}
+
+.form-group textarea {
+  resize: vertical;
+  min-height: 100px;
+}
+
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+  border-color: var(--primary);
+  background: var(--overlay-04);
+  box-shadow: 0 0 20px var(--primary-glow);
+  outline: none;
+}
+
+/* Modal Footer & Buttons */
+.modal-footer {
+  padding: 24px 32px;
+  border-top: 1px solid var(--overlay-04);
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+.modal-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 24px;
+  border-radius: 12px;
+  font-family: "Outfit", sans-serif;
+  font-weight: 700;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+  border: 1px solid transparent;
+}
+
+.modal-btn.cancel {
+  background: var(--overlay-02);
+  border-color: var(--overlay-06);
+  color: var(--text-muted);
+}
+
+.modal-btn.cancel:hover {
+  background: var(--overlay-04);
+  color: var(--text);
+  border-color: var(--overlay-08);
+}
+
+.modal-btn.confirm {
+  background: linear-gradient(135deg, var(--primary) 0%, #208d81 100%);
+  color: var(--bg-dark);
+  box-shadow: 0 4px 20px var(--primary-glow);
+}
+
+.modal-btn.confirm:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 32px rgba(79, 219, 200, 0.4);
+}
+
+.modal-btn.confirm:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Tag Input specific styles for dark theme */
+.sup-tag-input-wrap {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  background: var(--overlay-02);
+  border: 1px solid var(--overlay-06);
+  border-radius: 12px;
+  padding: 8px 12px;
+  transition: all 0.3s;
+  min-height: 46px;
+  align-items: center;
+}
+
+.sup-tag-input-wrap.focused {
+  border-color: var(--primary);
+  background: var(--overlay-04);
+  box-shadow: 0 0 20px var(--primary-glow);
+}
+
+.sup-tag-chip {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(59, 130, 246, 0.15);
+  color: #60a5fa;
+  padding: 4px 10px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  border: 1px solid rgba(59, 130, 246, 0.2);
+}
+
+.sup-tag-chip-remove {
+  background: none;
+  border: none;
+  color: currentColor;
+  opacity: 0.7;
+  cursor: pointer;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: opacity 0.2s;
+}
+
+.sup-tag-chip-remove:hover {
+  opacity: 1;
+}
+
+.sup-tag-inner-input {
+  flex: 1;
+  min-width: 120px;
+  background: transparent !important;
+  border: none !important;
+  padding: 0 !important;
+  color: var(--text) !important;
+  box-shadow: none !important;
+  font-size: 14px !important;
+  height: 24px;
+}
+
+.sup-tag-suggestions {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  background: var(--overlay-08);
+  backdrop-filter: blur(20px);
+  border: 1px solid var(--overlay-10);
+  border-radius: 12px;
+  overflow: hidden;
+  z-index: 10;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+}
+
+.sup-tag-suggestion-item {
+  padding: 12px 16px;
+  font-size: 14px;
+  color: var(--text);
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.sup-tag-suggestion-item:hover {
+  background: var(--overlay-10);
+  color: var(--primary);
+}
+
+/* Modal Headers */
+.modal-header {
+  padding: 24px 32px;
+  border-bottom: 1px solid var(--overlay-04);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.header-title-group {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.header-title-group h3 {
+  font-family: "Outfit", sans-serif;
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text);
+  margin: 0;
+}
+
+.modal-close-btn {
+  background: var(--overlay-02);
+  border: 1px solid var(--overlay-06);
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.modal-close-btn:hover {
+  background: rgba(244, 63, 94, 0.1);
+  color: #f43f5e;
+  border-color: rgba(244, 63, 94, 0.2);
+}
+
+.modal-scroll-area {
+  max-height: 60vh;
+  overflow-y: auto;
 }

@@ -39,9 +39,10 @@ export default function PnLReport({ from, to, showToast }) {
       }
     } catch (err) {
       console.error("PnL fetch error:", err);
-      setErrorState(
-        err.response?.data?.error || err.message || "Failed to load PnL report",
-      );
+      const apiError = err.response?.data?.error;
+      const errorMsg =
+        typeof apiError === "object" ? apiError.message : apiError;
+      setErrorState(errorMsg || err.message || "Failed to load PnL report");
     } finally {
       setLoading(false);
     }
@@ -103,7 +104,7 @@ export default function PnLReport({ from, to, showToast }) {
           PnL Report Error
         </h4>
         <p style={{ color: "var(--text-muted)", marginTop: "6px" }}>
-          {errorState}
+          {errorState?.message || String(errorState)}
         </p>
       </div>
     );

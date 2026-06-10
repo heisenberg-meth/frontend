@@ -732,7 +732,6 @@ ${printDiscount > 0 ? `<div style="display:flex;justify-content:space-between"><
     }, 800);
   };
 
-
   const openBillDetail = (bill) => {
     setSelectedBill(bill);
     setShowBillDetailDrawer(true);
@@ -890,7 +889,6 @@ ${printDiscount > 0 ? `<div style="display:flex;justify-content:space-between"><
         e.preventDefault();
         if (showNewBillConfirm) setShowNewBillConfirm(false);
         else if (showPreview) setShowPreview(false);
-
         else if (showReturnBillModal) setShowReturnBillModal(false);
         else if (showBillDetailDrawer) setShowBillDetailDrawer(false);
         else if (showAllBillsModal) setShowAllBillsModal(false);
@@ -1228,111 +1226,113 @@ ${printDiscount > 0 ? `<div style="display:flex;justify-content:space-between"><
 
             <div className="table-scroll-container">
               <table className="line-items-table">
-              <thead>
-                <tr>
-                  <th>Item</th>
-                  <th>Qty</th>
-                  <th>MRP</th>
-                  <th>Disc%</th>
-                  <th>GST%</th>
-                  <th>Total</th>
-                  <th></th>
-                </tr>
-              </thead>
-              <tbody>
-                {lineItems.map((item) => (
-                  <tr key={item.id}>
-                    <td>
-                      <div style={{ display: "flex", flexDirection: "column" }}>
-                        <span className="result-name">{item.name}</span>
-                        <span
-                          className="result-meta"
-                          style={{
-                            display: "flex",
-                            alignItems: "center",
-                            gap: "4px",
-                          }}
+                <thead>
+                  <tr>
+                    <th>Item</th>
+                    <th>Qty</th>
+                    <th>MRP</th>
+                    <th>Disc%</th>
+                    <th>GST%</th>
+                    <th>Total</th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {lineItems.map((item) => (
+                    <tr key={item.id}>
+                      <td>
+                        <div
+                          style={{ display: "flex", flexDirection: "column" }}
                         >
-                          <div
+                          <span className="result-name">{item.name}</span>
+                          <span
+                            className="result-meta"
                             style={{
-                              width: "6px",
-                              height: "6px",
-                              borderRadius: "50%",
-                              background: "var(--danger)",
+                              display: "flex",
+                              alignItems: "center",
+                              gap: "4px",
                             }}
+                          >
+                            <div
+                              style={{
+                                width: "6px",
+                                height: "6px",
+                                borderRadius: "50%",
+                                background: "var(--danger)",
+                              }}
+                            />
+                            {item.batch?.batchNumber ||
+                              item.batchNumber ||
+                              item.batchId ||
+                              "N/A"}{" "}
+                            · Exp {item.exp}
+                          </span>
+                        </div>
+                      </td>
+                      <td>
+                        <div className="qty-stepper">
+                          <button
+                            className="step-btn"
+                            onClick={() => updateQty(item.batchId, -1)}
+                          >
+                            <Minus size={12} />
+                          </button>
+                          <input
+                            className="qty-input"
+                            value={item.qty}
+                            readOnly
                           />
-                          {item.batch?.batchNumber ||
-                            item.batchNumber ||
-                            item.batchId ||
-                            "N/A"}{" "}
-                          · Exp {item.exp}
-                        </span>
-                      </div>
-                    </td>
-                    <td>
-                      <div className="qty-stepper">
-                        <button
-                          className="step-btn"
-                          onClick={() => updateQty(item.batchId, -1)}
-                        >
-                          <Minus size={12} />
-                        </button>
+                          <button
+                            className="step-btn"
+                            onClick={() => updateQty(item.batchId, 1)}
+                          >
+                            <Plus size={12} />
+                          </button>
+                        </div>
+                      </td>
+                      <td>
                         <input
-                          className="qty-input"
-                          value={item.qty}
+                          className="pos-input"
+                          style={{ width: "60px", padding: "6px" }}
+                          value={safeNumber(item.price)}
                           readOnly
                         />
+                      </td>
+                      <td>
+                        <input
+                          className="pos-input"
+                          style={{ width: "50px", padding: "6px" }}
+                          value={safeNumber(item.discPercent)}
+                          readOnly
+                        />
+                      </td>
+                      <td className="result-meta" style={{ fontWeight: 800 }}>
+                        {safeNumber(item.gst)}%
+                      </td>
+                      <td
+                        style={{
+                          textAlign: "right",
+                          fontWeight: 700,
+                          color: "var(--primary)",
+                        }}
+                      >
+                        ₹
+                        {(
+                          safeNumber(item.price) * safeNumber(item.qty)
+                        ).toFixed(2)}
+                      </td>
+                      <td style={{ textAlign: "right" }}>
                         <button
                           className="step-btn"
-                          onClick={() => updateQty(item.batchId, 1)}
+                          style={{ color: "var(--danger)" }}
+                          onClick={() => removeRow(item.batchId)}
                         >
-                          <Plus size={12} />
+                          <X size={14} />
                         </button>
-                      </div>
-                    </td>
-                    <td>
-                      <input
-                        className="pos-input"
-                        style={{ width: "60px", padding: "6px" }}
-                        value={safeNumber(item.price)}
-                        readOnly
-                      />
-                    </td>
-                    <td>
-                      <input
-                        className="pos-input"
-                        style={{ width: "50px", padding: "6px" }}
-                        value={safeNumber(item.discPercent)}
-                        readOnly
-                      />
-                    </td>
-                    <td className="result-meta" style={{ fontWeight: 800 }}>
-                      {safeNumber(item.gst)}%
-                    </td>
-                    <td
-                      style={{
-                        textAlign: "right",
-                        fontWeight: 700,
-                        color: "var(--primary)",
-                      }}
-                    >
-                      ₹
-                      {(safeNumber(item.price) * safeNumber(item.qty)).toFixed(
-                        2,
-                      )}
-                    </td>
-                    <td style={{ textAlign: "right" }}>
-                      <button
-                        className="step-btn"
-                        style={{ color: "var(--danger)" }}
-                        onClick={() => removeRow(item.batchId)}
-                      >
-                        <X size={14} />
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
               </table>
             </div>
 
@@ -1350,227 +1350,232 @@ ${printDiscount > 0 ? `<div style="display:flex;justify-content:space-between"><
 
             <div className="sticky-bottom-actions">
               <div className="bill-summary-v3">
-              <div className="summary-row">
-                <span>Subtotal</span>
-                <span>₹{subtotal.toFixed(2)}</span>
-              </div>
-              <div className="summary-row">
-                <span>CGST (avg {avgGst}%)</span>
-                <span>₹{cgstAmt.toFixed(2)}</span>
-              </div>
-              <div className="summary-row">
-                <span>SGST (avg {avgGst}%)</span>
-                <span>₹{sgstAmt.toFixed(2)}</span>
-              </div>
-              <div className="summary-row" style={{ alignItems: "center" }}>
-                <span>Discount (%)</span>
-                <div
-                  style={{ display: "flex", alignItems: "center", gap: "6px" }}
-                >
-                  <input
-                    className="pos-input"
-                    style={{
-                      width: "60px",
-                      height: "30px",
-                      textAlign: "right",
-                    }}
-                    value={discount}
-                    onChange={(e) => setDiscount(Number(e.target.value))}
-                    min="0"
-                    max="100"
-                    type="number"
-                  />
-                  <span
-                    style={{ fontSize: "11px", color: "var(--text-muted)" }}
-                  >
-                    = ₹{discountAmount.toFixed(2)}
-                  </span>
+                <div className="summary-row">
+                  <span>Subtotal</span>
+                  <span>₹{subtotal.toFixed(2)}</span>
                 </div>
-              </div>
-              <div className="summary-row grand">
-                <span>
-                  GRAND TOTAL{" "}
-                  <span
+                <div className="summary-row">
+                  <span>CGST (avg {avgGst}%)</span>
+                  <span>₹{cgstAmt.toFixed(2)}</span>
+                </div>
+                <div className="summary-row">
+                  <span>SGST (avg {avgGst}%)</span>
+                  <span>₹{sgstAmt.toFixed(2)}</span>
+                </div>
+                <div className="summary-row" style={{ alignItems: "center" }}>
+                  <span>Discount (%)</span>
+                  <div
                     style={{
-                      fontSize: "11px",
-                      fontWeight: 400,
-                      color: "var(--text-muted)",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "6px",
                     }}
                   >
-                    ({lineItems.length} item{lineItems.length !== 1 ? "s" : ""})
+                    <input
+                      className="pos-input"
+                      style={{
+                        width: "60px",
+                        height: "30px",
+                        textAlign: "right",
+                      }}
+                      value={discount}
+                      onChange={(e) => setDiscount(Number(e.target.value))}
+                      min="0"
+                      max="100"
+                      type="number"
+                    />
+                    <span
+                      style={{ fontSize: "11px", color: "var(--text-muted)" }}
+                    >
+                      = ₹{discountAmount.toFixed(2)}
+                    </span>
+                  </div>
+                </div>
+                <div className="summary-row grand">
+                  <span>
+                    GRAND TOTAL{" "}
+                    <span
+                      style={{
+                        fontSize: "11px",
+                        fontWeight: 400,
+                        color: "var(--text-muted)",
+                      }}
+                    >
+                      ({lineItems.length} item
+                      {lineItems.length !== 1 ? "s" : ""})
+                    </span>
                   </span>
-                </span>
-                <span>₹{grandTotal.toFixed(2)}</span>
+                  <span>₹{grandTotal.toFixed(2)}</span>
+                </div>
+                <div
+                  style={{
+                    fontSize: "11px",
+                    color: "var(--text-muted)",
+                    marginTop: "8px",
+                    textAlign: "right",
+                  }}
+                >
+                  {numberToWords(Math.round(grandTotal))}
+                </div>
               </div>
               <div
                 style={{
-                  fontSize: "11px",
-                  color: "var(--text-muted)",
-                  marginTop: "8px",
-                  textAlign: "right",
+                  marginTop: "16px",
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: "12px",
+                  width: "320px",
                 }}
               >
-                {numberToWords(Math.round(grandTotal))}
-              </div>
-            </div>
-            <div
-              style={{
-                marginTop: "16px",
-                display: "flex",
-                flexDirection: "column",
-                gap: "12px",
-                width: "320px",
-              }}
-            >
-              <div style={{ display: "flex", gap: "12px" }}>
+                <div style={{ display: "flex", gap: "12px" }}>
+                  <button
+                    className={`pos-btn outline ${draftSaving ? "btn-loading" : ""} ${draftSaved ? "btn-success" : ""} ${draftError ? "btn-error" : ""}`}
+                    style={{ flex: 1 }}
+                    onClick={handleSaveDraft}
+                    disabled={draftSaving || lineItems.length === 0}
+                    title="Save Draft (F2)"
+                  >
+                    {draftSaving ? (
+                      <>
+                        <Spinner size={16} /> Saving...
+                      </>
+                    ) : draftSaved ? (
+                      <>
+                        <CheckCircle2 size={16} /> Draft Saved!
+                      </>
+                    ) : (
+                      <>
+                        <Save size={16} /> Save Draft
+                      </>
+                    )}
+                  </button>
+                  <button
+                    className={`pos-btn outline ${printLoading ? "btn-loading" : ""}`}
+                    style={{ flex: 1 }}
+                    onClick={() => handlePrint()}
+                    disabled={printLoading || lineItems.length === 0}
+                    title="Print (F4)"
+                  >
+                    {printLoading ? (
+                      <>
+                        <Spinner size={16} /> Printing...
+                      </>
+                    ) : (
+                      <>
+                        <Printer size={16} /> Print
+                      </>
+                    )}
+                  </button>
+                </div>
                 <button
-                  className={`pos-btn outline ${draftSaving ? "btn-loading" : ""} ${draftSaved ? "btn-success" : ""} ${draftError ? "btn-error" : ""}`}
-                  style={{ flex: 1 }}
-                  onClick={handleSaveDraft}
-                  disabled={draftSaving || lineItems.length === 0}
-                  title="Save Draft (F2)"
+                  className={`pos-btn outline ${whatsappLoading ? "btn-loading" : ""}`}
+                  onClick={handleSendWhatsApp}
+                  disabled={whatsappLoading}
                 >
-                  {draftSaving ? (
+                  {whatsappLoading ? (
                     <>
-                      <Spinner size={16} /> Saving...
-                    </>
-                  ) : draftSaved ? (
-                    <>
-                      <CheckCircle2 size={16} /> Draft Saved!
+                      <Spinner size={16} /> Opening WhatsApp...
                     </>
                   ) : (
                     <>
-                      <Save size={16} /> Save Draft
+                      <MessageCircle size={16} /> Send WhatsApp
                     </>
                   )}
                 </button>
                 <button
-                  className={`pos-btn outline ${printLoading ? "btn-loading" : ""}`}
-                  style={{ flex: 1 }}
-                  onClick={() => handlePrint()}
-                  disabled={printLoading || lineItems.length === 0}
-                  title="Print (F4)"
-                >
-                  {printLoading ? (
-                    <>
-                      <Spinner size={16} /> Printing...
-                    </>
-                  ) : (
-                    <>
-                      <Printer size={16} /> Print
-                    </>
-                  )}
-                </button>
-              </div>
-              <button
-                className={`pos-btn outline ${whatsappLoading ? "btn-loading" : ""}`}
-                onClick={handleSendWhatsApp}
-                disabled={whatsappLoading}
-              >
-                {whatsappLoading ? (
-                  <>
-                    <Spinner size={16} /> Opening WhatsApp...
-                  </>
-                ) : (
-                  <>
-                    <MessageCircle size={16} /> Send WhatsApp
-                  </>
-                )}
-              </button>
-              <button
-                id="generate-invoice-btn"
-                className="pos-btn teal"
-                style={{ height: "48px", fontSize: "16px" }}
-                title="Generate Invoice (F8)"
-                onClick={async () => {
-                  if (!user?.branchId) {
-                    showToast(
-                      "Branch context missing. Cannot generate invoice.",
-                      "error",
-                    );
-                    return;
-                  }
-                  if (Number.isNaN(grandTotal) || grandTotal <= 0) {
-                    showToast("Invalid total amount calculation", "error");
-                    return;
-                  }
-                  if (lineItems.length === 0) {
-                    showToast("Add at least one medicine", "error");
-                    return;
-                  }
-                  setInvoiceSaving(true);
-                  try {
-                    const payload = {
-                      patientId: isWalkIn ? null : patient.id,
-                      patientName: isWalkIn
-                        ? "Walk-in Customer"
-                        : patient.name || "Walk-in Customer",
-                      patientPhone: isWalkIn ? null : patient.phone,
-                      items: lineItems.map((it) => ({
-                        medicineId: it.id,
-                        batchId: it.batchId,
-                        quantity: it.qty,
-                        unitPrice: it.price,
-                        gstPercentage: it.gst || 0,
-                      })),
-                      paymentMode: paymentMode,
-                      discountPercentage: safeNumber(discount),
-                      discountAmount: discountAmount,
-                      branchId: user.branchId,
-                    };
-                    const res = await api.post(
-                      API_ROUTES.BILLING_INVOICES,
-                      payload,
-                    );
-                    const rawInv = res.data?.data || res.data;
-                    const newInv = normalizeInvoice(rawInv);
+                  id="generate-invoice-btn"
+                  className="pos-btn teal"
+                  style={{ height: "48px", fontSize: "16px" }}
+                  title="Generate Invoice (F8)"
+                  onClick={async () => {
+                    if (!user?.branchId) {
+                      showToast(
+                        "Branch context missing. Cannot generate invoice.",
+                        "error",
+                      );
+                      return;
+                    }
+                    if (Number.isNaN(grandTotal) || grandTotal <= 0) {
+                      showToast("Invalid total amount calculation", "error");
+                      return;
+                    }
+                    if (lineItems.length === 0) {
+                      showToast("Add at least one medicine", "error");
+                      return;
+                    }
+                    setInvoiceSaving(true);
+                    try {
+                      const payload = {
+                        patientId: isWalkIn ? null : patient.id,
+                        patientName: isWalkIn
+                          ? "Walk-in Customer"
+                          : patient.name || "Walk-in Customer",
+                        patientPhone: isWalkIn ? null : patient.phone,
+                        items: lineItems.map((it) => ({
+                          medicineId: it.id,
+                          batchId: it.batchId,
+                          quantity: it.qty,
+                          unitPrice: it.price,
+                          gstPercentage: it.gst || 0,
+                        })),
+                        paymentMode: paymentMode,
+                        discountPercentage: safeNumber(discount),
+                        discountAmount: discountAmount,
+                        branchId: user.branchId,
+                      };
+                      const res = await api.post(
+                        API_ROUTES.BILLING_INVOICES,
+                        payload,
+                      );
+                      const rawInv = res.data?.data || res.data;
+                      const newInv = normalizeInvoice(rawInv);
 
-                    const invoiceWithPatient = {
-                      ...newInv,
-                      patientName: payload.patientName,
-                      patientPhone: payload.patientPhone,
-                    };
-
-                    setActiveInvoice(invoiceWithPatient);
-                    setBills((prev) => [
-                      normalizeBill({
+                      const invoiceWithPatient = {
                         ...newInv,
-                        paymentMethod: paymentMode,
                         patientName: payload.patientName,
                         patientPhone: payload.patientPhone,
-                      }),
-                      ...prev,
-                    ]);
-                    setShowPreview(true);
-                    showToast(`Invoice generated`, "success");
-                    // Draft is preserved allowing user to close preview and edit.
-                    setTimeout(() => barcodeInputRef.current?.focus(), 300);
-                  } catch (err) {
-                    console.error(err);
-                    showToast(
-                      err.response?.data?.message || "Failed to save invoice",
-                      "error",
-                    );
-                  } finally {
-                    setInvoiceSaving(false);
-                  }
-                }}
-                disabled={invoiceSaving || lineItems.length === 0}
-              >
-                {invoiceSaving ? (
-                  <>
-                    <Spinner size={20} /> SAVING INVOICE...
-                  </>
-                ) : (
-                  <>
-                    <CheckCircle2 size={24} /> GENERATE INVOICE
-                  </>
+                      };
+
+                      setActiveInvoice(invoiceWithPatient);
+                      setBills((prev) => [
+                        normalizeBill({
+                          ...newInv,
+                          paymentMethod: paymentMode,
+                          patientName: payload.patientName,
+                          patientPhone: payload.patientPhone,
+                        }),
+                        ...prev,
+                      ]);
+                      setShowPreview(true);
+                      showToast(`Invoice generated`, "success");
+                      // Draft is preserved allowing user to close preview and edit.
+                      setTimeout(() => barcodeInputRef.current?.focus(), 300);
+                    } catch (err) {
+                      console.error(err);
+                      showToast(
+                        err.response?.data?.message || "Failed to save invoice",
+                        "error",
+                      );
+                    } finally {
+                      setInvoiceSaving(false);
+                    }
+                  }}
+                  disabled={invoiceSaving || lineItems.length === 0}
+                >
+                  {invoiceSaving ? (
+                    <>
+                      <Spinner size={20} /> SAVING INVOICE...
+                    </>
+                  ) : (
+                    <>
+                      <CheckCircle2 size={24} /> GENERATE INVOICE
+                    </>
+                  )}
+                </button>
+                {draftError && (
+                  <div className="draft-error-text">{draftError}</div>
                 )}
-              </button>
-              {draftError && (
-                <div className="draft-error-text">{draftError}</div>
-              )}
-            </div>
+              </div>
             </div>
           </div>
         </div>
@@ -1882,7 +1887,13 @@ ${printDiscount > 0 ? `<div style="display:flex;justify-content:space-between"><
                 className="stock-modal-body"
                 style={{ padding: "32px", textAlign: "center" }}
               >
-                <h3 style={{ fontSize: "18px", fontWeight: 700, marginBottom: "12px" }}>
+                <h3
+                  style={{
+                    fontSize: "18px",
+                    fontWeight: 700,
+                    marginBottom: "12px",
+                  }}
+                >
                   Start New Bill?
                 </h3>
                 <p
@@ -1890,10 +1901,11 @@ ${printDiscount > 0 ? `<div style="display:flex;justify-content:space-between"><
                     fontSize: "15px",
                     fontWeight: 500,
                     marginBottom: "24px",
-                    color: "var(--text-secondary)"
+                    color: "var(--text-secondary)",
                   }}
                 >
-                  This will clear the current invoice and begin a new billing session.
+                  This will clear the current invoice and begin a new billing
+                  session.
                 </p>
                 <div
                   style={{
@@ -1925,7 +1937,6 @@ ${printDiscount > 0 ? `<div style="display:flex;justify-content:space-between"><
           </div>
         )}
       </AnimatePresence>
-
 
       <AnimatePresence>
         {showAllBillsModal && (

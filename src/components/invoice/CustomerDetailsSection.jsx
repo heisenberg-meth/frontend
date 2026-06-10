@@ -1,5 +1,16 @@
 import { useState } from "react";
-import { User, Phone, Stethoscope, FileText, MapPin, Shield, CreditCard, Calendar, Check, Loader2 } from "lucide-react";
+import {
+  User,
+  Phone,
+  Stethoscope,
+  FileText,
+  MapPin,
+  Shield,
+  CreditCard,
+  Calendar,
+  Check,
+  Loader2,
+} from "lucide-react";
 import api from "../../api.js";
 import { API_ROUTES } from "../../constants/api.routes.js";
 import { normalizeArrayResponse } from "../../utils/apiNormalizer";
@@ -21,7 +32,7 @@ export default function CustomerDetailsSection({
   setDueDate,
   isWalkIn,
   setIsWalkIn,
-  showToast
+  showToast,
 }) {
   const [loadingPatient, setLoadingPatient] = useState(false);
   const [patientResults, setPatientResults] = useState([]);
@@ -29,13 +40,13 @@ export default function CustomerDetailsSection({
 
   const handlePhoneChange = async (e) => {
     const phoneVal = e.target.value.replace(/\D/g, "").slice(0, 10);
-    setPatient(prev => ({ ...prev, phone: phoneVal }));
+    setPatient((prev) => ({ ...prev, phone: phoneVal }));
 
     if (phoneVal.length === 10) {
       setLoadingPatient(true);
       try {
         const res = await api.get(API_ROUTES.PATIENTS, {
-          params: { phone: phoneVal }
+          params: { phone: phoneVal },
         });
         const results = normalizeArrayResponse(res, "patients");
         if (results && results.length > 0) {
@@ -44,7 +55,10 @@ export default function CustomerDetailsSection({
         } else {
           setPatientResults([]);
           setShowDropdown(false);
-          showToast("New customer detected. Please enter customer name.", "info");
+          showToast(
+            "New customer detected. Please enter customer name.",
+            "info",
+          );
         }
       } catch (err) {
         console.error(err);
@@ -61,7 +75,7 @@ export default function CustomerDetailsSection({
     setPatient({
       id: p.id,
       name: p.fullName || p.name,
-      phone: p.phone
+      phone: p.phone,
     });
     if (p.address) {
       setAddress(p.address);
@@ -80,9 +94,7 @@ export default function CustomerDetailsSection({
           <div className="card-header-icon-wrapper">
             <User size={14} className="stroke-[2.5]" />
           </div>
-          <h3 className="card-header-title">
-            Customer & Billing Details
-          </h3>
+          <h3 className="card-header-title">Customer & Billing Details</h3>
         </div>
         <label className="flex items-center gap-1.5 cursor-pointer text-[11px] font-medium text-slate-500 hover:text-slate-800 transition-colors">
           <input
@@ -115,7 +127,9 @@ export default function CustomerDetailsSection({
               type="text"
               disabled={isWalkIn}
               value={isWalkIn ? "Walk-in Customer" : patient.name}
-              onChange={(e) => setPatient(prev => ({ ...prev, name: e.target.value }))}
+              onChange={(e) =>
+                setPatient((prev) => ({ ...prev, name: e.target.value }))
+              }
               placeholder="Patient full name"
               className="form-input form-input-has-icon disabled:opacity-40 disabled:cursor-not-allowed"
             />
@@ -136,13 +150,16 @@ export default function CustomerDetailsSection({
               className="form-input form-input-has-icon disabled:opacity-40 disabled:cursor-not-allowed"
             />
             {loadingPatient && (
-              <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 text-[#0d9488] animate-spin" size={14} />
+              <Loader2
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-[#0d9488] animate-spin"
+                size={14}
+              />
             )}
           </div>
 
           {showDropdown && patientResults.length > 0 && (
             <div className="absolute z-20 left-0 right-0 mt-1 bg-white border border-slate-200 rounded-lg shadow-lg max-h-48 overflow-y-auto divide-y divide-slate-100">
-              {patientResults.map(p => (
+              {patientResults.map((p) => (
                 <button
                   key={p.id}
                   type="button"
@@ -150,7 +167,9 @@ export default function CustomerDetailsSection({
                   className="w-full px-3 py-2 text-left text-xs text-slate-700 hover:bg-slate-50 flex items-center justify-between transition-colors"
                 >
                   <div>
-                    <div className="font-semibold text-slate-800">{p.fullName || p.name}</div>
+                    <div className="font-semibold text-slate-800">
+                      {p.fullName || p.name}
+                    </div>
                     <div className="text-[10px] text-slate-500">{p.phone}</div>
                   </div>
                   <Check size={12} className="text-[#0d9488]" />
@@ -232,8 +251,10 @@ export default function CustomerDetailsSection({
               onChange={(e) => setPaymentTerms(e.target.value)}
               className="form-input form-input-has-icon cursor-pointer"
             >
-              {termsOptions.map(opt => (
-                <option key={opt} value={opt}>{opt}</option>
+              {termsOptions.map((opt) => (
+                <option key={opt} value={opt}>
+                  {opt}
+                </option>
               ))}
             </select>
           </div>

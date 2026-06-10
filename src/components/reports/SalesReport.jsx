@@ -54,13 +54,13 @@ export default function SalesReport({ from, to, showToast }) {
 
   const exportCSV = () => {
     if (!data || !data.chart.length) return;
-    const headers = ["Date", "Invoices", "Revenue (₹)"];
+    const headers = ["Date", "Invoices", "Revenue (Rs.)"];
     const rows = data.chart.map((item) => [
       item.date,
       item.bills,
       item.revenue,
     ]);
-    const csvContent = [
+    const csvContent = "\uFEFF" + [
       headers.join(","),
       ...rows.map((r) => r.map((v) => `"${v}"`).join(",")),
     ].join("\n");
@@ -82,11 +82,11 @@ export default function SalesReport({ from, to, showToast }) {
       doc.text(`Sales Analytics Report (${from} to ${to})`, 14, 20);
       autoTable(doc, {
         startY: 30,
-        head: [["Date", "Invoices Count", "Revenue Amount"]],
+        head: [["Date", "Invoices Count", "Revenue Amount (Rs.)"]],
         body: data.chart.map((item) => [
           item.date,
           item.bills,
-          `₹${item.revenue.toLocaleString()}`,
+          `${item.revenue.toLocaleString()}`,
         ]),
         styles: { fontSize: 10 },
         headStyles: { fillColor: [79, 219, 200] },
@@ -120,6 +120,7 @@ export default function SalesReport({ from, to, showToast }) {
             th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
             th { background-color: #f5f5f5; }
             .header { margin-bottom: 20px; }
+            .no-print { display: none !important; }
           </style>
         </head>
         <body>
@@ -420,23 +421,23 @@ export default function SalesReport({ from, to, showToast }) {
           <table className="purchase-table">
             <thead>
               <tr>
-                <th>Date</th>
-                <th>Invoices</th>
-                <th>Revenue Amount</th>
+                <th style={{ width: "30%" }}>Date</th>
+                <th style={{ textAlign: "right", width: "30%" }}>Invoices</th>
+                <th style={{ textAlign: "right", width: "40%" }}>Revenue Amount</th>
               </tr>
             </thead>
             <tbody>
               {data.chart.map((d, i) => (
                 <tr key={i}>
                   <td>{d.date}</td>
-                  <td style={{ fontWeight: 700 }}>{d.bills}</td>
-                  <td style={{ fontWeight: 800, color: "var(--primary)" }}>
+                  <td style={{ fontWeight: 700, textAlign: "right" }}>{d.bills}</td>
+                  <td style={{ fontWeight: 800, color: "var(--primary)", textAlign: "right" }}>
                     ₹{(d.revenue || 0).toLocaleString()}
                   </td>
                 </tr>
               ))}
               <tr style={{ background: "rgba(79, 219, 200, 0.05)" }}>
-                <td colSpan={2} style={{ textAlign: "right", fontWeight: 800 }}>
+                <td colSpan={2} style={{ textAlign: "right", fontWeight: 800, paddingRight: "20px" }}>
                   TOTAL THIS PERIOD:
                 </td>
                 <td
@@ -444,6 +445,7 @@ export default function SalesReport({ from, to, showToast }) {
                     fontWeight: 800,
                     color: "var(--primary)",
                     fontSize: "16px",
+                    textAlign: "right"
                   }}
                 >
                   ₹{(summary.totalRevenue || 0).toLocaleString()}

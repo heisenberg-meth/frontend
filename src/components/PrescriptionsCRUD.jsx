@@ -164,9 +164,13 @@ function PrescriptionModal({ onClose, onSave, editData, showToast, saving }) {
     try {
       const formData = new FormData();
       formData.append("prescription", file);
-      const res = await api.post(`${API_ROUTES.PRESCRIPTIONS}/upload`, formData, {
-        headers: { "Content-Type": "multipart/form-data" },
-      });
+      const res = await api.post(
+        `${API_ROUTES.PRESCRIPTIONS}/upload`,
+        formData,
+        {
+          headers: { "Content-Type": "multipart/form-data" },
+        },
+      );
       const uploadedData = res.data.data || res.data;
       showToast("Prescription uploaded successfully", "success");
       onSave({ ...form, ...uploadedData, type: "Scanned" });
@@ -573,9 +577,9 @@ function PrescriptionViewModal({
               <button
                 className="rx-modal-btn verify"
                 onClick={() => onVerify(rx)}
-                disabled={processing === (rx.id)}
+                disabled={processing === rx.id}
               >
-                {processing === (rx.id) ? (
+                {processing === rx.id ? (
                   <Spinner size={16} />
                 ) : (
                   <>
@@ -586,9 +590,9 @@ function PrescriptionViewModal({
               <button
                 className="rx-modal-btn confirm"
                 onClick={() => onFulfill(rx)}
-                disabled={processing === (rx.id)}
+                disabled={processing === rx.id}
               >
-                {processing === (rx.id) ? (
+                {processing === rx.id ? (
                   <Spinner size={16} />
                 ) : (
                   <>
@@ -599,9 +603,9 @@ function PrescriptionViewModal({
               <button
                 className="rx-modal-btn danger"
                 onClick={() => onReject(rx)}
-                disabled={processing === (rx.id)}
+                disabled={processing === rx.id}
               >
-                {processing === (rx.id) ? (
+                {processing === rx.id ? (
                   <Spinner size={16} />
                 ) : (
                   <>
@@ -703,43 +707,38 @@ export default function PrescriptionsCRUD({ showToast }) {
   }, [showToast]);
 
   useEffect(() => {
-  let mounted = true;
+    let mounted = true;
 
-  const initialize = async () => {
-    try {
-      setLoading(true);
+    const initialize = async () => {
+      try {
+        setLoading(true);
 
-      const res = await getPrescriptions();
+        const res = await getPrescriptions();
 
-      if (!mounted) return;
+        if (!mounted) return;
 
-      const data = res.data.data || res.data;
+        const data = res.data.data || res.data;
 
-      setPrescriptions(
-        Array.isArray(data) ? data : []
-      );
-    } catch (err) {
-      console.error(err);
+        setPrescriptions(Array.isArray(data) ? data : []);
+      } catch (err) {
+        console.error(err);
 
-      if (mounted) {
-        showToast(
-          "Failed to load prescriptions",
-          "error"
-        );
+        if (mounted) {
+          showToast("Failed to load prescriptions", "error");
+        }
+      } finally {
+        if (mounted) {
+          setLoading(false);
+        }
       }
-    } finally {
-      if (mounted) {
-        setLoading(false);
-      }
-    }
-  };
+    };
 
-  initialize();
+    initialize();
 
-  return () => {
-    mounted = false;
-  };
-}, [showToast]);
+    return () => {
+      mounted = false;
+    };
+  }, [showToast]);
 
   const filtered = useMemo(() => {
     return prescriptions.filter((rx) => {
@@ -1063,9 +1062,9 @@ export default function PrescriptionsCRUD({ showToast }) {
                             className="rx-row-btn active"
                             title="Fulfill"
                             onClick={() => handleFulfill(rx)}
-                            disabled={processing === (rx.id)}
+                            disabled={processing === rx.id}
                           >
-                            {processing === (rx.id) ? (
+                            {processing === rx.id ? (
                               <Spinner size={14} />
                             ) : (
                               <ClipboardCheck size={16} />

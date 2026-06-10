@@ -34,6 +34,9 @@ const InventoryCRUD = lazy(() => import("../components/InventoryCRUD"));
 const SubscriptionCRUD = lazy(() => import("../components/SubscriptionCRUD"));
 const AccountingTax = lazy(() => import("../components/AccountingTax"));
 const Notifications = lazy(() => import("../pages/Notifications"));
+const InventoryAnalyticsFull = lazy(
+  () => import("../components/inventory/InventoryAnalyticsFull"),
+);
 
 export default function AppRoutes({
   user,
@@ -134,6 +137,14 @@ export default function AppRoutes({
             element={
               <PageErrorBoundary>
                 <InventoryCRUD showToast={showToast} title="Stock Management" />
+              </PageErrorBoundary>
+            }
+          />
+          <Route
+            path="/inventory/analytics"
+            element={
+              <PageErrorBoundary>
+                <InventoryAnalyticsFull showToast={showToast} />
               </PageErrorBoundary>
             }
           />

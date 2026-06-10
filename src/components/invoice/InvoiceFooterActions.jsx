@@ -6,7 +6,7 @@ export default function InvoiceFooterActions({
   onGenerate,
   savingDraft,
   savingInvoice,
-  disabled
+  disabled,
 }) {
   return (
     <div className="invoice-footer">
@@ -44,11 +44,13 @@ export default function InvoiceFooterActions({
       >
         {savingInvoice ? (
           <>
-            <Loader2 size={16} className="animate-spin text-[#0c1321]" /> Generating...
+            <Loader2 size={16} className="animate-spin text-[#0c1321]" />{" "}
+            Generating...
           </>
         ) : (
           <>
-            <FileText size={16} className="text-[#0c1321]" /> Generate & Save Invoice
+            <FileText size={16} className="text-[#0c1321]" /> Generate & Save
+            Invoice
           </>
         )}
       </button>

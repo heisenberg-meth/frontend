@@ -52,8 +52,12 @@ export function normalizeArray(res, dataKey) {
 }
 
 export function getErrorMessage(error) {
-  if (error?.response?.data?.error?.message) return error.response.data.error.message;
-  if (error?.response?.data?.error) return typeof error.response.data.error === "string" ? error.response.data.error : "Request failed";
+  if (error?.response?.data?.error?.message)
+    return error.response.data.error.message;
+  if (error?.response?.data?.error)
+    return typeof error.response.data.error === "string"
+      ? error.response.data.error
+      : "Request failed";
   if (error?.message) return error.message;
   return "An unexpected error occurred";
 }

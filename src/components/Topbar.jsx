@@ -486,7 +486,9 @@ export default function Topbar({
                     <div className="notif-header">
                       <div className="notif-header-left">
                         <h3>Notifications</h3>
-                        {unreadCount > 0 && <span className="notif-badge">{unreadCount} new</span>}
+                        {unreadCount > 0 && (
+                          <span className="notif-badge">{unreadCount} new</span>
+                        )}
                       </div>
                       {unreadCount > 0 && (
                         <button
@@ -508,12 +510,16 @@ export default function Topbar({
                               setShowNotifications(false);
                             }}
                           >
-                            {!item.isRead && <div className="notif-unread-dot" />}
+                            {!item.isRead && (
+                              <div className="notif-unread-dot" />
+                            )}
                             <div className="notif-item-icon">
                               {getNotifDropdownIcon(item.type)}
                             </div>
                             <div className="notif-item-content">
-                              <h4 className="notif-item-title">{item.title || item.type || "Notification"}</h4>
+                              <h4 className="notif-item-title">
+                                {item.title || item.type || "Notification"}
+                              </h4>
                               <p className="notif-item-desc">{item.message}</p>
                               <span className="notif-item-time">Just now</span>
                             </div>

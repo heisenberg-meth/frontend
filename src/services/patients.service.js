@@ -23,8 +23,7 @@ export const getPatientPurchaseHistory = (id) =>
   api.get(`patients/${id}/purchase-history`);
 export const getPatientPrescriptions = (id) =>
   api.get(`patients/${id}/prescriptions`);
-export const getPatientInvoices = (id) =>
-  api.get(`patients/${id}/invoices`);
+export const getPatientInvoices = (id) => api.get(`patients/${id}/invoices`);
 export const getPatientRefills = (id) => api.get(`patients/${id}/refills`);
 
 /* ─── Patient Prescriptions ─── */
@@ -32,5 +31,4 @@ export const createPatientPrescription = (data) =>
   api.post("prescriptions", data);
 export const getCustomerPrescriptions = (patientId) =>
   api.get(`patients/${patientId}/prescriptions`);
-export const getPrescriptionById = (id) =>
-  api.get(`prescriptions/${id}`);
+export const getPrescriptionById = (id) => api.get(`prescriptions/${id}`);

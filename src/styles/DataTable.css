@@ -1,7 +1,11 @@
 /* ── DATA TABLE REUSABLE STYLES ── */
 
 .data-table-container {
-  background: linear-gradient(145deg, var(--overlay-03) 0%, var(--overlay-01) 100%);
+  background: linear-gradient(
+    145deg,
+    var(--overlay-03) 0%,
+    var(--overlay-01) 100%
+  );
   backdrop-filter: blur(24px);
   border: 1px solid var(--overlay-06);
   border-radius: 28px;

@@ -1,4 +1,4 @@
-import { useState, useRef, useMemo, useEffect , useCallback} from "react";
+import { useState, useRef, useMemo, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Truck,
@@ -17,6 +17,8 @@ import {
   ShieldCheck,
   Trash2,
   Loader2,
+  ChevronDown,
+  Check,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -24,7 +26,75 @@ import {
   createSupplier,
   updateSupplier,
   deleteSupplier,
-} from "../services/suppliers.service";
+} from "../services/suppliers.service.js";
+
+function CustomDropdown({ value, onChange, options, placeholder = "Select" }) {
+  const [isOpen, setIsOpen] = useState(false);
+  const dropdownRef = useRef(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  return (
+    <div className="custom-dropdown-container" ref={dropdownRef}>
+      <button
+        className="custom-dropdown-trigger"
+        onClick={() => setIsOpen(!isOpen)}
+        aria-haspopup="listbox"
+        aria-expanded={isOpen}
+      >
+        <span>{value === "All Categories" ? placeholder : value}</span>
+        <ChevronDown
+          size={16}
+          className={`dropdown-icon ${isOpen ? "open" : ""}`}
+        />
+      </button>
+
+      <AnimatePresence>
+        {isOpen && (
+          <motion.div
+            className="custom-dropdown-menu"
+            initial={{ opacity: 0, y: -10, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -10, scale: 0.95 }}
+            transition={{ duration: 0.15 }}
+            role="listbox"
+          >
+            {options.map((opt) => {
+              const optValue = typeof opt === "object" ? opt.value : opt;
+              const optLabel = typeof opt === "object" ? opt.label : opt;
+              return (
+                <div
+                  key={optValue}
+                  className={`custom-dropdown-item ${value === optValue ? "selected" : ""}`}
+                  onClick={() => {
+                    onChange(optValue);
+                    setIsOpen(false);
+                  }}
+                  role="option"
+                  aria-selected={value === optValue}
+                >
+                  <span>{optLabel}</span>
+                  {value === optValue && (
+                    <Check size={14} className="check-icon" />
+                  )}
+                </div>
+              );
+            })}
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
 function Spinner({ size = 14 }) {
   return (
     <Loader2 size={size} style={{ animation: "spin 0.8s linear infinite" }} />
@@ -45,6 +115,31 @@ const DRUG_OPTIONS = [
   "Vaccines",
 ];
 
+const PAYMENT_TERMS_MAP = {
+  "Net 15": 15,
+  "Net 30": 30,
+  "Net 45": 45,
+  "Advance": 0,
+};
+
+const LEAD_TIME_MAP = {
+  "1 day": 1,
+  "2 days": 2,
+  "3 days": 3,
+  "1 week": 7,
+  "2 weeks": 14,
+};
+
+const getPaymentTermsStr = (days) => {
+  const entry = Object.entries(PAYMENT_TERMS_MAP).find(([, v]) => v === days);
+  return entry ? entry[0] : "Net 30";
+};
+
+const getLeadTimeStr = (days) => {
+  const entry = Object.entries(LEAD_TIME_MAP).find(([, v]) => v === days);
+  return entry ? entry[0] : "2 days";
+};
+
 const getInitials = (name) =>
   name
     .split(" ")
@@ -54,7 +149,7 @@ const getInitials = (name) =>
     .toUpperCase();
 
 /* ─── Tag Input ─── */
-function TagInput({ tags, onChange }) {
+function TagInput({ tags = [], onChange }) {
   const [inputVal, setInputVal] = useState("");
   const [focused, setFocused] = useState(false);
   const [showSuggestions, setShowSuggestions] = useState(false);
@@ -152,14 +247,26 @@ function SupplierModal({ onClose, onSave, editData, showToast, saving }) {
     categories: [],
     leadTime: "2 days",
     paymentTerms: "Net 30",
+    address: "",
     notes: "",
     status: "active",
   };
-  const [form, setForm] = useState(editData || EMPTY);
+
+  const initialForm = editData ? {
+    ...EMPTY,
+    ...editData,
+    contact: editData.contact || editData.contactPerson || "",
+    categories: editData.categories || editData.drugCategories || [],
+    gst: editData.gst || editData.gstNumber || "",
+    paymentTerms: editData.paymentTerms || getPaymentTermsStr(editData.paymentTermsDays),
+    leadTime: editData.leadTime || getLeadTimeStr(editData.leadTimeDays),
+  } : EMPTY;
+
+  const [form, setForm] = useState(initialForm);
   const set = (key, val) => setForm((f) => ({ ...f, [key]: val }));
 
   const handleSave = () => {
-    if (!form.name.trim() || !form.contact.trim() || !form.phone.trim()) {
+    if (!(form.name || "").trim() || !(form.contact || "").trim() || !(form.phone || "").trim()) {
       showToast("Supplier Name, Contact, and Phone are required.", "error");
       return;
     }
@@ -228,31 +335,38 @@ function SupplierModal({ onClose, onSave, editData, showToast, saving }) {
             <div className="form-group full">
               <label>Medicine Categories</label>
               <TagInput
-                tags={form.categories}
+                tags={form.categories || []}
                 onChange={(cats) => set("categories", cats)}
               />
             </div>
             <div className="form-group">
               <label>Avg. Lead Time</label>
               <select
+                className="pos-input"
                 value={form.leadTime}
                 onChange={(e) => set("leadTime", e.target.value)}
               >
-                {["1 day", "2 days", "3 days", "1 week", "2 weeks"].map((o) => (
-                  <option key={o}>{o}</option>
-                ))}
+                {["1 day", "2 days", "3 days", "1 week", "2 weeks"].map(opt => <option key={opt} value={opt}>{opt}</option>)}
               </select>
             </div>
             <div className="form-group">
               <label>Payment Terms</label>
               <select
+                className="pos-input"
                 value={form.paymentTerms}
                 onChange={(e) => set("paymentTerms", e.target.value)}
               >
-                {["Net 15", "Net 30", "Net 45", "Advance"].map((o) => (
-                  <option key={o}>{o}</option>
-                ))}
+                {["Net 15", "Net 30", "Net 45", "Advance"].map(opt => <option key={opt} value={opt}>{opt}</option>)}
               </select>
+            </div>
+            <div className="form-group full">
+              <label>Address</label>
+              <textarea
+                placeholder="Complete address details…"
+                value={form.address}
+                onChange={(e) => set("address", e.target.value)}
+                style={{ minHeight: "80px" }}
+              />
             </div>
             <div className="form-group full">
               <label>Operational Notes</label>
@@ -294,6 +408,7 @@ export default function Suppliers({ showToast }) {
   const navigate = useNavigate();
   const [suppliers, setSuppliers] = useState([]);
   const [search, setSearch] = useState("");
+  const [categoryFilter, setCategoryFilter] = useState("All Categories");
   const [modalOpen, setModalOpen] = useState(false);
   const [editTarget, setEditTarget] = useState(null);
   const [viewTarget, setViewTarget] = useState(null);
@@ -314,69 +429,70 @@ export default function Suppliers({ showToast }) {
   }, [showToast]);
 
   useEffect(() => {
-  let mounted = true;
+    let mounted = true;
 
-  const initialize = async () => {
-    try {
-      setLoading(true);
+    const initialize = async () => {
+      try {
+        setLoading(true);
 
-      const res = await getSuppliers();
+        const res = await getSuppliers();
 
-      if (!mounted) return;
+        if (!mounted) return;
 
-      const data =
-        res.data.data || res.data;
+        const data = res.data.data || res.data;
 
-      setSuppliers(
-        Array.isArray(data) ? data : []
-      );
-    } catch {
-      if (mounted) {
-        showToast(
-          "Failed to load suppliers",
-          "error"
-        );
+        setSuppliers(Array.isArray(data) ? data : []);
+      } catch {
+        if (mounted) {
+          showToast("Failed to load suppliers", "error");
+        }
+      } finally {
+        if (mounted) {
+          setLoading(false);
+        }
       }
-    } finally {
-      if (mounted) {
-        setLoading(false);
-      }
-    }
-  };
+    };
 
-  initialize();
+    initialize();
 
-  return () => {
-    mounted = false;
-  };
-}, [showToast]);
+    return () => {
+      mounted = false;
+    };
+  }, [showToast]);
 
   const filtered = useMemo(() => {
-    return suppliers.filter(
-      (s) =>
+    return suppliers.filter((s) => {
+      const matchSearch =
         (s.name || "").toLowerCase().includes(search.toLowerCase()) ||
         (s.contactPerson || s.contact || "")
           .toLowerCase()
           .includes(search.toLowerCase()) ||
         (s.drugCategories || s.categories || []).some((c) =>
           c.toLowerCase().includes(search.toLowerCase()),
-        ),
-    );
-  }, [suppliers, search]);
+        );
+
+      const matchCategory =
+        categoryFilter === "All Categories" ||
+        (s.drugCategories || s.categories || []).includes(categoryFilter);
+
+      return matchSearch && matchCategory;
+    });
+  }, [suppliers, search, categoryFilter]);
 
   const handleSave = async (form) => {
     setSaving(true);
     try {
+      const cleanPhone = (form.phone || "").replace(/[\s\-+()]/g, "");
+
       const payload = {
         name: form.name,
-        contactPerson: form.contact,
-        phone: form.phone,
-        email: form.email,
-        gstNumber: form.gst,
-        drugCategories: form.categories,
-        paymentTerms: form.paymentTerms.toLowerCase().replace("net-", "net-"),
-        notes: form.notes,
-        status: form.status,
+        contactPerson: form.contact || undefined,
+        phone: cleanPhone.length >= 10 ? form.phone : undefined,
+        email: form.email || undefined,
+        gstNumber: form.gst || undefined,
+        paymentTermsDays: PAYMENT_TERMS_MAP[form.paymentTerms] ?? 30,
+        leadTimeDays: LEAD_TIME_MAP[form.leadTime] ?? 7,
+        status: (form.status || "active").toUpperCase(),
       };
 
       if (editTarget) {
@@ -391,7 +507,9 @@ export default function Suppliers({ showToast }) {
       setEditTarget(null);
     } catch (err) {
       showToast(
-        err.response?.data?.error || "Failed to save supplier",
+        err.response?.data?.error ||
+          err.response?.data?.message ||
+          "Failed to save supplier",
         "error",
       );
     } finally {
@@ -540,12 +658,12 @@ export default function Suppliers({ showToast }) {
             />
           </div>
           <div className="sup-filter-group">
-            <select className="sup-select-filter">
-              <option>All Categories</option>
-              {DRUG_OPTIONS.map((o) => (
-                <option key={o}>{o}</option>
-              ))}
-            </select>
+            <CustomDropdown
+              value={categoryFilter}
+              onChange={setCategoryFilter}
+              options={["All Categories", ...DRUG_OPTIONS]}
+              placeholder="All Categories"
+            />
           </div>
         </div>
 
@@ -554,7 +672,8 @@ export default function Suppliers({ showToast }) {
             <thead>
               <tr>
                 <th>SUPPLIER IDENTITY</th>
-                <th>CONTACT DETAILS</th>
+                <th>CONTACT PERSON</th>
+                <th>PHONE</th>
                 <th>DRUG SPECIALTIES</th>
                 <th>PAYMENT TERMS</th>
                 <th>STATUS</th>
@@ -565,7 +684,7 @@ export default function Suppliers({ showToast }) {
               {loading ? (
                 <tr>
                   <td
-                    colSpan={6}
+                    colSpan={7}
                     style={{
                       textAlign: "center",
                       padding: "40px",
@@ -578,7 +697,7 @@ export default function Suppliers({ showToast }) {
               ) : filtered.length === 0 ? (
                 <tr>
                   <td
-                    colSpan={6}
+                    colSpan={7}
                     style={{
                       textAlign: "center",
                       padding: "40px",
@@ -590,7 +709,7 @@ export default function Suppliers({ showToast }) {
                 </tr>
               ) : (
                 filtered.map((s) => (
-                   <tr key={s.id}>
+                  <tr key={s.id}>
                     <td>
                       <div className="sup-identity">
                         <div className="sup-avatar">{getInitials(s.name)}</div>
@@ -607,8 +726,10 @@ export default function Suppliers({ showToast }) {
                         <span className="sup-person">
                           {s.contactPerson || s.contact || "—"}
                         </span>
-                        <span className="sup-phone">{s.phone || "—"}</span>
                       </div>
+                    </td>
+                    <td>
+                      <span className="sup-phone">{s.phone || "—"}</span>
                     </td>
                     <td>
                       <div className="sup-tag-list">
@@ -631,7 +752,7 @@ export default function Suppliers({ showToast }) {
                     </td>
                     <td>
                       <span className="sup-lead-time">
-                        {s.paymentTerms || "—"}
+                        {s.paymentTerms || (s.paymentTermsDays !== undefined ? (s.paymentTermsDays === 0 ? "Advance" : `Net ${s.paymentTermsDays}`) : "—")}
                       </span>
                     </td>
                     <td>
@@ -669,7 +790,7 @@ export default function Suppliers({ showToast }) {
                         <button
                           className="sup-row-btn danger"
                           title="Delete"
-                           onClick={() => handleDelete(s.id, s.name)}
+                          onClick={() => handleDelete(s.id, s.name)}
                         >
                           <Trash2 size={14} />
                         </button>

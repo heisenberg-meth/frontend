@@ -2,12 +2,24 @@ export const normalizeMedicine = (data) => {
   if (!data) return {};
   const batch = data.inventoryBatches?.[0];
 
-  const categoryObj = data.category && typeof data.category === "object" ? data.category : null;
-  const categoryName = categoryObj ? categoryObj.name : (typeof data.category === "string" ? data.category : "");
+  const categoryObj =
+    data.category && typeof data.category === "object" ? data.category : null;
+  const categoryName = categoryObj
+    ? categoryObj.name
+    : typeof data.category === "string"
+      ? data.category
+      : "";
   const categoryId = data.categoryId || categoryObj?.id || "";
 
-  const manufacturerObj = data.manufacturer && typeof data.manufacturer === "object" ? data.manufacturer : null;
-  const manufacturerName = manufacturerObj ? manufacturerObj.name : (typeof data.manufacturer === "string" ? data.manufacturer : "");
+  const manufacturerObj =
+    data.manufacturer && typeof data.manufacturer === "object"
+      ? data.manufacturer
+      : null;
+  const manufacturerName = manufacturerObj
+    ? manufacturerObj.name
+    : typeof data.manufacturer === "string"
+      ? data.manufacturer
+      : "";
   const manufacturerId = data.manufacturerId || manufacturerObj?.id || "";
 
   return {

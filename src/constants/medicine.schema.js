@@ -1,14 +1,25 @@
-import { z } from 'zod';
+import { z } from "zod";
 
-export const MedicineStatus = z.enum(['ACTIVE', 'INACTIVE', 'DISCONTINUED', 'BLOCKED', 'RESTRICTED', 'RECALLED']);
+export const MedicineStatus = z.enum([
+  "ACTIVE",
+  "INACTIVE",
+  "DISCONTINUED",
+  "BLOCKED",
+  "RESTRICTED",
+  "RECALLED",
+]);
 
-export const StorageCondition = z.enum(['ROOM_TEMPERATURE', 'COLD_STORAGE', 'PROTECT_FROM_LIGHT']);
+export const StorageCondition = z.enum([
+  "ROOM_TEMPERATURE",
+  "COLD_STORAGE",
+  "PROTECT_FROM_LIGHT",
+]);
 
 export const InitialBatchSchema = z.object({
-  batchNumber: z.string().min(1, 'Batch number is required'),
+  batchNumber: z.string().min(1, "Batch number is required"),
   quantity: z.number().int().min(0),
   expiryDate: z.string().refine((val) => new Date(val) > new Date(), {
-    message: 'Expiry date must be in the future',
+    message: "Expiry date must be in the future",
   }),
   manufacturingDate: z.string().optional(),
   purchasePrice: z.number().min(0).optional(),
@@ -33,21 +44,23 @@ export const CreateMedicineSchema = z.object({
   barcode: z.string().optional(),
   hsnCode: z.string().optional(),
   description: z.string().optional(),
-  initialBatch: z.object({
-    batchNumber: z.string(),
-    quantity: z.number(),
-    expiryDate: z.string(),
-    mrp: z.number(),
-    purchasePrice: z.number(),
-  }).optional(),
+  initialBatch: z
+    .object({
+      batchNumber: z.string(),
+      quantity: z.number(),
+      expiryDate: z.string(),
+      mrp: z.number(),
+      purchasePrice: z.number(),
+    })
+    .optional(),
 });
 
 export const AddBatchSchema = z.object({
   branchId: z.string().uuid().optional(),
-  batchNumber: z.string().min(1, 'Batch number is required'),
+  batchNumber: z.string().min(1, "Batch number is required"),
   quantity: z.number().int().min(0),
-  expiryDate: z.string().refine(val => new Date(val) > new Date(), {
-    message: 'Expiry date must be in the future',
+  expiryDate: z.string().refine((val) => new Date(val) > new Date(), {
+    message: "Expiry date must be in the future",
   }),
   manufacturingDate: z.string().optional(),
   purchasePrice: z.number().min(0).optional(),
@@ -57,13 +70,13 @@ export const AddBatchSchema = z.object({
 });
 
 export const CategorySchema = z.object({
-  name: z.string().min(1, 'Category name is required'),
+  name: z.string().min(1, "Category name is required"),
   description: z.string().optional(),
 });
 
 export const ManufacturerSchema = z.object({
-  name: z.string().min(1, 'Manufacturer name is required'),
-  contactEmail: z.string().email().optional().or(z.literal('')),
+  name: z.string().min(1, "Manufacturer name is required"),
+  contactEmail: z.string().email().optional().or(z.literal("")),
   phone: z.string().optional(),
   address: z.string().optional(),
   licenseNumber: z.string().optional(),
@@ -109,6 +122,12 @@ export const MedicineResponseSchema = z.object({
   createdAt: z.string(),
   updatedAt: z.string(),
 
-  category: z.object({ id: z.string(), name: z.string() }).nullable().optional(),
-  manufacturer: z.object({ id: z.string(), name: z.string() }).nullable().optional(),
+  category: z
+    .object({ id: z.string(), name: z.string() })
+    .nullable()
+    .optional(),
+  manufacturer: z
+    .object({ id: z.string(), name: z.string() })
+    .nullable()
+    .optional(),
 });

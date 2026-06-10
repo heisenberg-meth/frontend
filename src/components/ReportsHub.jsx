@@ -22,7 +22,7 @@ const getDatesForPeriod = (period) => {
   }
   return {
     from: from.toISOString().split("T")[0],
-    to: to.toISOString().split("T")[0]
+    to: to.toISOString().split("T")[0],
   };
 };
 
@@ -49,68 +49,131 @@ export default function ReportsHub({ showToast }) {
   return (
     <div className="reports-container">
       {/* ── Page Header ── */}
-      <div className="purchases-header" style={{ marginBottom: "24px" }}>
-        <div>
-          <h1 style={{ fontFamily: "Outfit", fontSize: "28px", fontWeight: 700 }}>
-            Reports & Analytics
-          </h1>
-          <p className="result-meta">
-            Real-time business intelligence: sales aggregates, supply spend, net profit, and expiry risks.
-          </p>
+      <div
+        className="reports-header"
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          gap: "24px",
+        }}
+      >
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            flexWrap: "wrap",
+            gap: "16px",
+          }}
+        >
+          <div>
+            <h1
+              style={{
+                fontFamily: "Outfit",
+                fontSize: "28px",
+                fontWeight: 700,
+                margin: 0,
+              }}
+            >
+              Reports & Analytics
+            </h1>
+            <p
+              className="result-meta"
+              style={{ marginTop: "8px", marginBottom: 0 }}
+            >
+              Real-time business intelligence: sales aggregates, supply spend,
+              net profit, and expiry risks.
+            </p>
+          </div>
 
-          <div className="purchases-tabs" style={{ marginTop: "16px" }}>
-            {[
-              { key: "sales", label: "Daily Sales Report" },
-              { key: "purchase", label: "Purchase Report" },
-              { key: "pnl", label: "Profit & Loss" },
-              { key: "expiry", label: "Expiry Report" }
-            ].map((tab) => (
-              <button
-                key={tab.key}
-                className={`p-tab ${activeTab === tab.key ? "active" : ""}`}
-                onClick={() => setActiveTab(tab.key)}
+          <div
+            className="header-actions"
+            style={{ display: "flex", gap: "12px", alignItems: "center" }}
+          >
+            {activeTab !== "expiry" && (
+              <div
+                style={{
+                  display: "flex",
+                  gap: "8px",
+                  background: "var(--surface-container)",
+                  borderRadius: "8px",
+                  padding: "4px",
+                }}
               >
-                {tab.label}
+                {["7D", "30D", "3M", "6M"].map((p) => (
+                  <button
+                    key={p}
+                    className="pos-btn outline"
+                    style={{
+                      border: "none",
+                      background:
+                        activePeriod === p
+                          ? "var(--primary-container)"
+                          : "transparent",
+                      color:
+                        activePeriod === p
+                          ? "var(--primary)"
+                          : "var(--text-muted)",
+                      padding: "6px 12px",
+                      fontSize: "12px",
+                      borderRadius: "6px",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      height: "100%",
+                    }}
+                    onClick={() => handlePeriodChange(p)}
+                  >
+                    {p}
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {activeTab !== "expiry" && (
+              <button
+                className="pos-btn outline"
+                onClick={() => setShowDateRangeModal(true)}
+                style={{
+                  height: "100%",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "8px",
+                }}
+              >
+                <Calendar size={16} /> {getActivePeriodLabel()}{" "}
+                <ChevronDown size={14} />
               </button>
-            ))}
+            )}
           </div>
         </div>
 
-        <div className="header-actions" style={{ display: "flex", gap: "12px", alignItems: "center" }}>
-          {activeTab !== "expiry" && (
-            <div style={{ display: "flex", gap: "8px", background: "var(--surface-container)", borderRadius: "8px", padding: "4px" }}>
-              {["7D", "30D", "3M", "6M"].map((p) => (
-                <button
-                  key={p}
-                  className="pos-btn outline"
-                  style={{
-                    border: "none",
-                    background: activePeriod === p ? "var(--primary-container)" : "transparent",
-                    color: activePeriod === p ? "var(--primary)" : "var(--text-muted)",
-                    padding: "6px 12px",
-                    fontSize: "12px",
-                    borderRadius: "6px"
-                  }}
-                  onClick={() => handlePeriodChange(p)}
-                >
-                  {p}
-                </button>
-              ))}
-            </div>
-          )}
-
-          {activeTab !== "expiry" && (
-            <button className="pos-btn outline" onClick={() => setShowDateRangeModal(true)}>
-              <Calendar size={16} /> {getActivePeriodLabel()} <ChevronDown size={14} />
+        <div className="purchases-tabs">
+          {[
+            { key: "sales", label: "Daily Sales Report" },
+            { key: "purchase", label: "Purchase Report" },
+            { key: "pnl", label: "Profit & Loss" },
+            { key: "expiry", label: "Expiry Report" },
+          ].map((tab) => (
+            <button
+              key={tab.key}
+              className={`p-tab ${activeTab === tab.key ? "active" : ""}`}
+              onClick={() => setActiveTab(tab.key)}
+            >
+              {tab.label}
             </button>
-          )}
+          ))}
         </div>
       </div>
 
       {/* ── Active Tab Component Mounting ── */}
       <div className="report-main-content">
         {activeTab === "sales" && dateRange.from && (
-          <SalesReport from={dateRange.from} to={dateRange.to} showToast={showToast} />
+          <SalesReport
+            from={dateRange.from}
+            to={dateRange.to}
+            showToast={showToast}
+          />
         )}
 
         {activeTab === "purchase" && dateRange.from && (
@@ -118,12 +181,14 @@ export default function ReportsHub({ showToast }) {
         )}
 
         {activeTab === "pnl" && dateRange.from && (
-          <PnLReport from={dateRange.from} to={dateRange.to} showToast={showToast} />
+          <PnLReport
+            from={dateRange.from}
+            to={dateRange.to}
+            showToast={showToast}
+          />
         )}
 
-        {activeTab === "expiry" && (
-          <ExpiryReport showToast={showToast} />
-        )}
+        {activeTab === "expiry" && <ExpiryReport showToast={showToast} />}
       </div>
 
       {/* ── Custom Date Range Modal ── */}
@@ -140,15 +205,24 @@ export default function ReportsHub({ showToast }) {
               >
                 <div className="stock-modal-header">
                   <h3 style={{ fontFamily: "Outfit", fontWeight: 700 }}>
-                    <Calendar size={18} style={{ marginRight: "8px", verticalAlign: "middle" }} />
+                    <Calendar
+                      size={18}
+                      style={{ marginRight: "8px", verticalAlign: "middle" }}
+                    />
                     Select Date Range
                   </h3>
-                  <button className="micro-btn" onClick={() => setShowDateRangeModal(false)}>
+                  <button
+                    className="micro-btn"
+                    onClick={() => setShowDateRangeModal(false)}
+                  >
                     <X size={20} />
                   </button>
                 </div>
                 <div className="stock-modal-body">
-                  <div className="p-form-grid" style={{ gridTemplateColumns: "1fr" }}>
+                  <div
+                    className="p-form-grid"
+                    style={{ gridTemplateColumns: "1fr" }}
+                  >
                     <div className="pos-input-group">
                       <label className="p-label">FROM DATE</label>
                       <input
@@ -158,7 +232,7 @@ export default function ReportsHub({ showToast }) {
                         onChange={(e) =>
                           setDateRange((prev) => ({
                             ...prev,
-                            from: e.target.value
+                            from: e.target.value,
                           }))
                         }
                       />
@@ -172,7 +246,7 @@ export default function ReportsHub({ showToast }) {
                         onChange={(e) =>
                           setDateRange((prev) => ({
                             ...prev,
-                            to: e.target.value
+                            to: e.target.value,
                           }))
                         }
                       />
@@ -183,7 +257,7 @@ export default function ReportsHub({ showToast }) {
                         background: "rgba(79, 219, 200, 0.05)",
                         borderRadius: "12px",
                         fontSize: "13px",
-                        color: "var(--text-muted)"
+                        color: "var(--text-muted)",
                       }}
                     >
                       {dateRange.from && dateRange.to
@@ -193,7 +267,11 @@ export default function ReportsHub({ showToast }) {
                   </div>
                 </div>
                 <div className="stock-modal-footer">
-                  <button className="pos-btn outline" style={{ flex: 1 }} onClick={() => setShowDateRangeModal(false)}>
+                  <button
+                    className="pos-btn outline"
+                    style={{ flex: 1 }}
+                    onClick={() => setShowDateRangeModal(false)}
+                  >
                     Cancel
                   </button>
                   <button
@@ -211,7 +289,7 @@ export default function ReportsHub({ showToast }) {
                       setActivePeriod("custom");
                       showToast(
                         `Report filtered: ${new Date(dateRange.from).toLocaleDateString("en-IN")} → ${new Date(dateRange.to).toLocaleDateString("en-IN")}`,
-                        "success"
+                        "success",
                       );
                       setShowDateRangeModal(false);
                     }}
@@ -223,7 +301,7 @@ export default function ReportsHub({ showToast }) {
             </div>
           )}
         </AnimatePresence>,
-        document.body
+        document.body,
       )}
     </div>
   );

@@ -5,7 +5,7 @@ export default function InvoiceSummaryCard({
   discount,
   setDiscount,
   tax,
-  grandTotal
+  grandTotal,
 }) {
   const cgst = tax / 2;
   const sgst = tax / 2;
@@ -20,19 +20,25 @@ export default function InvoiceSummaryCard({
         {/* Subtotal */}
         <div className="flex justify-between text-slate-400">
           <span>Subtotal</span>
-          <span className="font-semibold text-slate-200">₹{subtotal.toFixed(2)}</span>
+          <span className="font-semibold text-slate-200">
+            ₹{subtotal.toFixed(2)}
+          </span>
         </div>
 
         {/* CGST */}
         <div className="flex justify-between text-slate-400">
           <span>CGST</span>
-          <span className="font-semibold text-slate-200">₹{cgst.toFixed(2)}</span>
+          <span className="font-semibold text-slate-200">
+            ₹{cgst.toFixed(2)}
+          </span>
         </div>
 
         {/* SGST */}
         <div className="flex justify-between text-slate-400">
           <span>SGST</span>
-          <span className="font-semibold text-slate-200">₹{sgst.toFixed(2)}</span>
+          <span className="font-semibold text-slate-200">
+            ₹{sgst.toFixed(2)}
+          </span>
         </div>
 
         {/* Discount Input */}
@@ -47,7 +53,10 @@ export default function InvoiceSummaryCard({
               max="100"
               value={discount || ""}
               onChange={(e) => {
-                const val = Math.min(100, Math.max(0, Number(e.target.value) || 0));
+                const val = Math.min(
+                  100,
+                  Math.max(0, Number(e.target.value) || 0),
+                );
                 setDiscount(val);
               }}
               className="w-full px-2 py-1 bg-slate-900 border border-white/10 rounded text-right text-sm text-slate-200 focus:outline-none focus:border-[#4fdbc8]"

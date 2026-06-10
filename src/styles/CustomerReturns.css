@@ -531,35 +531,59 @@
 }
 
 .return-action-btn.approve {
-  background: linear-gradient(135deg, rgba(16, 185, 129, 0.15), rgba(16, 185, 129, 0.08));
+  background: linear-gradient(
+    135deg,
+    rgba(16, 185, 129, 0.15),
+    rgba(16, 185, 129, 0.08)
+  );
   color: var(--success);
   border: 1px solid rgba(16, 185, 129, 0.25);
 }
 
 .return-action-btn.approve:hover {
-  background: linear-gradient(135deg, rgba(16, 185, 129, 0.25), rgba(16, 185, 129, 0.15));
+  background: linear-gradient(
+    135deg,
+    rgba(16, 185, 129, 0.25),
+    rgba(16, 185, 129, 0.15)
+  );
   box-shadow: 0 0 20px rgba(16, 185, 129, 0.15);
 }
 
 .return-action-btn.reject {
-  background: linear-gradient(135deg, rgba(239, 68, 68, 0.15), rgba(239, 68, 68, 0.08));
+  background: linear-gradient(
+    135deg,
+    rgba(239, 68, 68, 0.15),
+    rgba(239, 68, 68, 0.08)
+  );
   color: var(--danger);
   border: 1px solid rgba(239, 68, 68, 0.25);
 }
 
 .return-action-btn.reject:hover {
-  background: linear-gradient(135deg, rgba(239, 68, 68, 0.25), rgba(239, 68, 68, 0.15));
+  background: linear-gradient(
+    135deg,
+    rgba(239, 68, 68, 0.25),
+    rgba(239, 68, 68, 0.15)
+  );
   box-shadow: 0 0 20px rgba(239, 68, 68, 0.15);
 }
 
 .return-action-btn.refund {
-  background: linear-gradient(135deg, rgba(168, 85, 247, 0.15), rgba(168, 85, 247, 0.08));
+  background: linear-gradient(
+    135deg,
+    rgba(168, 85, 247, 0.15),
+    rgba(168, 85, 247, 0.08)
+  );
   color: #a855f7;
   border: 1px solid rgba(168, 85, 247, 0.25);
 }
 
 .return-action-btn.refund:hover {
-  background: linear-gradient(135deg, rgba(168, 85, 247, 0.25), rgba(168, 85, 247, 0.15));
+  background: linear-gradient(
+    135deg,
+    rgba(168, 85, 247, 0.25),
+    rgba(168, 85, 247, 0.15)
+  );
   box-shadow: 0 0 20px rgba(168, 85, 247, 0.15);
 }
 
