@@ -315,9 +315,19 @@ export default function SalesManagement({ showToast, storeProfile }) {
     const gstin = storeProfile?.gstin || "";
 
     const invoiceNum = sale.invoiceNumber || sale.id;
-    const patientName = sale.patient?.fullName || sale.patientName || sale.customerName || sale.patient || "Walk-in";
-    const dateStr = sale.date || sale.createdAt ? format(new Date(sale.date || sale.createdAt), "dd MMM yyyy") : "";
-    const timeStr = sale.time || (sale.createdAt ? format(new Date(sale.createdAt), "hh:mm a") : "");
+    const patientName =
+      sale.patient?.fullName ||
+      sale.patientName ||
+      sale.customerName ||
+      sale.patient ||
+      "Walk-in";
+    const dateStr =
+      sale.date || sale.createdAt
+        ? format(new Date(sale.date || sale.createdAt), "dd MMM yyyy")
+        : "";
+    const timeStr =
+      sale.time ||
+      (sale.createdAt ? format(new Date(sale.createdAt), "hh:mm a") : "");
 
     const html = `
       <html>
@@ -417,7 +427,7 @@ export default function SalesManagement({ showToast, storeProfile }) {
 
   const downloadInvoicePDF = (sale) => {
     const doc = new jsPDF();
-    
+
     // Store Profile
     const shopName = storeProfile?.shopName || "Viyan MedAssist";
     const address = storeProfile?.address || "";
@@ -428,7 +438,7 @@ export default function SalesManagement({ showToast, storeProfile }) {
     doc.setFontSize(22);
     doc.setFont("helvetica", "bold");
     doc.text(shopName, 14, 20);
-    
+
     doc.setFontSize(10);
     doc.setFont("helvetica", "normal");
     let y = 28;
@@ -437,7 +447,11 @@ export default function SalesManagement({ showToast, storeProfile }) {
       y += 6;
     }
     if (phone || email) {
-      doc.text(`${phone ? `Phone: ${phone}` : ""} ${email ? `| Email: ${email}` : ""}`, 14, y);
+      doc.text(
+        `${phone ? `Phone: ${phone}` : ""} ${email ? `| Email: ${email}` : ""}`,
+        14,
+        y,
+      );
       y += 6;
     }
     if (gstin) {
@@ -457,11 +471,21 @@ export default function SalesManagement({ showToast, storeProfile }) {
 
     doc.setFontSize(10);
     doc.setFont("helvetica", "normal");
-    
+
     const invoiceNum = sale.invoiceNumber || sale.id;
-    const patientName = sale.patient?.fullName || sale.patientName || sale.customerName || sale.patient || "Walk-in";
-    const dateStr = sale.date || sale.createdAt ? format(new Date(sale.date || sale.createdAt), "dd MMM yyyy") : "";
-    const timeStr = sale.time || (sale.createdAt ? format(new Date(sale.createdAt), "hh:mm a") : "");
+    const patientName =
+      sale.patient?.fullName ||
+      sale.patientName ||
+      sale.customerName ||
+      sale.patient ||
+      "Walk-in";
+    const dateStr =
+      sale.date || sale.createdAt
+        ? format(new Date(sale.date || sale.createdAt), "dd MMM yyyy")
+        : "";
+    const timeStr =
+      sale.time ||
+      (sale.createdAt ? format(new Date(sale.createdAt), "hh:mm a") : "");
 
     doc.text(`Invoice No: ${invoiceNum}`, 14, y);
     doc.text(`Date: ${dateStr} ${timeStr}`, 120, y);
@@ -482,16 +506,20 @@ export default function SalesManagement({ showToast, storeProfile }) {
       ]),
       headStyles: { fillColor: [41, 128, 185], textColor: 255 },
       alternateRowStyles: { fillColor: [245, 245, 245] },
-      margin: { top: 10, left: 14, right: 14 }
+      margin: { top: 10, left: 14, right: 14 },
     });
 
     const finalY = doc.lastAutoTable.finalY + 15;
-    
+
     doc.setFontSize(12);
     doc.setFont("helvetica", "bold");
     const totalAmount = sale.totalAmount || sale.total || 0;
-    doc.text(`Total Amount: Rs. ${Number(totalAmount).toFixed(2)}`, 140, finalY);
-    
+    doc.text(
+      `Total Amount: Rs. ${Number(totalAmount).toFixed(2)}`,
+      140,
+      finalY,
+    );
+
     doc.save(`Invoice_${invoiceNum}.pdf`);
     showToast("PDF downloaded", "success");
   };
