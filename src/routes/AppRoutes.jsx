@@ -1,13 +1,13 @@
 import { Suspense, lazy } from "react";
 import { Routes, Route, Navigate, useLocation } from "react-router-dom";
-import ProtectedRoute from "../guards/ProtectedRoute";
-import DashboardLayout from "../layouts/DashboardLayout";
-import Auth from "../components/Auth";
-import PageErrorBoundary from "../components/PageErrorBoundary";
-import LoadingScreen from "../components/LoadingScreen";
 import { SubscriptionStatus } from "../constants/enums";
 
 // Lazy load components for better performance
+const ProtectedRoute = lazy(() => import("../guards/ProtectedRoute"));
+const DashboardLayout = lazy(() => import("../layouts/DashboardLayout"));
+const Auth = lazy(() => import("../components/Auth"));
+const PageErrorBoundary = lazy(() => import("../components/PageErrorBoundary"));
+const LoadingScreen = lazy(() => import("../components/LoadingScreen"));
 const Dashboard = lazy(() => import("../components/Dashboard"));
 const BulkImport = lazy(() => import("../components/BulkImport"));
 const ManageTeam = lazy(() => import("../components/ManageTeam"));
