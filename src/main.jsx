@@ -27,6 +27,7 @@ import "./styles/ManageTeam.css";
 import "./styles/ReportsHub.css";
 import "./styles/Patients.css";
 import "./styles/Profile.css";
+import "./styles/admin.css";
 import App from "./App.jsx";
 
 // Global logging to catch chunk load errors and unhandled promise rejections

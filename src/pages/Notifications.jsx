@@ -185,7 +185,6 @@ export default function Notifications({ showToast }) {
             <Search size={16} className="search-icon" />
             <input
               required
-              required
               type="text"
               placeholder="Search notifications..."
               value={searchQuery}

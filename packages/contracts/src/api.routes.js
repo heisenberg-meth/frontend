@@ -116,4 +116,18 @@ export const API_ROUTES = {
   // Communications & Loyalty
   COMMUNICATIONS: "/communications",
   LOYALTY: "/loyalty",
+
+  // ── Admin ────────────────────────────────────────────────────────────────
+  ADMIN_LOGIN: "/admin/login",
+  ADMIN_REFRESH: "/admin/refresh",
+  ADMIN_LOGOUT: "/admin/logout",
+  ADMIN_ME: "/admin/me",
+  ADMIN_DASHBOARD_STATS: "/admin/dashboard/stats",
+  ADMIN_ADMINS: "/admin/admins",
+  ADMIN_AUDIT_LOGS: "/admin/audit-logs",
+  ADMIN_DEVICES: "/admin/devices",
+  ADMIN_DEVICES_BLOCK: "/admin/devices",
+  ADMIN_DEVICES_UNBLOCK: "/admin/devices",
+  ADMIN_FEATURE_FLAGS: "/admin/feature-flags",
+  ADMIN_SUBSCRIPTIONS_EXPIRING: "/admin/subscriptions/expiring",
 };

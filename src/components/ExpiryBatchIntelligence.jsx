@@ -671,7 +671,6 @@ export default function ExpiryBatchIntelligence({ showToast }) {
                 <Search size={16} />
                 <input
                   required
-                  required
                   type="text"
                   placeholder="Search medicine or batch..."
                   className="table-search-input"
@@ -817,7 +816,6 @@ export default function ExpiryBatchIntelligence({ showToast }) {
             <div className="table-search-wrapper" style={{ maxWidth: "340px" }}>
               <Search size={16} />
               <input
-                required
                 required
                 type="text"
                 placeholder="Search batch # or medicine..."
@@ -1409,7 +1407,6 @@ export default function ExpiryBatchIntelligence({ showToast }) {
                     </div>
                     <input
                       required
-                      required
                       className="pos-input"
                       value={alertSettings.warning}
                       onChange={(e) =>
@@ -1427,7 +1424,6 @@ export default function ExpiryBatchIntelligence({ showToast }) {
                       Critical
                     </div>
                     <input
-                      required
                       required
                       className="pos-input"
                       value={alertSettings.critical}
@@ -1455,18 +1451,10 @@ export default function ExpiryBatchIntelligence({ showToast }) {
                   </div>
                   <div className="checkbox-row">
                     <label className="checkbox-item">
-                      <input
-                        required
-                        required
-                        type="checkbox"
-                        checked
-                        readOnly
-                      />{" "}
-                      In-App
+                      <input required type="checkbox" checked readOnly /> In-App
                     </label>
                     <label className="checkbox-item">
                       <input
-                        required
                         required
                         type="checkbox"
                         checked={alertSettings.email}
@@ -1482,7 +1470,6 @@ export default function ExpiryBatchIntelligence({ showToast }) {
                     <label className="checkbox-item">
                       <input
                         required
-                        required
                         type="checkbox"
                         checked={false}
                         readOnly
@@ -1491,7 +1478,6 @@ export default function ExpiryBatchIntelligence({ showToast }) {
                     </label>
                     <label className="checkbox-item">
                       <input
-                        required
                         required
                         type="checkbox"
                         checked={alertSettings.whatsapp}
@@ -1651,7 +1637,6 @@ export default function ExpiryBatchIntelligence({ showToast }) {
                     </label>
                     <input
                       required
-                      required
                       className="pos-input"
                       type="number"
                       value={returnQty}
@@ -1678,7 +1663,6 @@ export default function ExpiryBatchIntelligence({ showToast }) {
                       Discount Percentage (%)
                     </label>
                     <input
-                      required
                       required
                       className="pos-input"
                       type="number"
@@ -1713,7 +1697,6 @@ export default function ExpiryBatchIntelligence({ showToast }) {
                       Offer Duration (Days)
                     </label>
                     <input
-                      required
                       required
                       className="pos-input"
                       type="number"
@@ -1903,7 +1886,6 @@ export default function ExpiryBatchIntelligence({ showToast }) {
                     <label className="p-label">Medicine</label>
                     <input
                       required
-                      required
                       className="pos-input"
                       value={editBatch.med}
                       onChange={(e) =>
@@ -1914,7 +1896,6 @@ export default function ExpiryBatchIntelligence({ showToast }) {
                   <div className="pos-input-group">
                     <label className="p-label">Supplier</label>
                     <input
-                      required
                       required
                       className="pos-input"
                       value={editBatch.supplier || editBatch.brand}
@@ -1931,7 +1912,6 @@ export default function ExpiryBatchIntelligence({ showToast }) {
                     <label className="p-label">MFG Date</label>
                     <input
                       required
-                      required
                       className="pos-input"
                       type="date"
                       value={editBatch.mfg}
@@ -1944,7 +1924,6 @@ export default function ExpiryBatchIntelligence({ showToast }) {
                     <label className="p-label">Expiry Date</label>
                     <input
                       required
-                      required
                       className="pos-input"
                       type="date"
                       value={editBatch.exp}
@@ -1956,7 +1935,6 @@ export default function ExpiryBatchIntelligence({ showToast }) {
                   <div className="pos-input-group">
                     <label className="p-label">Quantity</label>
                     <input
-                      required
                       required
                       className="pos-input"
                       type="number"
@@ -1972,7 +1950,6 @@ export default function ExpiryBatchIntelligence({ showToast }) {
                   <div className="pos-input-group">
                     <label className="p-label">Value (₹)</label>
                     <input
-                      required
                       required
                       className="pos-input"
                       type="number"
@@ -2038,7 +2015,6 @@ export default function ExpiryBatchIntelligence({ showToast }) {
                     <label className="p-label">MEDICINE NAME*</label>
                     <input
                       required
-                      required
                       className="pos-input"
                       placeholder="e.g. Amoxicillin 500mg"
                       value={newBatch.med}
@@ -2050,7 +2026,6 @@ export default function ExpiryBatchIntelligence({ showToast }) {
                   <div className="pos-input-group">
                     <label className="p-label">SUPPLIER</label>
                     <input
-                      required
                       required
                       className="pos-input"
                       placeholder="e.g. Cipla"
@@ -2064,7 +2039,6 @@ export default function ExpiryBatchIntelligence({ showToast }) {
                     <label className="p-label">MFG DATE</label>
                     <input
                       required
-                      required
                       className="pos-input"
                       type="date"
                       value={newBatch.mfg}
@@ -2076,7 +2050,6 @@ export default function ExpiryBatchIntelligence({ showToast }) {
                   <div className="pos-input-group">
                     <label className="p-label">EXPIRY DATE</label>
                     <input
-                      required
                       required
                       className="pos-input"
                       type="date"
@@ -2090,7 +2063,6 @@ export default function ExpiryBatchIntelligence({ showToast }) {
                     <label className="p-label">QUANTITY*</label>
                     <input
                       required
-                      required
                       className="pos-input"
                       type="number"
                       placeholder="e.g. 50"
@@ -2103,7 +2075,6 @@ export default function ExpiryBatchIntelligence({ showToast }) {
                   <div className="pos-input-group">
                     <label className="p-label">VALUE (₹)</label>
                     <input
-                      required
                       required
                       className="pos-input"
                       type="number"

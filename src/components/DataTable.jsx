@@ -120,7 +120,6 @@ export default function DataTable({
             <Search size={18} className="search-icon" />
             <input
               required
-              required
               placeholder={searchPlaceholder}
               value={search}
               onChange={(e) => {

@@ -8,6 +8,17 @@ const DashboardLayout = lazy(() => import("../layouts/DashboardLayout"));
 const Auth = lazy(() => import("../components/Auth"));
 const PageErrorBoundary = lazy(() => import("../components/PageErrorBoundary"));
 const LoadingScreen = lazy(() => import("../components/LoadingScreen"));
+
+// Admin pages
+const AdminLogin = lazy(() => import("../pages/admin/AdminLogin"));
+const AdminLayout = lazy(() => import("../pages/admin/AdminLayout"));
+const AdminDashboard = lazy(() => import("../pages/admin/AdminDashboard"));
+const AdminUsers = lazy(() => import("../pages/admin/AdminUsers"));
+const AdminDevices = lazy(() => import("../pages/admin/AdminDevices"));
+const AdminSubscriptions = lazy(() => import("../pages/admin/AdminSubscriptions"));
+const AdminAuditLogs = lazy(() => import("../pages/admin/AdminAuditLogs"));
+const AdminFeatureFlags = lazy(() => import("../pages/admin/AdminFeatureFlags"));
+const AdminAdmins = lazy(() => import("../pages/admin/AdminAdmins"));
 const Dashboard = lazy(() => import("../components/Dashboard"));
 const BulkImport = lazy(() => import("../components/BulkImport"));
 const ManageTeam = lazy(() => import("../components/ManageTeam"));
@@ -368,6 +379,21 @@ export default function AppRoutes({
 
         {/* 404 Redirect */}
         <Route path="*" element={<Navigate to="/dashboard" replace />} />
+      </Routes>
+
+      {/* ── Admin Routes (separate from pharmacy app) ── */}
+      <Routes>
+        <Route path="/admin/login" element={<AdminLogin />} />
+        <Route path="/admin" element={<Navigate to="/admin/dashboard" replace />} />
+        <Route element={<AdminLayout />}>
+          <Route path="/admin/dashboard" element={<AdminDashboard />} />
+          <Route path="/admin/users" element={<AdminUsers />} />
+          <Route path="/admin/devices" element={<AdminDevices />} />
+          <Route path="/admin/subscriptions" element={<AdminSubscriptions />} />
+          <Route path="/admin/audit-logs" element={<AdminAuditLogs />} />
+          <Route path="/admin/feature-flags" element={<AdminFeatureFlags />} />
+          <Route path="/admin/admins" element={<AdminAdmins />} />
+        </Route>
       </Routes>
     </Suspense>
   );
