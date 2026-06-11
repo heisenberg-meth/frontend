@@ -134,16 +134,19 @@ export default function PurchaseManagement({ showToast }) {
   }, [showToast]);
 
   const loadMedicines = useCallback(async () => {
+    console.log("LOAD MEDICINES START");
     try {
       setLoadingMedicines(true);
       const response = await getMedicines({
         page: 1,
         limit: 1000,
       });
+      console.log("MEDICINES RESPONSE:", response);
       const items = response?.data?.data?.items || response?.data?.data || [];
+      console.log("MEDICINES PARSED ITEMS:", items);
       setMedicines(items);
     } catch (error) {
-      console.error("Failed to load medicines", error);
+      console.error("LOAD MEDICINES ERROR:", error);
     } finally {
       setLoadingMedicines(false);
     }
@@ -347,6 +350,7 @@ export default function PurchaseManagement({ showToast }) {
   };
 
   const handleOpenDrawer = (type, row = null) => {
+    console.log("OPENING DRAWER:", type);
     setSelectedRow(row);
     setDrawer(type);
     if (type === "new-purchase" || type === "edit-purchase") {
