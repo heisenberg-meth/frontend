@@ -6,6 +6,8 @@ import {
   createPurchaseOrder,
   receivePurchaseOrder,
 } from "../services/purchases.service.js";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 import {
   ShoppingCart,
   Clock,
@@ -51,7 +53,7 @@ const safeData = (result, ...keys) => {
   return [];
 };
 
-export default function PurchaseManagement({ showToast }) {
+export default function PurchaseManagement({ showToast, storeProfile }) {
   const [activeTab, setActiveTab] = useState("invoices");
   const [drawer, setDrawer] = useState(null);
   const [selectedRow, setSelectedRow] = useState(null);
@@ -70,12 +72,15 @@ export default function PurchaseManagement({ showToast }) {
   const handleOpenReceiveModal = (po) => {
     setSelectedRow(po);
     setReceiveItems(
-      (po.items || []).map((item) => ({
-        ...item,
-        receivedQuantity: item.quantity || 1,
-        batchNumber: "",
-        expiryDate: "",
-      })),
+      (po.items || []).map((item) => {
+        const remaining = Math.max(0, (item.quantity || 0) - (item.receivedQuantity || 0));
+        return {
+          ...item,
+          receivedQuantity: remaining,
+          batchNumber: "",
+          expiryDate: "",
+        };
+      }),
     );
     setShowReceiveModal(true);
   };
@@ -86,9 +91,7 @@ export default function PurchaseManagement({ showToast }) {
         api.get(API_ROUTES.SUPPLIERS),
         api.get(API_ROUTES.PURCHASES_ORDERS),
         api.get(API_ROUTES.PURCHASES_RETURNS),
-        api.get(API_ROUTES.PURCHASES_ORDERS, {
-          params: { status: "RECEIVED" },
-        }),
+        api.get(API_ROUTES.PURCHASES_INVOICES),
       ]);
 
       setSuppliers(safeData(results[0], "data"));
@@ -113,9 +116,7 @@ export default function PurchaseManagement({ showToast }) {
           api.get(API_ROUTES.SUPPLIERS),
           api.get(API_ROUTES.PURCHASES_ORDERS),
           api.get(API_ROUTES.PURCHASES_RETURNS),
-          api.get(API_ROUTES.PURCHASES_ORDERS, {
-            params: { status: "RECEIVED" },
-          }),
+          api.get(API_ROUTES.PURCHASES_INVOICES),
         ]);
 
         if (!mounted) return;
@@ -264,6 +265,134 @@ export default function PurchaseManagement({ showToast }) {
     setSaving(false);
   };
 
+  const downloadPurchasePDF = (order) => {
+    if (!order) return;
+    const doc = new jsPDF();
+
+    // Store Profile
+    const shopName = storeProfile?.shopName || "Viyan MedAssist";
+    const address = storeProfile?.address || "";
+    const phone = storeProfile?.phone || "";
+    const email = storeProfile?.email || "";
+    const gstin = storeProfile?.gstin || "";
+
+    // Header / Shop Info
+    doc.setFontSize(22);
+    doc.setFont("helvetica", "bold");
+    doc.text(shopName, 14, 20);
+
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "normal");
+    let y = 28;
+    if (address) {
+      doc.text(address, 14, y);
+      y += 6;
+    }
+    if (phone || email) {
+      doc.text(
+        `${phone ? `Phone: ${phone}` : ""} ${email ? `| Email: ${email}` : ""}`,
+        14,
+        y,
+      );
+      y += 6;
+    }
+    if (gstin) {
+      doc.text(`GSTIN: ${gstin}`, 14, y);
+      y += 6;
+    }
+
+    doc.setLineWidth(0.5);
+    doc.line(14, y, 196, y);
+    y += 10;
+
+    // Document type detection
+    let docType = "PURCHASE INVOICE";
+    let docNum = order.invoiceNumber || order.id || "-";
+    if (order.returnNumber) {
+      docType = "PURCHASE RETURN";
+      docNum = order.returnNumber;
+    } else if (order.orderNumber || order.poNumber) {
+      docType = "PURCHASE ORDER";
+      docNum = order.orderNumber || order.poNumber;
+    }
+
+    // Document Details
+    doc.setFontSize(12);
+    doc.setFont("helvetica", "bold");
+    doc.text(docType, 14, y);
+    y += 8;
+
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "normal");
+
+    const supplierName =
+      order.supplier?.name || order.supplierName || order.supplier || "-";
+    const orderDate =
+      order.date || (order.createdAt ? formatDate(order.createdAt) : "-");
+    const refNum =
+      order.referenceNumber || order.ref || order.supplierInvoiceNumber || "-";
+    const invoiceDateStr = order.invoiceDate
+      ? formatDate(order.invoiceDate)
+      : "-";
+
+    doc.text(
+      `${docType
+        .split(" ")
+        .map((w) => w.charAt(0) + w.slice(1).toLowerCase())
+        .join(" ")} No: ${docNum}`,
+      14,
+      y,
+    );
+    doc.text(`Date: ${orderDate}`, 120, y);
+    y += 8;
+    doc.text(`Supplier: ${supplierName}`, 14, y);
+    doc.text(`Ref / Inv No: ${refNum}`, 120, y);
+    y += 8;
+    if (order.invoiceDate) {
+      doc.text(`Invoice Date: ${invoiceDateStr}`, 120, y);
+      y += 8;
+    }
+    y += 4;
+
+    // Table
+    autoTable(doc, {
+      startY: y,
+      head: [["Medicine", "Quantity", "Purchase Price (Rs.)", "Total (Rs.)"]],
+      body: (order.items || []).map((it) => [
+        it.medicine?.name || it.medicineName || it.name || "Unknown",
+        String(it.quantity || it.qty || 0),
+        `Rs. ${Number(it.purchasePrice || it.unitPrice || it.price || 0).toFixed(2)}`,
+        `Rs. ${Number((it.quantity || it.qty || 0) * (it.purchasePrice || it.unitPrice || it.price || 0)).toFixed(2)}`,
+      ]),
+      headStyles: { fillColor: [13, 148, 136], textColor: 255 }, // teal color (matches the theme)
+      alternateRowStyles: { fillColor: [245, 245, 245] },
+      margin: { top: 10, left: 14, right: 14 },
+    });
+
+    const finalY = doc.lastAutoTable.finalY + 15;
+
+    // Totals Box
+    doc.setFontSize(11);
+    doc.setFont("helvetica", "normal");
+
+    const subtotalVal = order.subtotal || order.totalAmount || order.total || 0;
+    const gstVal = order.gstAmount || 0;
+    const totalVal = order.totalAmount || order.total || 0;
+
+    doc.text(`Subtotal:`, 130, finalY);
+    doc.text(`Rs. ${Number(subtotalVal).toFixed(2)}`, 165, finalY);
+
+    doc.text(`GST:`, 130, finalY + 6);
+    doc.text(`Rs. ${Number(gstVal).toFixed(2)}`, 165, finalY + 6);
+
+    doc.setFont("helvetica", "bold");
+    doc.text(`Total Amount:`, 130, finalY + 14);
+    doc.text(`Rs. ${Number(totalVal).toFixed(2)}`, 165, finalY + 14);
+
+    doc.save(`${docType.replace(" ", "_")}_${docNum}.pdf`);
+    showToast("PDF downloaded successfully", "success");
+  };
+
   const handleSavePurchase = async () => {
     if (!selectedSupplier) {
       showToast("Please select a supplier", "error");
@@ -348,11 +477,13 @@ export default function PurchaseManagement({ showToast }) {
       inv.supplier?.name || inv.supplierName || inv.supplier || "";
     const matchesSupplier =
       filters.supplier === "All Suppliers" || supplierName === filters.supplier;
+    const statusVal = (inv.paymentStatus || inv.status || "").toLowerCase().replace(/[\s_-]+/g, "");
+    const filterVal = filters.status.toLowerCase().replace(/[\s_-]+/g, "");
     const matchesStatus =
       filters.status === "All Status" ||
-      (inv.status || "").toLowerCase() === filters.status.toLowerCase();
+      statusVal === filterVal;
     const matchesSearch =
-      (inv.id || "").toLowerCase().includes(filters.search.toLowerCase()) ||
+      (inv.id || inv.invoiceNumber || "").toLowerCase().includes(filters.search.toLowerCase()) ||
       supplierName.toLowerCase().includes(filters.search.toLowerCase());
     const matchesDate =
       !filters.date || (inv.date || inv.createdAt || "").includes(filters.date);
@@ -397,17 +528,28 @@ export default function PurchaseManagement({ showToast }) {
 
   const handleReceiveOrder = async () => {
     try {
+      const itemsToReceive = receiveItems.filter((item) => Number(item.receivedQuantity) > 0);
+      if (itemsToReceive.length === 0) {
+        showToast("Please receive at least one item with a quantity greater than 0", "warning");
+        return;
+      }
+
+      // Check that batchNumber and expiryDate are filled for all received items
+      const incompleteItem = itemsToReceive.find(
+        (item) => !item.batchNumber?.trim() || !item.expiryDate
+      );
+      if (incompleteItem) {
+        showToast("Please provide a Batch Number and Expiry Date for all received items", "warning");
+        return;
+      }
+
       showToast("Receiving order...", "info");
       const payload = {
-        receivedItems: receiveItems.map((item) => ({
+        receivedItems: itemsToReceive.map((item) => ({
           medicineId: item.medicineId || item.id,
-          receivedQuantity:
-            Number(item.receivedQuantity) || Number(item.quantity) || 1,
-          batchNumber:
-            item.batchNumber || "B" + Math.floor(Math.random() * 10000),
-          expiryDate: item.expiryDate
-            ? new Date(item.expiryDate).toISOString()
-            : new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString(),
+          receivedQuantity: Number(item.receivedQuantity),
+          batchNumber: item.batchNumber.trim(),
+          expiryDate: new Date(item.expiryDate).toISOString(),
         })),
       };
       await receivePurchaseOrder(selectedRow.id, payload);
@@ -661,9 +803,9 @@ export default function PurchaseManagement({ showToast }) {
                     <td className="result-meta">₹{inv.gstAmount || 0}</td>
                     <td>
                       <span
-                        className={`p-status ${(inv.status || "").toLowerCase().replace(" ", "")}`}
+                        className={`p-status ${(inv.paymentStatus || inv.status || "PENDING").toLowerCase().replace(/[\s_-]+/g, "")}`}
                       >
-                        {inv.status || "PAID"}
+                        {inv.paymentStatus || inv.status || "PENDING"}
                       </span>
                     </td>
                     <td>
@@ -766,7 +908,7 @@ export default function PurchaseManagement({ showToast }) {
                       >
                         <Eye size={14} />
                       </button>
-                      {(po.status === "SENT" || po.status === "PENDING") && (
+                      {(po.status === "APPROVED" || po.status === "ORDERED" || po.status === "PARTIALLY_RECEIVED") && (
                         <button
                           className="pos-btn teal"
                           style={{ padding: "4px 10px", fontSize: "11px" }}
@@ -940,9 +1082,9 @@ export default function PurchaseManagement({ showToast }) {
                   </h2>
                   {drawer === "invoice-detail" && (
                     <span
-                      className={`p-status ${(selectedRow?.status || "PAID").toLowerCase().replace(" ", "")}`}
+                      className={`p-status ${(selectedRow?.paymentStatus || selectedRow?.status || "PENDING").toLowerCase().replace(/[\s_-]+/g, "")}`}
                     >
-                      {selectedRow?.status || "PAID"}
+                      {selectedRow?.paymentStatus || selectedRow?.status || "PENDING"}
                     </span>
                   )}
                 </div>
@@ -1309,13 +1451,16 @@ export default function PurchaseManagement({ showToast }) {
                         <tbody>
                           {(selectedRow.items || []).map((item, idx) => (
                             <tr key={idx}>
-                              <td>{item.medicine?.name || item.name}</td>
+                              <td>{item.medicine?.name || item.medicineName || item.name || "-"}</td>
                               <td>{item.quantity}</td>
-                              <td>₹{item.purchasePrice}</td>
+                              <td>₹{Number(item.purchasePrice || item.unitPrice || item.price || 0).toFixed(2)}</td>
                               <td style={{ textAlign: "right" }}>
                                 ₹
                                 {Number(
-                                  item.total || item.quantity * item.price || 0,
+                                  item.total ||
+                                    item.totalAmount ||
+                                    item.quantity * (item.purchasePrice || item.unitPrice || item.price || 0) ||
+                                    0,
                                 ).toFixed(2)}
                               </td>
                             </tr>
@@ -1343,9 +1488,9 @@ export default function PurchaseManagement({ showToast }) {
                           ₹
                           {Number(
                             selectedRow?.subtotal ||
-                              selectedRow?.totalAmount ||
-                              selectedRow?.total ||
-                              0,
+                              (selectedRow?.totalAmount && selectedRow?.gstAmount !== undefined
+                                ? selectedRow.totalAmount - selectedRow.gstAmount
+                                : selectedRow?.totalAmount || selectedRow?.total || 0),
                           ).toFixed(2)}
                         </span>
                       </div>
@@ -1394,7 +1539,11 @@ export default function PurchaseManagement({ showToast }) {
                   Cancel
                 </button>
                 {drawer === "invoice-detail" ? (
-                  <button className="pos-btn teal" style={{ flex: 2 }}>
+                  <button
+                    className="pos-btn teal"
+                    style={{ flex: 2 }}
+                    onClick={() => downloadPurchasePDF(selectedRow)}
+                  >
                     <Download size={16} /> Download PDF
                   </button>
                 ) : (

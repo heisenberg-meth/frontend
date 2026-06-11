@@ -181,7 +181,10 @@ export default function AppRoutes({
             path="/purchases"
             element={
               <PageErrorBoundary>
-                <PurchaseManagement showToast={showToast} />
+                <PurchaseManagement
+                  showToast={showToast}
+                  storeProfile={storeProfile}
+                />
               </PageErrorBoundary>
             }
           />

@@ -17,5 +17,8 @@ export const cancelPurchaseOrder = (id) =>
 export const receivePurchaseOrder = (id, data) =>
   api.post(`${API_ROUTES.PURCHASES_ORDERS}/${id}/receive`, data);
 
+export const getPurchaseInvoices = () =>
+  api.get(API_ROUTES.PURCHASES_INVOICES);
+
 export const processPurchaseReturn = (data) =>
   api.post("billing/returns", data);
