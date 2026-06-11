@@ -86,9 +86,33 @@ export default function Notifications({ showToast }) {
   }, [showToast]);
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    fetchData();
-  }, [fetchData]);
+    const loadData = async () => {
+      setLoading(true);
+      try {
+        const res = await getNotifications();
+        const data = Array.isArray(res.data?.data)
+          ? res.data.data
+          : Array.isArray(res.data)
+            ? res.data
+            : [];
+
+        const processedData = data.map((n) => ({
+          ...n,
+          type: n.type || "System",
+          createdAt: n.createdAt || new Date().toISOString(),
+        }));
+
+        setNotifications(processedData);
+      } catch (err) {
+        console.error("Error fetching notifications:", err);
+        showToast?.("Failed to load notifications", "error");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadData();
+  }, [showToast]);
 
   const handleMarkRead = async (id) => {
     try {
@@ -256,9 +280,7 @@ export default function Notifications({ showToast }) {
                       </h4>
                       <span className="notif-card-time">
                         <Calendar size={12} className="inline mr-1" />
-                        {new Date(
-                          notif.createdAt
-                        ).toLocaleDateString()}
+                        {new Date(notif.createdAt).toLocaleDateString()}
                       </span>
                     </div>
                     {notif.title && (

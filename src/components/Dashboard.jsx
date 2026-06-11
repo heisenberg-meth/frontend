@@ -136,11 +136,9 @@ export default function Dashboard({
     try {
       for (const m of expiring) await api.delete(`inventory/medicines/${m.id}`);
       fetchData();
-      /* eslint-disable react-hooks/purity */
       setDisposalRef(
         `DSP-${new Date().getFullYear()}-${Math.floor(10000 + Math.random() * 90000)}`,
       );
-      /* eslint-enable react-hooks/purity */
       setDisposalStep(3);
     } catch {
       showToast("Disposal failed", "error");

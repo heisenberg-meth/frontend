@@ -48,7 +48,6 @@ export default function InventoryAnalyticsModal({ isOpen, onClose }) {
 
   const navigate = useNavigate();
 
-
   const fetchAnalytics = async () => {
     try {
       setLoading(true);
@@ -189,14 +188,11 @@ export default function InventoryAnalyticsModal({ isOpen, onClose }) {
 
   useEffect(() => {
     if (isOpen) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
       if (activeTab !== "overview") setActiveTab("overview");
       fetchAnalytics();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen]);
 
-  // Keyboard shortcut to close
   useEffect(() => {
     const handleKeyDown = (e) => {
       if (e.key === "Escape" && isOpen) onClose();

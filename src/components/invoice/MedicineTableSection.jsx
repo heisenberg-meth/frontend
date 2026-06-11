@@ -500,12 +500,11 @@ export default function MedicineTableSection({
   showToast,
   theme = "light",
 }) {
-  // Ensure at least one row on mount
   useEffect(() => {
     if (lineItems.length === 0) {
       setLineItems([makeBlankRow()]);
     }
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, []);
 
   const addRow = () => {
     setLineItems((prev) => [...prev, makeBlankRow()]);

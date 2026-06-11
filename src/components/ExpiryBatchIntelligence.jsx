@@ -583,47 +583,52 @@ export default function ExpiryBatchIntelligence({ showToast }) {
                 <div
                   className="timeline-segment expired"
                   style={{
-                    width: `${Math.max((timelineCounts.expired / timelineCounts.total) * 100, 3)}%`,
+                    flex: Math.max((timelineCounts.expired / timelineCounts.total) * 100, 5),
                   }}
                   onClick={() => setFilter("EXPIRED")}
+                  title={`EXPIRED: ${timelineCounts.expired}`}
                 >
-                  EXPIRED {timelineCounts.expired}
+                  <span>EXPIRED {timelineCounts.expired}</span>
                 </div>
                 <div
                   className="timeline-segment urg-7"
                   style={{
-                    width: `${Math.max((timelineCounts.urg7 / timelineCounts.total) * 100, 3)}%`,
+                    flex: Math.max((timelineCounts.urg7 / timelineCounts.total) * 100, 5),
                   }}
                   onClick={() => setFilter("< 7 DAYS")}
+                  title={`< 7 DAYS: ${timelineCounts.urg7}`}
                 >
-                  &lt; 7D {timelineCounts.urg7}
+                  <span>&lt; 7D {timelineCounts.urg7}</span>
                 </div>
                 <div
                   className="timeline-segment urg-30"
                   style={{
-                    width: `${Math.max((timelineCounts.urg30 / timelineCounts.total) * 100, 3)}%`,
+                    flex: Math.max((timelineCounts.urg30 / timelineCounts.total) * 100, 5),
                   }}
                   onClick={() => setFilter("7-30 DAYS")}
+                  title={`7-30 DAYS: ${timelineCounts.urg30}`}
                 >
-                  &lt; 30D {timelineCounts.urg30}
+                  <span>&lt; 30D {timelineCounts.urg30}</span>
                 </div>
                 <div
                   className="timeline-segment urg-90"
                   style={{
-                    width: `${Math.max((timelineCounts.urg90 / timelineCounts.total) * 100, 3)}%`,
+                    flex: Math.max((timelineCounts.urg90 / timelineCounts.total) * 100, 5),
                   }}
                   onClick={() => setFilter("30-90 DAYS")}
+                  title={`30-90 DAYS: ${timelineCounts.urg90}`}
                 >
-                  &lt; 90D {timelineCounts.urg90}
+                  <span>&lt; 90D {timelineCounts.urg90}</span>
                 </div>
                 <div
                   className="timeline-segment safe"
                   style={{
-                    width: `${Math.max((timelineCounts.safe / timelineCounts.total) * 100, 3)}%`,
+                    flex: Math.max((timelineCounts.safe / timelineCounts.total) * 100, 5),
                   }}
                   onClick={() => setFilter("SAFE")}
+                  title={`SAFE: ${timelineCounts.safe}`}
                 >
-                  SAFE {timelineCounts.safe}
+                  <span>SAFE {timelineCounts.safe}</span>
                 </div>
               </div>
             </div>

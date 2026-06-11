@@ -58,7 +58,7 @@ export default function PurchaseManagement({ showToast }) {
   const [medicines, setMedicines] = useState([]);
   const [suppliers, setSuppliers] = useState([]);
   const [orders, setOrders] = useState([]);
-  const [, setLoadingMedicines] = useState(false);
+  const [loadingMedicines, setLoadingMedicines] = useState(false);
   const [returns, setReturns] = useState([]);
   const [invoices, setInvoices] = useState([]);
   const [loading, setLoading] = useState(false);
