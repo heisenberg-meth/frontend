@@ -36,6 +36,12 @@ import {
   uploadTeamAvatar,
 } from "../services/profile.service";
 import { getBackendOrigin } from "../api";
+
+const generateTempPassword = () => {
+  const randomPart = Math.floor(1000 + (Date.now() % 9000));
+  return `MedAssist!${randomPart}`;
+};
+
 export default function ManageTeam({ user, showToast }) {
   const [team, setTeam] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -88,8 +94,7 @@ export default function ManageTeam({ user, showToast }) {
 
     setLoading(true);
     try {
-      const tempPassword =
-        "MedAssist!" + Math.floor(1000 + Math.random() * 9000);
+      const tempPassword = generateTempPassword();
       const payload = {
         email: form.email,
         password: tempPassword,

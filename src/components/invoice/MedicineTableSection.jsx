@@ -504,7 +504,7 @@ export default function MedicineTableSection({
     if (lineItems.length === 0) {
       setLineItems([makeBlankRow()]);
     }
-  }, []);
+  }, [lineItems.length, setLineItems]);
 
   const addRow = () => {
     setLineItems((prev) => [...prev, makeBlankRow()]);

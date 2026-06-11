@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Bell,
@@ -59,31 +59,6 @@ export default function Notifications({ showToast }) {
   const [searchQuery, setSearchQuery] = useState("");
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
-
-  const fetchData = useCallback(async () => {
-    setLoading(true);
-    try {
-      const res = await getNotifications();
-      const data = Array.isArray(res.data?.data)
-        ? res.data.data
-        : Array.isArray(res.data)
-          ? res.data
-          : [];
-
-      // Ensure date strings are parseable or keep them as is if valid
-      const processedData = data.map((n) => ({
-        ...n,
-        type: n.type || "System",
-        createdAt: n.createdAt || new Date().toISOString(),
-      }));
-      setNotifications(processedData);
-    } catch (err) {
-      console.error("Error fetching notifications:", err);
-      showToast?.("Failed to load notifications", "error");
-    } finally {
-      setLoading(false);
-    }
-  }, [showToast]);
 
   useEffect(() => {
     const loadData = async () => {

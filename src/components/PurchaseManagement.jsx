@@ -1,8 +1,11 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import api from "../api.js";
 import { API_ROUTES } from "../constants/api.routes.js";
-import { receiveGoods } from "../services/purchases.service.js";
 import { getMedicines } from "../services/inventory.service";
+import {
+  createPurchaseOrder,
+  receivePurchaseOrder,
+} from "../services/purchases.service.js";
 import {
   ShoppingCart,
   Clock,
@@ -73,6 +76,7 @@ export default function PurchaseManagement({ showToast }) {
         }),
       ]);
 
+      console.log("REFRESH DATA RESULTS:", results);
       setSuppliers(safeData(results[0], "data"));
       setOrders(safeData(results[1], "data"));
       setReturns(safeData(results[2], "data"));
@@ -100,6 +104,7 @@ export default function PurchaseManagement({ showToast }) {
           }),
         ]);
 
+        console.log("INITIALIZE RESULTS:", results);
         if (!mounted) return;
 
         setSuppliers(safeData(results[0], "data"));
@@ -132,6 +137,17 @@ export default function PurchaseManagement({ showToast }) {
       mounted = false;
     };
   }, [showToast]);
+
+  useEffect(() => {
+    console.log("SUPPLIERS STATE UPDATED:", suppliers);
+  }, [suppliers]);
+
+  useEffect(() => {
+    console.log("MEDICINES STATE UPDATED:", medicines);
+    if (medicines.length > 0) {
+      console.log("FIRST MEDICINE SAMPLE:", medicines[0]);
+    }
+  }, [medicines]);
 
   const loadMedicines = useCallback(async () => {
     console.log("LOAD MEDICINES START");
@@ -295,7 +311,9 @@ export default function PurchaseManagement({ showToast }) {
         gstAmount: gstTotal,
         totalAmount: grandTotal,
       };
-      await receiveGoods(payload);
+      console.log("PURCHASE PAYLOAD", payload);
+      const result = await createPurchaseOrder(payload);
+      console.log("PURCHASE RESULT", result);
       showToast("Purchase Saved Successfully", "success");
       closeDrawer();
       await refreshData();
@@ -420,8 +438,7 @@ export default function PurchaseManagement({ showToast }) {
   const handleReceiveOrder = async () => {
     try {
       showToast("Receiving order...", "info");
-      await api.post(API_ROUTES.PURCHASES_RECEIVE, {
-        orderId: selectedRow.id,
+      await receivePurchaseOrder(selectedRow.id, {
         items: selectedRow.items || [],
       });
       showToast("Order Received & Inventory Updated", "success");

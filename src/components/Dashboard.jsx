@@ -33,6 +33,11 @@ const getDays = (d) => {
 const fmt = (n) =>
   `₹${Number(n).toLocaleString("en-IN", { maximumFractionDigits: 0 })}`;
 
+const generateDisposalRef = () => {
+  const randomPart = Math.floor(10000 + (Date.now() % 90000));
+  return `DSP-${new Date().getFullYear()}-${randomPart}`;
+};
+
 /* ─── MAIN DASHBOARD ─── */
 export default function Dashboard({
   medicines = [],
@@ -136,9 +141,7 @@ export default function Dashboard({
     try {
       for (const m of expiring) await api.delete(`inventory/medicines/${m.id}`);
       fetchData();
-      setDisposalRef(
-        `DSP-${new Date().getFullYear()}-${Math.floor(10000 + Math.random() * 90000)}`,
-      );
+      setDisposalRef(generateDisposalRef());
       setDisposalStep(3);
     } catch {
       showToast("Disposal failed", "error");
