@@ -132,11 +132,22 @@ export function AuthProvider({ children }) {
 
   const login = useCallback(
     async (credentials) => {
-      const res = await api.post("auth/login", credentials);
+      const storedDeviceToken = localStorage.getItem("viyan_device_token");
+      const res = await api.post("auth/login", {
+        ...credentials,
+        deviceToken: credentials.deviceToken || storedDeviceToken || undefined,
+      });
       const payload = res.data?.data || res.data;
 
-      if (!payload || !payload.token) {
+      if (!payload) {
         throw new Error("Login failed: Invalid response from server.");
+      }
+
+      if (payload.deviceVerificationRequired) {
+        return {
+          deviceVerificationRequired: true,
+          message: payload.message,
+        };
       }
 
       const {
@@ -144,10 +155,15 @@ export function AuthProvider({ children }) {
         subscriptionExpired,
         redirectTo,
         token,
+        deviceToken,
       } = payload;
 
       if (token) {
         localStorage.setItem("viyan_token", token);
+      }
+
+      if (deviceToken) {
+        localStorage.setItem("viyan_device_token", deviceToken);
       }
 
       if (userData) {
@@ -168,9 +184,13 @@ export function AuthProvider({ children }) {
 
   const register = useCallback(async (userData) => {
     const res = await api.post(API_ROUTES.AUTH_REGISTER, userData);
-    const payload = res.data?.data;
+    const payload = res.data?.data || res.data;
     if (!payload || !payload.userId) {
       throw new Error("Registration failed: Invalid response from server.");
+    }
+
+    if (payload.deviceToken) {
+      localStorage.setItem("viyan_device_token", payload.deviceToken);
     }
 
     return { isNew: true, userId: payload.userId };

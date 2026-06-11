@@ -106,7 +106,7 @@ export default function Auth({ onAuth }) {
       }
     }
 
-    if (view === "verifyOtp" && !form.otp) {
+    if ((view === "verifyOtp" || view === "verifyDeviceOtp") && !form.otp) {
       setError("Please enter the verification code.");
       return;
     }
@@ -115,7 +115,28 @@ export default function Auth({ onAuth }) {
 
     try {
       if (view === "login") {
-        await onAuth({ email: email.toLowerCase(), password }, false);
+        const result = await onAuth(
+          {
+            email: email.toLowerCase(),
+            password,
+            fingerprint: getFingerprint(),
+          },
+          false,
+        );
+        if (result?.deviceVerificationRequired) {
+          setView("verifyDeviceOtp");
+          setSuccess(result.message);
+        }
+      } else if (view === "verifyDeviceOtp") {
+        await onAuth(
+          {
+            email: email.toLowerCase(),
+            password,
+            fingerprint: getFingerprint(),
+            otp: form.otp,
+          },
+          false,
+        );
       } else if (view === "register") {
         await onAuth(
           {
@@ -271,6 +292,7 @@ export default function Auth({ onAuth }) {
               {view === "register" && "Join the Network"}
               {view === "forgot" && "Forgot Password"}
               {view === "verifyOtp" && "Verify Code"}
+              {view === "verifyDeviceOtp" && "Verify Device"}
               {view === "newPassword" && "Create New Password"}
             </h2>
             <p className="canvas-subtitle">
@@ -283,6 +305,8 @@ export default function Auth({ onAuth }) {
                 "Enter your email to receive a recovery code."}
               {view === "verifyOtp" &&
                 "Enter the 6-digit code sent to your email."}
+              {view === "verifyDeviceOtp" &&
+                "Enter the 6-digit authorization code sent to your email."}
               {view === "newPassword" &&
                 "Choose a strong password for your account."}
             </p>
@@ -342,7 +366,6 @@ export default function Auth({ onAuth }) {
                     <div className="control-input-wrap">
                       <input
                         required
-                        required
                         type="text"
                         className="canvas-input"
                         placeholder="Dr. Julian Sterling"
@@ -368,7 +391,6 @@ export default function Auth({ onAuth }) {
                         onChange={(e) =>
                           updateField("shopName", e.target.value)
                         }
-                        required
                       />
                     </div>
                   </div>
@@ -378,7 +400,8 @@ export default function Auth({ onAuth }) {
               {(view === "login" ||
                 view === "register" ||
                 view === "forgot" ||
-                view === "verifyOtp") && (
+                view === "verifyOtp" ||
+                view === "verifyDeviceOtp") && (
                 <div className="control-group">
                   <label className="control-label">
                     {loginType === "admin" ? "WORK EMAIL" : "STAFF ID / EMAIL"}
@@ -396,8 +419,9 @@ export default function Auth({ onAuth }) {
                       }
                       value={form.email}
                       onChange={(e) => updateField("email", e.target.value)}
-                      required
-                      disabled={view === "verifyOtp"}
+                      disabled={
+                        view === "verifyOtp" || view === "verifyDeviceOtp"
+                      }
                       autoComplete="off"
                     />
                   </div>
@@ -427,7 +451,6 @@ export default function Auth({ onAuth }) {
                       placeholder="Enter your password"
                       value={form.password}
                       onChange={(e) => updateField("password", e.target.value)}
-                      required
                       autoComplete="new-password"
                     />
                     <button
@@ -444,7 +467,7 @@ export default function Auth({ onAuth }) {
                 </div>
               )}
 
-              {view === "verifyOtp" && (
+              {(view === "verifyOtp" || view === "verifyDeviceOtp") && (
                 <div className="control-group">
                   <label className="control-label">
                     VERIFICATION CODE (OTP)
@@ -458,21 +481,22 @@ export default function Auth({ onAuth }) {
                       placeholder="Enter 6-digit code"
                       value={form.otp}
                       onChange={(e) => updateField("otp", e.target.value)}
-                      required
                       maxLength={6}
                       pattern="\d{6}"
                       autoFocus
                     />
                   </div>
-                  <button
-                    type="button"
-                    className="control-link"
-                    onClick={handleResendOtp}
-                    disabled={loading}
-                    style={{ marginTop: "8px", alignSelf: "flex-end" }}
-                  >
-                    Resend Code
-                  </button>
+                  {view === "verifyOtp" && (
+                    <button
+                      type="button"
+                      className="control-link"
+                      onClick={handleResendOtp}
+                      disabled={loading}
+                      style={{ marginTop: "8px", alignSelf: "flex-end" }}
+                    >
+                      Resend Code
+                    </button>
+                  )}
                 </div>
               )}
 
@@ -491,7 +515,6 @@ export default function Auth({ onAuth }) {
                         onChange={(e) =>
                           updateField("newPassword", e.target.value)
                         }
-                        required
                         minLength={8}
                         autoFocus
                       />
@@ -526,7 +549,6 @@ export default function Auth({ onAuth }) {
                         onChange={(e) =>
                           updateField("confirmPassword", e.target.value)
                         }
-                        required
                       />
                     </div>
                   </div>
@@ -547,7 +569,6 @@ export default function Auth({ onAuth }) {
                       onChange={(e) =>
                         updateField("confirmPassword", e.target.value)
                       }
-                      required
                     />
                   </div>
                 </div>
@@ -570,7 +591,7 @@ export default function Auth({ onAuth }) {
                 "Create Account"
               ) : view === "forgot" ? (
                 "Send Recovery Code"
-              ) : view === "verifyOtp" ? (
+              ) : view === "verifyOtp" || view === "verifyDeviceOtp" ? (
                 "Verify Code"
               ) : (
                 "Reset Password"
@@ -636,6 +657,7 @@ export default function Auth({ onAuth }) {
             )}
             {(view === "forgot" ||
               view === "verifyOtp" ||
+              view === "verifyDeviceOtp" ||
               view === "newPassword") && (
               <button type="button" onClick={() => navigateTo("login")}>
                 Back to Sign In

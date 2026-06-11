@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import api from "../api.js";
+import { useAuth } from "../hooks/useAuth.js";
 import { API_ROUTES } from "../constants/api.routes.js";
 import { getMedicines } from "../services/inventory.service";
 import {
@@ -55,9 +56,12 @@ const safeData = (result, ...keys) => {
 };
 
 export default function PurchaseManagement({ showToast, storeProfile }) {
+  const { user } = useAuth();
   const [activeTab, setActiveTab] = useState("invoices");
   const [drawer, setDrawer] = useState(null);
   const [selectedRow, setSelectedRow] = useState(null);
+  const [branches, setBranches] = useState([]);
+  const [selectedBranchId, setSelectedBranchId] = useState("");
   const [showReturnModal, setShowReturnModal] = useState(false);
   const [showReceiveModal, setShowReceiveModal] = useState(false);
   const [medicines, setMedicines] = useState([]);
@@ -74,7 +78,10 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
     setSelectedRow(po);
     setReceiveItems(
       (po.items || []).map((item) => {
-        const remaining = Math.max(0, (item.quantity || 0) - (item.receivedQuantity || 0));
+        const remaining = Math.max(
+          0,
+          (item.quantity || 0) - (item.receivedQuantity || 0),
+        );
         return {
           ...item,
           receivedQuantity: remaining,
@@ -93,12 +100,14 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
         api.get(API_ROUTES.PURCHASES_ORDERS),
         api.get(API_ROUTES.PURCHASES_RETURNS),
         api.get(API_ROUTES.PURCHASES_INVOICES),
+        api.get("/branches"),
       ]);
 
       setSuppliers(safeData(results[0], "data"));
       setOrders(safeData(results[1], "data"));
       setReturns(safeData(results[2], "data"));
       setInvoices(safeData(results[3], "data"));
+      setBranches(safeData(results[4], "data"));
     } catch (err) {
       console.error("[FETCH DATA ERROR]", err);
 
@@ -118,6 +127,7 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
           api.get(API_ROUTES.PURCHASES_ORDERS),
           api.get(API_ROUTES.PURCHASES_RETURNS),
           api.get(API_ROUTES.PURCHASES_INVOICES),
+          api.get("/branches"),
         ]);
 
         if (!mounted) return;
@@ -126,6 +136,7 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
         setOrders(safeData(results[1], "data"));
         setReturns(safeData(results[2], "data"));
         setInvoices(safeData(results[3], "data"));
+        setBranches(safeData(results[4], "data"));
 
         const failed = results.filter((r) => r.status === "rejected");
         if (failed.length > 0) {
@@ -264,6 +275,7 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
     setInvoiceDate(new Date().toISOString().split("T")[0]);
     setSupplierInvNo("");
     setSaving(false);
+    setSelectedBranchId("");
   };
 
   const downloadPurchasePDF = (order) => {
@@ -399,6 +411,17 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
       showToast("Please select a supplier", "error");
       return;
     }
+    const finalBranchId =
+      selectedBranchId ||
+      user?.branchId ||
+      (branches.length > 0 ? branches[0].id : "");
+    if (!finalBranchId) {
+      showToast(
+        "Please select a branch or verify your user profile branch is assigned",
+        "error",
+      );
+      return;
+    }
     if (purchaseItems.length === 0) {
       showToast("Add at least one medicine", "error");
       return;
@@ -423,6 +446,7 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
     try {
       const payload = {
         supplierId: selectedSupplier.id,
+        branchId: finalBranchId,
         supplierInvoiceNumber: supplierInvNo.trim(),
         invoiceDate: invoiceDate || new Date().toISOString().split("T")[0],
         items: purchaseItems.map((item) => ({
@@ -463,6 +487,9 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
     setDrawer(type);
     if (type === "new-purchase" || type === "edit-purchase") {
       loadMedicines();
+      setSelectedBranchId(
+        user?.branchId || (branches.length > 0 ? branches[0].id : ""),
+      );
     }
   };
 
@@ -478,13 +505,16 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
       inv.supplier?.name || inv.supplierName || inv.supplier || "";
     const matchesSupplier =
       filters.supplier === "All Suppliers" || supplierName === filters.supplier;
-    const statusVal = (inv.paymentStatus || inv.status || "").toLowerCase().replace(/[\s_-]+/g, "");
+    const statusVal = (inv.paymentStatus || inv.status || "")
+      .toLowerCase()
+      .replace(/[\s_-]+/g, "");
     const filterVal = filters.status.toLowerCase().replace(/[\s_-]+/g, "");
     const matchesStatus =
-      filters.status === "All Status" ||
-      statusVal === filterVal;
+      filters.status === "All Status" || statusVal === filterVal;
     const matchesSearch =
-      (inv.id || inv.invoiceNumber || "").toLowerCase().includes(filters.search.toLowerCase()) ||
+      (inv.id || inv.invoiceNumber || "")
+        .toLowerCase()
+        .includes(filters.search.toLowerCase()) ||
       supplierName.toLowerCase().includes(filters.search.toLowerCase());
     const matchesDate =
       !filters.date || (inv.date || inv.createdAt || "").includes(filters.date);
@@ -529,18 +559,26 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
 
   const handleReceiveOrder = async () => {
     try {
-      const itemsToReceive = receiveItems.filter((item) => Number(item.receivedQuantity) > 0);
+      const itemsToReceive = receiveItems.filter(
+        (item) => Number(item.receivedQuantity) > 0,
+      );
       if (itemsToReceive.length === 0) {
-        showToast("Please receive at least one item with a quantity greater than 0", "warning");
+        showToast(
+          "Please receive at least one item with a quantity greater than 0",
+          "warning",
+        );
         return;
       }
 
       // Check that batchNumber and expiryDate are filled for all received items
       const incompleteItem = itemsToReceive.find(
-        (item) => !item.batchNumber?.trim() || !item.expiryDate
+        (item) => !item.batchNumber?.trim() || !item.expiryDate,
       );
       if (incompleteItem) {
-        showToast("Please provide a Batch Number and Expiry Date for all received items", "warning");
+        showToast(
+          "Please provide a Batch Number and Expiry Date for all received items",
+          "warning",
+        );
         return;
       }
 
@@ -583,6 +621,27 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
       showToast("Failed to process return", "error");
     }
   };
+
+  const finalBranchId =
+    selectedBranchId ||
+    user?.branchId ||
+    (branches.length > 0 ? branches[0].id : "");
+  const hasMultipleBranches = branches.length > 1;
+  const isFormInvalid =
+    !selectedSupplier ||
+    (hasMultipleBranches ? !selectedBranchId : !finalBranchId) ||
+    !supplierInvNo.trim() ||
+    purchaseItems.length === 0 ||
+    purchaseItems.some(
+      (item) =>
+        !item.qty ||
+        Number(item.qty) <= 0 ||
+        !item.purchasePrice ||
+        Number(item.purchasePrice) <= 0 ||
+        !item.batchNumber ||
+        !item.batchNumber.trim() ||
+        !item.expiryDate,
+    );
 
   if (loading) {
     return (
@@ -909,26 +968,46 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
                       >
                         <Eye size={14} />
                       </button>
-                      {(po.status === "DRAFT" || po.status === "PENDING" || po.status === "PENDING_APPROVAL") && (
+                      {(po.status === "DRAFT" ||
+                        po.status === "PENDING" ||
+                        po.status === "PENDING_APPROVAL") && (
                         <button
                           className="pos-btn"
-                          style={{ padding: "4px 10px", fontSize: "11px", backgroundColor: "var(--primary)", color: "white" }}
+                          style={{
+                            padding: "4px 10px",
+                            fontSize: "11px",
+                            backgroundColor: "var(--primary)",
+                            color: "white",
+                          }}
                           onClick={async (e) => {
                             e.stopPropagation();
                             try {
-                              await api.patch(`${API_ROUTES.PURCHASES_ORDERS}/${po.id}/status`, { status: "APPROVED" });
-                              showToast("Purchase Order approved successfully!", "success");
+                              await api.patch(
+                                `${API_ROUTES.PURCHASES_ORDERS}/${po.id}/status`,
+                                { status: "APPROVED" },
+                              );
+                              showToast(
+                                "Purchase Order approved successfully!",
+                                "success",
+                              );
                               await refreshData();
                             } catch (err) {
                               console.error(err);
-                              showToast(err.response?.data?.error || err.message || "Failed to approve order", "error");
+                              showToast(
+                                err.response?.data?.error ||
+                                  err.message ||
+                                  "Failed to approve order",
+                                "error",
+                              );
                             }
                           }}
                         >
                           <Check size={12} /> Approve
                         </button>
                       )}
-                      {(po.status === "APPROVED" || po.status === "ORDERED" || po.status === "PARTIALLY_RECEIVED") && (
+                      {(po.status === "APPROVED" ||
+                        po.status === "ORDERED" ||
+                        po.status === "PARTIALLY_RECEIVED") && (
                         <button
                           className="pos-btn teal"
                           style={{ padding: "4px 10px", fontSize: "11px" }}
@@ -1104,7 +1183,9 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
                     <span
                       className={`p-status ${(selectedRow?.paymentStatus || selectedRow?.status || "PENDING").toLowerCase().replace(/[\s_-]+/g, "")}`}
                     >
-                      {selectedRow?.paymentStatus || selectedRow?.status || "PENDING"}
+                      {selectedRow?.paymentStatus ||
+                        selectedRow?.status ||
+                        "PENDING"}
                     </span>
                   )}
                 </div>
@@ -1139,6 +1220,30 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
                           ))}
                         </select>
                       </div>
+                      {hasMultipleBranches && (
+                        <div
+                          className="pos-input-group"
+                          style={{ marginTop: "16px" }}
+                        >
+                          <span className="p-label">BRANCH</span>
+                          <select
+                            required
+                            className="pos-input"
+                            style={{ width: "100%" }}
+                            value={selectedBranchId}
+                            onChange={(e) =>
+                              setSelectedBranchId(e.target.value)
+                            }
+                          >
+                            <option value="">Select Branch...</option>
+                            {branches.map((b) => (
+                              <option key={b.id} value={b.id}>
+                                {b.name}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                      )}
                       {selectedSupplier && (
                         <div className="supplier-preview-card">
                           <div className="supplier-preview-name">
@@ -1471,15 +1576,32 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
                         <tbody>
                           {(selectedRow.items || []).map((item, idx) => (
                             <tr key={idx}>
-                              <td>{item.medicine?.name || item.medicineName || item.name || "-"}</td>
+                              <td>
+                                {item.medicine?.name ||
+                                  item.medicineName ||
+                                  item.name ||
+                                  "-"}
+                              </td>
                               <td>{item.quantity}</td>
-                              <td>₹{Number(item.purchasePrice || item.unitPrice || item.price || 0).toFixed(2)}</td>
+                              <td>
+                                ₹
+                                {Number(
+                                  item.purchasePrice ||
+                                    item.unitPrice ||
+                                    item.price ||
+                                    0,
+                                ).toFixed(2)}
+                              </td>
                               <td style={{ textAlign: "right" }}>
                                 ₹
                                 {Number(
                                   item.total ||
                                     item.totalAmount ||
-                                    item.quantity * (item.purchasePrice || item.unitPrice || item.price || 0) ||
+                                    item.quantity *
+                                      (item.purchasePrice ||
+                                        item.unitPrice ||
+                                        item.price ||
+                                        0) ||
                                     0,
                                 ).toFixed(2)}
                               </td>
@@ -1508,9 +1630,13 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
                           ₹
                           {Number(
                             selectedRow?.subtotal ||
-                              (selectedRow?.totalAmount && selectedRow?.gstAmount !== undefined
-                                ? selectedRow.totalAmount - selectedRow.gstAmount
-                                : selectedRow?.totalAmount || selectedRow?.total || 0),
+                              (selectedRow?.totalAmount &&
+                              selectedRow?.gstAmount !== undefined
+                                ? selectedRow.totalAmount -
+                                  selectedRow.gstAmount
+                                : selectedRow?.totalAmount ||
+                                  selectedRow?.total ||
+                                  0),
                           ).toFixed(2)}
                         </span>
                       </div>
@@ -1568,10 +1694,10 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
                   </button>
                 ) : (
                   <button
-                    className="pos-btn teal"
+                    className={`pos-btn teal ${saving || isFormInvalid ? "btn-disabled" : ""}`}
                     style={{ flex: 2 }}
                     onClick={handleSavePurchase}
-                    disabled={saving}
+                    disabled={saving || isFormInvalid}
                   >
                     {saving ? "Creating..." : "Create Purchase Order"}
                   </button>

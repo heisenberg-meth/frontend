@@ -373,6 +373,10 @@ function AppContent() {
       ? await register(credentials)
       : await login(credentials);
 
+    if (result?.deviceVerificationRequired) {
+      return result;
+    }
+
     if (result.subscriptionExpired) {
       navigate(result.redirectTo || "/billing");
     } else if (result.isNew) {
@@ -382,6 +386,7 @@ function AppContent() {
       fetchSettings();
       navigate("/dashboard");
     }
+    return result;
   };
 
   if (!restored || authLoading) {
@@ -491,7 +496,6 @@ function AppContent() {
                       <Lock size={12} /> CURRENT PASSWORD
                     </label>
                     <input
-                      required
                       required
                       type="password"
                       placeholder="Enter current password"
