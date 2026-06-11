@@ -22,6 +22,7 @@ import {
   ScanLine,
   Package,
   Loader2,
+  Check,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 function Spinner({ size = 14 }) {
@@ -908,6 +909,25 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
                       >
                         <Eye size={14} />
                       </button>
+                      {(po.status === "DRAFT" || po.status === "PENDING" || po.status === "PENDING_APPROVAL") && (
+                        <button
+                          className="pos-btn"
+                          style={{ padding: "4px 10px", fontSize: "11px", backgroundColor: "var(--primary)", color: "white" }}
+                          onClick={async (e) => {
+                            e.stopPropagation();
+                            try {
+                              await api.patch(`${API_ROUTES.PURCHASES_ORDERS}/${po.id}/status`, { status: "APPROVED" });
+                              showToast("Purchase Order approved successfully!", "success");
+                              await refreshData();
+                            } catch (err) {
+                              console.error(err);
+                              showToast(err.response?.data?.error || err.message || "Failed to approve order", "error");
+                            }
+                          }}
+                        >
+                          <Check size={12} /> Approve
+                        </button>
+                      )}
                       {(po.status === "APPROVED" || po.status === "ORDERED" || po.status === "PARTIALLY_RECEIVED") && (
                         <button
                           className="pos-btn teal"
