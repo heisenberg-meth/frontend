@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
 import {
@@ -48,8 +48,12 @@ export default function InventoryAnalyticsModal({ isOpen, onClose }) {
 
   const navigate = useNavigate();
 
+  const handleClose = useCallback(() => {
+    setActiveTab("overview");
+    onClose();
+  }, [onClose]);
 
-  const fetchAnalytics = async () => {
+  const fetchAnalytics = useCallback(async () => {
     try {
       setLoading(true);
       const res = await getMedicines({ limit: 10000 });
@@ -101,6 +105,7 @@ export default function InventoryAnalyticsModal({ isOpen, onClose }) {
             ? Math.round(((mrp - purchasePrice) / mrp) * 100)
             : 0;
         highValue.push({
+          id: item.id,
           name: item.name,
           batch: batchNum,
           qty,
@@ -116,6 +121,7 @@ export default function InventoryAnalyticsModal({ isOpen, onClose }) {
 
           if (diffDays <= 30 && diffDays > 0) {
             days30.push({
+              id: item.id,
               name: item.name,
               qty,
               value: itemValue,
@@ -124,6 +130,7 @@ export default function InventoryAnalyticsModal({ isOpen, onClose }) {
             riskVal += itemValue;
           } else if (diffDays <= 60 && diffDays > 30) {
             days60.push({
+              id: item.id,
               name: item.name,
               qty,
               value: itemValue,
@@ -132,6 +139,7 @@ export default function InventoryAnalyticsModal({ isOpen, onClose }) {
             riskVal += itemValue;
           } else if (diffDays <= 0) {
             deadStock.push({
+              id: item.id,
               name: item.name,
               qty,
               value: itemValue,
@@ -148,6 +156,7 @@ export default function InventoryAnalyticsModal({ isOpen, onClose }) {
           );
           if (inactiveDays > 180) {
             deadStock.push({
+              id: item.id,
               name: item.name,
               qty,
               value: itemValue,
@@ -185,25 +194,23 @@ export default function InventoryAnalyticsModal({ isOpen, onClose }) {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     if (isOpen) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      if (activeTab !== "overview") setActiveTab("overview");
       fetchAnalytics();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isOpen]);
+  }, [isOpen, fetchAnalytics]);
 
-  // Keyboard shortcut to close
   useEffect(() => {
     const handleKeyDown = (e) => {
-      if (e.key === "Escape" && isOpen) onClose();
+      if (e.key === "Escape" && isOpen) {
+        handleClose();
+      }
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [isOpen, onClose]);
+  }, [isOpen, handleClose]);
 
   const totalCategoryValue = useMemo(() => {
     return categories.reduce((acc, curr) => acc + curr.value, 0);
@@ -310,7 +317,7 @@ export default function InventoryAnalyticsModal({ isOpen, onClose }) {
 
   return createPortal(
     <AnimatePresence>
-      <div className="inventory-analytics-overlay" onClick={onClose}>
+      <div className="inventory-analytics-overlay" onClick={handleClose}>
         <motion.div
           className="inventory-analytics-modal"
           initial={{ opacity: 0, y: 30, scale: 0.95 }}
@@ -332,7 +339,7 @@ export default function InventoryAnalyticsModal({ isOpen, onClose }) {
             </div>
             <button
               className="inventory-analytics-close"
-              onClick={onClose}
+              onClick={handleClose}
               aria-label="Close modal"
             >
               <X size={24} />

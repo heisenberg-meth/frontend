@@ -704,7 +704,6 @@ ${printDiscount > 0 ? `<div style="display:flex;justify-content:space-between"><
     ],
   );
 
-
   const openBillDetail = (bill) => {
     setSelectedBill(bill);
     setShowBillDetailDrawer(true);
@@ -1749,8 +1748,7 @@ ${printDiscount > 0 ? `<div style="display:flex;justify-content:space-between"><
                   pct:
                     (todayBills || []).length > 0
                       ? ((todayBills || []).filter(
-                          (b) =>
-                            (b.paymentMode || b.paymentMethod) === "CASH",
+                          (b) => (b.paymentMode || b.paymentMethod) === "CASH",
                         ).length /
                           (todayBills || []).length) *
                         100
@@ -1770,8 +1768,7 @@ ${printDiscount > 0 ? `<div style="display:flex;justify-content:space-between"><
                   pct:
                     (todayBills || []).length > 0
                       ? ((todayBills || []).filter(
-                          (b) =>
-                            (b.paymentMode || b.paymentMethod) === "UPI",
+                          (b) => (b.paymentMode || b.paymentMethod) === "UPI",
                         ).length /
                           (todayBills || []).length) *
                         100
@@ -1791,8 +1788,7 @@ ${printDiscount > 0 ? `<div style="display:flex;justify-content:space-between"><
                   pct:
                     (todayBills || []).length > 0
                       ? ((todayBills || []).filter(
-                          (b) =>
-                            (b.paymentMode || b.paymentMethod) === "CARD",
+                          (b) => (b.paymentMode || b.paymentMethod) === "CARD",
                         ).length /
                           (todayBills || []).length) *
                         100
