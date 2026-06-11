@@ -184,6 +184,8 @@ export default function Notifications({ showToast }) {
           <div className="notif-search-box">
             <Search size={16} className="search-icon" />
             <input
+              required
+              required
               type="text"
               placeholder="Search notifications..."
               value={searchQuery}

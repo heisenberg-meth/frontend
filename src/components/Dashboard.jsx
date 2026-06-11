@@ -588,6 +588,8 @@ export default function Dashboard({
                 <div className="form-group">
                   <label>Disposal Location</label>
                   <input
+                    required
+                    required
                     placeholder="Waste Storage Room"
                     value={disposalForm.location}
                     onChange={(e) =>
@@ -601,6 +603,8 @@ export default function Dashboard({
                 <div className="form-group">
                   <label>Disposal Supervisor</label>
                   <input
+                    required
+                    required
                     placeholder="Supervisor Name"
                     value={disposalForm.supervisor}
                     onChange={(e) =>
@@ -614,6 +618,8 @@ export default function Dashboard({
                 <div className="form-group">
                   <label>Witness Name</label>
                   <input
+                    required
+                    required
                     placeholder="Witness Name"
                     value={disposalForm.witness}
                     onChange={(e) =>
@@ -639,6 +645,8 @@ export default function Dashboard({
                 </div>
                 <div className="form-group full-width checkbox-group">
                   <input
+                    required
+                    required
                     type="checkbox"
                     id="compliance-check"
                     checked={disposalForm.agreed}
@@ -757,6 +765,8 @@ export default function Dashboard({
               <div className="disposal-confirm-input compact-input">
                 <label>Type DISPOSE to confirm</label>
                 <input
+                  required
+                  required
                   type="text"
                   value={disposalConfirmText}
                   onChange={(e) => setDisposalConfirmText(e.target.value)}

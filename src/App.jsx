@@ -384,8 +384,6 @@ function AppContent() {
     }
   };
 
-
-
   if (!restored || authLoading) {
     return (
       <div
@@ -493,6 +491,8 @@ function AppContent() {
                       <Lock size={12} /> CURRENT PASSWORD
                     </label>
                     <input
+                      required
+                      required
                       type="password"
                       placeholder="Enter current password"
                       value={verifyPassword}

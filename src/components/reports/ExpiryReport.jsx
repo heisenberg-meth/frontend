@@ -374,6 +374,7 @@ export default function ExpiryReport({ showToast }) {
         >
           <Search size={16} />
           <input
+            required
             type="text"
             placeholder="Search medicine or batch..."
             style={{
@@ -590,6 +591,7 @@ export default function ExpiryReport({ showToast }) {
                   <div className="pos-input-group">
                     <label className="p-label">DISCOUNT PERCENTAGE (%)</label>
                     <input
+                      required
                       className="pos-input"
                       type="number"
                       placeholder="20"

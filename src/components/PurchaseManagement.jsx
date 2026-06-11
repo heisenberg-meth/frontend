@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useCallback } from "react";
 import api from "../api.js";
 import { API_ROUTES } from "../constants/api.routes.js";
 import { getMedicines } from "../services/inventory.service";
@@ -17,7 +17,6 @@ import {
   Eye,
   Edit2,
   Truck,
-  UploadCloud,
   ScanLine,
   Package,
   Loader2,
@@ -64,7 +63,23 @@ export default function PurchaseManagement({ showToast }) {
   const [loadingMedicines, setLoadingMedicines] = useState(false);
   const [returns, setReturns] = useState([]);
   const [invoices, setInvoices] = useState([]);
+  const [purchaseItems, setPurchaseItems] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [receiveItems, setReceiveItems] = useState([]);
+
+  const handleOpenReceiveModal = (po) => {
+    setSelectedRow(po);
+    setReceiveItems(
+      (po.items || []).map((item) => ({
+        ...item,
+        receivedQuantity: item.quantity || 1,
+        batchNumber: "",
+        expiryDate: "",
+      })),
+    );
+    setShowReceiveModal(true);
+  };
+
   const refreshData = async () => {
     try {
       const results = await Promise.allSettled([
@@ -76,7 +91,6 @@ export default function PurchaseManagement({ showToast }) {
         }),
       ]);
 
-      console.log("REFRESH DATA RESULTS:", results);
       setSuppliers(safeData(results[0], "data"));
       setOrders(safeData(results[1], "data"));
       setReturns(safeData(results[2], "data"));
@@ -104,7 +118,6 @@ export default function PurchaseManagement({ showToast }) {
           }),
         ]);
 
-        console.log("INITIALIZE RESULTS:", results);
         if (!mounted) return;
 
         setSuppliers(safeData(results[0], "data"));
@@ -138,28 +151,18 @@ export default function PurchaseManagement({ showToast }) {
     };
   }, [showToast]);
 
-  useEffect(() => {
-    console.log("SUPPLIERS STATE UPDATED:", suppliers);
-  }, [suppliers]);
+  useEffect(() => {}, [medicines]);
 
-  useEffect(() => {
-    console.log("MEDICINES STATE UPDATED:", medicines);
-    if (medicines.length > 0) {
-      console.log("FIRST MEDICINE SAMPLE:", medicines[0]);
-    }
-  }, [medicines]);
+  useEffect(() => {}, [purchaseItems]);
 
   const loadMedicines = useCallback(async () => {
-    console.log("LOAD MEDICINES START");
     try {
       setLoadingMedicines(true);
       const response = await getMedicines({
         page: 1,
         limit: 1000,
       });
-      console.log("MEDICINES RESPONSE:", response);
       const items = response?.data?.data?.items || response?.data?.data || [];
-      console.log("MEDICINES PARSED ITEMS:", items);
       setMedicines(items);
     } catch (error) {
       console.error("LOAD MEDICINES ERROR:", error);
@@ -190,15 +193,11 @@ export default function PurchaseManagement({ showToast }) {
   /* ── New Purchase Form State ── */
   const [selectedSupplier, setSelectedSupplier] = useState(null);
   const [medicineSearch, setMedicineSearch] = useState("");
-  const [purchaseItems, setPurchaseItems] = useState([]);
   const [invoiceDate, setInvoiceDate] = useState(
     new Date().toISOString().split("T")[0],
   );
   const [supplierInvNo, setSupplierInvNo] = useState("");
   const [saving, setSaving] = useState(false);
-  const [uploadedFile, setUploadedFile] = useState(null);
-  const [dragOver, setDragOver] = useState(false);
-  const fileInputRef = useRef(null);
 
   const filteredMedicines = medicines.filter((m) =>
     (m.name || "").toLowerCase().includes(medicineSearch.toLowerCase()),
@@ -229,6 +228,7 @@ export default function PurchaseManagement({ showToast }) {
         expiryDate: "",
       },
     ]);
+
     setMedicineSearch("");
   };
 
@@ -262,8 +262,6 @@ export default function PurchaseManagement({ showToast }) {
     setInvoiceDate(new Date().toISOString().split("T")[0]);
     setSupplierInvNo("");
     setSaving(false);
-    setUploadedFile(null);
-    setDragOver(false);
   };
 
   const handleSavePurchase = async () => {
@@ -311,9 +309,7 @@ export default function PurchaseManagement({ showToast }) {
         gstAmount: gstTotal,
         totalAmount: grandTotal,
       };
-      console.log("PURCHASE PAYLOAD", payload);
-      const result = await createPurchaseOrder(payload);
-      console.log("PURCHASE RESULT", result);
+      await createPurchaseOrder(payload);
       showToast("Purchase Saved Successfully", "success");
       closeDrawer();
       await refreshData();
@@ -332,43 +328,7 @@ export default function PurchaseManagement({ showToast }) {
     if (e.key === "Escape") closeDrawer();
   };
 
-  const handleFileSelect = (file) => {
-    if (!file) return;
-    if (file.size > 5 * 1024 * 1024) {
-      showToast("File too large. Max 5MB allowed.", "error");
-      return;
-    }
-    if (file.type !== "application/pdf") {
-      showToast("Only PDF files are supported.", "error");
-      return;
-    }
-    setUploadedFile(file);
-    showToast(`Uploaded: ${file.name}`, "success");
-  };
-
-  const handleFileChange = (e) => {
-    handleFileSelect(e.target.files[0]);
-    e.target.value = "";
-  };
-
-  const handleDrop = (e) => {
-    e.preventDefault();
-    setDragOver(false);
-    handleFileSelect(e.dataTransfer.files[0]);
-  };
-
-  const handleDragOver = (e) => {
-    e.preventDefault();
-    setDragOver(true);
-  };
-
-  const handleDragLeave = (e) => {
-    e.preventDefault();
-    setDragOver(false);
-  };
-
   const handleOpenDrawer = (type, row = null) => {
-    console.log("OPENING DRAWER:", type);
     setSelectedRow(row);
     setDrawer(type);
     if (type === "new-purchase" || type === "edit-purchase") {
@@ -438,15 +398,28 @@ export default function PurchaseManagement({ showToast }) {
   const handleReceiveOrder = async () => {
     try {
       showToast("Receiving order...", "info");
-      await receivePurchaseOrder(selectedRow.id, {
-        items: selectedRow.items || [],
-      });
+      const payload = {
+        receivedItems: receiveItems.map((item) => ({
+          medicineId: item.medicineId || item.id,
+          receivedQuantity:
+            Number(item.receivedQuantity) || Number(item.quantity) || 1,
+          batchNumber:
+            item.batchNumber || "B" + Math.floor(Math.random() * 10000),
+          expiryDate: item.expiryDate
+            ? new Date(item.expiryDate).toISOString()
+            : new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString(),
+        })),
+      };
+      await receivePurchaseOrder(selectedRow.id, payload);
       showToast("Order Received & Inventory Updated", "success");
       setShowReceiveModal(false);
       await refreshData();
     } catch (err) {
       console.error(err);
-      showToast("Failed to receive order", "error");
+      showToast(
+        err.response?.data?.error || err.message || "Failed to receive order",
+        "error",
+      );
     }
   };
 
@@ -517,7 +490,16 @@ export default function PurchaseManagement({ showToast }) {
           >
             <div className="btn-glow" />
             <Plus size={18} />
-            New Purchase
+            New Purchase Order
+          </button>
+          <button
+            className="pos-btn accent purchase-create-btn"
+            style={{ marginLeft: 12 }}
+            onClick={() => setActiveTab("orders")}
+          >
+            <div className="btn-glow" />
+            <Package size={18} />
+            Receive Goods
           </button>
         </div>
       </div>
@@ -584,6 +566,7 @@ export default function PurchaseManagement({ showToast }) {
         <div className="purchase-filters">
           <div className="pos-input-group" style={{ maxWidth: "200px" }}>
             <input
+              required
               className="filter-input"
               type="date"
               value={filters.date}
@@ -621,6 +604,7 @@ export default function PurchaseManagement({ showToast }) {
           </select>
           <div className="pos-input-group" style={{ flex: 1 }}>
             <input
+              required
               className="filter-input"
               placeholder="Search by ID or Supplier..."
               style={{ width: "100%" }}
@@ -788,8 +772,7 @@ export default function PurchaseManagement({ showToast }) {
                           style={{ padding: "4px 10px", fontSize: "11px" }}
                           onClick={(e) => {
                             e.stopPropagation();
-                            setSelectedRow(po);
-                            setShowReceiveModal(true);
+                            handleOpenReceiveModal(po);
                           }}
                         >
                           <Truck size={12} /> Receive
@@ -948,7 +931,7 @@ export default function PurchaseManagement({ showToast }) {
                 <div>
                   <h2 style={{ fontFamily: "Outfit", fontWeight: 700 }}>
                     {drawer === "new-purchase"
-                      ? "New Purchase Entry"
+                      ? "Create Purchase Order"
                       : drawer === "edit-purchase"
                         ? "Edit Purchase"
                         : selectedRow?.invoiceNumber ||
@@ -1012,6 +995,7 @@ export default function PurchaseManagement({ showToast }) {
                         <div className="pos-input-group">
                           <label className="p-label">INVOICE DATE</label>
                           <input
+                            required
                             className="pos-input"
                             type="date"
                             value={invoiceDate}
@@ -1021,6 +1005,7 @@ export default function PurchaseManagement({ showToast }) {
                         <div className="pos-input-group">
                           <label className="p-label">SUPPLIER INV #</label>
                           <input
+                            required
                             className="pos-input"
                             placeholder="e.g. CIP-9921"
                             value={supplierInvNo}
@@ -1038,6 +1023,7 @@ export default function PurchaseManagement({ showToast }) {
                           style={{ position: "relative" }}
                         >
                           <input
+                            required
                             className="pos-input medicine-search-input"
                             placeholder="Search medicine to add..."
                             value={medicineSearch}
@@ -1160,6 +1146,7 @@ export default function PurchaseManagement({ showToast }) {
                                 </td>
                                 <td>
                                   <input
+                                    required
                                     className="p-cost-input"
                                     style={{ width: "80px" }}
                                     placeholder="Batch..."
@@ -1175,6 +1162,7 @@ export default function PurchaseManagement({ showToast }) {
                                 </td>
                                 <td>
                                   <input
+                                    required
                                     className="p-cost-input"
                                     type="date"
                                     style={{ width: "125px" }}
@@ -1190,6 +1178,7 @@ export default function PurchaseManagement({ showToast }) {
                                 </td>
                                 <td>
                                   <input
+                                    required
                                     className="p-cost-input"
                                     style={{ width: "50px" }}
                                     value={item.qty}
@@ -1200,6 +1189,7 @@ export default function PurchaseManagement({ showToast }) {
                                 </td>
                                 <td>
                                   <input
+                                    required
                                     className="p-cost-input"
                                     style={{ width: "65px" }}
                                     value={item.purchasePrice}
@@ -1270,88 +1260,13 @@ export default function PurchaseManagement({ showToast }) {
                             borderTop: "1px solid rgba(255,255,255,0.06)",
                             paddingTop: "12px",
                             marginTop: "8px",
+                            width: "100%",
                           }}
                         >
                           <span>Total</span>
                           <span>₹{grandTotal.toFixed(2)}</span>
                         </div>
                       </div>
-                    </div>
-
-                    <div
-                      className={`p-upload-zone ${dragOver ? "drag-over" : ""} ${uploadedFile ? "has-file" : ""}`}
-                      onClick={() => fileInputRef.current?.click()}
-                      onDrop={handleDrop}
-                      onDragOver={handleDragOver}
-                      onDragLeave={handleDragLeave}
-                    >
-                      <input
-                        ref={fileInputRef}
-                        type="file"
-                        accept=".pdf,application/pdf"
-                        style={{ display: "none" }}
-                        onChange={handleFileChange}
-                      />
-                      {uploadedFile ? (
-                        <>
-                          <div
-                            style={{
-                              width: "40px",
-                              height: "40px",
-                              borderRadius: "10px",
-                              background: "rgba(79, 219, 200, 0.1)",
-                              display: "flex",
-                              alignItems: "center",
-                              justifyContent: "center",
-                              marginBottom: "8px",
-                            }}
-                          >
-                            <UploadCloud
-                              size={20}
-                              style={{ color: "var(--primary)" }}
-                            />
-                          </div>
-                          <div style={{ fontWeight: 700, fontSize: "13px" }}>
-                            {uploadedFile.name}
-                          </div>
-                          <div
-                            className="result-meta"
-                            style={{ fontSize: "10px" }}
-                          >
-                            {(uploadedFile.size / 1024).toFixed(1)} KB
-                          </div>
-                          <button
-                            className="micro-btn"
-                            style={{
-                              marginTop: "4px",
-                              color: "var(--danger)",
-                              fontSize: "11px",
-                            }}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setUploadedFile(null);
-                            }}
-                          >
-                            <X size={14} /> Remove
-                          </button>
-                        </>
-                      ) : (
-                        <>
-                          <UploadCloud
-                            size={32}
-                            style={{
-                              color: "var(--primary)",
-                              marginBottom: "8px",
-                            }}
-                          />
-                          <div>
-                            <b>Click or Drag</b> to upload invoice PDF
-                          </div>
-                          <div style={{ fontSize: "10px" }}>
-                            Max file size: 5MB
-                          </div>
-                        </>
-                      )}
                     </div>
                   </>
                 ) : (
@@ -1486,10 +1401,10 @@ export default function PurchaseManagement({ showToast }) {
                   <button
                     className="pos-btn teal"
                     style={{ flex: 2 }}
-                    disabled={saving}
                     onClick={handleSavePurchase}
+                    disabled={saving}
                   >
-                    {saving ? "Saving..." : "Save Purchase"}
+                    {saving ? "Creating..." : "Create Purchase Order"}
                   </button>
                 )}
               </div>
@@ -1524,6 +1439,7 @@ export default function PurchaseManagement({ showToast }) {
                 <div className="pos-input-group">
                   <label>Original Invoice</label>
                   <input
+                    required
                     className="pos-input"
                     value={selectedRow.invoiceNumber || selectedRow.id}
                     disabled
@@ -1541,11 +1457,12 @@ export default function PurchaseManagement({ showToast }) {
                         marginBottom: "12px",
                       }}
                     >
-                      <input type="checkbox" defaultChecked />
+                      <input required type="checkbox" defaultChecked />
                       <div style={{ flex: 1 }}>
                         {item.medicine?.name || item.name}
                       </div>
                       <input
+                        required
                         className="p-cost-input"
                         defaultValue={item.quantity}
                         max={item.quantity}
@@ -1629,29 +1546,53 @@ export default function PurchaseManagement({ showToast }) {
                     </tr>
                   </thead>
                   <tbody>
-                    {(selectedRow.items || []).map((item, idx) => (
+                    {receiveItems.map((item, idx) => (
                       <tr key={idx}>
                         <td>{item.medicine?.name || item.name}</td>
                         <td>{item.quantity}</td>
                         <td>
                           <input
+                            required
                             className="p-cost-input"
                             style={{ width: "60px" }}
-                            defaultValue={item.quantity}
+                            type="number"
+                            value={item.receivedQuantity}
+                            onChange={(e) => {
+                              const newItems = [...receiveItems];
+                              newItems[idx].receivedQuantity = e.target.value;
+                              setReceiveItems(newItems);
+                            }}
                           />
                         </td>
                         <td>
                           <input
+                            required
                             className="p-cost-input"
                             placeholder="Batch..."
+                            value={item.batchNumber}
+                            onChange={(e) => {
+                              const newItems = [...receiveItems];
+                              newItems[idx].batchNumber = e.target.value;
+                              setReceiveItems(newItems);
+                            }}
                           />
                         </td>
                         <td>
-                          <input className="p-cost-input" type="date" />
+                          <input
+                            required
+                            className="p-cost-input"
+                            type="date"
+                            value={item.expiryDate}
+                            onChange={(e) => {
+                              const newItems = [...receiveItems];
+                              newItems[idx].expiryDate = e.target.value;
+                              setReceiveItems(newItems);
+                            }}
+                          />
                         </td>
                       </tr>
                     ))}
-                    {(!selectedRow.items || selectedRow.items.length === 0) && (
+                    {receiveItems.length === 0 && (
                       <tr>
                         <td colSpan="5">No items to receive.</td>
                       </tr>

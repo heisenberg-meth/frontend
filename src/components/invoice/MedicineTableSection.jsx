@@ -271,6 +271,7 @@ function MedicineRow({
       <div className="med-cell med-cell-name">
         <div className="med-search-wrap">
           <input
+            required
             ref={inputRef}
             type="text"
             className={`form-input ${isSelected ? "form-input-selected" : ""}`}
@@ -410,6 +411,7 @@ function MedicineRow({
       {/* ── Qty ── */}
       <div className="med-cell med-cell-qty">
         <input
+          required
           type="number"
           className="form-input text-center"
           min="1"
@@ -431,6 +433,7 @@ function MedicineRow({
       {/* ── MRP ── */}
       <div className="med-cell med-cell-mrp">
         <input
+          required
           type="text"
           className="form-input text-right"
           readOnly
@@ -442,6 +445,7 @@ function MedicineRow({
       {/* ── Discount ── */}
       <div className="med-cell med-cell-disc">
         <input
+          required
           type="number"
           className="form-input text-center"
           min="0"

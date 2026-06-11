@@ -896,7 +896,7 @@ export default function BulkImport({ fetchData, showToast }) {
                   {...getRootProps()}
                   className={`dropzone-inner-v2 ${isDragActive ? "active" : ""}`}
                 >
-                  <input {...getInputProps()} />
+                  <input required required {...getInputProps()} />
                   {file ? (
                     <div className="file-selected-state">
                       <div className="file-info-row">
@@ -1087,6 +1087,8 @@ export default function BulkImport({ fetchData, showToast }) {
                   <div className="checkbox-list">
                     <label className="check-item">
                       <input
+                        required
+                        required
                         type="checkbox"
                         checked={barcodeOptions.autoGen}
                         onChange={(e) =>
@@ -1100,6 +1102,8 @@ export default function BulkImport({ fetchData, showToast }) {
                     </label>
                     <label className="check-item">
                       <input
+                        required
+                        required
                         type="checkbox"
                         checked={barcodeOptions.overwrite}
                         onChange={(e) =>
@@ -1115,6 +1119,8 @@ export default function BulkImport({ fetchData, showToast }) {
                     </label>
                     <label className="check-item">
                       <input
+                        required
+                        required
                         type="checkbox"
                         checked={barcodeOptions.validate}
                         onChange={(e) =>
@@ -1595,6 +1601,8 @@ export default function BulkImport({ fetchData, showToast }) {
                 <div className="pos-input-group">
                   <label className="p-label">SUPPLIER NAME*</label>
                   <input
+                    required
+                    required
                     className="pos-input"
                     placeholder="e.g. Cipla Ltd"
                     value={supplierForm.name}
@@ -1606,6 +1614,8 @@ export default function BulkImport({ fetchData, showToast }) {
                 <div className="pos-input-group">
                   <label className="p-label">CONTACT PERSON</label>
                   <input
+                    required
+                    required
                     className="pos-input"
                     placeholder="Name"
                     value={supplierForm.contact}
@@ -1620,6 +1630,8 @@ export default function BulkImport({ fetchData, showToast }) {
                 <div className="pos-input-group">
                   <label className="p-label">PHONE</label>
                   <input
+                    required
+                    required
                     className="pos-input"
                     placeholder="+91..."
                     value={supplierForm.phone}
@@ -1634,6 +1646,8 @@ export default function BulkImport({ fetchData, showToast }) {
                 <div className="pos-input-group">
                   <label className="p-label">EMAIL</label>
                   <input
+                    required
+                    required
                     className="pos-input"
                     placeholder="supplier@mail.com"
                     value={supplierForm.email}
@@ -1648,6 +1662,8 @@ export default function BulkImport({ fetchData, showToast }) {
                 <div className="pos-input-group">
                   <label className="p-label">GST NUMBER</label>
                   <input
+                    required
+                    required
                     className="pos-input"
                     placeholder="29AAB..."
                     value={supplierForm.gst}
@@ -1659,6 +1675,8 @@ export default function BulkImport({ fetchData, showToast }) {
                 <div className="pos-input-group">
                   <label className="p-label">LEAD TIME (DAYS)</label>
                   <input
+                    required
+                    required
                     className="pos-input"
                     type="number"
                     placeholder="3"
@@ -1727,6 +1745,8 @@ export default function BulkImport({ fetchData, showToast }) {
               <div className="pos-input-group">
                 <label className="p-label">TEMPLATE NAME</label>
                 <input
+                  required
+                  required
                   className="pos-input"
                   placeholder="e.g. Cipla Invoice Format"
                   value={templateName}
@@ -1745,6 +1765,8 @@ export default function BulkImport({ fetchData, showToast }) {
               </div>
               <label className="check-item">
                 <input
+                  required
+                  required
                   type="checkbox"
                   checked={templateDefault}
                   onChange={(e) => setTemplateDefault(e.target.checked)}

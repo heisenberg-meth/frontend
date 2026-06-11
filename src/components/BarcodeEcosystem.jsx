@@ -587,6 +587,8 @@ export default function BarcodeEcosystem({ showToast }) {
                         </div>
                       ) : (
                         <input
+                          required
+                          required
                           ref={searchInputRef}
                           type="text"
                           placeholder="Type to search medicines..."
@@ -789,6 +791,8 @@ export default function BarcodeEcosystem({ showToast }) {
                     {Object.keys(labelFields).map((k) => (
                       <label key={k} className="checkbox-item">
                         <input
+                          required
+                          required
                           type="checkbox"
                           checked={labelFields[k]}
                           onChange={(e) =>
@@ -1063,6 +1067,8 @@ export default function BarcodeEcosystem({ showToast }) {
             </div>
             <div style={{ display: "flex", gap: "12px", width: "100%" }}>
               <input
+                required
+                required
                 className="pos-input"
                 style={{ flex: 1 }}
                 placeholder="Enter 13-digit barcode..."
@@ -1287,18 +1293,24 @@ export default function BarcodeEcosystem({ showToast }) {
                   "UPC-A",
                 ].map((f) => (
                   <label key={f} className="checkbox-item">
-                    <input type="checkbox" defaultChecked /> {f}
+                    <input required required type="checkbox" defaultChecked />{" "}
+                    {f}
                   </label>
                 ))}
               </div>
               <div style={{ display: "flex", gap: "12px", marginTop: "20px" }}>
                 <div className="pos-input-group" style={{ flex: 1 }}>
                   <label className="p-label">PREFIX TO STRIP</label>
-                  <input className="pos-input" placeholder="e.g. GS1" />
+                  <input
+                    required
+                    required
+                    className="pos-input"
+                    placeholder="e.g. GS1"
+                  />
                 </div>
                 <div className="pos-input-group" style={{ flex: 1 }}>
                   <label className="p-label">SUFFIX TO STRIP</label>
-                  <input className="pos-input" />
+                  <input required required className="pos-input" />
                 </div>
               </div>
             </div>
@@ -1315,15 +1327,16 @@ export default function BarcodeEcosystem({ showToast }) {
               style={{ display: "flex", flexDirection: "column", gap: "12px" }}
             >
               <label className="checkbox-item">
-                <input type="checkbox" defaultChecked /> Auto-add scanned
-                medicine to bill (in /billing screen)
+                <input required required type="checkbox" defaultChecked />{" "}
+                Auto-add scanned medicine to bill (in /billing screen)
               </label>
               <label className="checkbox-item">
-                <input type="checkbox" defaultChecked /> Beep sound on
-                successful scan
+                <input required required type="checkbox" defaultChecked /> Beep
+                sound on successful scan
               </label>
               <label className="checkbox-item">
-                <input type="checkbox" /> Vibrate (mobile only)
+                <input required required type="checkbox" /> Vibrate (mobile
+                only)
               </label>
             </div>
             <button

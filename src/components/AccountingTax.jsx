@@ -301,6 +301,8 @@ export default function AccountingTax({ showToast }) {
               <div className="search-input-wrapper">
                 <Search size={18} />
                 <input
+                  required
+                  required
                   placeholder="Search expenses..."
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
@@ -608,6 +610,8 @@ export default function AccountingTax({ showToast }) {
                 <div className="form-group">
                   <label>Description</label>
                   <input
+                    required
+                    required
                     className="pos-input"
                     value={expenseForm.description}
                     onChange={(e) =>
@@ -622,6 +626,8 @@ export default function AccountingTax({ showToast }) {
                 <div className="form-group">
                   <label>Amount (₹)</label>
                   <input
+                    required
+                    required
                     className="pos-input"
                     type="number"
                     value={expenseForm.amount}
@@ -654,6 +660,8 @@ export default function AccountingTax({ showToast }) {
                     style={{ display: "flex", alignItems: "center", gap: 8 }}
                   >
                     <input
+                      required
+                      required
                       type="checkbox"
                       checked={expenseForm.receipt}
                       onChange={(e) =>

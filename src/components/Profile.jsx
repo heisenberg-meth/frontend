@@ -263,6 +263,7 @@ export default function Profile({
                   <User size={12} /> Full Professional Name
                 </label>
                 <input
+                  required
                   type="text"
                   value={formData.fullName}
                   onChange={(e) =>
@@ -276,6 +277,7 @@ export default function Profile({
                   <Store size={12} /> Pharmacy / Node Name
                 </label>
                 <input
+                  required
                   type="text"
                   value={formData.shopName}
                   onChange={(e) =>
@@ -289,7 +291,7 @@ export default function Profile({
                   <Mail size={12} /> Registered Email
                 </label>
                 <div className="input-with-action">
-                  <input type="text" value={formData.email} disabled />
+                  <input required type="text" value={formData.email} disabled />
                   <div className="input-actions">
                     <CheckCircle2 size={14} className="text-success" />
                     <button
@@ -306,6 +308,7 @@ export default function Profile({
                   <Phone size={12} /> Phone Number
                 </label>
                 <input
+                  required
                   type="text"
                   value={formData.phone}
                   onChange={(e) =>
@@ -318,13 +321,19 @@ export default function Profile({
                 <label>
                   <BadgeCheck size={12} /> Employee ID
                 </label>
-                <input type="text" value={formData.employeeId} disabled />
+                <input
+                  required
+                  type="text"
+                  value={formData.employeeId}
+                  disabled
+                />
               </div>
               <div className="input-v2">
                 <label>
                   <ShieldCheck size={12} /> Professional Role
                 </label>
                 <input
+                  required
                   type="text"
                   value={
                     user?.role === "OWNER"
@@ -444,6 +453,7 @@ export default function Profile({
                 <label className="modal-action-btn primary">
                   <Camera size={18} /> Upload New Photo
                   <input
+                    required
                     type="file"
                     hidden
                     accept="image/*"
@@ -471,6 +481,7 @@ export default function Profile({
                 <label>Current Password</label>
                 <div className="input-with-action">
                   <input
+                    required
                     type={showPassword ? "text" : "password"}
                     placeholder="Enter current password"
                     value={passwordData.currentPassword}
@@ -492,6 +503,7 @@ export default function Profile({
               <div className="input-v2">
                 <label>New Password</label>
                 <input
+                  required
                   type="password"
                   placeholder="Enter new password"
                   value={passwordData.newPassword}
@@ -531,6 +543,7 @@ export default function Profile({
               <div className="input-v2">
                 <label>Confirm New Password</label>
                 <input
+                  required
                   type="password"
                   placeholder="Repeat new password"
                   value={passwordData.confirmPassword}

@@ -48,6 +48,7 @@ export default function InvoiceSummaryCard({
           </span>
           <div className="relative w-24">
             <input
+              required
               type="number"
               min="0"
               max="100"

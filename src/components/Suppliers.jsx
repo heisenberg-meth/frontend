@@ -119,7 +119,7 @@ const PAYMENT_TERMS_MAP = {
   "Net 15": 15,
   "Net 30": 30,
   "Net 45": 45,
-  "Advance": 0,
+  Advance: 0,
 };
 
 const LEAD_TIME_MAP = {
@@ -201,6 +201,7 @@ function TagInput({ tags = [], onChange }) {
           </span>
         ))}
         <input
+          required
           className="sup-tag-inner-input"
           value={inputVal}
           placeholder={tags.length === 0 ? "Type and press Enter…" : ""}
@@ -252,21 +253,29 @@ function SupplierModal({ onClose, onSave, editData, showToast, saving }) {
     status: "active",
   };
 
-  const initialForm = editData ? {
-    ...EMPTY,
-    ...editData,
-    contact: editData.contact || editData.contactPerson || "",
-    categories: editData.categories || editData.drugCategories || [],
-    gst: editData.gst || editData.gstNumber || "",
-    paymentTerms: editData.paymentTerms || getPaymentTermsStr(editData.paymentTermsDays),
-    leadTime: editData.leadTime || getLeadTimeStr(editData.leadTimeDays),
-  } : EMPTY;
+  const initialForm = editData
+    ? {
+        ...EMPTY,
+        ...editData,
+        contact: editData.contact || editData.contactPerson || "",
+        categories: editData.categories || editData.drugCategories || [],
+        gst: editData.gst || editData.gstNumber || "",
+        paymentTerms:
+          editData.paymentTerms ||
+          getPaymentTermsStr(editData.paymentTermsDays),
+        leadTime: editData.leadTime || getLeadTimeStr(editData.leadTimeDays),
+      }
+    : EMPTY;
 
   const [form, setForm] = useState(initialForm);
   const set = (key, val) => setForm((f) => ({ ...f, [key]: val }));
 
   const handleSave = () => {
-    if (!(form.name || "").trim() || !(form.contact || "").trim() || !(form.phone || "").trim()) {
+    if (
+      !(form.name || "").trim() ||
+      !(form.contact || "").trim() ||
+      !(form.phone || "").trim()
+    ) {
       showToast("Supplier Name, Contact, and Phone are required.", "error");
       return;
     }
@@ -294,6 +303,7 @@ function SupplierModal({ onClose, onSave, editData, showToast, saving }) {
             <div className="form-group full">
               <label>Supplier Legal Name *</label>
               <input
+                required
                 placeholder="e.g. Cipla Distributors Ltd."
                 value={form.name}
                 onChange={(e) => set("name", e.target.value)}
@@ -302,6 +312,7 @@ function SupplierModal({ onClose, onSave, editData, showToast, saving }) {
             <div className="form-group">
               <label>Contact Person *</label>
               <input
+                required
                 placeholder="e.g. Ramesh Kumar"
                 value={form.contact}
                 onChange={(e) => set("contact", e.target.value)}
@@ -310,6 +321,7 @@ function SupplierModal({ onClose, onSave, editData, showToast, saving }) {
             <div className="form-group">
               <label>Phone Number *</label>
               <input
+                required
                 placeholder="+91 XXXXX XXXXX"
                 value={form.phone}
                 onChange={(e) => set("phone", e.target.value)}
@@ -346,7 +358,13 @@ function SupplierModal({ onClose, onSave, editData, showToast, saving }) {
                 value={form.leadTime}
                 onChange={(e) => set("leadTime", e.target.value)}
               >
-                {["1 day", "2 days", "3 days", "1 week", "2 weeks"].map(opt => <option key={opt} value={opt}>{opt}</option>)}
+                {["1 day", "2 days", "3 days", "1 week", "2 weeks"].map(
+                  (opt) => (
+                    <option key={opt} value={opt}>
+                      {opt}
+                    </option>
+                  ),
+                )}
               </select>
             </div>
             <div className="form-group">
@@ -356,7 +374,11 @@ function SupplierModal({ onClose, onSave, editData, showToast, saving }) {
                 value={form.paymentTerms}
                 onChange={(e) => set("paymentTerms", e.target.value)}
               >
-                {["Net 15", "Net 30", "Net 45", "Advance"].map(opt => <option key={opt} value={opt}>{opt}</option>)}
+                {["Net 15", "Net 30", "Net 45", "Advance"].map((opt) => (
+                  <option key={opt} value={opt}>
+                    {opt}
+                  </option>
+                ))}
               </select>
             </div>
             <div className="form-group full">
@@ -752,7 +774,12 @@ export default function Suppliers({ showToast }) {
                     </td>
                     <td>
                       <span className="sup-lead-time">
-                        {s.paymentTerms || (s.paymentTermsDays !== undefined ? (s.paymentTermsDays === 0 ? "Advance" : `Net ${s.paymentTermsDays}`) : "—")}
+                        {s.paymentTerms ||
+                          (s.paymentTermsDays !== undefined
+                            ? s.paymentTermsDays === 0
+                              ? "Advance"
+                              : `Net ${s.paymentTermsDays}`
+                            : "—")}
                       </span>
                     </td>
                     <td>

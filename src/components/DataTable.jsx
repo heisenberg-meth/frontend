@@ -119,6 +119,8 @@ export default function DataTable({
           <div className="data-table-search">
             <Search size={18} className="search-icon" />
             <input
+              required
+              required
               placeholder={searchPlaceholder}
               value={search}
               onChange={(e) => {

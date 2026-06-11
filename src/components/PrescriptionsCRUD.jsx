@@ -221,6 +221,7 @@ function PrescriptionModal({ onClose, onSave, editData, showToast, saving }) {
             <label className="rx-upload-btn">
               <Upload size={16} /> Upload Scan
               <input
+                required
                 type="file"
                 hidden
                 accept="image/*,.pdf"
@@ -239,6 +240,7 @@ function PrescriptionModal({ onClose, onSave, editData, showToast, saving }) {
             <div className="form-group full">
               <label>Patient Name *</label>
               <input
+                required
                 placeholder="e.g. Rahul Sharma"
                 value={form.patientName}
                 onChange={(e) => set("patientName", e.target.value)}
@@ -247,6 +249,7 @@ function PrescriptionModal({ onClose, onSave, editData, showToast, saving }) {
             <div className="form-group">
               <label>Phone Number</label>
               <input
+                required
                 placeholder="+91 XXXXX XXXXX"
                 value={form.patientPhone}
                 onChange={(e) => set("patientPhone", e.target.value)}
@@ -255,6 +258,7 @@ function PrescriptionModal({ onClose, onSave, editData, showToast, saving }) {
             <div className="form-group">
               <label>Age</label>
               <input
+                required
                 type="number"
                 placeholder="42"
                 value={form.patientAge}
@@ -291,6 +295,7 @@ function PrescriptionModal({ onClose, onSave, editData, showToast, saving }) {
             <div className="form-group full">
               <label>Doctor Name *</label>
               <input
+                required
                 placeholder="e.g. Dr. Priya Mehta"
                 value={form.doctorName}
                 onChange={(e) => set("doctorName", e.target.value)}
@@ -299,6 +304,7 @@ function PrescriptionModal({ onClose, onSave, editData, showToast, saving }) {
             <div className="form-group">
               <label>Registration Number</label>
               <input
+                required
                 placeholder="e.g. MMC-12345"
                 value={form.doctorRegNo}
                 onChange={(e) => set("doctorRegNo", e.target.value)}
@@ -307,6 +313,7 @@ function PrescriptionModal({ onClose, onSave, editData, showToast, saving }) {
             <div className="form-group">
               <label>Specialty</label>
               <input
+                required
                 placeholder="e.g. General Physician"
                 value={form.doctorSpecialty}
                 onChange={(e) => set("doctorSpecialty", e.target.value)}
@@ -333,6 +340,7 @@ function PrescriptionModal({ onClose, onSave, editData, showToast, saving }) {
                 <div className="form-group full">
                   <label>Medicine Name *</label>
                   <input
+                    required
                     placeholder="e.g. Amoxicillin 500mg"
                     value={med.name}
                     onChange={(e) =>
@@ -357,6 +365,7 @@ function PrescriptionModal({ onClose, onSave, editData, showToast, saving }) {
                   <label>Duration</label>
                   <div style={{ display: "flex", gap: 8 }}>
                     <input
+                      required
                       type="number"
                       placeholder="7"
                       value={med.duration}
@@ -381,6 +390,7 @@ function PrescriptionModal({ onClose, onSave, editData, showToast, saving }) {
                 <div className="form-group full">
                   <label>Instructions</label>
                   <input
+                    required
                     placeholder="e.g. After meals"
                     value={med.instructions}
                     onChange={(e) =>
@@ -401,6 +411,7 @@ function PrescriptionModal({ onClose, onSave, editData, showToast, saving }) {
             <div className="form-group full">
               <label>Diagnosis</label>
               <input
+                required
                 placeholder="e.g. Upper Respiratory Tract Infection"
                 value={form.diagnosis}
                 onChange={(e) => set("diagnosis", e.target.value)}
@@ -940,6 +951,7 @@ export default function PrescriptionsCRUD({ showToast }) {
           <div className="rx-search-box">
             <Search size={20} className="search-icon" />
             <input
+              required
               placeholder="Search by patient, Rx ID, or doctor..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}

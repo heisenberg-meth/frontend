@@ -226,6 +226,7 @@ export default function ReportsHub({ showToast }) {
                     <div className="pos-input-group">
                       <label className="p-label">FROM DATE</label>
                       <input
+                        required
                         className="pos-input"
                         type="date"
                         value={dateRange.from}
@@ -240,6 +241,7 @@ export default function ReportsHub({ showToast }) {
                     <div className="pos-input-group">
                       <label className="p-label">TO DATE</label>
                       <input
+                        required
                         className="pos-input"
                         type="date"
                         value={dateRange.to}

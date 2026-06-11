@@ -497,6 +497,7 @@ export default function SystemSettings({
             <div className="sys-form-group">
               <label className="sys-label">GSTIN NUMBER</label>
               <input
+                required
                 className="sys-input"
                 value={gstin}
                 onChange={(e) => setGstin(e.target.value)}
@@ -505,6 +506,7 @@ export default function SystemSettings({
             <div className="sys-form-group">
               <label className="sys-label">LEGAL BUSINESS NAME</label>
               <input
+                required
                 className="sys-input"
                 value={bizName}
                 onChange={(e) => setBizName(e.target.value)}
@@ -519,6 +521,7 @@ export default function SystemSettings({
             <div className="sys-form-group">
               <label className="sys-label">DISPLAY SHOP NAME</label>
               <input
+                required
                 className="sys-input"
                 value={shopName}
                 onChange={(e) => setShopName(e.target.value)}
@@ -527,6 +530,7 @@ export default function SystemSettings({
             <div className="sys-form-group">
               <label className="sys-label">PHONE NUMBER</label>
               <input
+                required
                 className="sys-input"
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
@@ -535,6 +539,7 @@ export default function SystemSettings({
             <div className="sys-form-group">
               <label className="sys-label">EMAIL ADDRESS</label>
               <input
+                required
                 className="sys-input"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
@@ -563,6 +568,7 @@ export default function SystemSettings({
                 <div className="sys-badge">{lowStock} UNITS</div>
               </div>
               <input
+                required
                 type="range"
                 className="sys-slider"
                 min="1"
@@ -577,6 +583,7 @@ export default function SystemSettings({
                 <div className="sys-badge">{expiryDays} DAYS</div>
               </div>
               <input
+                required
                 type="range"
                 className="sys-slider"
                 min="7"

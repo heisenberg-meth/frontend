@@ -341,6 +341,8 @@ export default function Auth({ onAuth }) {
                     <label className="control-label">FULL NAME</label>
                     <div className="control-input-wrap">
                       <input
+                        required
+                        required
                         type="text"
                         className="canvas-input"
                         placeholder="Dr. Julian Sterling"
@@ -348,7 +350,6 @@ export default function Auth({ onAuth }) {
                         onChange={(e) =>
                           updateField("fullName", e.target.value)
                         }
-                        required
                       />
                     </div>
                   </div>
@@ -359,6 +360,7 @@ export default function Auth({ onAuth }) {
                     <div className="control-input-wrap">
                       <Shield size={18} className="input-icon-left" />
                       <input
+                        required
                         type="text"
                         className="canvas-input"
                         placeholder="e.g. Apex Medical Solutions"
@@ -384,6 +386,7 @@ export default function Auth({ onAuth }) {
                   <div className="control-input-wrap">
                     <Mail size={18} className="input-icon-left" />
                     <input
+                      required
                       type={loginType === "admin" ? "email" : "text"}
                       className="canvas-input"
                       placeholder={
@@ -418,6 +421,7 @@ export default function Auth({ onAuth }) {
                   <div className="control-input-wrap">
                     <Lock size={18} className="input-icon-left" />
                     <input
+                      required
                       type={showPassword ? "text" : "password"}
                       className="canvas-input"
                       placeholder="Enter your password"
@@ -448,6 +452,7 @@ export default function Auth({ onAuth }) {
                   <div className="control-input-wrap">
                     <Shield size={18} className="input-icon-left" />
                     <input
+                      required
                       type="text"
                       className="canvas-input"
                       placeholder="Enter 6-digit code"
@@ -478,6 +483,7 @@ export default function Auth({ onAuth }) {
                     <div className="control-input-wrap">
                       <Lock size={18} className="input-icon-left" />
                       <input
+                        required
                         type={showPassword ? "text" : "password"}
                         className="canvas-input"
                         placeholder="Min. 8 characters"
@@ -512,6 +518,7 @@ export default function Auth({ onAuth }) {
                     <div className="control-input-wrap">
                       <Lock size={18} className="input-icon-left" />
                       <input
+                        required
                         type={showPassword ? "text" : "password"}
                         className="canvas-input"
                         placeholder="Re-enter new password"
@@ -532,6 +539,7 @@ export default function Auth({ onAuth }) {
                   <div className="control-input-wrap">
                     <Lock size={18} className="input-icon-left" />
                     <input
+                      required
                       type={showPassword ? "text" : "password"}
                       className="canvas-input"
                       placeholder="Re-enter your password"

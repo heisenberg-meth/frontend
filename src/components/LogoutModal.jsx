@@ -167,6 +167,7 @@ export default function LogoutModal({
                   <label className="logout-checkbox-wrapper">
                     <div className="custom-checkbox-container">
                       <input
+                        required
                         type="checkbox"
                         checked={clearSession}
                         onChange={(e) => setClearSession(e.target.checked)}

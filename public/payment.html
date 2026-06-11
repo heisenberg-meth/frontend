@@ -1441,7 +1441,7 @@
       <div class="topbar-left">
         <div class="search-bar">
           <i class="ti ti-search"></i>
-          <input type="text" placeholder="Search analytics, stock, or clinical logs...">
+          <input required type="text" placeholder="Search analytics, stock, or clinical logs...">
         </div>
       </div>
       <div class="topbar-right">
@@ -1505,10 +1505,10 @@
             <span class="card-label">GST DETAILS (OPTIONAL)</span>
             <div class="row-inputs">
               <div class="form-group" style="margin-bottom:0">
-                <input type="text" class="sys-input-field" id="gstin-input" placeholder="29AABCC1234D1Z5 — optional">
+                <input required type="text" class="sys-input-field" id="gstin-input" placeholder="29AABCC1234D1Z5 — optional">
               </div>
               <div class="form-group" style="margin-bottom:0">
-                <input type="text" class="sys-input-field" id="bizname-input" placeholder="Viyan Pharmacy">
+                <input required type="text" class="sys-input-field" id="bizname-input" placeholder="Viyan Pharmacy">
               </div>
             </div>
             <span class="helper-note">GST invoice will be generated if GSTIN is provided</span>
@@ -1533,7 +1533,7 @@
               <div class="form-group">
                 <span class="card-label">CARD NUMBER</span>
                 <div class="card-logo-container">
-                  <input type="text" class="sys-input-field" id="card-num-input" placeholder="1234 5678 9012 3456"
+                  <input required type="text" class="sys-input-field" id="card-num-input" placeholder="1234 5678 9012 3456"
                     oninput="formatCard(this)">
                   <span class="card-detect-chip" id="card-type-chip">VISA</span>
                 </div>
@@ -1542,14 +1542,14 @@
               <div class="row-inputs">
                 <div class="form-group">
                   <span class="card-label">EXPIRY DATE</span>
-                  <input type="text" class="sys-input-field" id="card-exp-input" placeholder="MM / YY" maxlength="5"
+                  <input required type="text" class="sys-input-field" id="card-exp-input" placeholder="MM / YY" maxlength="5"
                     oninput="formatExpiry(this)">
                   <span class="error-msg" id="err-card-exp">Enter expiry (MM/YY)</span>
                 </div>
                 <div class="form-group">
                   <span class="card-label">CVV</span>
                   <div class="cvv-container">
-                    <input type="password" class="sys-input-field" id="card-cvv-input" placeholder="•••" maxlength="3">
+                    <input required type="password" class="sys-input-field" id="card-cvv-input" placeholder="•••" maxlength="3">
                     <button class="cvv-toggle-btn" onclick="toggleCvv()"><i class="ti ti-eye"></i></button>
                   </div>
                   <span class="error-msg" id="err-card-cvv">Enter 3-digit CVV</span>
@@ -1557,11 +1557,11 @@
               </div>
               <div class="form-group">
                 <span class="card-label">CARDHOLDER NAME</span>
-                <input type="text" class="sys-input-field" id="card-name-input" placeholder="Name as on card">
+                <input required type="text" class="sys-input-field" id="card-name-input" placeholder="Name as on card">
                 <span class="error-msg" id="err-card-name">Enter cardholder name</span>
               </div>
               <label class="terms-label" style="margin-top:12px; margin-bottom:12px">
-                <input type="checkbox" checked> Save this card for future payments
+                <input required type="checkbox" checked> Save this card for future payments
               </label>
             </div>
 
@@ -1577,7 +1577,7 @@
               </div>
               <div class="form-group">
                 <span class="card-label">UPI ID</span>
-                <input type="text" class="sys-input-field" id="upi-input" placeholder="yourname@upi">
+                <input required type="text" class="sys-input-field" id="upi-input" placeholder="yourname@upi">
                 <span class="error-msg" id="err-upi">Please enter a valid UPI ID (e.g. name@paytm)</span>
               </div>
 
@@ -1728,14 +1728,14 @@
             <div id="form-submission-area">
               <span class="card-label">PROMO COUPON CODE</span>
               <div class="coupon-row" id="coupon-row-input">
-                <input type="text" class="sys-input-field" id="coupon-input" placeholder="Enter coupon code"
+                <input required type="text" class="sys-input-field" id="coupon-input" placeholder="Enter coupon code"
                   style="flex:1">
                 <button class="sys-btn-outline" onclick="applyPromo()">Apply</button>
               </div>
               <div class="coupon-success-chip" id="coupon-chip"></div>
 
               <label class="terms-label" id="terms-box-label">
-                <input type="checkbox" id="terms-chk" onchange="syncPayBtnState()">
+                <input required type="checkbox" id="terms-chk" onchange="syncPayBtnState()">
                 I agree to the <a href="#">Terms of Service</a> and <a href="#">Privacy Policy</a>
               </label>
 
@@ -1945,12 +1945,12 @@ rzp.open();
         <div class="rp-otp-desc" id="rp-otp-phone-display">Enter 6-digit OTP sent to +91 987•• ••210</div>
 
         <div class="rp-otp-input-row">
-          <input type="text" class="rp-otp-box" maxlength="1" onkeyup="moveOtp(this, 1)">
-          <input type="text" class="rp-otp-box" maxlength="1" onkeyup="moveOtp(this, 2)">
-          <input type="text" class="rp-otp-box" maxlength="1" onkeyup="moveOtp(this, 3)">
-          <input type="text" class="rp-otp-box" maxlength="1" onkeyup="moveOtp(this, 4)">
-          <input type="text" class="rp-otp-box" maxlength="1" onkeyup="moveOtp(this, 5)">
-          <input type="text" class="rp-otp-box" maxlength="1" onkeyup="moveOtp(this, 6)">
+          <input required type="text" class="rp-otp-box" maxlength="1" onkeyup="moveOtp(this, 1)">
+          <input required type="text" class="rp-otp-box" maxlength="1" onkeyup="moveOtp(this, 2)">
+          <input required type="text" class="rp-otp-box" maxlength="1" onkeyup="moveOtp(this, 3)">
+          <input required type="text" class="rp-otp-box" maxlength="1" onkeyup="moveOtp(this, 4)">
+          <input required type="text" class="rp-otp-box" maxlength="1" onkeyup="moveOtp(this, 5)">
+          <input required type="text" class="rp-otp-box" maxlength="1" onkeyup="moveOtp(this, 6)">
         </div>
 
         <a class="rp-resend-link" href="#" onclick="showToast('OTP resent successfully', 'success')">Resend OTP</a>

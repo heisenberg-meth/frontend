@@ -129,6 +129,7 @@ export default function Patients({ showToast }) {
         <div className="search-box-v2">
           <Search size={18} />
           <input
+            required
             placeholder="Search by name, phone, or patient ID..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
@@ -328,6 +329,7 @@ export default function Patients({ showToast }) {
                 ) : (
                   <div className="prescriptions-stack">
                     <input
+                      required
                       type="file"
                       ref={prescriptionFileRef}
                       accept="image/*,.pdf"

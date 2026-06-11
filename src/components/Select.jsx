@@ -106,6 +106,7 @@ export default function Select({
           >
             {searchable && (
               <input
+                required
                 ref={searchRef}
                 className="custom-select-search"
                 type="text"

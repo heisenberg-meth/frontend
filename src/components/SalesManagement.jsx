@@ -877,6 +877,7 @@ export default function SalesManagement({ showToast, storeProfile }) {
         <div className="sales-table-card">
           <div className="sales-filters">
             <input
+              required
               className="sales-input"
               placeholder="Search Invoice # or Patient..."
               style={{ flex: 1 }}
@@ -1233,6 +1234,7 @@ export default function SalesManagement({ showToast, storeProfile }) {
                 <div className="pos-input-group">
                   <label>Phone Number</label>
                   <input
+                    required
                     className="pos-input"
                     style={{ width: "100%" }}
                     defaultValue={selectedSale.patient?.phone || "+91 "}
@@ -1323,6 +1325,7 @@ export default function SalesManagement({ showToast, storeProfile }) {
                       }}
                     >
                       <input
+                        required
                         type="checkbox"
                         checked={returnChecked[idx] ?? true}
                         onChange={(e) =>
@@ -1336,6 +1339,7 @@ export default function SalesManagement({ showToast, storeProfile }) {
                         {item.medicine?.name || item.name}
                       </div>
                       <input
+                        required
                         className="p-cost-input"
                         style={{ width: "50px" }}
                         type="number"
@@ -1423,6 +1427,7 @@ export default function SalesManagement({ showToast, storeProfile }) {
                 <div className="pos-input-group">
                   <label>Start Date</label>
                   <input
+                    required
                     type="date"
                     className="pos-input"
                     style={{ width: "100%" }}
@@ -1435,6 +1440,7 @@ export default function SalesManagement({ showToast, storeProfile }) {
                 <div className="pos-input-group" style={{ marginTop: "16px" }}>
                   <label>End Date</label>
                   <input
+                    required
                     type="date"
                     className="pos-input"
                     style={{ width: "100%" }}

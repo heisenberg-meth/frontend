@@ -160,6 +160,8 @@ export default function BarcodeScanner({ onResult, onClose, showToast }) {
                 style={{ display: "flex", gap: 8 }}
               >
                 <input
+                  required
+                  required
                   type="text"
                   value={manualCode}
                   onChange={(e) => setManualCode(e.target.value)}

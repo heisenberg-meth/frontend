@@ -110,6 +110,7 @@ function POModal({ supplier, onClose, onSuccess, saving }) {
               Order Quantity (units each)
             </label>
             <input
+              required
               className="lsa-modal-input"
               type="number"
               min="1"
@@ -121,6 +122,7 @@ function POModal({ supplier, onClose, onSuccess, saving }) {
           <div className="lsa-modal-field">
             <label className="lsa-modal-label">Notes (optional)</label>
             <input
+              required
               className="lsa-modal-input"
               placeholder="Priority delivery required…"
               value={note}
@@ -337,6 +339,7 @@ function NotifySettings({ showToast, settings }) {
             <label className="lsa-toggle-label">
               <div className="lsa-toggle">
                 <input
+                  required
                   type="checkbox"
                   checked={wa}
                   onChange={(e) => setWa(e.target.checked)}
@@ -361,6 +364,7 @@ function NotifySettings({ showToast, settings }) {
             </label>
           </div>
           <input
+            required
             className="lsa-notify-input"
             placeholder="WhatsApp phone number"
             value={phone}
@@ -373,6 +377,7 @@ function NotifySettings({ showToast, settings }) {
             <label className="lsa-toggle-label">
               <div className="lsa-toggle">
                 <input
+                  required
                   type="checkbox"
                   checked={sms}
                   onChange={(e) => setSms(e.target.checked)}
@@ -393,6 +398,7 @@ function NotifySettings({ showToast, settings }) {
             </label>
           </div>
           <input
+            required
             className="lsa-notify-input"
             placeholder="SMS phone number"
             value={phone}
@@ -405,6 +411,7 @@ function NotifySettings({ showToast, settings }) {
             <label className="lsa-toggle-label">
               <div className="lsa-toggle">
                 <input
+                  required
                   type="checkbox"
                   checked={email}
                   onChange={(e) => setEmail(e.target.checked)}
@@ -424,6 +431,7 @@ function NotifySettings({ showToast, settings }) {
             </label>
           </div>
           <input
+            required
             className="lsa-notify-input"
             type="email"
             placeholder="Email address"

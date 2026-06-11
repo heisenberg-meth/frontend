@@ -429,6 +429,7 @@ export default function Topbar({
           >
             <Search size={18} className="search-icon" />
             <input
+              required
               type="text"
               placeholder="Search analytics, stock, or clinical logs..."
               readOnly
@@ -665,6 +666,7 @@ export default function Topbar({
               <div className="search-input-wrap">
                 <Search size={20} className="search-overlay-icon" />
                 <input
+                  required
                   autoFocus
                   type="text"
                   placeholder="Search medicines, patients, suppliers, invoices, or settings..."

@@ -222,6 +222,7 @@ export default function ManageTeam({ user, showToast }) {
                   <User size={12} /> FULL NAME
                 </label>
                 <input
+                  required
                   placeholder="e.g. Dr. Sarah Chen"
                   value={form.fullName}
                   onChange={(e) =>
@@ -234,6 +235,7 @@ export default function ManageTeam({ user, showToast }) {
                   <Mail size={12} /> PROFESSIONAL EMAIL
                 </label>
                 <input
+                  required
                   type="email"
                   placeholder="s.chen@viyanmed.com"
                   value={form.email}
@@ -553,6 +555,7 @@ export default function ManageTeam({ user, showToast }) {
                     </>
                   )}
                   <input
+                    required
                     type="file"
                     ref={fileInputRef}
                     hidden

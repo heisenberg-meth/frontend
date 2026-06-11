@@ -243,6 +243,7 @@ function MedicineModal({
             <div className="form-group full">
               <label>Medicine Name *</label>
               <input
+                required
                 placeholder="e.g. Amoxicillin 500mg Capsules"
                 value={form.name || ""}
                 onChange={(e) => set("name", e.target.value)}
@@ -257,6 +258,7 @@ function MedicineModal({
             <div className="form-group">
               <label>Generic Name *</label>
               <input
+                required
                 placeholder="e.g. Amoxicillin"
                 value={form.genericName || ""}
                 onChange={(e) => set("genericName", e.target.value)}
@@ -269,6 +271,7 @@ function MedicineModal({
             <div className="form-group">
               <label>Manufacturer</label>
               <input
+                required
                 placeholder="e.g. Cipla Ltd"
                 value={form.manufacturer || ""}
                 onChange={(e) => set("manufacturer", e.target.value)}
@@ -293,6 +296,7 @@ function MedicineModal({
                 </select>
               ) : (
                 <input
+                  required
                   placeholder="Type category name (e.g. Tablets)"
                   value={form.category || ""}
                   onChange={(e) => set("category", e.target.value)}
@@ -322,6 +326,7 @@ function MedicineModal({
                 <div className="form-group">
                   <label>Batch Number *</label>
                   <input
+                    required
                     placeholder="e.g. B-20241"
                     value={form.batchNumber || ""}
                     onChange={(e) => set("batchNumber", e.target.value)}
@@ -334,6 +339,7 @@ function MedicineModal({
                 <div className="form-group">
                   <label>Expiry Date *</label>
                   <input
+                    required
                     type="date"
                     value={form.expiryDate || ""}
                     onChange={(e) => set("expiryDate", e.target.value)}
@@ -348,6 +354,7 @@ function MedicineModal({
                 <div className="form-group">
                   <label>MRP (₹) *</label>
                   <input
+                    required
                     type="number"
                     step="0.01"
                     placeholder="0.00"
@@ -362,6 +369,7 @@ function MedicineModal({
                 <div className="form-group">
                   <label>Purchase Cost (₹)</label>
                   <input
+                    required
                     type="number"
                     step="0.01"
                     placeholder="0.00"
@@ -374,6 +382,7 @@ function MedicineModal({
                 <div className="form-group">
                   <label>Stock Quantity *</label>
                   <input
+                    required
                     type="number"
                     placeholder="0"
                     value={form.quantity ?? ""}
@@ -389,6 +398,7 @@ function MedicineModal({
             <div className="form-group">
               <label>Reorder Level</label>
               <input
+                required
                 type="number"
                 placeholder="10"
                 value={form.reorderLevel ?? ""}
@@ -413,6 +423,7 @@ function MedicineModal({
             <div className="form-group">
               <label>HSN Code</label>
               <input
+                required
                 placeholder="e.g. 3004"
                 value={form.hsnCode || ""}
                 onChange={(e) => set("hsnCode", e.target.value)}
@@ -423,6 +434,7 @@ function MedicineModal({
             <div className="form-group full">
               <label>Barcode / SKU</label>
               <input
+                required
                 placeholder="Scan or enter barcode"
                 value={form.barcode || ""}
                 onChange={(e) => set("barcode", e.target.value)}
@@ -433,6 +445,7 @@ function MedicineModal({
             <div className="form-group full">
               <label>Supplier</label>
               <input
+                required
                 placeholder="e.g. Cipla Distributors"
                 value={form.supplier || ""}
                 onChange={(e) => set("supplier", e.target.value)}
@@ -823,6 +836,7 @@ function BatchModal({
             <div className="form-group">
               <label>Batch Number *</label>
               <input
+                required
                 placeholder="e.g. B-20241"
                 value={form.batchNumber || ""}
                 onChange={(e) => set("batchNumber", e.target.value)}
@@ -837,6 +851,7 @@ function BatchModal({
             <div className="form-group">
               <label>Expiry Date *</label>
               <input
+                required
                 type="date"
                 value={form.expiryDate || ""}
                 onChange={(e) => set("expiryDate", e.target.value)}
@@ -851,6 +866,7 @@ function BatchModal({
             <div className="form-group">
               <label>MRP (₹) *</label>
               <input
+                required
                 type="number"
                 step="0.01"
                 placeholder="0.00"
@@ -865,6 +881,7 @@ function BatchModal({
             <div className="form-group">
               <label>Purchase Price (₹) *</label>
               <input
+                required
                 type="number"
                 step="0.01"
                 placeholder="0.00"
@@ -881,6 +898,7 @@ function BatchModal({
             <div className="form-group">
               <label>Stock Quantity *</label>
               <input
+                required
                 type="number"
                 placeholder="0"
                 value={form.quantity ?? ""}
@@ -896,6 +914,7 @@ function BatchModal({
             <div className="form-group">
               <label>Rack Location</label>
               <input
+                required
                 placeholder="e.g. A-12"
                 value={form.rackLocation || ""}
                 onChange={(e) => set("rackLocation", e.target.value)}
@@ -1078,7 +1097,16 @@ export default function InventoryCRUD({
     } finally {
       setLoading(false);
     }
-  }, [medicines.length, categoryFilter, statusFilter, currentPage, debouncedSearch, categoriesList, viewTarget, showToast]);
+  }, [
+    medicines.length,
+    categoryFilter,
+    statusFilter,
+    currentPage,
+    debouncedSearch,
+    categoriesList,
+    viewTarget,
+    showToast,
+  ]);
 
   const handleEditStock = (medicine) => {
     const batches = medicine.inventoryBatches || [];
@@ -1472,6 +1500,7 @@ export default function InventoryCRUD({
           <div className="inv-search-box">
             <Search size={18} className="search-icon" />
             <input
+              required
               placeholder="Search by name, generic, batch..."
               value={search}
               onChange={(e) => {
