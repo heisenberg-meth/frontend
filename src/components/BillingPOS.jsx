@@ -413,12 +413,21 @@ export default function BillingPOS({
       : 0;
   const cgstAmt = tax / 2;
   const sgstAmt = tax / 2;
-  const visibleBills = bills.slice(0, 5);
+  const visibleBills = todayBills.slice(0, 5);
   const todayStr = new Date().toLocaleDateString("en-IN", {
     day: "numeric",
     month: "short",
     year: "numeric",
   });
+  const todayDateStr = new Date().toISOString().split("T")[0];
+  const todayBills = useMemo(
+    () =>
+      bills.filter((b) => {
+        const bd = b.date ? b.date.split("T")[0] : "";
+        return bd === todayDateStr;
+      }),
+    [bills, todayDateStr],
+  );
   const returnAmount = useMemo(() => {
     const items = resolveInvoiceItems(selectedBill || {}).map(
       normalizeInvoiceItem,
@@ -920,7 +929,7 @@ ${printDiscount > 0 ? `<div style="display:flex;justify-content:space-between"><
             label: "TODAY'S REVENUE",
             val:
               "₹" +
-              bills
+              todayBills
                 .reduce((sum, b) => sum + safeNumber(b.total), 0)
                 .toLocaleString(),
             icon: IndianRupee,
@@ -928,7 +937,7 @@ ${printDiscount > 0 ? `<div style="display:flex;justify-content:space-between"><
           },
           {
             label: "BILLS TODAY",
-            val: String(bills.length),
+            val: String(todayBills.length),
             icon: Receipt,
             col: "var(--info)",
           },
@@ -1564,7 +1573,7 @@ ${printDiscount > 0 ? `<div style="display:flex;justify-content:space-between"><
                   className="badge-paid"
                   style={{ background: "var(--primary)", color: "#000" }}
                 >
-                  {bills.length}
+                  {todayBills.length}
                 </span>
               </div>
               <div
@@ -1730,7 +1739,7 @@ ${printDiscount > 0 ? `<div style="display:flex;justify-content:space-between"><
                   label: "CASH",
                   val:
                     "₹" +
-                    (bills || [])
+                    (todayBills || [])
                       .filter(
                         (b) => (b.paymentMode || b.paymentMethod) === "CASH",
                       )
@@ -1738,10 +1747,12 @@ ${printDiscount > 0 ? `<div style="display:flex;justify-content:space-between"><
                       .toLocaleString(),
                   col: "var(--primary)",
                   pct:
-                    (bills || []).length > 0
-                      ? ((bills || []).filter((b) => b.paymentMethod === "CASH")
-                          .length /
-                          (bills || []).length) *
+                    (todayBills || []).length > 0
+                      ? ((todayBills || []).filter(
+                          (b) =>
+                            (b.paymentMode || b.paymentMethod) === "CASH",
+                        ).length /
+                          (todayBills || []).length) *
                         100
                       : 0,
                 },
@@ -1749,7 +1760,7 @@ ${printDiscount > 0 ? `<div style="display:flex;justify-content:space-between"><
                   label: "UPI",
                   val:
                     "₹" +
-                    (bills || [])
+                    (todayBills || [])
                       .filter(
                         (b) => (b.paymentMode || b.paymentMethod) === "UPI",
                       )
@@ -1757,10 +1768,12 @@ ${printDiscount > 0 ? `<div style="display:flex;justify-content:space-between"><
                       .toLocaleString(),
                   col: "var(--info)",
                   pct:
-                    (bills || []).length > 0
-                      ? ((bills || []).filter((b) => b.paymentMethod === "UPI")
-                          .length /
-                          (bills || []).length) *
+                    (todayBills || []).length > 0
+                      ? ((todayBills || []).filter(
+                          (b) =>
+                            (b.paymentMode || b.paymentMethod) === "UPI",
+                        ).length /
+                          (todayBills || []).length) *
                         100
                       : 0,
                 },
@@ -1768,7 +1781,7 @@ ${printDiscount > 0 ? `<div style="display:flex;justify-content:space-between"><
                   label: "CARD",
                   val:
                     "₹" +
-                    (bills || [])
+                    (todayBills || [])
                       .filter(
                         (b) => (b.paymentMode || b.paymentMethod) === "CARD",
                       )
@@ -1776,10 +1789,12 @@ ${printDiscount > 0 ? `<div style="display:flex;justify-content:space-between"><
                       .toLocaleString(),
                   col: "var(--info)",
                   pct:
-                    (bills || []).length > 0
-                      ? ((bills || []).filter((b) => b.paymentMethod === "CARD")
-                          .length /
-                          (bills || []).length) *
+                    (todayBills || []).length > 0
+                      ? ((todayBills || []).filter(
+                          (b) =>
+                            (b.paymentMode || b.paymentMethod) === "CARD",
+                        ).length /
+                          (todayBills || []).length) *
                         100
                       : 0,
                 },
@@ -1814,7 +1829,7 @@ ${printDiscount > 0 ? `<div style="display:flex;justify-content:space-between"><
                   </div>
                 </div>
               ))}
-              {bills.length === 0 && (
+              {todayBills.length === 0 && (
                 <p
                   className="result-meta"
                   style={{ textAlign: "center", marginTop: 40 }}

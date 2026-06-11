@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import api from "../api.js";
 import { API_ROUTES } from "../constants/api.routes.js";
 import { receiveGoods } from "../services/purchases.service.js";
@@ -133,7 +133,7 @@ export default function PurchaseManagement({ showToast }) {
     };
   }, [showToast]);
 
-  const loadMedicines = async () => {
+  const loadMedicines = useCallback(async () => {
     try {
       setLoadingMedicines(true);
       const response = await getMedicines({
@@ -147,14 +147,7 @@ export default function PurchaseManagement({ showToast }) {
     } finally {
       setLoadingMedicines(false);
     }
-  };
-
-  useEffect(() => {
-    if (drawer === "new-purchase" || drawer === "edit-purchase") {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      loadMedicines();
-    }
-  }, [drawer]);
+  }, []);
 
   useEffect(() => {
     if (drawer || showReturnModal || showReceiveModal) {
@@ -356,6 +349,9 @@ export default function PurchaseManagement({ showToast }) {
   const handleOpenDrawer = (type, row = null) => {
     setSelectedRow(row);
     setDrawer(type);
+    if (type === "new-purchase" || type === "edit-purchase") {
+      loadMedicines();
+    }
   };
 
   const closeDrawer = () => {
@@ -1034,26 +1030,40 @@ export default function PurchaseManagement({ showToast }) {
                               }
                             }}
                           />
-                          {medicineSearch && filteredMedicines.length > 0 && (
-                            <div className="medicine-suggestions">
-                              {filteredMedicines.map((m) => (
-                                <div
-                                  key={m.id}
-                                  className="medicine-suggestion-item"
-                                  onClick={() => addMedicine(m)}
-                                >
-                                  <span>{m.name}</span>
-                                  <span
-                                    style={{
-                                      color: "var(--primary)",
-                                      fontWeight: 600,
-                                    }}
-                                  >
-                                    ₹{m.purchasePrice}
-                                  </span>
-                                </div>
-                              ))}
+                          {loadingMedicines ? (
+                            <div
+                              className="medicine-suggestions"
+                              style={{
+                                padding: "12px",
+                                color: "rgba(255,255,255,0.5)",
+                                fontSize: "12px",
+                              }}
+                            >
+                              Loading inventory...
                             </div>
+                          ) : (
+                            medicineSearch &&
+                            filteredMedicines.length > 0 && (
+                              <div className="medicine-suggestions">
+                                {filteredMedicines.map((m) => (
+                                  <div
+                                    key={m.id}
+                                    className="medicine-suggestion-item"
+                                    onClick={() => addMedicine(m)}
+                                  >
+                                    <span>{m.name}</span>
+                                    <span
+                                      style={{
+                                        color: "var(--primary)",
+                                        fontWeight: 600,
+                                      }}
+                                    >
+                                      ₹{m.purchasePrice}
+                                    </span>
+                                  </div>
+                                ))}
+                              </div>
+                            )
                           )}
                         </div>
                         <button
