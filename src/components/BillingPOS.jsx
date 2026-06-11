@@ -239,8 +239,8 @@ export default function BillingPOS({
   const [draftSaving, setDraftSaving] = useState(false);
   const [draftSaved, setDraftSaved] = useState(false);
   const [draftError, setDraftError] = useState("");
-  const [printLoading, setPrintLoading] = useState(false);
-  const [whatsappLoading, setWhatsappLoading] = useState(false);
+  const [, setPrintLoading] = useState(false);
+
   const [phoneFieldError, setPhoneFieldError] = useState("");
   const [findError, setFindError] = useState("");
   const [showAllBillsModal, setShowAllBillsModal] = useState(false);
@@ -695,45 +695,6 @@ ${printDiscount > 0 ? `<div style="display:flex;justify-content:space-between"><
     ],
   );
 
-  const handleSendWhatsApp = () => {
-    if (!patient.phone && !isWalkIn) {
-      setPhoneFieldError("Phone number required to send WhatsApp");
-      return;
-    }
-    if (lineItems.length === 0) {
-      showToast("Add at least one medicine", "error");
-      return;
-    }
-
-    setWhatsappLoading(true);
-
-    const phone = (isWalkIn ? "" : patient.phone).replace(/\D/g, "");
-    const cleaned = phone.replace(/^(91|0)/, "");
-    const formattedPhone = cleaned ? `91${cleaned}` : "";
-
-    const itemsList = lineItems
-      .map(
-        (i) =>
-          `• ${i.name} x${safeNumber(i.qty)} = ₹${(safeNumber(i.price) * safeNumber(i.qty)).toFixed(2)}`,
-      )
-      .join("\n");
-    const msg = `*VIYAN MEDASSIST*\nInvoice: ${activeInvoice?.id || "N/A"}\nDate: ${new Date().toLocaleDateString("en-IN")}\nPatient: ${patient.name || "Walk-in Customer"}\n\n*Medicines:*\n${itemsList}\n\nSubtotal: ₹${subtotal.toFixed(2)}\nCGST: ₹${cgstAmt.toFixed(2)}\nSGST: ₹${sgstAmt.toFixed(2)}\n*TOTAL: ₹${grandTotal.toFixed(2)}*\n\nThank you for visiting Viyan MedAssist!`;
-
-    if (formattedPhone) {
-      window.open(
-        `https://wa.me/${formattedPhone}?text=${encodeURIComponent(msg)}`,
-        "_blank",
-      );
-    } else {
-      showToast("No valid phone number", "error");
-    }
-
-    setTimeout(() => {
-      setWhatsappLoading(false);
-      if (formattedPhone)
-        showToast(`WhatsApp opened for +91 ${cleaned}`, "success");
-    }, 800);
-  };
 
   const openBillDetail = (bill) => {
     setSelectedBill(bill);

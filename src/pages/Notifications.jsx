@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Bell,
@@ -13,7 +13,6 @@ import {
   Trash2,
   Calendar,
   X,
-  Filter,
 } from "lucide-react";
 import {
   getNotifications,
@@ -61,11 +60,7 @@ export default function Notifications({ showToast }) {
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    fetchData();
-  }, []);
-
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     setLoading(true);
     try {
       const res = await getNotifications();
@@ -79,6 +74,7 @@ export default function Notifications({ showToast }) {
       const processedData = data.map((n) => ({
         ...n,
         type: n.type || "System",
+        createdAt: n.createdAt || new Date().toISOString(),
       }));
       setNotifications(processedData);
     } catch (err) {
@@ -87,7 +83,12 @@ export default function Notifications({ showToast }) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [showToast]);
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    fetchData();
+  }, [fetchData]);
 
   const handleMarkRead = async (id) => {
     try {
@@ -105,7 +106,7 @@ export default function Notifications({ showToast }) {
       await markAllNotificationsRead();
       setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })));
       showToast?.("All notifications marked as read", "success");
-    } catch (err) {
+    } catch {
       showToast?.("Failed to mark all as read", "error");
     }
   };
@@ -115,7 +116,7 @@ export default function Notifications({ showToast }) {
       await deleteNotification(id);
       setNotifications((prev) => prev.filter((n) => n.id !== id));
       showToast?.("Notification deleted", "success");
-    } catch (err) {
+    } catch {
       showToast?.("Failed to delete notification", "error");
     }
   };
@@ -129,7 +130,7 @@ export default function Notifications({ showToast }) {
       // await deleteNotification('all');
       setNotifications([]);
       showToast?.("All notifications cleared", "success");
-    } catch (err) {
+    } catch {
       showToast?.("Failed to clear notifications", "error");
     }
   };
@@ -256,7 +257,7 @@ export default function Notifications({ showToast }) {
                       <span className="notif-card-time">
                         <Calendar size={12} className="inline mr-1" />
                         {new Date(
-                          notif.createdAt || Date.now(),
+                          notif.createdAt
                         ).toLocaleDateString()}
                       </span>
                     </div>

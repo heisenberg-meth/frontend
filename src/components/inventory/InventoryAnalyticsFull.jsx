@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { 
   ArrowLeft,
@@ -8,7 +8,7 @@ import {
   FileText,
   Loader2
 } from "lucide-react";
-import { motion } from "framer-motion";
+
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from "recharts";
 import { getMedicines } from "../../services/inventory.service";
 

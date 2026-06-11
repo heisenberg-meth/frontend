@@ -48,13 +48,6 @@ export default function InventoryAnalyticsModal({ isOpen, onClose }) {
 
   const navigate = useNavigate();
 
-  useEffect(() => {
-    if (isOpen) {
-      if (activeTab !== "overview") setActiveTab("overview");
-      fetchAnalytics();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isOpen]);
 
   const fetchAnalytics = async () => {
     try {
@@ -194,6 +187,15 @@ export default function InventoryAnalyticsModal({ isOpen, onClose }) {
     }
   };
 
+  useEffect(() => {
+    if (isOpen) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      if (activeTab !== "overview") setActiveTab("overview");
+      fetchAnalytics();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen]);
+
   // Keyboard shortcut to close
   useEffect(() => {
     const handleKeyDown = (e) => {
@@ -213,7 +215,7 @@ export default function InventoryAnalyticsModal({ isOpen, onClose }) {
         state: { summary, categories, highValueStock, expiryRisk },
       });
       onClose();
-    } catch (err) {
+    } catch {
       toast.error("Unable to open analytics page");
     }
   };

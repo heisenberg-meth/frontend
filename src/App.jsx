@@ -384,27 +384,7 @@ function AppContent() {
     }
   };
 
-  const handleSelectTrial = async () => {
-    try {
-      await api.post("subscriptions/verify-trial");
-      await refreshUser();
-      showToast("Clinical Trial Activated for 28 Days!", "success");
-      fetchData();
-      fetchSettings();
-      navigate("/dashboard");
-    } catch {
-      showToast("Trial activation failed. Please try again.", "error");
-    }
-  };
 
-  const handleSelectPro = () => {
-    navigate("/payment");
-  };
-
-  const handlePaymentComplete = () => {
-    refreshUser();
-    navigate("/dashboard");
-  };
 
   if (!restored || authLoading) {
     return (

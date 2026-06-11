@@ -58,7 +58,7 @@ export default function PurchaseManagement({ showToast }) {
   const [medicines, setMedicines] = useState([]);
   const [suppliers, setSuppliers] = useState([]);
   const [orders, setOrders] = useState([]);
-  const [loadingMedicines, setLoadingMedicines] = useState(false);
+  const [, setLoadingMedicines] = useState(false);
   const [returns, setReturns] = useState([]);
   const [invoices, setInvoices] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -151,6 +151,7 @@ export default function PurchaseManagement({ showToast }) {
 
   useEffect(() => {
     if (drawer === "new-purchase" || drawer === "edit-purchase") {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       loadMedicines();
     }
   }, [drawer]);
