@@ -1017,7 +1017,6 @@ ${printDiscount > 0 ? `<div style="display:flex;justify-content:space-between"><
                 <label>PATIENT NAME</label>
                 <input
                   required
-                  required
                   id="patient-name-input"
                   className={`pos-input ${newPatientMsg ? "new-patient-input" : ""}`}
                   placeholder={isWalkIn ? "Walk-in Customer" : "Enter name..."}
@@ -1030,7 +1029,6 @@ ${printDiscount > 0 ? `<div style="display:flex;justify-content:space-between"><
               <div className="pos-input-group">
                 <label>PHONE NUMBER</label>
                 <input
-                  required
                   required
                   id="patient-phone-input"
                   className={`pos-input ${phoneFieldError ? "input-error" : ""}`}
@@ -1122,7 +1120,6 @@ ${printDiscount > 0 ? `<div style="display:flex;justify-content:space-between"><
             >
               <Barcode className="barcode-icon" size={24} />
               <input
-                required
                 required
                 ref={barcodeInputRef}
                 className="barcode-input"
@@ -1266,7 +1263,6 @@ ${printDiscount > 0 ? `<div style="display:flex;justify-content:space-between"><
                           </button>
                           <input
                             required
-                            required
                             className="qty-input"
                             value={item.qty}
                             readOnly
@@ -1282,7 +1278,6 @@ ${printDiscount > 0 ? `<div style="display:flex;justify-content:space-between"><
                       <td>
                         <input
                           required
-                          required
                           className="pos-input"
                           style={{ width: "60px", padding: "6px" }}
                           value={safeNumber(item.price)}
@@ -1291,7 +1286,6 @@ ${printDiscount > 0 ? `<div style="display:flex;justify-content:space-between"><
                       </td>
                       <td>
                         <input
-                          required
                           required
                           className="pos-input"
                           style={{ width: "50px", padding: "6px" }}
@@ -1365,7 +1359,6 @@ ${printDiscount > 0 ? `<div style="display:flex;justify-content:space-between"><
                     }}
                   >
                     <input
-                      required
                       required
                       className="pos-input"
                       style={{
@@ -1965,7 +1958,6 @@ ${printDiscount > 0 ? `<div style="display:flex;justify-content:space-between"><
                 <div className="all-bills-toolbar">
                   <input
                     required
-                    required
                     className="all-bills-search"
                     placeholder="Search by invoice, patient, phone..."
                   />
@@ -2316,7 +2308,6 @@ ${printDiscount > 0 ? `<div style="display:flex;justify-content:space-between"><
                           <td>
                             <input
                               required
-                              required
                               className="pos-input return-qty-input"
                               type="number"
                               min="0"
@@ -2441,7 +2432,6 @@ ${printDiscount > 0 ? `<div style="display:flex;justify-content:space-between"><
                   <label>Find Bill</label>
                   <div style={{ display: "flex", gap: "8px" }}>
                     <input
-                      required
                       required
                       className="pos-input"
                       style={{ flex: 1 }}
@@ -2595,7 +2585,6 @@ ${printDiscount > 0 ? `<div style="display:flex;justify-content:space-between"><
                           >
                             <input
                               required
-                              required
                               type="checkbox"
                               checked={returnModalItems[idx]?.checked ?? true}
                               onChange={(e) =>
@@ -2610,7 +2599,6 @@ ${printDiscount > 0 ? `<div style="display:flex;justify-content:space-between"><
                             />
                             <div style={{ flex: 1 }}>{item.name}</div>
                             <input
-                              required
                               required
                               className="p-cost-input"
                               style={{ width: "50px" }}
