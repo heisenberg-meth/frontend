@@ -2,17 +2,26 @@ import { useState, useEffect } from "react";
 import { Outlet, useNavigate, useLocation } from "react-router-dom";
 import { adminApi } from "../../services/admin.service";
 import {
-  LayoutDashboard, Users, Monitor, CreditCard, FileText, Flag, ShieldCheck, LogOut, Menu,
+  LayoutDashboard, Users, Monitor, CreditCard, FileText, Flag,
+  ShieldCheck, Shield, DollarSign, BarChart3, Send, Clock, Ticket, Activity, Store, LogOut, Menu,
 } from "lucide-react";
 
 const NAV_ITEMS = [
-  { path: "/admin/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { path: "/admin/users", label: "Users & Shops", icon: Users },
-  { path: "/admin/devices", label: "Device Monitoring", icon: Monitor },
-  { path: "/admin/subscriptions", label: "Subscriptions", icon: CreditCard },
-  { path: "/admin/audit-logs", label: "Audit Logs", icon: FileText },
-  { path: "/admin/feature-flags", label: "Feature Flags", icon: Flag },
-  { path: "/admin/admins", label: "Admin Users", icon: ShieldCheck },
+  { path: "/admin/dashboard", label: "Dashboard", icon: LayoutDashboard, roles: ["ROOT_ADMIN", "ADMIN", "SUPPORT", "SALES", "FINANCE"] },
+  { path: "/admin/shops", label: "Shops", icon: Store, roles: ["ROOT_ADMIN", "ADMIN", "SUPPORT"] },
+  { path: "/admin/users", label: "Users", icon: Users, roles: ["ROOT_ADMIN", "ADMIN", "SUPPORT"] },
+  { path: "/admin/devices", label: "Device Monitoring", icon: Monitor, roles: ["ROOT_ADMIN", "ADMIN"] },
+  { path: "/admin/subscriptions", label: "Subscriptions", icon: CreditCard, roles: ["ROOT_ADMIN", "ADMIN", "SUPPORT"] },
+  { path: "/admin/revenue", label: "Revenue", icon: BarChart3, roles: ["ROOT_ADMIN", "ADMIN", "FINANCE"] },
+  { path: "/admin/payments", label: "Payments", icon: DollarSign, roles: ["ROOT_ADMIN", "ADMIN", "FINANCE"] },
+  { path: "/admin/expiry", label: "Expiry Alerts", icon: Clock, roles: ["ROOT_ADMIN", "ADMIN", "SUPPORT"] },
+  { path: "/admin/system-health", label: "System Health", icon: Activity, roles: ["ROOT_ADMIN", "ADMIN"] },
+  { path: "/admin/support-tickets", label: "Support Tickets", icon: Ticket, roles: ["ROOT_ADMIN", "ADMIN", "SUPPORT"] },
+  { path: "/admin/broadcast", label: "Broadcast", icon: Send, roles: ["ROOT_ADMIN", "ADMIN"] },
+  { path: "/admin/security", label: "Security Center", icon: Shield, roles: ["ROOT_ADMIN", "ADMIN"] },
+  { path: "/admin/audit-logs", label: "Audit Logs", icon: FileText, roles: ["ROOT_ADMIN", "ADMIN", "SUPPORT", "SALES", "FINANCE"] },
+  { path: "/admin/feature-flags", label: "Feature Flags", icon: Flag, roles: ["ROOT_ADMIN", "ADMIN"] },
+  { path: "/admin/admins", label: "Admin Users", icon: ShieldCheck, roles: ["ROOT_ADMIN"] },
 ];
 
 export default function AdminLayout() {
@@ -62,18 +71,19 @@ export default function AdminLayout() {
         </div>
 
         <nav className="admin-sidebar-nav">
-          {NAV_ITEMS.map((item) => {
+          {NAV_ITEMS.filter((item) => item.roles.includes(admin?.role)).map((item) => {
             const Icon = item.icon;
-            const isActive = location.pathname === item.path;
+            const isActive = location.pathname === item.path || location.pathname.startsWith(item.path + "/");
             return (
-              <button
+              <NavLink
                 key={item.path}
+                to={item.path}
                 className={`admin-nav-item ${isActive ? "active" : ""}`}
-                onClick={() => { navigate(item.path); setSidebarOpen(false); }}
+                onClick={() => setSidebarOpen(false)}
               >
                 <Icon size={18} />
                 <span>{item.label}</span>
-              </button>
+              </NavLink>
             );
           })}
         </nav>

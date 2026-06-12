@@ -1,6 +1,10 @@
 import { useState, useEffect } from "react";
 import { adminApi } from "../../services/admin.service";
-import { Search, ShieldOff, ShieldCheck, AlertTriangle } from "lucide-react";
+import { downloadCsv } from "../../utils/exportCsv";
+import {
+  Search, ShieldOff, ShieldCheck, AlertTriangle, Unlink, RefreshCw, Download,
+} from "lucide-react";
+import toast from "react-hot-toast";
 
 export default function AdminDevices() {
   const [devices, setDevices] = useState([]);
@@ -8,6 +12,7 @@ export default function AdminDevices() {
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
+  const [refreshing, setRefreshing] = useState(null);
 
   const fetchDevices = async () => {
     setLoading(true);
@@ -37,12 +42,25 @@ export default function AdminDevices() {
   const handleBlock = async (id) => {
     if (!confirm("Block this device?")) return;
     await adminApi.blockDevice(id, "Admin action");
+    toast.success("Device blocked");
     fetchDevices();
   };
 
   const handleUnblock = async (id) => {
     await adminApi.unblockDevice(id);
+    toast.success("Device unblocked");
     fetchDevices();
+  };
+
+  const handleUnlink = async (id) => {
+    if (!confirm("Unlink this device? It will be blocked and disassociated.")) return;
+    try {
+      await adminApi.unlinkDevice(id);
+      toast.success("Device unlinked");
+      fetchDevices();
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Failed to unlink");
+    }
   };
 
   const getRiskBadge = (score) => {
@@ -52,6 +70,8 @@ export default function AdminDevices() {
     return <span className="admin-badge" style={{ background: "#22c55e" }}>Low</span>;
   };
 
+  const daysBetween = (a, b) => Math.max(1, Math.ceil((new Date(b) - new Date(a)) / 86400000));
+
   return (
     <div className="admin-page">
       <div className="admin-toolbar">
@@ -59,6 +79,17 @@ export default function AdminDevices() {
           <Search size={16} />
           <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search by fingerprint, browser, OS, IP..." />
         </form>
+        <button onClick={() => downloadCsv(devices.map((d) => ({
+          Fingerprint: d.fingerprintHash,
+          "Browser/OS": `${d.browser || ""} / ${d.os || ""}`,
+          IP: d.ipAddress || "",
+          "Risk Score": d.riskScore,
+          Status: d.isBlocked ? "Blocked" : "Active",
+          "First Seen": new Date(d.firstSeen).toLocaleDateString(),
+          "Last Seen": new Date(d.lastSeen).toLocaleString(),
+        })), "devices-export")} className="admin-btn" style={{ background: "#222", color: "#fff", padding: "8px 14px", fontSize: 12 }}>
+          <Download size={14} /> CSV
+        </button>
       </div>
 
       <div className="admin-table-container">
@@ -70,6 +101,7 @@ export default function AdminDevices() {
               <th>Browser / OS</th>
               <th>IP</th>
               <th>Risk</th>
+              <th>Login Days</th>
               <th>Status</th>
               <th>First Seen</th>
               <th>Last Seen</th>
@@ -78,16 +110,17 @@ export default function AdminDevices() {
           </thead>
           <tbody>
             {loading ? (
-              <tr><td colSpan={9} className="admin-empty">Loading...</td></tr>
+              <tr><td colSpan={10} className="admin-empty">Loading...</td></tr>
             ) : devices.length === 0 ? (
-              <tr><td colSpan={9} className="admin-empty">No devices found</td></tr>
+              <tr><td colSpan={10} className="admin-empty">No devices found</td></tr>
             ) : devices.map((d) => (
               <tr key={d.id}>
                 <td><code className="admin-fp">{d.fingerprintHash?.slice(0, 16)}...</code></td>
-                <td>{d.shopId?.slice(0, 8)}</td>
+                <td style={{ fontSize: 12 }}>{d.shopId?.slice(0, 8)}</td>
                 <td><small>{d.browser || "—"} / {d.os || "—"}</small></td>
                 <td>{d.ipAddress || "—"}</td>
                 <td>{getRiskBadge(d.riskScore)}</td>
+                <td style={{ fontSize: 12, color: "#888" }}>{daysBetween(d.firstSeen, d.lastSeen)}</td>
                 <td>
                   {d.isBlocked
                     ? <span className="admin-status admin-status-blocked">BLOCKED</span>
@@ -105,6 +138,9 @@ export default function AdminDevices() {
                       <ShieldOff size={16} />
                     </button>
                   )}
+                  <button className="admin-icon-btn" style={{ color: "#8b5cf6" }} title="Unlink" onClick={() => handleUnlink(d.id)}>
+                    <Unlink size={14} />
+                  </button>
                 </td>
               </tr>
             ))}

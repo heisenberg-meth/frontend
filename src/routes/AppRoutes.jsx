@@ -19,6 +19,14 @@ const AdminSubscriptions = lazy(() => import("../pages/admin/AdminSubscriptions"
 const AdminAuditLogs = lazy(() => import("../pages/admin/AdminAuditLogs"));
 const AdminFeatureFlags = lazy(() => import("../pages/admin/AdminFeatureFlags"));
 const AdminAdmins = lazy(() => import("../pages/admin/AdminAdmins"));
+const AdminSecurityCenter = lazy(() => import("../pages/admin/AdminSecurityCenter"));
+const AdminPayments = lazy(() => import("../pages/admin/AdminPayments"));
+const AdminRevenue = lazy(() => import("../pages/admin/AdminRevenue"));
+const AdminBroadcast = lazy(() => import("../pages/admin/AdminBroadcast"));
+const AdminExpiry = lazy(() => import("../pages/admin/AdminExpiry"));
+const AdminSupportTickets = lazy(() => import("../pages/admin/AdminSupportTickets"));
+const AdminSystemHealth = lazy(() => import("../pages/admin/AdminSystemHealth"));
+const AdminShops = lazy(() => import("../pages/admin/AdminShops"));
 const Dashboard = lazy(() => import("../components/Dashboard"));
 const BulkImport = lazy(() => import("../components/BulkImport"));
 const ManageTeam = lazy(() => import("../components/ManageTeam"));
@@ -391,6 +399,14 @@ export default function AppRoutes({
           <Route path="/admin/devices" element={<AdminDevices />} />
           <Route path="/admin/subscriptions" element={<AdminSubscriptions />} />
           <Route path="/admin/audit-logs" element={<AdminAuditLogs />} />
+          <Route path="/admin/shops" element={<AdminShops />} />
+          <Route path="/admin/system-health" element={<AdminSystemHealth />} />
+          <Route path="/admin/support-tickets" element={<AdminSupportTickets />} />
+          <Route path="/admin/expiry" element={<AdminExpiry />} />
+          <Route path="/admin/broadcast" element={<AdminBroadcast />} />
+          <Route path="/admin/revenue" element={<AdminRevenue />} />
+          <Route path="/admin/payments" element={<AdminPayments />} />
+          <Route path="/admin/security" element={<AdminSecurityCenter />} />
           <Route path="/admin/feature-flags" element={<AdminFeatureFlags />} />
           <Route path="/admin/admins" element={<AdminAdmins />} />
         </Route>
