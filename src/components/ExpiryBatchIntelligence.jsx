@@ -187,6 +187,8 @@ export default function ExpiryBatchIntelligence({ showToast }) {
         b.batch?.toLowerCase().includes(invSearch.toLowerCase());
       if (!matchesSearch) return false;
       if (invFilter === "ALL") return true;
+      if (invFilter === "EXPIRED") return b.days < 0;
+      if (invFilter === "ACTIVE") return b.days >= 0 && b.days <= 365;
       return b.status === invFilter;
     });
   }, [batches, invSearch, invFilter]);
@@ -194,7 +196,7 @@ export default function ExpiryBatchIntelligence({ showToast }) {
   const dynamicStats = useMemo(() => {
     const activeBatches = batches.filter((b) => (b.qty || b.quantity) > 0);
     const expired = activeBatches.filter(
-      (b) => b.status === "expired" || b.days < 0,
+      (b) => b.days < 0,
     ).length;
     const wk1 = activeBatches.filter((b) => b.days >= 0 && b.days < 7).length;
     const mo1 = activeBatches.filter((b) => b.days >= 7 && b.days < 30).length;
