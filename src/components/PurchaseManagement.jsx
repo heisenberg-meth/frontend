@@ -167,36 +167,6 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
     };
   }, [showToast]);
 
-  useEffect(() => {
-    const state = location.state;
-    if (!state) return;
-
-    if (state.action === "raise-po") {
-      handleOpenDrawer("new-purchase");
-
-      if (state.medicine) {
-        setPurchaseItems([
-          {
-            ...state.medicine,
-            qty: state.medicine.reorderQty || 1,
-            batchNumber: "",
-            expiryDate: "",
-          },
-        ]);
-      }
-
-      if (state.supplierId && suppliers.length > 0) {
-        const sup = suppliers.find((s) => s.id === state.supplierId);
-        if (sup) {
-          setSelectedSupplier(sup);
-        }
-      }
-
-      // Clear route state to prevent opening the drawer again on refresh
-      navigate(location.pathname, { replace: true, state: {} });
-    }
-  }, [location.state, suppliers, navigate, location.pathname]);
-
   useEffect(() => {}, [medicines]);
 
   useEffect(() => {}, [purchaseItems]);
@@ -531,6 +501,39 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
     setSelectedRow(null);
     resetForm();
   };
+
+  useEffect(() => {
+    const state = location.state;
+    if (!state) return;
+
+    if (state.action === "raise-po") {
+      setTimeout(() => {
+        handleOpenDrawer("new-purchase");
+
+        if (state.medicine) {
+          setPurchaseItems([
+            {
+              ...state.medicine,
+              qty: state.medicine.reorderQty || 1,
+              batchNumber: "",
+              expiryDate: "",
+            },
+          ]);
+        }
+
+        if (state.supplierId && suppliers.length > 0) {
+          const sup = suppliers.find((s) => s.id === state.supplierId);
+          if (sup) {
+            setSelectedSupplier(sup);
+          }
+        }
+
+        // Clear route state to prevent opening the drawer again on refresh
+        navigate(location.pathname, { replace: true, state: {} });
+      }, 0);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location.state, suppliers, navigate, location.pathname]);
 
   /* ── Filtered Data Logic ── */
   const filteredInvoices = invoices.filter((inv) => {
