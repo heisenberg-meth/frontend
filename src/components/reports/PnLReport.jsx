@@ -182,7 +182,6 @@ export default function PnLReport({ from, to, showToast }) {
                 <label className="p-label">AMOUNT ₹</label>
                 <input
                   required
-                  required
                   className="pos-input"
                   type="number"
                   placeholder="0.00"
@@ -214,7 +213,6 @@ export default function PnLReport({ from, to, showToast }) {
                 }}
               >
                 <input
-                  required
                   required
                   type="file"
                   hidden

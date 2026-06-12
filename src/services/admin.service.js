@@ -202,7 +202,7 @@ export const adminApi = {
     return data;
   },
 
-  async updateUserStatus(id, status) {
+  async updateTenantStatus(id, status) {
     const { data } = await adminHttp.put(`/admin/users/${id}/status`, {
       status,
     });
@@ -430,6 +430,35 @@ export const adminApi = {
       API_ROUTES.ADMIN_SUBSCRIPTIONS_EXPIRING,
       { params: { days } },
     );
+    return data;
+  },
+
+  // ---- Individual User Management ----
+  async updateUserStatus(tenantId, userId, status) {
+    const { data } = await adminHttp.put(
+      `/admin/users/${tenantId}/users/${userId}/status`,
+      { status },
+    );
+    return data;
+  },
+
+  async blockUser(tenantId, userId, reason) {
+    const { data } = await adminHttp.put(
+      `/admin/users/${tenantId}/users/${userId}/block`,
+      { reason },
+    );
+    return data;
+  },
+
+  async unblockUser(tenantId, userId) {
+    const { data } = await adminHttp.put(
+      `/admin/users/${tenantId}/users/${userId}/unblock`,
+    );
+    return data;
+  },
+
+  async listAllUsers(params = {}) {
+    const { data } = await adminHttp.get("/admin/users/list-all", { params });
     return data;
   },
 };

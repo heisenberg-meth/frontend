@@ -1,4 +1,3 @@
-// ── Subscription ────────────────────────────────────────────────────────
 export const SubscriptionStatus = Object.freeze({
   TRIAL: "TRIAL",
   ACTIVE: "ACTIVE",
@@ -9,7 +8,6 @@ export const SubscriptionStatus = Object.freeze({
   CANCELLED: "CANCELLED",
 });
 
-// ── Payment ─────────────────────────────────────────────────────────────
 export const PaymentStatus = Object.freeze({
   CREATED: "CREATED",
   INITIATED: "INITIATED",
@@ -28,7 +26,6 @@ export const PaymentStatus = Object.freeze({
   REVERSED: "REVERSED",
 });
 
-// ── Roles ───────────────────────────────────────────────────────────────
 export const Role = Object.freeze({
   OWNER: "OWNER",
   STAFF: "STAFF",
@@ -37,7 +34,6 @@ export const Role = Object.freeze({
   CASHIER: "CASHIER",
 });
 
-// ── Purchase Orders ─────────────────────────────────────────────────────
 export const PurchaseOrderStatus = Object.freeze({
   DRAFT: "DRAFT",
   PENDING_APPROVAL: "PENDING_APPROVAL",
@@ -49,7 +45,6 @@ export const PurchaseOrderStatus = Object.freeze({
   CANCELLED: "CANCELLED",
 });
 
-// ── Medicine ────────────────────────────────────────────────────────────
 export const MedicineStatus = Object.freeze({
   ACTIVE: "ACTIVE",
   INACTIVE: "INACTIVE",
@@ -59,7 +54,6 @@ export const MedicineStatus = Object.freeze({
   RECALLED: "RECALLED",
 });
 
-// ── Supplier ────────────────────────────────────────────────────────────
 export const SupplierStatus = Object.freeze({
   ACTIVE: "ACTIVE",
   SUSPENDED: "SUSPENDED",
@@ -76,7 +70,6 @@ export const SupplierType = Object.freeze({
   LOCAL_VENDOR: "LOCAL_VENDOR",
 });
 
-// ── Stock ───────────────────────────────────────────────────────────────
 export const StockAlertType = Object.freeze({
   LOW_STOCK: "LOW_STOCK",
   OUT_OF_STOCK: "OUT_OF_STOCK",
@@ -96,7 +89,6 @@ export const AlertStatus = Object.freeze({
   ON_ORDER: "ON_ORDER",
 });
 
-// ── Audit ───────────────────────────────────────────────────────────────
 export const AuditLogType = Object.freeze({
   SECURITY: "SECURITY",
   INVENTORY: "INVENTORY",
@@ -105,7 +97,6 @@ export const AuditLogType = Object.freeze({
   ACCESS: "ACCESS",
 });
 
-// ── Recall Severity ─────────────────────────────────────────────────────
 export const RecallSeverity = Object.freeze({
   LOW: "LOW",
   MEDIUM: "MEDIUM",

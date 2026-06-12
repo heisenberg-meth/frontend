@@ -95,4 +95,9 @@ export const API_ROUTES = {
   ADMIN_DEVICES_UNBLOCK: "/admin/devices",
   ADMIN_FEATURE_FLAGS: "/admin/feature-flags",
   ADMIN_SUBSCRIPTIONS_EXPIRING: "/admin/subscriptions/expiring",
+
+  SUPPLIER_RETURNS: "/supplier-returns",
+  SUPPLIER_RETURNS_EXPIRED_GROUPED: "/supplier-returns/expired/grouped",
+  SUPPLIER_RETURNS_EXPIRED_SUMMARY: "/supplier-returns/expired/summary",
+  SUPPLIER_RETURNS_CREDIT_NOTES: "/supplier-returns/credit-notes",
 };

@@ -413,13 +413,8 @@ export default function BillingPOS({
       : 0;
   const cgstAmt = tax / 2;
   const sgstAmt = tax / 2;
-  const visibleBills = todayBills.slice(0, 5);
-  const todayStr = new Date().toLocaleDateString("en-IN", {
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-  });
   const todayDateStr = new Date().toISOString().split("T")[0];
+
   const todayBills = useMemo(
     () =>
       bills.filter((b) => {
@@ -428,6 +423,14 @@ export default function BillingPOS({
       }),
     [bills, todayDateStr],
   );
+
+  const visibleBills = todayBills.slice(0, 5);
+
+  const todayStr = new Date().toLocaleDateString("en-IN", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
   const returnAmount = useMemo(() => {
     const items = resolveInvoiceItems(selectedBill || {}).map(
       normalizeInvoiceItem,

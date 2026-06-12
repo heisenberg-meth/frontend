@@ -189,6 +189,27 @@
   box-shadow: 0 0 0 4px var(--primary-glow);
 }
 
+.search-clear {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  color: var(--text-dim);
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.search-clear:hover {
+  color: var(--text);
+  background: var(--overlay-10);
+}
+
 .top-bar-actions {
   display: flex;
   align-items: center;

@@ -15,20 +15,31 @@ const AdminLayout = lazy(() => import("../pages/admin/AdminLayout"));
 const AdminDashboard = lazy(() => import("../pages/admin/AdminDashboard"));
 const AdminUsers = lazy(() => import("../pages/admin/AdminUsers"));
 const AdminDevices = lazy(() => import("../pages/admin/AdminDevices"));
-const AdminSubscriptions = lazy(() => import("../pages/admin/AdminSubscriptions"));
+const AdminSubscriptions = lazy(
+  () => import("../pages/admin/AdminSubscriptions"),
+);
 const AdminAuditLogs = lazy(() => import("../pages/admin/AdminAuditLogs"));
-const AdminFeatureFlags = lazy(() => import("../pages/admin/AdminFeatureFlags"));
+const AdminFeatureFlags = lazy(
+  () => import("../pages/admin/AdminFeatureFlags"),
+);
 const AdminAdmins = lazy(() => import("../pages/admin/AdminAdmins"));
-const AdminSecurityCenter = lazy(() => import("../pages/admin/AdminSecurityCenter"));
+const AdminSecurityCenter = lazy(
+  () => import("../pages/admin/AdminSecurityCenter"),
+);
 const AdminPayments = lazy(() => import("../pages/admin/AdminPayments"));
 const AdminRevenue = lazy(() => import("../pages/admin/AdminRevenue"));
 const AdminBroadcast = lazy(() => import("../pages/admin/AdminBroadcast"));
 const AdminExpiry = lazy(() => import("../pages/admin/AdminExpiry"));
-const AdminSupportTickets = lazy(() => import("../pages/admin/AdminSupportTickets"));
-const AdminSystemHealth = lazy(() => import("../pages/admin/AdminSystemHealth"));
+const AdminSupportTickets = lazy(
+  () => import("../pages/admin/AdminSupportTickets"),
+);
+const AdminSystemHealth = lazy(
+  () => import("../pages/admin/AdminSystemHealth"),
+);
 const AdminShops = lazy(() => import("../pages/admin/AdminShops"));
 const Dashboard = lazy(() => import("../components/Dashboard"));
 const BulkImport = lazy(() => import("../components/BulkImport"));
+const BulkDisposal = lazy(() => import("../components/BulkDisposal"));
 const ManageTeam = lazy(() => import("../components/ManageTeam"));
 const SystemSettings = lazy(() => import("../components/SystemSettings"));
 const SalesManagement = lazy(() => import("../components/SalesManagement"));
@@ -47,6 +58,7 @@ const ExpiryBatchIntelligence = lazy(
 const BarcodeEcosystem = lazy(() => import("../components/BarcodeEcosystem"));
 const Profile = lazy(() => import("../components/Profile"));
 const Suppliers = lazy(() => import("../components/Suppliers"));
+const SupplierReturns = lazy(() => import("../components/SupplierReturns"));
 const Patients = lazy(() => import("../components/Patients"));
 const PrescriptionsCRUD = lazy(() => import("../components/PrescriptionsCRUD"));
 const InventoryCRUD = lazy(() => import("../components/InventoryCRUD"));
@@ -235,6 +247,14 @@ export default function AppRoutes({
             }
           />
           <Route
+            path="/expiry/bulk-disposal"
+            element={
+              <PageErrorBoundary>
+                <BulkDisposal showToast={showToast} />
+              </PageErrorBoundary>
+            }
+          />
+          <Route
             path="/barcode"
             element={
               <PageErrorBoundary>
@@ -247,6 +267,14 @@ export default function AppRoutes({
             element={
               <PageErrorBoundary>
                 <Suppliers showToast={showToast} />
+              </PageErrorBoundary>
+            }
+          />
+          <Route
+            path="/supplier-returns"
+            element={
+              <PageErrorBoundary>
+                <SupplierReturns showToast={showToast} />
               </PageErrorBoundary>
             }
           />
@@ -387,7 +415,10 @@ export default function AppRoutes({
 
         {/* Admin Routes */}
         <Route path="/admin/login" element={<AdminLogin />} />
-        <Route path="/admin" element={<Navigate to="/admin/dashboard" replace />} />
+        <Route
+          path="/admin"
+          element={<Navigate to="/admin/dashboard" replace />}
+        />
         <Route element={<AdminLayout />}>
           <Route path="/admin/dashboard" element={<AdminDashboard />} />
           <Route path="/admin/users" element={<AdminUsers />} />
@@ -396,7 +427,10 @@ export default function AppRoutes({
           <Route path="/admin/audit-logs" element={<AdminAuditLogs />} />
           <Route path="/admin/shops" element={<AdminShops />} />
           <Route path="/admin/system-health" element={<AdminSystemHealth />} />
-          <Route path="/admin/support-tickets" element={<AdminSupportTickets />} />
+          <Route
+            path="/admin/support-tickets"
+            element={<AdminSupportTickets />}
+          />
           <Route path="/admin/expiry" element={<AdminExpiry />} />
           <Route path="/admin/broadcast" element={<AdminBroadcast />} />
           <Route path="/admin/revenue" element={<AdminRevenue />} />

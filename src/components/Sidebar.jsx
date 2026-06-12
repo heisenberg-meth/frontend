@@ -12,6 +12,8 @@ import {
   CalendarClock,
   QrCode,
   ShieldCheck,
+  Trash2,
+  PackageX,
 } from "lucide-react";
 
 export default function Sidebar({ user, onSignOut }) {
@@ -93,11 +95,25 @@ export default function Sidebar({ user, onSignOut }) {
             <span>Expiry & Batch</span>
           </NavLink>
           <NavLink
+            to="/expiry/bulk-disposal"
+            className={({ isActive }) => `nav-link ${isActive ? "active" : ""}`}
+          >
+            <Trash2 size={18} />
+            <span>Bulk Disposal</span>
+          </NavLink>
+          <NavLink
             to="/barcode"
             className={({ isActive }) => `nav-link ${isActive ? "active" : ""}`}
           >
             <QrCode size={18} />
             <span>Barcode & QR</span>
+          </NavLink>
+          <NavLink
+            to="/supplier-returns"
+            className={({ isActive }) => `nav-link ${isActive ? "active" : ""}`}
+          >
+            <PackageX size={18} />
+            <span>Supplier Returns</span>
           </NavLink>
 
           {user?.role === "OWNER" && (

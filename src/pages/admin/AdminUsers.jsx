@@ -17,6 +17,9 @@ import {
   Key,
   Smartphone,
   Download,
+  Lock,
+  Unlock,
+  PauseCircle,
 } from "lucide-react";
 import toast from "react-hot-toast";
 
@@ -69,7 +72,7 @@ export default function AdminUsers() {
 
   const handleStatusChange = async (id, status) => {
     try {
-      await adminApi.updateUserStatus(id, status);
+      await adminApi.updateTenantStatus(id, status);
       fetchUsers();
     } catch (err) {
       console.error(err);
@@ -161,6 +164,51 @@ export default function AdminUsers() {
       toast.success("User devices reset");
     } catch (err) {
       toast.error(err.response?.data?.message || "Failed to reset devices");
+    }
+  };
+
+  const handleBlockUser = async (tenantId, userId, userName) => {
+    const reason = prompt(`Reason for blocking "${userName}":`);
+    if (!reason) return;
+    try {
+      await adminApi.blockUser(tenantId, userId, reason);
+      toast.success(`User "${userName}" blocked`);
+      openDetail(tenantId);
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Failed to block user");
+    }
+  };
+
+  const handleUnblockUser = async (tenantId, userId, userName) => {
+    if (!confirm(`Unblock "${userName}"?`)) return;
+    try {
+      await adminApi.unblockUser(tenantId, userId);
+      toast.success(`User "${userName}" unblocked`);
+      openDetail(tenantId);
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Failed to unblock user");
+    }
+  };
+
+  const handleSuspendUser = async (tenantId, userId, userName) => {
+    if (!confirm(`Suspend "${userName}"?`)) return;
+    try {
+      await adminApi.updateUserStatus(tenantId, userId, "SUSPENDED");
+      toast.success(`User "${userName}" suspended`);
+      openDetail(tenantId);
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Failed to suspend user");
+    }
+  };
+
+  const handleActivateUser = async (tenantId, userId, userName) => {
+    if (!confirm(`Activate "${userName}"?`)) return;
+    try {
+      await adminApi.updateUserStatus(tenantId, userId, "ACTIVE");
+      toast.success(`User "${userName}" activated`);
+      openDetail(tenantId);
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Failed to activate user");
     }
   };
 
@@ -638,6 +686,7 @@ export default function AdminUsers() {
                             <th>Name</th>
                             <th>Email</th>
                             <th>Role</th>
+                            <th>Status</th>
                             <th>Phone</th>
                             <th>Joined</th>
                             <th>Actions</th>
@@ -649,12 +698,98 @@ export default function AdminUsers() {
                               <td>{u.fullName}</td>
                               <td>{u.email}</td>
                               <td>{u.role}</td>
+                              <td>
+                                {u.status === "BLOCKED" ? (
+                                  <span
+                                    className="admin-badge"
+                                    style={{ background: "#dc2626" }}
+                                  >
+                                    BLOCKED
+                                  </span>
+                                ) : u.status === "SUSPENDED" ? (
+                                  <span
+                                    className="admin-badge"
+                                    style={{ background: "#f59e0b" }}
+                                  >
+                                    SUSPENDED
+                                  </span>
+                                ) : (
+                                  <span
+                                    className="admin-badge"
+                                    style={{ background: "#22c55e" }}
+                                  >
+                                    ACTIVE
+                                  </span>
+                                )}
+                              </td>
                               <td>{u.phone || "—"}</td>
                               <td>
                                 {new Date(u.createdAt).toLocaleDateString()}
                               </td>
                               <td>
                                 <div style={{ display: "flex", gap: 4 }}>
+                                  {u.status === "BLOCKED" ? (
+                                    <button
+                                      className="admin-icon-btn"
+                                      style={{ color: "#22c55e" }}
+                                      title="Unblock User"
+                                      onClick={() =>
+                                        handleUnblockUser(
+                                          detail.id,
+                                          u.id,
+                                          u.fullName,
+                                        )
+                                      }
+                                    >
+                                      <Unlock size={14} />
+                                    </button>
+                                  ) : u.status === "SUSPENDED" ? (
+                                    <button
+                                      className="admin-icon-btn"
+                                      style={{ color: "#22c55e" }}
+                                      title="Activate User"
+                                      onClick={() =>
+                                        handleActivateUser(
+                                          detail.id,
+                                          u.id,
+                                          u.fullName,
+                                        )
+                                      }
+                                    >
+                                      <CheckCircle size={14} />
+                                    </button>
+                                  ) : (
+                                    <>
+                                      <button
+                                        className="admin-icon-btn"
+                                        style={{ color: "#f59e0b" }}
+                                        title="Suspend User"
+                                        onClick={() =>
+                                          handleSuspendUser(
+                                            detail.id,
+                                            u.id,
+                                            u.fullName,
+                                          )
+                                        }
+                                      >
+                                        <PauseCircle size={14} />
+                                      </button>
+                                      <button
+                                        className="admin-icon-btn"
+                                        style={{ color: "#dc2626" }}
+                                        title="Block User"
+                                        onClick={() =>
+                                          handleBlockUser(
+                                            detail.id,
+                                            u.id,
+                                            u.fullName,
+                                          )
+                                        }
+                                      >
+                                        <Lock size={14} />
+                                      </button>
+                                    </>
+                                  )}
                                   <button
                                     className="admin-icon-btn"
                                     style={{ color: "#f59e0b" }}
