@@ -597,10 +597,12 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
       await refreshData();
     } catch (err) {
       console.error(err);
-      showToast(
-        err.response?.data?.error || err.message || "Failed to receive order",
-        "error",
-      );
+      const errorMessage =
+        err.response?.data?.error?.message ||
+        err.response?.data?.error ||
+        err.message ||
+        "Failed to receive order";
+      showToast(errorMessage, "error");
     }
   };
 
