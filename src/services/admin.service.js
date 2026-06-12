@@ -30,7 +30,9 @@ adminHttp.interceptors.response.use(
       try {
         const refreshToken = localStorage.getItem(REFRESH_KEY);
         if (!refreshToken) throw new Error("No refresh token");
-        const { data } = await axios.post(`${getBaseUrl()}/admin/refresh`, { refreshToken });
+        const { data } = await axios.post(`${getBaseUrl()}/admin/refresh`, {
+          refreshToken,
+        });
         if (data.success && data.data.accessToken) {
           localStorage.setItem(TOKEN_KEY, data.data.accessToken);
           localStorage.setItem(REFRESH_KEY, data.data.refreshToken);
@@ -50,7 +52,10 @@ adminHttp.interceptors.response.use(
 
 export const adminApi = {
   async login(email, password) {
-    const { data } = await adminHttp.post(API_ROUTES.ADMIN_LOGIN, { email, password });
+    const { data } = await adminHttp.post(API_ROUTES.ADMIN_LOGIN, {
+      email,
+      password,
+    });
     if (data.success && data.data.accessToken) {
       localStorage.setItem(TOKEN_KEY, data.data.accessToken);
       localStorage.setItem(REFRESH_KEY, data.data.refreshToken);
@@ -62,7 +67,9 @@ export const adminApi = {
   async refresh() {
     const refreshToken = localStorage.getItem(REFRESH_KEY);
     if (!refreshToken) throw new Error("No refresh token");
-    const { data } = await adminHttp.post(API_ROUTES.ADMIN_REFRESH, { refreshToken });
+    const { data } = await adminHttp.post(API_ROUTES.ADMIN_REFRESH, {
+      refreshToken,
+    });
     if (data.success && data.data.accessToken) {
       localStorage.setItem(TOKEN_KEY, data.data.accessToken);
       localStorage.setItem(REFRESH_KEY, data.data.refreshToken);
@@ -74,7 +81,9 @@ export const adminApi = {
   async logout() {
     try {
       await adminHttp.post(API_ROUTES.ADMIN_LOGOUT);
-    } catch {} finally {
+    } catch (err) {
+      console.log(err);
+    } finally {
       localStorage.removeItem(TOKEN_KEY);
       localStorage.removeItem(REFRESH_KEY);
       localStorage.removeItem(ADMIN_KEY);
@@ -115,7 +124,10 @@ export const adminApi = {
   },
 
   async updateAdmin(id, payload) {
-    const { data } = await adminHttp.put(`${API_ROUTES.ADMIN_ADMINS}/${id}`, payload);
+    const { data } = await adminHttp.put(
+      `${API_ROUTES.ADMIN_ADMINS}/${id}`,
+      payload,
+    );
     return data;
   },
 
@@ -125,7 +137,9 @@ export const adminApi = {
   },
 
   async getAuditLogs(params = {}) {
-    const { data } = await adminHttp.get(API_ROUTES.ADMIN_AUDIT_LOGS, { params });
+    const { data } = await adminHttp.get(API_ROUTES.ADMIN_AUDIT_LOGS, {
+      params,
+    });
     return data;
   },
 
@@ -135,7 +149,10 @@ export const adminApi = {
   },
 
   async blockDevice(id, reason) {
-    const { data } = await adminHttp.put(`${API_ROUTES.ADMIN_DEVICES_BLOCK}/${id}/block`, { reason });
+    const { data } = await adminHttp.put(
+      `${API_ROUTES.ADMIN_DEVICES_BLOCK}/${id}/block`,
+      { reason },
+    );
     return data;
   },
 
@@ -145,7 +162,9 @@ export const adminApi = {
   },
 
   async unblockDevice(id) {
-    const { data } = await adminHttp.put(`${API_ROUTES.ADMIN_DEVICES_UNBLOCK}/${id}/unblock`);
+    const { data } = await adminHttp.put(
+      `${API_ROUTES.ADMIN_DEVICES_UNBLOCK}/${id}/unblock`,
+    );
     return data;
   },
 
@@ -155,17 +174,26 @@ export const adminApi = {
   },
 
   async createFeatureFlag(payload) {
-    const { data } = await adminHttp.post(API_ROUTES.ADMIN_FEATURE_FLAGS, payload);
+    const { data } = await adminHttp.post(
+      API_ROUTES.ADMIN_FEATURE_FLAGS,
+      payload,
+    );
     return data;
   },
 
   async updateFeatureFlag(id, payload) {
-    const { data } = await adminHttp.put(`${API_ROUTES.ADMIN_FEATURE_FLAGS}/${id}`, payload);
+    const { data } = await adminHttp.put(
+      `${API_ROUTES.ADMIN_FEATURE_FLAGS}/${id}`,
+      payload,
+    );
     return data;
   },
 
   async toggleFeatureFlag(id, enabled) {
-    const { data } = await adminHttp.put(`${API_ROUTES.ADMIN_FEATURE_FLAGS}/${id}/toggle`, { enabled });
+    const { data } = await adminHttp.put(
+      `${API_ROUTES.ADMIN_FEATURE_FLAGS}/${id}/toggle`,
+      { enabled },
+    );
     return data;
   },
 
@@ -175,7 +203,9 @@ export const adminApi = {
   },
 
   async updateUserStatus(id, status) {
-    const { data } = await adminHttp.put(`/admin/users/${id}/status`, { status });
+    const { data } = await adminHttp.put(`/admin/users/${id}/status`, {
+      status,
+    });
     return data;
   },
 
@@ -190,7 +220,9 @@ export const adminApi = {
   },
 
   async blacklistTenant(id, reason) {
-    const { data } = await adminHttp.put(`/admin/users/${id}/blacklist`, { reason });
+    const { data } = await adminHttp.put(`/admin/users/${id}/blacklist`, {
+      reason,
+    });
     return data;
   },
 
@@ -225,7 +257,9 @@ export const adminApi = {
   },
 
   async blockShop(id, reason) {
-    const { data } = await adminHttp.post(`/admin/shops/${id}/block`, { reason });
+    const { data } = await adminHttp.post(`/admin/shops/${id}/block`, {
+      reason,
+    });
     return data;
   },
 
@@ -235,17 +269,23 @@ export const adminApi = {
   },
 
   async deleteUser(tenantId, userId) {
-    const { data } = await adminHttp.delete(`/admin/users/${tenantId}/users/${userId}`);
+    const { data } = await adminHttp.delete(
+      `/admin/users/${tenantId}/users/${userId}`,
+    );
     return data;
   },
 
   async resetUserPassword(tenantId, userId) {
-    const { data } = await adminHttp.post(`/admin/users/${tenantId}/users/${userId}/reset-password`);
+    const { data } = await adminHttp.post(
+      `/admin/users/${tenantId}/users/${userId}/reset-password`,
+    );
     return data;
   },
 
   async resetUserDevice(tenantId, userId) {
-    const { data } = await adminHttp.post(`/admin/users/${tenantId}/users/${userId}/reset-device`);
+    const { data } = await adminHttp.post(
+      `/admin/users/${tenantId}/users/${userId}/reset-device`,
+    );
     return data;
   },
 
@@ -265,12 +305,18 @@ export const adminApi = {
   },
 
   async replySupportTicket(id, payload) {
-    const { data } = await adminHttp.post(`/admin/support-tickets/${id}/reply`, payload);
+    const { data } = await adminHttp.post(
+      `/admin/support-tickets/${id}/reply`,
+      payload,
+    );
     return data;
   },
 
   async updateSupportTicketStatus(id, payload) {
-    const { data } = await adminHttp.put(`/admin/support-tickets/${id}/status`, payload);
+    const { data } = await adminHttp.put(
+      `/admin/support-tickets/${id}/status`,
+      payload,
+    );
     return data;
   },
 
@@ -280,7 +326,10 @@ export const adminApi = {
   },
 
   async sendExpiryReminders(payload) {
-    const { data } = await adminHttp.post("/admin/expiry/send-reminders", payload);
+    const { data } = await adminHttp.post(
+      "/admin/expiry/send-reminders",
+      payload,
+    );
     return data;
   },
 
@@ -295,7 +344,9 @@ export const adminApi = {
   },
 
   async getMonthlyRevenue(months = 12) {
-    const { data } = await adminHttp.get("/admin/revenue/monthly", { params: { months } });
+    const { data } = await adminHttp.get("/admin/revenue/monthly", {
+      params: { months },
+    });
     return data;
   },
 
@@ -310,12 +361,16 @@ export const adminApi = {
   },
 
   async refundPayment(id, reason) {
-    const { data } = await adminHttp.put(`/admin/payments/${id}/refund`, { reason });
+    const { data } = await adminHttp.put(`/admin/payments/${id}/refund`, {
+      reason,
+    });
     return data;
   },
 
   async updatePaymentStatus(id, status) {
-    const { data } = await adminHttp.put(`/admin/payments/${id}/status`, { status });
+    const { data } = await adminHttp.put(`/admin/payments/${id}/status`, {
+      status,
+    });
     return data;
   },
 
@@ -325,7 +380,9 @@ export const adminApi = {
   },
 
   async getLoginAttempts(params = {}) {
-    const { data } = await adminHttp.get("/admin/security/login-attempts", { params });
+    const { data } = await adminHttp.get("/admin/security/login-attempts", {
+      params,
+    });
     return data;
   },
 
@@ -340,17 +397,26 @@ export const adminApi = {
   },
 
   async updateSubscription(id, payload) {
-    const { data } = await adminHttp.patch(`/admin/subscriptions/${id}`, payload);
+    const { data } = await adminHttp.patch(
+      `/admin/subscriptions/${id}`,
+      payload,
+    );
     return data;
   },
 
   async renewSubscription(id, payload) {
-    const { data } = await adminHttp.post(`/admin/subscriptions/${id}/renew`, payload);
+    const { data } = await adminHttp.post(
+      `/admin/subscriptions/${id}/renew`,
+      payload,
+    );
     return data;
   },
 
   async extendSubscription(id, payload) {
-    const { data } = await adminHttp.post(`/admin/subscriptions/${id}/extend`, payload);
+    const { data } = await adminHttp.post(
+      `/admin/subscriptions/${id}/extend`,
+      payload,
+    );
     return data;
   },
 
@@ -360,7 +426,10 @@ export const adminApi = {
   },
 
   async getExpiringSubscriptions(days = 7) {
-    const { data } = await adminHttp.get(API_ROUTES.ADMIN_SUBSCRIPTIONS_EXPIRING, { params: { days } });
+    const { data } = await adminHttp.get(
+      API_ROUTES.ADMIN_SUBSCRIPTIONS_EXPIRING,
+      { params: { days } },
+    );
     return data;
   },
 };

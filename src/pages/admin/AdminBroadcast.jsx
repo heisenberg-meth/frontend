@@ -1,6 +1,13 @@
 import { useState } from "react";
 import { adminApi } from "../../services/admin.service";
-import { Send, Mail, MessageSquare, Globe, AlertCircle, CheckCircle } from "lucide-react";
+import {
+  Send,
+  Mail,
+  MessageSquare,
+  Globe,
+  AlertCircle,
+  CheckCircle,
+} from "lucide-react";
 
 export default function AdminBroadcast() {
   const [channel, setChannel] = useState("EMAIL");
@@ -19,7 +26,12 @@ export default function AdminBroadcast() {
       const filters = {};
       if (statusFilter) filters.status = statusFilter;
       if (planFilter) filters.plan = planFilter;
-      const res = await adminApi.sendBroadcast({ channel, subject, message, filters });
+      const res = await adminApi.sendBroadcast({
+        channel,
+        subject,
+        message,
+        filters,
+      });
       setResult(res);
     } catch (err) {
       setResult({ error: err.message || "Failed to send broadcast" });
@@ -36,7 +48,9 @@ export default function AdminBroadcast() {
 
   return (
     <div className="admin-page">
-      <h2><Send size={20} /> Broadcast Center</h2>
+      <h2>
+        <Send size={20} /> Broadcast Center
+      </h2>
       <p style={{ color: "#888", marginBottom: 24 }}>
         Send bulk messages to all or filtered shops
       </p>
@@ -53,9 +67,21 @@ export default function AdminBroadcast() {
                   type="button"
                   onClick={() => setChannel(ch.value)}
                   style={{
-                    flex: 1, padding: "10px 16px", border: channel === ch.value ? "2px solid #22c55e" : "2px solid #333",
-                    borderRadius: 8, background: channel === ch.value ? "#0a2e1a" : "transparent",
-                    color: "#fff", cursor: "pointer", display: "flex", alignItems: "center", gap: 8, justifyContent: "center",
+                    flex: 1,
+                    padding: "10px 16px",
+                    border:
+                      channel === ch.value
+                        ? "2px solid #22c55e"
+                        : "2px solid #333",
+                    borderRadius: 8,
+                    background:
+                      channel === ch.value ? "#0a2e1a" : "transparent",
+                    color: "#fff",
+                    cursor: "pointer",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 8,
+                    justifyContent: "center",
                   }}
                 >
                   <Icon size={18} /> {ch.label}
@@ -91,7 +117,11 @@ export default function AdminBroadcast() {
         <div style={{ display: "flex", gap: 16 }}>
           <div className="admin-form-group" style={{ flex: 1 }}>
             <label>Status Filter (optional)</label>
-            <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} disabled={sending}>
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              disabled={sending}
+            >
               <option value="">All statuses</option>
               <option value="ACTIVE">Active</option>
               <option value="SUSPENDED">Suspended</option>
@@ -100,7 +130,11 @@ export default function AdminBroadcast() {
           </div>
           <div className="admin-form-group" style={{ flex: 1 }}>
             <label>Plan Filter (optional)</label>
-            <select value={planFilter} onChange={(e) => setPlanFilter(e.target.value)} disabled={sending}>
+            <select
+              value={planFilter}
+              onChange={(e) => setPlanFilter(e.target.value)}
+              disabled={sending}
+            >
               <option value="">All plans</option>
               <option value="FREE">Free</option>
               <option value="BASIC">Basic</option>
@@ -110,17 +144,36 @@ export default function AdminBroadcast() {
           </div>
         </div>
 
-        <button type="submit" className="admin-btn admin-btn-primary" style={{ marginTop: 16 }} disabled={sending || !message.trim()}>
+        <button
+          type="submit"
+          className="admin-btn admin-btn-primary"
+          style={{ marginTop: 16 }}
+          disabled={sending || !message.trim()}
+        >
           {sending ? "Sending..." : "Send Broadcast"}
         </button>
       </form>
 
       {result && (
-        <div className="admin-alert" style={{ marginTop: 24, background: result.error ? "#3a0e0e" : "#0a2e1a", border: `1px solid ${result.error ? "#ef4444" : "#22c55e"}` }}>
+        <div
+          className="admin-alert"
+          style={{
+            marginTop: 24,
+            background: result.error ? "#3a0e0e" : "#0a2e1a",
+            border: `1px solid ${result.error ? "#ef4444" : "#22c55e"}`,
+          }}
+        >
           {result.error ? (
-            <><AlertCircle size={18} style={{ color: "#ef4444" }} /> {result.error}</>
+            <>
+              <AlertCircle size={18} style={{ color: "#ef4444" }} />{" "}
+              {result.error}
+            </>
           ) : (
-            <><CheckCircle size={18} style={{ color: "#22c55e" }} /> Sent to {result.sent} of {result.total} recipients{result.failed > 0 ? ` (${result.failed} failed)` : ""}</>
+            <>
+              <CheckCircle size={18} style={{ color: "#22c55e" }} /> Sent to{" "}
+              {result.sent} of {result.total} recipients
+              {result.failed > 0 ? ` (${result.failed} failed)` : ""}
+            </>
           )}
         </div>
       )}

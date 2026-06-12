@@ -385,12 +385,7 @@ export default function AppRoutes({
           }
         />
 
-        {/* 404 Redirect */}
-        <Route path="*" element={<Navigate to="/dashboard" replace />} />
-      </Routes>
-
-      {/* ── Admin Routes (separate from pharmacy app) ── */}
-      <Routes>
+        {/* Admin Routes */}
         <Route path="/admin/login" element={<AdminLogin />} />
         <Route path="/admin" element={<Navigate to="/admin/dashboard" replace />} />
         <Route element={<AdminLayout />}>
@@ -410,6 +405,9 @@ export default function AppRoutes({
           <Route path="/admin/feature-flags" element={<AdminFeatureFlags />} />
           <Route path="/admin/admins" element={<AdminAdmins />} />
         </Route>
+
+        {/* 404 Redirect */}
+        <Route path="*" element={<Navigate to="/dashboard" replace />} />
       </Routes>
     </Suspense>
   );

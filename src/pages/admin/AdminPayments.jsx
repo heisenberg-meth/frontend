@@ -1,9 +1,6 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { adminApi } from "../../services/admin.service";
-import {
-  Search, DollarSign, ArrowLeftRight, RotateCcw, Eye,
-  CheckCircle, XCircle, Building2,
-} from "lucide-react";
+import { Search, RotateCcw, CheckCircle, XCircle } from "lucide-react";
 
 const STATUS_COLORS = {
   SUCCESS: { bg: "#22c55e" },
@@ -22,11 +19,17 @@ export default function AdminPayments() {
   const [total, setTotal] = useState(0);
   const [filterStatus, setFilterStatus] = useState("");
 
-  const fetchPayments = async () => {
+  const searchRef = useRef(search);
+  useEffect(() => {
+    searchRef.current = search;
+  }, [search]);
+
+  const fetchPayments = useCallback(async () => {
+    await Promise.resolve();
     setLoading(true);
     try {
       const params = { page, limit: 20 };
-      if (search) params.search = search;
+      if (searchRef.current) params.search = searchRef.current;
       if (filterStatus) params.status = filterStatus;
       const res = await adminApi.listPayments(params);
       if (res.success) {
@@ -38,9 +41,11 @@ export default function AdminPayments() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [page, filterStatus]);
 
-  useEffect(() => { fetchPayments(); }, [page, filterStatus]);
+  useEffect(() => {
+    Promise.resolve().then(() => fetchPayments());
+  }, [fetchPayments]);
 
   const handleRefund = async (id) => {
     const reason = prompt("Refund reason:");
@@ -65,12 +70,29 @@ export default function AdminPayments() {
   return (
     <div className="admin-page">
       <div className="admin-toolbar">
-        <form className="admin-search" onSubmit={(e) => { e.preventDefault(); setPage(1); fetchPayments(); }}>
+        <form
+          className="admin-search"
+          onSubmit={(e) => {
+            e.preventDefault();
+            setPage(1);
+            fetchPayments();
+          }}
+        >
           <Search size={16} />
-          <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search by transaction ID, order ID, shop..." />
+          <input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search by transaction ID, order ID, shop..."
+          />
         </form>
         <div className="admin-filter-group">
-          <select value={filterStatus} onChange={(e) => { setFilterStatus(e.target.value); setPage(1); }}>
+          <select
+            value={filterStatus}
+            onChange={(e) => {
+              setFilterStatus(e.target.value);
+              setPage(1);
+            }}
+          >
             <option value="">All Status</option>
             <option value="SUCCESS">Success</option>
             <option value="FAILED">Failed</option>
@@ -96,49 +118,97 @@ export default function AdminPayments() {
           </thead>
           <tbody>
             {loading ? (
-              <tr><td colSpan={7} className="admin-empty">Loading...</td></tr>
-            ) : payments.length === 0 ? (
-              <tr><td colSpan={7} className="admin-empty">No payments found</td></tr>
-            ) : payments.map((p) => (
-              <tr key={p.id}>
-                <td><strong>{p.tenant?.name || "—"}</strong></td>
-                <td><code className="admin-fp">{(p.transactionId || p.razorpayPaymentId || p.id).slice(0, 16)}...</code></td>
-                <td><strong>₹{Number(p.amount).toLocaleString()}</strong></td>
-                <td>{p.paymentMethod || p.paymentProvider || "—"}</td>
-                <td>
-                  <span className="admin-badge" style={{ background: STATUS_COLORS[p.status]?.bg || "#666" }}>
-                    {p.status}
-                  </span>
-                </td>
-                <td>{new Date(p.createdAt).toLocaleDateString()}</td>
-                <td className="admin-actions-cell">
-                  {p.status === "SUCCESS" && (
-                    <button className="admin-icon-btn warn" title="Refund" onClick={() => handleRefund(p.id)}>
-                      <RotateCcw size={16} />
-                    </button>
-                  )}
-                  {p.status === "PENDING" && (
-                    <>
-                      <button className="admin-icon-btn success" title="Mark Paid" onClick={() => handleStatusChange(p.id, "SUCCESS")}>
-                        <CheckCircle size={16} />
-                      </button>
-                      <button className="admin-icon-btn danger" title="Mark Failed" onClick={() => handleStatusChange(p.id, "FAILED")}>
-                        <XCircle size={16} />
-                      </button>
-                    </>
-                  )}
+              <tr>
+                <td colSpan={7} className="admin-empty">
+                  Loading...
                 </td>
               </tr>
-            ))}
+            ) : payments.length === 0 ? (
+              <tr>
+                <td colSpan={7} className="admin-empty">
+                  No payments found
+                </td>
+              </tr>
+            ) : (
+              payments.map((p) => (
+                <tr key={p.id}>
+                  <td>
+                    <strong>{p.tenant?.name || "—"}</strong>
+                  </td>
+                  <td>
+                    <code className="admin-fp">
+                      {(p.transactionId || p.razorpayPaymentId || p.id).slice(
+                        0,
+                        16,
+                      )}
+                      ...
+                    </code>
+                  </td>
+                  <td>
+                    <strong>₹{Number(p.amount).toLocaleString()}</strong>
+                  </td>
+                  <td>{p.paymentMethod || p.paymentProvider || "—"}</td>
+                  <td>
+                    <span
+                      className="admin-badge"
+                      style={{
+                        background: STATUS_COLORS[p.status]?.bg || "#666",
+                      }}
+                    >
+                      {p.status}
+                    </span>
+                  </td>
+                  <td>{new Date(p.createdAt).toLocaleDateString()}</td>
+                  <td className="admin-actions-cell">
+                    {p.status === "SUCCESS" && (
+                      <button
+                        className="admin-icon-btn warn"
+                        title="Refund"
+                        onClick={() => handleRefund(p.id)}
+                      >
+                        <RotateCcw size={16} />
+                      </button>
+                    )}
+                    {p.status === "PENDING" && (
+                      <>
+                        <button
+                          className="admin-icon-btn success"
+                          title="Mark Paid"
+                          onClick={() => handleStatusChange(p.id, "SUCCESS")}
+                        >
+                          <CheckCircle size={16} />
+                        </button>
+                        <button
+                          className="admin-icon-btn danger"
+                          title="Mark Failed"
+                          onClick={() => handleStatusChange(p.id, "FAILED")}
+                        >
+                          <XCircle size={16} />
+                        </button>
+                      </>
+                    )}
+                  </td>
+                </tr>
+              ))
+            )}
           </tbody>
         </table>
       </div>
 
       {total > 20 && (
         <div className="admin-pagination">
-          <button disabled={page <= 1} onClick={() => setPage(page - 1)}>Previous</button>
-          <span>Page {page} of {Math.ceil(total / 20)}</span>
-          <button disabled={page >= Math.ceil(total / 20)} onClick={() => setPage(page + 1)}>Next</button>
+          <button disabled={page <= 1} onClick={() => setPage(page - 1)}>
+            Previous
+          </button>
+          <span>
+            Page {page} of {Math.ceil(total / 20)}
+          </span>
+          <button
+            disabled={page >= Math.ceil(total / 20)}
+            onClick={() => setPage(page + 1)}
+          >
+            Next
+          </button>
         </div>
       )}
     </div>

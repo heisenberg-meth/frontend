@@ -61,7 +61,11 @@ export default function AdminLogin() {
               required
               minLength={8}
             />
-            <button type="button" className="pw-toggle" onClick={() => setShowPw(!showPw)}>
+            <button
+              type="button"
+              className="pw-toggle"
+              onClick={() => setShowPw(!showPw)}
+            >
               {showPw ? <EyeOff size={16} /> : <Eye size={16} />}
             </button>
           </div>
