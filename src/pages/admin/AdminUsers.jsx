@@ -509,7 +509,7 @@ export default function AdminUsers() {
               >
                 {p}
               </button>
-            )
+            ),
           )}
           <button
             disabled={page === Math.ceil(total / pageSize)}
