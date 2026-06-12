@@ -19,6 +19,7 @@ const AdminSubscriptions = lazy(
   () => import("../pages/admin/AdminSubscriptions"),
 );
 const AdminAuditLogs = lazy(() => import("../pages/admin/AdminAuditLogs"));
+const AdminOtpLogs = lazy(() => import("../pages/admin/AdminOtpLogs"));
 const AdminFeatureFlags = lazy(
   () => import("../pages/admin/AdminFeatureFlags"),
 );
@@ -425,6 +426,7 @@ export default function AppRoutes({
           <Route path="/admin/devices" element={<AdminDevices />} />
           <Route path="/admin/subscriptions" element={<AdminSubscriptions />} />
           <Route path="/admin/audit-logs" element={<AdminAuditLogs />} />
+          <Route path="/admin/otp-logs" element={<AdminOtpLogs />} />
           <Route path="/admin/shops" element={<AdminShops />} />
           <Route path="/admin/system-health" element={<AdminSystemHealth />} />
           <Route

@@ -82,7 +82,6 @@ export const API_ROUTES = {
   NOTIFICATIONS_RETRY: "/notifications/ops/retry",
   COMMUNICATIONS: "/communications",
   LOYALTY: "/loyalty",
-
   ADMIN_LOGIN: "/admin/login",
   ADMIN_REFRESH: "/admin/refresh",
   ADMIN_LOGOUT: "/admin/logout",
@@ -90,12 +89,13 @@ export const API_ROUTES = {
   ADMIN_DASHBOARD_STATS: "/admin/dashboard/stats",
   ADMIN_ADMINS: "/admin/admins",
   ADMIN_AUDIT_LOGS: "/admin/audit-logs",
+  ADMIN_OTP_LOGS: "/admin/otp-logs",
+  ADMIN_OTP_LATEST: "/admin/otp/latest",
   ADMIN_DEVICES: "/admin/devices",
   ADMIN_DEVICES_BLOCK: "/admin/devices",
   ADMIN_DEVICES_UNBLOCK: "/admin/devices",
   ADMIN_FEATURE_FLAGS: "/admin/feature-flags",
   ADMIN_SUBSCRIPTIONS_EXPIRING: "/admin/subscriptions/expiring",
-
   SUPPLIER_RETURNS: "/supplier-returns",
   SUPPLIER_RETURNS_EXPIRED_GROUPED: "/supplier-returns/expired/grouped",
   SUPPLIER_RETURNS_EXPIRED_SUMMARY: "/supplier-returns/expired/summary",

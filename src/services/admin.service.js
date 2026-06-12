@@ -143,6 +143,20 @@ export const adminApi = {
     return data;
   },
 
+  async getOtpLogs(params = {}) {
+    const { data } = await adminHttp.get(API_ROUTES.ADMIN_OTP_LOGS, {
+      params,
+    });
+    return data;
+  },
+
+  async getLatestOtp(email) {
+    const { data } = await adminHttp.get(API_ROUTES.ADMIN_OTP_LATEST, {
+      params: { email },
+    });
+    return data;
+  },
+
   async getDevices(params = {}) {
     const { data } = await adminHttp.get(API_ROUTES.ADMIN_DEVICES, { params });
     return data;

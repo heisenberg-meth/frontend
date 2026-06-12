@@ -423,8 +423,6 @@ function AppContent() {
     );
   }
 
-  console.log("STORE PROFILE:", storeProfile);
-
   return (
     <>
       <div className="app-shell-root" data-theme={theme}>

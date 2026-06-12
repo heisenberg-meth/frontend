@@ -101,6 +101,12 @@ const NAV_ITEMS = [
     roles: ["ROOT_ADMIN", "ADMIN", "SUPPORT", "SALES", "FINANCE"],
   },
   {
+    path: "/admin/otp-logs",
+    label: "OTP Logs",
+    icon: FileText,
+    roles: ["ROOT_ADMIN", "ADMIN", "SUPPORT", "SALES", "FINANCE"],
+  },
+  {
     path: "/admin/feature-flags",
     label: "Feature Flags",
     icon: Flag,
