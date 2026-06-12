@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import api from "../api.js";
 import { useAuth } from "../hooks/useAuth.js";
 import { API_ROUTES } from "../constants/api.routes.js";
@@ -57,6 +58,8 @@ const safeData = (result, ...keys) => {
 
 export default function PurchaseManagement({ showToast, storeProfile }) {
   const { user } = useAuth();
+  const location = useLocation();
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("invoices");
   const [drawer, setDrawer] = useState(null);
   const [selectedRow, setSelectedRow] = useState(null);
@@ -163,6 +166,36 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
       mounted = false;
     };
   }, [showToast]);
+
+  useEffect(() => {
+    const state = location.state;
+    if (!state) return;
+
+    if (state.action === "raise-po") {
+      handleOpenDrawer("new-purchase");
+
+      if (state.medicine) {
+        setPurchaseItems([
+          {
+            ...state.medicine,
+            qty: state.medicine.reorderQty || 1,
+            batchNumber: "",
+            expiryDate: "",
+          },
+        ]);
+      }
+
+      if (state.supplierId && suppliers.length > 0) {
+        const sup = suppliers.find((s) => s.id === state.supplierId);
+        if (sup) {
+          setSelectedSupplier(sup);
+        }
+      }
+
+      // Clear route state to prevent opening the drawer again on refresh
+      navigate(location.pathname, { replace: true, state: {} });
+    }
+  }, [location.state, suppliers, navigate, location.pathname]);
 
   useEffect(() => {}, [medicines]);
 

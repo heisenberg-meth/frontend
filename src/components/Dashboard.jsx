@@ -395,7 +395,18 @@ export default function Dashboard({
                           className="micro-btn-teal"
                           onClick={(e) => {
                             e.stopPropagation();
-                            navigate("/purchases");
+                            navigate("/purchases", {
+                              state: {
+                                action: "raise-po",
+                                medicine: {
+                                  id: item.id,
+                                  name: item.name,
+                                  purchasePrice: item.purchasePrice || item.price || 0,
+                                  reorderQty: item.reorderLevel || item.minStock || 50,
+                                  gstPercentage: item.gstPercentage || 12,
+                                }
+                              }
+                            });
                           }}
                         >
                           Raise PO

@@ -398,7 +398,16 @@
   background: #111827;
   border: 1px solid rgba(255,255,255,0.06);
   border-radius: 12px;
+  max-height: calc(100vh - 220px);
+  overflow-y: auto;
   overflow-x: auto;
+}
+
+.admin-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: #111827;
 }
 
 .admin-table {
@@ -536,6 +545,20 @@
 .admin-pagination span {
   font-size: 13px;
   color: #888;
+}
+
+.admin-pagination button.active {
+  background: #4fdbc8;
+  color: #0d1527;
+  border-color: #4fdbc8;
+  font-weight: 600;
+}
+
+.admin-pagination .pagination-dots {
+  color: #666;
+  font-size: 14px;
+  padding: 0 4px;
+  user-select: none;
 }
 
 /* ── Buttons ── */

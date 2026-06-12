@@ -28,6 +28,7 @@ export default function AdminUsers() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(25);
   const [total, setTotal] = useState(0);
   const [selectedUser, setSelectedUser] = useState(null);
   const [detailLoading, setDetailLoading] = useState(false);
@@ -44,7 +45,7 @@ export default function AdminUsers() {
     await Promise.resolve();
     setLoading(true);
     try {
-      const params = { page, limit: 20 };
+      const params = { page, limit: pageSize };
       if (searchRef.current) params.search = searchRef.current;
       if (filterVerified) params.verified = filterVerified;
       if (filterBlacklisted) params.blacklisted = filterBlacklisted;
@@ -58,7 +59,44 @@ export default function AdminUsers() {
     } finally {
       setLoading(false);
     }
-  }, [page, filterVerified, filterBlacklisted]);
+  }, [page, pageSize, filterVerified, filterBlacklisted]);
+
+  const getPageNumbers = (current, totalPages) => {
+    const pages = [];
+    const maxVisible = 5;
+
+    if (totalPages <= maxVisible + 2) {
+      for (let i = 1; i <= totalPages; i++) {
+        pages.push(i);
+      }
+    } else {
+      pages.push(1);
+
+      let start = Math.max(2, current - 2);
+      let end = Math.min(totalPages - 1, current + 2);
+
+      if (current <= 3) {
+        end = maxVisible;
+      } else if (current >= totalPages - 2) {
+        start = totalPages - maxVisible + 1;
+      }
+
+      if (start > 2) {
+        pages.push("...");
+      }
+
+      for (let i = start; i <= end; i++) {
+        pages.push(i);
+      }
+
+      if (end < totalPages - 1) {
+        pages.push("...");
+      }
+
+      pages.push(totalPages);
+    }
+    return pages;
+  };
 
   useEffect(() => {
     Promise.resolve().then(() => fetchUsers());
@@ -259,6 +297,19 @@ export default function AdminUsers() {
             <option value="false">Not Blacklisted</option>
           </select>
         </div>
+        <div className="admin-filter-group">
+          <select
+            value={pageSize}
+            onChange={(e) => {
+              setPageSize(Number(e.target.value));
+              setPage(1);
+            }}
+          >
+            <option value={25}>Show 25</option>
+            <option value={50}>Show 50</option>
+            <option value={100}>Show 100</option>
+          </select>
+        </div>
         <button
           onClick={() =>
             downloadCsv(
@@ -440,16 +491,28 @@ export default function AdminUsers() {
         </table>
       </div>
 
-      {total > 20 && (
+      {total > pageSize && (
         <div className="admin-pagination">
-          <button disabled={page <= 1} onClick={() => setPage(page - 1)}>
+          <button disabled={page === 1} onClick={() => setPage(page - 1)}>
             Previous
           </button>
-          <span>
-            Page {page} of {Math.ceil(total / 20)}
-          </span>
+          {getPageNumbers(page, Math.ceil(total / pageSize)).map((p, idx) =>
+            p === "..." ? (
+              <span key={`dots-${idx}`} className="pagination-dots">
+                ...
+              </span>
+            ) : (
+              <button
+                key={`page-${p}`}
+                className={page === p ? "active" : ""}
+                onClick={() => setPage(p)}
+              >
+                {p}
+              </button>
+            )
+          )}
           <button
-            disabled={page >= Math.ceil(total / 20)}
+            disabled={page === Math.ceil(total / pageSize)}
             onClick={() => setPage(page + 1)}
           >
             Next

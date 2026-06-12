@@ -810,7 +810,12 @@ export default function Suppliers({ showToast }) {
                         <button
                           className="sup-row-btn active"
                           title="Raise PO"
-                          onClick={() => navigate("/purchases")}
+                          onClick={() => navigate("/purchases", {
+                            state: {
+                              action: "raise-po",
+                              supplierId: s.id,
+                            }
+                          })}
                         >
                           <ClipboardList size={14} />
                         </button>
