@@ -260,14 +260,18 @@ export default function BulkDisposal({ showToast }) {
             <CheckCircle2 size={32} color="white" />
           </div>
           <h3 style={{ fontSize: 22, fontWeight: 700, marginTop: 8 }}>
-            Disposal Completed
+            {result.stats?.count || 0} Batches Archived Successfully
           </h3>
-          <p style={{ color: "var(--text-muted)", textAlign: "center" }}>
-            {result.stats?.count || 0} medicines disposed
+          <p
+            style={{
+              color: "var(--text-muted)",
+              textAlign: "center",
+              lineHeight: "1.6",
+            }}
+          >
+            Disposed Quantity: {result.stats?.totalUnits || 0}
             <br />
-            Total Units: {result.stats?.totalUnits || 0}
-            <br />
-            Total Value: {"\u20B9"}
+            Inventory Value Removed: {"\u20B9"}
             {Number(result.stats?.totalValue || 0).toLocaleString("en-IN")}
           </p>
           <div
