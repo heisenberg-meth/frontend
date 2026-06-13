@@ -185,11 +185,15 @@ export default function Auth({ onAuth }) {
     } catch (err) {
       const errData = err.response?.data;
       const message =
-        errData?.error?.message ||
-        errData?.message ||
-        errData?.error ||
-        err.message ||
-        "Action failed. Please try again.";
+        typeof errData?.error?.message === 'string'
+          ? errData.error.message
+          : typeof errData?.message === 'string'
+            ? errData.message
+            : typeof errData?.error === 'string'
+              ? errData.error
+              : typeof err.message === 'string'
+                ? err.message
+                : "Action failed. Please try again.";
       setError(message);
     } finally {
       setLoading(false);
@@ -207,9 +211,13 @@ export default function Auth({ onAuth }) {
       setSuccess("New code sent. Check your inbox.");
     } catch (err) {
       const errData = err.response?.data;
-      setError(
-        errData?.error?.message || errData?.message || "Failed to resend code.",
-      );
+      const message =
+        typeof errData?.error?.message === 'string'
+          ? errData.error.message
+          : typeof errData?.message === 'string'
+            ? errData.message
+            : "Failed to resend code.";
+      setError(message);
     } finally {
       setLoading(false);
     }

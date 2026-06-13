@@ -698,10 +698,15 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
     } catch (err) {
       console.error(err);
       const errorMessage =
-        err.response?.data?.error?.message ||
-        err.response?.data?.error ||
-        err.message ||
-        "Failed to receive order";
+        typeof err.response?.data?.error?.message === 'string'
+          ? err.response.data.error.message
+          : typeof err.response?.data?.error === 'string'
+            ? err.response.data.error
+            : typeof err.response?.data?.message === 'string'
+              ? err.response.data.message
+              : typeof err.message === 'string'
+                ? err.message
+                : "Failed to receive order";
       showToast(errorMessage, "error");
     } finally {
       setIsReceiving(false);
