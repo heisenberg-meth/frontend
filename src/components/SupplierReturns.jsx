@@ -26,6 +26,8 @@ import {
   getCreditNotes,
 } from "../services/supplier-returns.service.js";
 
+import { formatDate } from "../utils/format.js";
+
 const STATUS_BADGE = {
   DRAFT: { label: "Draft", class: "badge-neutral" },
   PENDING: { label: "Pending", class: "badge-warning" },
@@ -117,6 +119,15 @@ export default function SupplierReturns({ showToast }) {
     [showToast],
   );
 
+  const getErrorMessage = (err) => {
+    return (
+      err.response?.data?.error?.message ||
+      err.response?.data?.message ||
+      err.message ||
+      "Unexpected error"
+    );
+  };
+
   const fetchReturns = useCallback(
     async (p = page) => {
       setLoading(true);
@@ -131,7 +142,7 @@ export default function SupplierReturns({ showToast }) {
           setPage(data.pagination.page);
         }
       } catch (err) {
-        notify(err.response?.data?.error || "Failed to load returns", "error");
+        notify(getErrorMessage(err) || "Failed to load returns", "error");
       } finally {
         setLoading(false);
       }
@@ -152,10 +163,7 @@ export default function SupplierReturns({ showToast }) {
           setPage(data.pagination.page);
         }
       } catch (err) {
-        notify(
-          err.response?.data?.error || "Failed to load credit notes",
-          "error",
-        );
+        notify(getErrorMessage(err) || "Failed to load credit notes", "error");
       } finally {
         setLoading(false);
       }
@@ -173,10 +181,7 @@ export default function SupplierReturns({ showToast }) {
       if (groupedRes.data.success) setExpiredBySupplier(groupedRes.data.data);
       if (summaryRes.data.success) setExpiredSummary(summaryRes.data.data);
     } catch (err) {
-      notify(
-        err.response?.data?.error || "Failed to load expired data",
-        "error",
-      );
+      notify(getErrorMessage(err) || "Failed to load expired data", "error");
     } finally {
       setLoading(false);
     }
@@ -225,7 +230,7 @@ export default function SupplierReturns({ showToast }) {
         fetchReturns();
       }
     } catch (err) {
-      notify(err.response?.data?.error || "Failed to create return", "error");
+      notify(getErrorMessage(err) || "Failed to create return", "error");
     }
   };
 
@@ -238,7 +243,7 @@ export default function SupplierReturns({ showToast }) {
         if (selectedReturn?.id === id) setSelectedReturn(data.data);
       }
     } catch (err) {
-      notify(err.response?.data?.error || "Failed to update status", "error");
+      notify(getErrorMessage(err) || "Failed to update status", "error");
     }
   };
 
@@ -250,10 +255,7 @@ export default function SupplierReturns({ showToast }) {
         fetchReturns();
       }
     } catch (err) {
-      notify(
-        err.response?.data?.error || "Failed to generate credit note",
-        "error",
-      );
+      notify(getErrorMessage(err) || "Failed to generate credit note", "error");
     }
   };
 
@@ -399,7 +401,7 @@ export default function SupplierReturns({ showToast }) {
                         <td>
                           <Badge status={r.status} />
                         </td>
-                        <td>{new Date(r.createdAt).toLocaleDateString()}</td>
+                        <td>{formatDate(r.createdAt)}</td>
                         <td>
                           <div className="action-btns">
                             <button
@@ -414,7 +416,8 @@ export default function SupplierReturns({ showToast }) {
                                   console.log(err);
 
                                   notify(
-                                    "Failed to load return detail",
+                                    getErrorMessage(err) ||
+                                      "Failed to load return detail",
                                     "error",
                                   );
                                 }
@@ -474,7 +477,7 @@ export default function SupplierReturns({ showToast }) {
                         <td>
                           <Badge status={cn.status} map={CREDIT_NOTE_STATUS} />
                         </td>
-                        <td>{new Date(cn.issuedAt).toLocaleDateString()}</td>
+                        <td>{formatDate(cn.issuedAt)}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -578,13 +581,7 @@ export default function SupplierReturns({ showToast }) {
                               <tr key={item.id}>
                                 <td>{item.medicine?.name || "—"}</td>
                                 <td>{item.batchNumber || "—"}</td>
-                                <td>
-                                  {item.expiryDate
-                                    ? new Date(
-                                        item.expiryDate,
-                                      ).toLocaleDateString()
-                                    : "—"}
-                                </td>
+                                <td>{formatDate(item.expiryDate)}</td>
                                 <td>{item.quantity}</td>
                                 <td>
                                   ${Number(item.purchasePrice || 0).toFixed(2)}
@@ -888,13 +885,7 @@ export default function SupplierReturns({ showToast }) {
                                   </td>
                                   <td>{item.medicine?.name || "—"}</td>
                                   <td>{item.batchNumber || "—"}</td>
-                                  <td>
-                                    {item.expiryDate
-                                      ? new Date(
-                                          item.expiryDate,
-                                        ).toLocaleDateString()
-                                      : "—"}
-                                  </td>
+                                  <td>{formatDate(item.expiryDate)}</td>
                                   <td>{item.quantity}</td>
                                   <td>
                                     $

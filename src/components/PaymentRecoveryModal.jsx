@@ -228,7 +228,7 @@ export default function PaymentRecoveryModal({ onRecovered, onClose }) {
                 marginTop: 8,
               }}
             >
-              {error || "Your previous payment did not go through."}
+              {typeof error === "string" ? error : error?.message || String(error) || "Your previous payment did not go through."}
             </p>
             <div style={{ display: "flex", gap: 12, marginTop: 24 }}>
               <button
@@ -268,7 +268,7 @@ export default function PaymentRecoveryModal({ onRecovered, onClose }) {
                 marginTop: 8,
               }}
             >
-              {error || "Could not verify payment status. You can proceed."}
+              {typeof error === "string" ? error : error?.message || String(error) || "Could not verify payment status. You can proceed."}
             </p>
             <button
               className="sys-btn-outline"

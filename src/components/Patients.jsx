@@ -1,5 +1,6 @@
 import { useState, useMemo, useEffect, useRef } from "react";
 import api from "../api.js";
+import { formatDate } from "../utils/format.js";
 import { API_ROUTES } from "../constants/api.routes.js";
 import {
   UserPlus,
@@ -301,7 +302,7 @@ export default function Patients({ showToast }) {
                           <b>{entry.type.replace(/_/g, " ")}</b>
                           <p>{entry.notes || "Manual Transaction"}</p>
                           <small>
-                            {new Date(entry.createdAt).toLocaleDateString()}
+                            {formatDate(entry.createdAt)}
                           </small>
                         </div>
                         <div

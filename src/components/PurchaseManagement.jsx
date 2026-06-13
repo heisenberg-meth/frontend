@@ -76,6 +76,7 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
   const [purchaseItems, setPurchaseItems] = useState([]);
   const [loading, setLoading] = useState(false);
   const [receiveItems, setReceiveItems] = useState([]);
+  const [isReceiving, setIsReceiving] = useState(false);
 
   const handleOpenReceiveModal = (po) => {
     setSelectedRow(po);
@@ -85,11 +86,21 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
           0,
           (item.quantity || 0) - (item.receivedQuantity || 0),
         );
+        const unitPrice =
+          item.purchasePrice || item.unitPrice || item.price || 0;
         return {
           ...item,
+          orderedQuantity: item.quantity || 0,
+          prevReceivedQuantity: item.receivedQuantity || 0,
+          pendingQuantity: remaining,
           receivedQuantity: remaining,
           batchNumber: "",
           expiryDate: "",
+          purchasePrice: unitPrice,
+          mrp:
+            item.mrp ||
+            item.sellingPrice ||
+            (unitPrice ? (Number(unitPrice) * 1.2).toFixed(2) : 0),
         };
       }),
     );
@@ -594,7 +605,9 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
   });
 
   const handleReceiveOrder = async () => {
+    if (isReceiving) return;
     try {
+      setIsReceiving(true);
       const itemsToReceive = receiveItems.filter(
         (item) => Number(item.receivedQuantity) > 0,
       );
@@ -618,13 +631,64 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
         return;
       }
 
+      // Validation 1: Receive Qty <= Pending Qty
+      const exceedsPending = itemsToReceive.find(
+        (item) => Number(item.receivedQuantity) > Number(item.pendingQuantity),
+      );
+      if (exceedsPending) {
+        showToast(
+          `Received quantity for ${exceedsPending.medicine?.name || exceedsPending.medicineName || exceedsPending.name || "item"} cannot exceed the pending quantity (${exceedsPending.pendingQuantity})`,
+          "warning",
+        );
+        return;
+      }
+
+      // Validation 2: Expiry Date < Today
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const expiredItem = itemsToReceive.find(
+        (item) => new Date(item.expiryDate) < today,
+      );
+      if (expiredItem) {
+        showToast(
+          `Expiry date for ${expiredItem.medicine?.name || expiredItem.medicineName || expiredItem.name || "item"} must be in the future (today or later)`,
+          "warning",
+        );
+        return;
+      }
+
+      // Validation 3: Purchase Price <= 0
+      const invalidPrice = itemsToReceive.find(
+        (item) => Number(item.purchasePrice) <= 0,
+      );
+      if (invalidPrice) {
+        showToast(
+          `Purchase price for ${invalidPrice.medicine?.name || invalidPrice.medicineName || invalidPrice.name || "item"} must be greater than 0`,
+          "warning",
+        );
+        return;
+      }
+
+      // Validation 4: MRP <= 0
+      const invalidMRP = itemsToReceive.find((item) => Number(item.mrp) <= 0);
+      if (invalidMRP) {
+        showToast(
+          `MRP for ${invalidMRP.medicine?.name || invalidMRP.medicineName || invalidMRP.name || "item"} must be greater than 0`,
+          "warning",
+        );
+        return;
+      }
+
       showToast("Receiving order...", "info");
       const payload = {
         receivedItems: itemsToReceive.map((item) => ({
           medicineId: item.medicineId || item.id,
           receivedQuantity: Number(item.receivedQuantity),
           batchNumber: item.batchNumber.trim(),
-          expiryDate: new Date(item.expiryDate).toISOString(),
+          expiryDate: item.expiryDate,
+          purchasePrice: Number(item.purchasePrice),
+          sellingPrice: Number(item.mrp),
+          mrp: Number(item.mrp),
         })),
       };
       await receivePurchaseOrder(selectedRow.id, payload);
@@ -639,6 +703,8 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
         err.message ||
         "Failed to receive order";
       showToast(errorMessage, "error");
+    } finally {
+      setIsReceiving(false);
     }
   };
 
@@ -1846,7 +1912,7 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
           <div className="stock-modal-overlay">
             <motion.div
               className="stock-modal-content"
-              style={{ width: "600px" }}
+              style={{ width: "900px", maxWidth: "95vw" }}
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.9 }}
@@ -1868,80 +1934,128 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
                   {selectedRow.poNumber || selectedRow.id}.
                 </p>
 
-                <table className="p-line-table">
-                  <thead>
-                    <tr>
-                      <th>Medicine</th>
-                      <th>Ordered</th>
-                      <th>Received</th>
-                      <th>Batch #</th>
-                      <th>Expiry</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {receiveItems.map((item, idx) => (
-                      <tr key={idx}>
-                        <td>{item.medicine?.name || item.name}</td>
-                        <td>{item.quantity}</td>
-                        <td>
-                          <input
-                            required
-                            className="p-cost-input"
-                            style={{ width: "60px" }}
-                            type="number"
-                            value={item.receivedQuantity}
-                            onChange={(e) => {
-                              const newItems = [...receiveItems];
-                              newItems[idx].receivedQuantity = e.target.value;
-                              setReceiveItems(newItems);
-                            }}
-                          />
-                        </td>
-                        <td>
-                          <input
-                            required
-                            className="p-cost-input"
-                            placeholder="Batch..."
-                            value={item.batchNumber}
-                            onChange={(e) => {
-                              const newItems = [...receiveItems];
-                              newItems[idx].batchNumber = e.target.value;
-                              setReceiveItems(newItems);
-                            }}
-                          />
-                        </td>
-                        <td>
-                          <input
-                            required
-                            className="p-cost-input"
-                            type="date"
-                            value={item.expiryDate}
-                            onChange={(e) => {
-                              const newItems = [...receiveItems];
-                              newItems[idx].expiryDate = e.target.value;
-                              setReceiveItems(newItems);
-                            }}
-                          />
-                        </td>
-                      </tr>
-                    ))}
-                    {receiveItems.length === 0 && (
+                <div style={{ overflowX: "auto" }}>
+                  <table className="p-line-table">
+                    <thead>
                       <tr>
-                        <td colSpan="5">No items to receive.</td>
+                        <th>Medicine</th>
+                        <th>Ordered Qty</th>
+                        <th>Prev Received Qty</th>
+                        <th>Pending Qty</th>
+                        <th>Receive Qty</th>
+                        <th>Batch #</th>
+                        <th>Expiry</th>
+                        <th>Purchase Price</th>
+                        <th>MRP</th>
                       </tr>
-                    )}
-                  </tbody>
-                </table>
+                    </thead>
+                    <tbody>
+                      {receiveItems.map((item, idx) => (
+                        <tr key={idx}>
+                          <td>
+                            {item.medicine?.name ||
+                              item.medicineName ||
+                              item.name ||
+                              "-"}
+                          </td>
+                          <td>{item.orderedQuantity}</td>
+                          <td>{item.prevReceivedQuantity}</td>
+                          <td>{item.pendingQuantity}</td>
+                          <td>
+                            <input
+                              required
+                              className="p-cost-input"
+                              style={{ width: "60px" }}
+                              type="number"
+                              value={item.receivedQuantity}
+                              onChange={(e) => {
+                                const newItems = [...receiveItems];
+                                newItems[idx].receivedQuantity = e.target.value;
+                                setReceiveItems(newItems);
+                              }}
+                            />
+                          </td>
+                          <td>
+                            <input
+                              required
+                              className="p-cost-input"
+                              placeholder="Batch..."
+                              value={item.batchNumber}
+                              onChange={(e) => {
+                                const newItems = [...receiveItems];
+                                newItems[idx].batchNumber = e.target.value;
+                                setReceiveItems(newItems);
+                              }}
+                            />
+                          </td>
+                          <td>
+                            <input
+                              required
+                              className="p-cost-input"
+                              type="date"
+                              value={item.expiryDate}
+                              onChange={(e) => {
+                                const newItems = [...receiveItems];
+                                newItems[idx].expiryDate = e.target.value;
+                                setReceiveItems(newItems);
+                              }}
+                            />
+                          </td>
+                          <td>
+                            <input
+                              required
+                              className="p-cost-input"
+                              style={{ width: "80px" }}
+                              type="number"
+                              step="0.01"
+                              value={item.purchasePrice}
+                              onChange={(e) => {
+                                const newItems = [...receiveItems];
+                                newItems[idx].purchasePrice = e.target.value;
+                                setReceiveItems(newItems);
+                              }}
+                            />
+                          </td>
+                          <td>
+                            <input
+                              required
+                              className="p-cost-input"
+                              style={{ width: "80px" }}
+                              type="number"
+                              step="0.01"
+                              value={item.mrp}
+                              onChange={(e) => {
+                                const newItems = [...receiveItems];
+                                newItems[idx].mrp = e.target.value;
+                                setReceiveItems(newItems);
+                              }}
+                            />
+                          </td>
+                        </tr>
+                      ))}
+                      {receiveItems.length === 0 && (
+                        <tr>
+                          <td colSpan="9">No items to receive.</td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
               </div>
               <div className="stock-modal-footer">
                 <button
                   className="pos-btn outline"
                   onClick={() => setShowReceiveModal(false)}
+                  disabled={isReceiving}
                 >
                   Cancel
                 </button>
-                <button className="pos-btn teal" onClick={handleReceiveOrder}>
-                  Confirm Receipt
+                <button
+                  className="pos-btn teal"
+                  onClick={handleReceiveOrder}
+                  disabled={isReceiving}
+                >
+                  {isReceiving ? "Receiving..." : "Confirm Receipt"}
                 </button>
               </div>
             </motion.div>

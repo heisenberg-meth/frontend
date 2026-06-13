@@ -224,7 +224,7 @@ export default function SalesReport({ from, to, showToast }) {
           Sales Report Error
         </h4>
         <p style={{ color: "var(--text-muted)", marginTop: "6px" }}>
-          {errorState}
+          {errorState?.message || String(errorState)}
         </p>
       </div>
     );

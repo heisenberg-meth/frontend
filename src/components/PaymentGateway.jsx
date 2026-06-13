@@ -119,9 +119,13 @@ export default function PaymentGateway({ user, onPaymentComplete, amount }) {
       console.error(error);
       setRetryCount((prev) => prev + 1);
       setStatus("checkout");
-      setPaymentError(
-        error.response?.data?.error || error.message || "Initialization failed",
-      );
+      const errorMessage =
+        typeof error.response?.data?.error === 'string'
+          ? error.response.data.error
+          : error.response?.data?.error?.message ||
+            error.message ||
+            "Initialization failed";
+      setPaymentError(errorMessage);
       isProcessingRef.current = false;
     }
   }, [user, amount, retryCount, status]);

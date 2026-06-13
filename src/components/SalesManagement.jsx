@@ -719,7 +719,9 @@ export default function SalesManagement({ showToast, storeProfile }) {
                       <tr key={sale.id}>
                         <td className="result-meta">
                           {sale.time ||
-                            new Date(sale.createdAt).toLocaleTimeString()}
+                            (sale.createdAt && !isNaN(new Date(sale.createdAt))
+                              ? new Date(sale.createdAt).toLocaleTimeString()
+                              : "--")}
                         </td>
                         <td style={{ fontWeight: 700 }}>
                           {sale.invoiceNumber || sale.id}

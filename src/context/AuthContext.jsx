@@ -16,7 +16,25 @@ export function AuthProvider({ children }) {
   const restoreAttemptedRef = useRef(false);
 
   const showToast = useCallback((message, type = "success") => {
-    setToast({ message, type });
+    let finalMessage = "An unexpected error occurred";
+    if (typeof message === "string") {
+      finalMessage = message;
+    } else if (message && typeof message === "object") {
+      if (message.response?.data?.error?.message) {
+        finalMessage = message.response.data.error.message;
+      } else if (message.response?.data?.message) {
+        finalMessage = message.response.data.message;
+      } else if (message.error?.message) {
+        finalMessage = message.error.message;
+      } else if (message.message && typeof message.message === "string") {
+        finalMessage = message.message;
+      } else if (message.error && typeof message.error === "string") {
+        finalMessage = message.error;
+      } else {
+        finalMessage = JSON.stringify(message);
+      }
+    }
+    setToast({ message: finalMessage, type });
     setTimeout(() => setToast(null), 3500);
   }, []);
 
@@ -60,9 +78,10 @@ export function AuthProvider({ children }) {
 
   const refreshToken = useCallback(async () => {
     try {
+      const storedRefresh = localStorage.getItem("viyan_refresh_token");
       const res = await axios.post(
         `${getBaseUrl()}/auth/refresh`,
-        {},
+        storedRefresh ? { refreshToken: storedRefresh } : {},
         {
           withCredentials: true,
           timeout: 10000,
@@ -76,12 +95,16 @@ export function AuthProvider({ children }) {
 
       const payload = res.data?.data || res.data;
       const newToken = payload?.token || payload?.accessToken;
+      const newRefresh = payload?.refreshToken;
 
       if (!newToken) {
         throw new Error("Token refresh failed: Invalid response from server.");
       }
 
       localStorage.setItem("viyan_token", newToken);
+      if (newRefresh) {
+        localStorage.setItem("viyan_refresh_token", newRefresh);
+      }
       return newToken;
     } catch (error) {
       console.error("[AUTH] Token refresh failed:", error.message || error);
@@ -155,11 +178,16 @@ export function AuthProvider({ children }) {
         subscriptionExpired,
         redirectTo,
         token,
+        refreshToken: newRefreshToken,
         deviceToken,
       } = payload;
 
       if (token) {
         localStorage.setItem("viyan_token", token);
+      }
+
+      if (newRefreshToken) {
+        localStorage.setItem("viyan_refresh_token", newRefreshToken);
       }
 
       if (deviceToken) {

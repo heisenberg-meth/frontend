@@ -186,9 +186,10 @@ api.interceptors.response.use(
       isRefreshing = true;
 
       try {
+        const storedRefresh = localStorage.getItem("viyan_refresh_token");
         const res = await axios.post(
           `${getBaseUrl()}/auth/refresh`,
-          {},
+          storedRefresh ? { refreshToken: storedRefresh } : {},
           {
             withCredentials: true,
             timeout: 10000,
@@ -200,12 +201,16 @@ api.interceptors.response.use(
 
         const payload = res.data?.data || res.data;
         const newToken = payload?.token || payload?.accessToken;
+        const newRefresh = payload?.refreshToken;
 
         if (!newToken) {
           throw new Error("No token in refresh response");
         }
 
         localStorage.setItem("viyan_token", newToken);
+        if (newRefresh) {
+          localStorage.setItem("viyan_refresh_token", newRefresh);
+        }
 
         originalRequest.headers.Authorization = `Bearer ${newToken}`;
         processQueue(null, newToken);
