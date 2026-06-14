@@ -471,7 +471,7 @@ export default function Dashboard({
                     navigate("/expiry/bulk-disposal");
                   }}
                 >
-                  <Trash2 size={14} style={{ marginRight: 6 }} />
+                  <Trash2 size={14} style={{ marginRight: 7 }} />
                   Bulk Dispose
                 </button>
               </div>

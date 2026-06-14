@@ -796,6 +796,12 @@
   cursor: pointer;
   transition: all 0.3s ease;
   box-shadow: 0 4px 14px rgba(255, 77, 109, 0.3);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 7px;
+  padding: 0;
+  padding-right: 30px;
 }
 
 .urgent-disposal-btn:hover {
@@ -907,6 +913,7 @@
   display: flex;
   flex-wrap: wrap;
   gap: 24px;
+  justify-content: space-evenly;
   margin-bottom: 32px;
 }
 
