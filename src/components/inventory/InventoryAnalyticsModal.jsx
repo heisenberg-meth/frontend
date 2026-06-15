@@ -199,17 +199,11 @@ export default function InventoryAnalyticsModal({ isOpen, onClose }) {
   useEffect(() => {
     if (!isOpen) return;
 
-    let cancelled = false;
-
     const run = async () => {
       await fetchAnalytics();
     };
 
     run();
-
-    return () => {
-      cancelled = true;
-    };
   }, [isOpen, fetchAnalytics]);
 
   useEffect(() => {

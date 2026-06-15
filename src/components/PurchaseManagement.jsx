@@ -559,13 +559,12 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
           id: item.medicineId || item.medicine?.id,
           name: item.medicine?.name || item.medicineName || item.name || "",
           qty: item.quantity || item.qty || 0,
-          purchasePrice:
-            Number(item.purchasePrice || item.unitPrice || item.price || 0),
+          purchasePrice: Number(
+            item.purchasePrice || item.unitPrice || item.price || 0,
+          ),
           gstPercentage: Number(item.gstPercentage || 0),
           batchNumber: item.batchNumber || "",
-          expiryDate: item.expiryDate
-            ? item.expiryDate.split("T")[0]
-            : "",
+          expiryDate: item.expiryDate ? item.expiryDate.split("T")[0] : "",
         })),
       );
     }
@@ -763,13 +762,13 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
     } catch (err) {
       console.error(err);
       const errorMessage =
-        typeof err.response?.data?.error?.message === 'string'
+        typeof err.response?.data?.error?.message === "string"
           ? err.response.data.error.message
-          : typeof err.response?.data?.error === 'string'
+          : typeof err.response?.data?.error === "string"
             ? err.response.data.error
-            : typeof err.response?.data?.message === 'string'
+            : typeof err.response?.data?.message === "string"
               ? err.response.data.message
-              : typeof err.message === 'string'
+              : typeof err.message === "string"
                 ? err.message
                 : "Failed to receive order";
       showToast(errorMessage, "error");
@@ -785,22 +784,45 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
     for (const item of items) {
       const medicineId = item.medicineId || item.medicine?.id;
       if (!medicineId) {
-        results.push({ medicineId: null, medicineName: item.medicine?.name || item.name || 'Unknown', batches: [], selectedBatchId: '', quantity: 0 });
+        results.push({
+          medicineId: null,
+          medicineName: item.medicine?.name || item.name || "Unknown",
+          batches: [],
+          selectedBatchId: "",
+          quantity: 0,
+        });
         continue;
       }
       try {
-        const { data } = await api.get(API_ROUTES.INVENTORY_BATCHES, { params: { medicineId, limit: 50 } });
-        const batches = (data?.data?.batches || data?.batches || data?.data || []).filter(b => b.quantity > 0 && b.status === 'ACTIVE');
+        const { data } = await api.get(API_ROUTES.INVENTORY_BATCHES, {
+          params: { medicineId, limit: 50 },
+        });
+        const batches = (
+          data?.data?.batches ||
+          data?.batches ||
+          data?.data ||
+          []
+        ).filter((b) => b.quantity > 0 && b.status === "ACTIVE");
         results.push({
           medicineId,
-          medicineName: item.medicine?.name || item.name || 'Unknown',
+          medicineName: item.medicine?.name || item.name || "Unknown",
           batches,
-          selectedBatchId: batches.length === 1 ? batches[0].id : '',
-          quantity: Math.min(item.quantity || 0, batches.length > 0 ? batches[0].quantity : 0),
+          selectedBatchId: batches.length === 1 ? batches[0].id : "",
+          quantity: Math.min(
+            item.quantity || 0,
+            batches.length > 0 ? batches[0].quantity : 0,
+          ),
           maxQuantity: batches.length > 0 ? batches[0].quantity : 0,
         });
       } catch {
-        results.push({ medicineId, medicineName: item.medicine?.name || item.name || 'Unknown', batches: [], selectedBatchId: '', quantity: 0, maxQuantity: 0 });
+        results.push({
+          medicineId,
+          medicineName: item.medicine?.name || item.name || "Unknown",
+          batches: [],
+          selectedBatchId: "",
+          quantity: 0,
+          maxQuantity: 0,
+        });
       }
     }
     setReturnSelections(results);
@@ -809,6 +831,19 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
 
   const handleProcessReturn = async () => {
     try {
+      const supplierId = selectedRow?.supplierId || selectedRow?.supplier?.id;
+      const purchaseInvoiceId = selectedRow?.id;
+
+      if (!purchaseInvoiceId) {
+        showToast("Select a valid purchase invoice", "error");
+        return;
+      }
+
+      if (!supplierId) {
+        showToast("Supplier information is missing", "error");
+        return;
+      }
+
       const payloadItems = returnSelections
         .filter((s) => s.selectedBatchId && s.quantity > 0)
         .map((s) => ({
@@ -816,23 +851,51 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
           quantity: Number(s.quantity),
           medicineId: s.medicineId,
         }));
+
       if (payloadItems.length === 0) {
         showToast("Select at least one batch and quantity to return", "error");
         return;
       }
+
+      const reason = "Return";
+      if (!reason) {
+        showToast("Return reason is required", "error");
+        return;
+      }
+
       showToast("Processing return...", "info");
-      await api.post(API_ROUTES.PURCHASES_RETURNS, {
+      const payload = {
+        purchaseInvoiceId,
         items: payloadItems,
-        reason: "Return",
-                        supplierId: selectedRow?.supplierId || selectedRow?.supplier?.id,
-      });
-      showToast("Return Submitted Successfully", "success");
+        reason,
+        supplierId,
+      };
+
+      await api.post(API_ROUTES.PURCHASES_RETURNS, payload);
+
+      showToast("Return Processed Successfully", "success");
       setShowReturnModal(false);
       setReturnSelections([]);
       await refreshData();
     } catch (err) {
-      console.error(err);
-      showToast("Failed to process return", "error");
+      console.error("STATUS:", err.response?.status);
+      console.error("DATA:", err.response?.data);
+      console.error("PAYLOAD:", {
+        purchaseInvoiceId: selectedRow?.id,
+        items: returnSelections
+          .filter((s) => s.selectedBatchId && s.quantity > 0)
+          .map((s) => ({
+            batchId: s.selectedBatchId,
+            quantity: Number(s.quantity),
+            medicineId: s.medicineId,
+          })),
+        reason: "Return",
+        supplierId: selectedRow?.supplierId || selectedRow?.supplier?.id,
+      });
+      showToast(
+        err.response?.data?.message || "Failed to process return",
+        "error",
+      );
     }
   };
 
@@ -929,7 +992,7 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
               "₹" +
               invoices
                 .reduce(
-                  (sum, inv) => sum + (inv.totalAmount || inv.total || 0),
+                  (sum, inv) => sum + Number(inv.totalAmount || inv.total || 0),
                   0,
                 )
                 .toLocaleString(),
@@ -949,7 +1012,10 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
             val:
               "₹" +
               returns
-                .reduce((sum, r) => sum + (r.refundAmount || r.value || 0), 0)
+                .reduce(
+                  (sum, r) => sum + Number(r.refundAmount || r.value || 0),
+                  0,
+                )
                 .toLocaleString(),
             icon: ArrowLeft,
             col: "var(--danger)",
@@ -1065,9 +1131,7 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
                   >
                     <td>{inv.date || formatDate(inv.createdAt)}</td>
                     <td style={{ fontWeight: 700 }}>
-                      {inv.supplierInvoiceNumber ||
-                        inv.invoiceNumber ||
-                        "-"}
+                      {inv.supplierInvoiceNumber || inv.invoiceNumber || "-"}
                     </td>
                     <td>
                       {inv.supplier?.name || inv.supplierName || inv.supplier}
@@ -1239,7 +1303,8 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
                     </div>
                   </td>
                 </tr>
-              ))}                {filteredOrders.length === 0 && (
+              ))}{" "}
+              {filteredOrders.length === 0 && (
                 <tr>
                   <td
                     colSpan="7"
@@ -1348,14 +1413,14 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
             <b style={{ color: "var(--text)" }}>
               ₹
               {filteredInvoices
-                .reduce((s, i) => s + (i.totalAmount || 0), 0)
+                .reduce((s, i) => s + Number(i.totalAmount || 0), 0)
                 .toLocaleString()}
             </b>{" "}
             | GST input credit:{" "}
             <b style={{ color: "var(--primary)" }}>
               ₹
               {filteredInvoices
-                .reduce((s, i) => s + (i.gstAmount || 0), 0)
+                .reduce((s, i) => s + Number(i.gstAmount || 0), 0)
                 .toLocaleString()}
             </b>
           </div>
@@ -1758,7 +1823,9 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
                       <div className="detail-item">
                         <span className="detail-label">SUPPLIER</span>
                         <span className="detail-value">
-                          {selectedRow?.supplier?.name || selectedRow?.supplier || "-"}
+                          {selectedRow?.supplier?.name ||
+                            selectedRow?.supplier ||
+                            "-"}
                         </span>
                       </div>
                       <div className="detail-item">
@@ -1904,7 +1971,9 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
                   <button
                     className="pos-btn teal"
                     style={{ flex: 2 }}
-                    onClick={() => selectedRow && downloadPurchasePDF(selectedRow)}
+                    onClick={() =>
+                      selectedRow && downloadPurchasePDF(selectedRow)
+                    }
                   >
                     <Download size={16} /> Download PDF
                   </button>
@@ -1964,7 +2033,9 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
                 {loadingReturnBatches ? (
                   <div style={{ textAlign: "center", padding: "20px" }}>
                     <Loader2 className="spin" size={24} />
-                    <p style={{ marginTop: 12, color: "var(--text-muted)" }}>Loading available batches...</p>
+                    <p style={{ marginTop: 12, color: "var(--text-muted)" }}>
+                      Loading available batches...
+                    </p>
                   </div>
                 ) : (
                   <div style={{ marginTop: "16px" }}>
@@ -1982,22 +2053,39 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
                             background: "var(--bg-card)",
                           }}
                         >
-                          <div style={{ fontWeight: 600, marginBottom: "8px", fontSize: "0.9rem" }}>
+                          <div
+                            style={{
+                              fontWeight: 600,
+                              marginBottom: "8px",
+                              fontSize: "0.9rem",
+                            }}
+                          >
                             {sel.medicineName}
                           </div>
-                          <div style={{ display: "flex", gap: "8px", alignItems: "center", flexWrap: "wrap" }}>
+                          <div
+                            style={{
+                              display: "flex",
+                              gap: "8px",
+                              alignItems: "center",
+                              flexWrap: "wrap",
+                            }}
+                          >
                             <div style={{ flex: 2, minWidth: "140px" }}>
                               <select
                                 className="pos-input"
                                 style={{ width: "100%", fontSize: "0.8rem" }}
                                 value={sel.selectedBatchId}
                                 onChange={(e) => {
-                                  const batch = sel.batches.find((b) => b.id === e.target.value);
+                                  const batch = sel.batches.find(
+                                    (b) => b.id === e.target.value,
+                                  );
                                   const newSel = [...returnSelections];
                                   newSel[idx] = {
                                     ...sel,
                                     selectedBatchId: e.target.value,
-                                    quantity: batch ? Math.min(sel.quantity, batch.quantity) : 0,
+                                    quantity: batch
+                                      ? Math.min(sel.quantity, batch.quantity)
+                                      : 0,
                                     maxQuantity: batch ? batch.quantity : 0,
                                   };
                                   setReturnSelections(newSel);
@@ -2006,7 +2094,13 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
                                 <option value="">Select batch</option>
                                 {sel.batches.map((b) => (
                                   <option key={b.id} value={b.id}>
-                                    {b.batchNumber} (Qty: {b.quantity}, Exp: {b.expiryDate ? new Date(b.expiryDate).toLocaleDateString() : 'N/A'})
+                                    {b.batchNumber} (Qty: {b.quantity}, Exp:{" "}
+                                    {b.expiryDate
+                                      ? new Date(
+                                          b.expiryDate,
+                                        ).toLocaleDateString()
+                                      : "N/A"}
+                                    )
                                   </option>
                                 ))}
                               </select>
@@ -2021,7 +2115,13 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
                                 value={sel.quantity}
                                 onChange={(e) => {
                                   const newSel = [...returnSelections];
-                                  newSel[idx] = { ...sel, quantity: Math.min(Number(e.target.value) || 0, sel.maxQuantity) };
+                                  newSel[idx] = {
+                                    ...sel,
+                                    quantity: Math.min(
+                                      Number(e.target.value) || 0,
+                                      sel.maxQuantity,
+                                    ),
+                                  };
                                   setReturnSelections(newSel);
                                 }}
                                 style={{ width: "100%" }}
@@ -2029,12 +2129,24 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
                                 disabled={!sel.selectedBatchId}
                               />
                             </div>
-                            <span style={{ fontSize: "0.75rem", color: "var(--text-muted)", whiteSpace: "nowrap" }}>
+                            <span
+                              style={{
+                                fontSize: "0.75rem",
+                                color: "var(--text-muted)",
+                                whiteSpace: "nowrap",
+                              }}
+                            >
                               Max: {sel.maxQuantity}
                             </span>
                           </div>
                           {sel.selectedBatchId && sel.quantity <= 0 && (
-                            <div style={{ color: "var(--danger)", fontSize: "0.75rem", marginTop: "4px" }}>
+                            <div
+                              style={{
+                                color: "var(--danger)",
+                                fontSize: "0.75rem",
+                                marginTop: "4px",
+                              }}
+                            >
                               Enter a quantity to return
                             </div>
                           )}
@@ -2119,7 +2231,9 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
                     <tbody>
                       {receiveItems.map((item, idx) => {
                         const isDiff = differentBatch[idx] || false;
-                        const hasPrior = !!(item.batchNumber || item.expiryDate);
+                        const hasPrior = !!(
+                          item.batchNumber || item.expiryDate
+                        );
                         return (
                           <tr key={idx}>
                             <td>
@@ -2142,7 +2256,8 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
                                 value={item.receivedQuantity}
                                 onChange={(e) => {
                                   const newItems = [...receiveItems];
-                                  newItems[idx].receivedQuantity = e.target.value;
+                                  newItems[idx].receivedQuantity =
+                                    e.target.value;
                                   setReceiveItems(newItems);
                                 }}
                               />
@@ -2151,7 +2266,9 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
                               <input
                                 required
                                 className="p-cost-input"
-                                style={{ opacity: hasPrior && !isDiff ? 0.6 : 1 }}
+                                style={{
+                                  opacity: hasPrior && !isDiff ? 0.6 : 1,
+                                }}
                                 placeholder="Batch..."
                                 value={item.batchNumber || ""}
                                 disabled={hasPrior && !isDiff}
@@ -2166,7 +2283,9 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
                               <input
                                 required
                                 className="p-cost-input"
-                                style={{ opacity: hasPrior && !isDiff ? 0.6 : 1 }}
+                                style={{
+                                  opacity: hasPrior && !isDiff ? 0.6 : 1,
+                                }}
                                 type="date"
                                 value={item.expiryDate || ""}
                                 disabled={hasPrior && !isDiff}
@@ -2181,7 +2300,10 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
                               <input
                                 required
                                 className="p-cost-input"
-                                style={{ width: "80px", opacity: hasPrior && !isDiff ? 0.6 : 1 }}
+                                style={{
+                                  width: "80px",
+                                  opacity: hasPrior && !isDiff ? 0.6 : 1,
+                                }}
                                 type="number"
                                 step="0.01"
                                 value={item.purchasePrice}
@@ -2197,7 +2319,10 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
                               <input
                                 required
                                 className="p-cost-input"
-                                style={{ width: "80px", opacity: hasPrior && !isDiff ? 0.6 : 1 }}
+                                style={{
+                                  width: "80px",
+                                  opacity: hasPrior && !isDiff ? 0.6 : 1,
+                                }}
                                 type="number"
                                 step="0.01"
                                 value={item.mrp}
@@ -2223,7 +2348,14 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
                                   title="Different batch received"
                                 />
                               ) : (
-                                <span style={{ color: "var(--text-muted)", fontSize: 11 }}>—</span>
+                                <span
+                                  style={{
+                                    color: "var(--text-muted)",
+                                    fontSize: 11,
+                                  }}
+                                >
+                                  —
+                                </span>
                               )}
                             </td>
                           </tr>

@@ -1035,91 +1035,97 @@ export default function InventoryCRUD({
     }
   }, []);
 
-  const loadMedicines = useCallback(async (options = {}) => {
-    const { skipSummary = true } = options;
+  const loadMedicines = useCallback(
+    async (options = {}) => {
+      const { skipSummary = true } = options;
 
-    if (medicineAbortRef.current) {
-      medicineAbortRef.current.abort();
-    }
-    const controller = new AbortController();
-    medicineAbortRef.current = controller;
+      if (medicineAbortRef.current) {
+        medicineAbortRef.current.abort();
+      }
+      const controller = new AbortController();
+      medicineAbortRef.current = controller;
 
-    if (medicines.length === 0) setLoading(true);
-    try {
-      let categoryId = undefined;
-      if (categoryFilter !== "All") {
-        const catObj = categoriesList.find(
-          (c) => (c.name || c) === categoryFilter,
+      if (medicines.length === 0) setLoading(true);
+      try {
+        let categoryId = undefined;
+        if (categoryFilter !== "All") {
+          const catObj = categoriesList.find(
+            (c) => (c.name || c) === categoryFilter,
+          );
+          if (catObj) {
+            categoryId = catObj.id;
+          }
+        }
+
+        let backendStatus = undefined;
+        if (statusFilter === "In Stock") backendStatus = "IN_STOCK";
+        else if (statusFilter === "Low Stock") backendStatus = "LOW_STOCK";
+        else if (statusFilter === "Out of Stock")
+          backendStatus = "OUT_OF_STOCK";
+        else if (statusFilter === "Expiring Soon")
+          backendStatus = "EXPIRING_SOON";
+        else if (statusFilter === "Expired") backendStatus = "EXPIRED";
+
+        const medicinesRes = await getMedicines({
+          page: currentPage,
+          limit,
+          search: debouncedSearch,
+          categoryId,
+          status: backendStatus,
+          signal: controller.signal,
+        });
+
+        if (controller.signal.aborted) return;
+
+        const items = Array.isArray(medicinesRes.data?.data?.items)
+          ? medicinesRes.data.data.items
+          : Array.isArray(medicinesRes.data?.data)
+            ? medicinesRes.data.data
+            : [];
+
+        const total = medicinesRes.data?.data?.total ?? items.length;
+        const pages = medicinesRes.data?.data?.totalPages ?? 1;
+
+        const mapped = items.map(normalizeMedicine);
+        setMedicines(mapped);
+        setTotalItems(total);
+        setTotalPages(pages);
+
+        if (viewTarget) {
+          const updatedViewTarget = mapped.find((m) => m.id === viewTarget.id);
+          if (updatedViewTarget) {
+            setViewTarget(updatedViewTarget);
+          }
+        }
+
+        // Only refresh summary on explicit requests (save/delete), not on page/filter changes
+        if (!skipSummary) {
+          await loadSummary();
+        }
+      } catch (err) {
+        if (err?.name === "CanceledError" || controller.signal.aborted) return;
+        showToast(
+          "Failed to load inventory",
+          err?.response?.data?.error || "error",
         );
-        if (catObj) {
-          categoryId = catObj.id;
+      } finally {
+        if (!controller.signal.aborted) {
+          setLoading(false);
         }
       }
-
-      let backendStatus = undefined;
-      if (statusFilter === "In Stock") backendStatus = "IN_STOCK";
-      else if (statusFilter === "Low Stock") backendStatus = "LOW_STOCK";
-      else if (statusFilter === "Out of Stock") backendStatus = "OUT_OF_STOCK";
-      else if (statusFilter === "Expiring Soon")
-        backendStatus = "EXPIRING_SOON";
-      else if (statusFilter === "Expired") backendStatus = "EXPIRED";
-
-      const medicinesRes = await getMedicines({
-        page: currentPage,
-        limit,
-        search: debouncedSearch,
-        categoryId,
-        status: backendStatus,
-        signal: controller.signal,
-      });
-
-      if (controller.signal.aborted) return;
-
-      const items = Array.isArray(medicinesRes.data?.data?.items)
-        ? medicinesRes.data.data.items
-        : Array.isArray(medicinesRes.data?.data)
-          ? medicinesRes.data.data
-          : [];
-
-      const total = medicinesRes.data?.data?.total ?? items.length;
-      const pages = medicinesRes.data?.data?.totalPages ?? 1;
-
-      const mapped = items.map(normalizeMedicine);
-      setMedicines(mapped);
-      setTotalItems(total);
-      setTotalPages(pages);
-
-      if (viewTarget) {
-        const updatedViewTarget = mapped.find((m) => m.id === viewTarget.id);
-        if (updatedViewTarget) {
-          setViewTarget(updatedViewTarget);
-        }
-      }
-
-      // Only refresh summary on explicit requests (save/delete), not on page/filter changes
-      if (!skipSummary) {
-        await loadSummary();
-      }
-    } catch (err) {
-      if (err?.name === "CanceledError" || controller.signal.aborted) return;
-      showToast(
-        "Failed to load inventory",
-        err?.response?.data?.error || "error",
-      );
-    } finally {
-      if (!controller.signal.aborted) {
-        setLoading(false);
-      }
-    }
-  }, [
-    categoryFilter,
-    statusFilter,
-    currentPage,
-    debouncedSearch,
-    categoriesList,
-    showToast,
-    loadSummary,
-  ]);
+    },
+    [
+      medicines.length,
+      categoryFilter,
+      statusFilter,
+      currentPage,
+      debouncedSearch,
+      viewTarget,
+      categoriesList,
+      loadSummary,
+      showToast,
+    ],
+  );
 
   const handleEditStock = (medicine) => {
     const batches = medicine.inventoryBatches || [];
@@ -1343,7 +1349,7 @@ export default function InventoryCRUD({
       setDeleteTarget(null);
     } catch (err) {
       const errorMessage =
-        typeof err.response?.data?.error === 'string'
+        typeof err.response?.data?.error === "string"
           ? err.response.data.error
           : err.response?.data?.error?.message ||
             err.response?.data?.message ||
