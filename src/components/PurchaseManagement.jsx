@@ -80,8 +80,21 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
   const [receiveItems, setReceiveItems] = useState([]);
   const [isReceiving, setIsReceiving] = useState(false);
 
-  const handleOpenReceiveModal = (po) => {
+  const [differentBatch, setDifferentBatch] = useState({});
+
+  const handleOpenReceiveModal = async (po) => {
     setSelectedRow(po);
+    setDifferentBatch({});
+
+    let priorGRN = null;
+    try {
+      const { data } = await api.get(`${API_ROUTES.PURCHASES_ORDERS}/${po.id}`);
+      const order = data?.data || data;
+      priorGRN = order?.goodsReceiptNotes?.[0] || null;
+    } catch {
+      // no prior GRN data available
+    }
+
     setReceiveItems(
       (po.items || []).map((item) => {
         const remaining = Math.max(
@@ -90,19 +103,29 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
         );
         const unitPrice =
           item.purchasePrice || item.unitPrice || item.price || 0;
+
+        const priorItem = priorGRN?.items?.find(
+          (gi) => gi.purchaseOrderItemId === item.id,
+        );
+
         return {
           ...item,
           orderedQuantity: item.quantity || 0,
           prevReceivedQuantity: item.receivedQuantity || 0,
           pendingQuantity: remaining,
           receivedQuantity: remaining,
-          batchNumber: "",
-          expiryDate: "",
-          purchasePrice: unitPrice,
-          mrp:
-            item.mrp ||
-            item.sellingPrice ||
-            (unitPrice ? (Number(unitPrice) * 1.2).toFixed(2) : 0),
+          batchNumber: priorItem?.batchNumber || "",
+          expiryDate: priorItem?.expiryDate
+            ? priorItem.expiryDate.split("T")[0]
+            : "",
+          purchasePrice: priorItem?.purchasePrice
+            ? Number(priorItem.purchasePrice)
+            : unitPrice,
+          mrp: priorItem?.sellingPrice
+            ? Number(priorItem.sellingPrice)
+            : item.mrp ||
+              item.sellingPrice ||
+              (unitPrice ? (Number(unitPrice) * 1.2).toFixed(2) : 0),
         };
       }),
     );
@@ -499,12 +522,45 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
   };
 
   const handleOpenDrawer = (type, row = null) => {
+    if (!row) {
+      showToast("Unable to load invoice details", "error");
+      return;
+    }
     setSelectedRow(row);
     setDrawer(type);
-    if (type === "new-purchase" || type === "edit-purchase") {
+    if (type === "new-purchase") {
       loadMedicines();
       setSelectedBranchId(
         user?.branchId || (branches.length > 0 ? branches[0].id : ""),
+      );
+      resetForm();
+    }
+    if (type === "edit-purchase") {
+      loadMedicines();
+      setSelectedSupplier(row.supplier || null);
+      setInvoiceDate(
+        (row.invoiceDate || row.date || "").split("T")[0] ||
+          new Date().toISOString().split("T")[0],
+      );
+      setSupplierInvNo(row.supplierInvoiceNumber || "");
+      setSelectedBranchId(
+        row.branchId ||
+          user?.branchId ||
+          (branches.length > 0 ? branches[0].id : ""),
+      );
+      setPurchaseItems(
+        (row.items || []).map((item) => ({
+          id: item.medicineId || item.medicine?.id,
+          name: item.medicine?.name || item.medicineName || item.name || "",
+          qty: item.quantity || item.qty || 0,
+          purchasePrice:
+            Number(item.purchasePrice || item.unitPrice || item.price || 0),
+          gstPercentage: Number(item.gstPercentage || 0),
+          batchNumber: item.batchNumber || "",
+          expiryDate: item.expiryDate
+            ? item.expiryDate.split("T")[0]
+            : "",
+        })),
       );
     }
   };
@@ -561,7 +617,7 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
     const matchesStatus =
       filters.status === "All Status" || statusVal === filterVal;
     const matchesSearch =
-      (inv.id || inv.invoiceNumber || "")
+      (inv.supplierInvoiceNumber || inv.invoiceNumber || inv.id || "")
         .toLowerCase()
         .includes(filters.search.toLowerCase()) ||
       supplierName.toLowerCase().includes(filters.search.toLowerCase());
@@ -696,6 +752,7 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
       await receivePurchaseOrder(selectedRow.id, payload);
       showToast("Order Received & Inventory Updated", "success");
       setShowReceiveModal(false);
+      setDifferentBatch({});
       await refreshData();
     } catch (err) {
       console.error(err);
@@ -761,7 +818,7 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
       await api.post(API_ROUTES.PURCHASES_RETURNS, {
         items: payloadItems,
         reason: "Return",
-        supplierId: selectedRow.supplierId || selectedRow.supplier?.id,
+                        supplierId: selectedRow?.supplierId || selectedRow?.supplier?.id,
       });
       showToast("Return Submitted Successfully", "success");
       setShowReturnModal(false);
@@ -985,7 +1042,7 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
               <thead>
                 <tr>
                   <th>Date</th>
-                  <th>Inv #</th>
+                  <th>Supplier Inv #</th>
                   <th>Supplier</th>
                   <th>Medicines</th>
                   <th>Total ₹</th>
@@ -1002,7 +1059,9 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
                   >
                     <td>{inv.date || formatDate(inv.createdAt)}</td>
                     <td style={{ fontWeight: 700 }}>
-                      {inv.invoiceNumber || inv.id}
+                      {inv.supplierInvoiceNumber ||
+                        inv.invoiceNumber ||
+                        "-"}
                     </td>
                     <td>
                       {inv.supplier?.name || inv.supplierName || inv.supplier}
@@ -1077,9 +1136,9 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
           <table className="purchase-table">
             <thead>
               <tr>
-                <th>PO #</th>
-                <th>Date</th>
                 <th>Supplier</th>
+                <th>Date</th>
+                <th>PO #</th>
                 <th>Items</th>
                 <th>Total ₹</th>
                 <th>Delivery</th>
@@ -1093,9 +1152,13 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
                   key={po.id}
                   onClick={() => handleOpenDrawer("invoice-detail", po)}
                 >
-                  <td style={{ fontWeight: 700 }}>{po.poNumber || po.id}</td>
+                  <td style={{ fontWeight: 700 }}>
+                    {po.supplier?.name || po.supplierName || "-"}
+                  </td>
                   <td>{po.date || formatDate(po.createdAt)}</td>
-                  <td>{po.supplier?.name || po.supplierName || po.supplier}</td>
+                  <td className="result-meta" style={{ fontSize: 11 }}>
+                    {po.poNumber || ""}
+                  </td>
                   <td>{po.items?.length || po.items || 0}</td>
                   <td style={{ fontWeight: 700 }}>
                     ₹{(po.totalAmount || po.total || 0).toLocaleString()}
@@ -1326,7 +1389,7 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
                     {drawer === "new-purchase"
                       ? "Create Purchase Order"
                       : drawer === "edit-purchase"
-                        ? "Edit Purchase"
+                        ? "Edit Purchase Invoice"
                         : selectedRow?.invoiceNumber ||
                           selectedRow?.poNumber ||
                           selectedRow?.id}
@@ -1694,21 +1757,21 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
                       <div className="detail-item">
                         <span className="detail-label">SUPPLIER</span>
                         <span className="detail-value">
-                          {selectedRow.supplier?.name || selectedRow.supplier}
+                          {selectedRow?.supplier?.name || selectedRow?.supplier || "-"}
                         </span>
                       </div>
                       <div className="detail-item">
                         <span className="detail-label">DATE</span>
                         <span className="detail-value">
-                          {selectedRow.date ||
-                            formatDate(selectedRow.createdAt)}
+                          {selectedRow?.date ||
+                            formatDate(selectedRow?.createdAt)}
                         </span>
                       </div>
                       <div className="detail-item">
                         <span className="detail-label">REF #</span>
                         <span className="detail-value">
-                          {selectedRow.referenceNumber ||
-                            selectedRow.ref ||
+                          {selectedRow?.referenceNumber ||
+                            selectedRow?.ref ||
                             "-"}
                         </span>
                       </div>
@@ -1726,7 +1789,7 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
                           </tr>
                         </thead>
                         <tbody>
-                          {(selectedRow.items || []).map((item, idx) => (
+                          {(selectedRow?.items || []).map((item, idx) => (
                             <tr key={idx}>
                               <td>
                                 {item.medicine?.name ||
@@ -1759,8 +1822,8 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
                               </td>
                             </tr>
                           ))}
-                          {(!selectedRow.items ||
-                            selectedRow.items.length === 0) && (
+                          {(!selectedRow?.items ||
+                            selectedRow?.items?.length === 0) && (
                             <tr>
                               <td colSpan="4">No item details available.</td>
                             </tr>
@@ -1840,7 +1903,7 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
                   <button
                     className="pos-btn teal"
                     style={{ flex: 2 }}
-                    onClick={() => downloadPurchasePDF(selectedRow)}
+                    onClick={() => selectedRow && downloadPurchasePDF(selectedRow)}
                   >
                     <Download size={16} /> Download PDF
                   </button>
@@ -1851,7 +1914,11 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
                     onClick={handleSavePurchase}
                     disabled={saving || isFormInvalid}
                   >
-                    {saving ? "Creating..." : "Create Purchase Order"}
+                    {saving
+                      ? "Saving..."
+                      : drawer === "edit-purchase"
+                        ? "Save Changes"
+                        : "Create Purchase Order"}
                   </button>
                 )}
               </div>
@@ -1888,7 +1955,7 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
                   <input
                     required
                     className="pos-input"
-                    value={selectedRow.invoiceNumber || selectedRow.id}
+                    value={selectedRow?.invoiceNumber || selectedRow?.id || ""}
                     disabled
                     style={{ width: "100%" }}
                   />
@@ -2029,7 +2096,7 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
               <div className="stock-modal-body">
                 <p className="result-meta" style={{ marginBottom: "16px" }}>
                   Please confirm the quantities received for{" "}
-                  {selectedRow.poNumber || selectedRow.id}.
+                  {selectedRow?.poNumber || selectedRow?.id}.
                 </p>
 
                 <div style={{ overflowX: "auto" }}>
@@ -2045,95 +2112,125 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
                         <th>Expiry</th>
                         <th>Purchase Price</th>
                         <th>MRP</th>
+                        <th style={{ width: 70 }}>Diff Batch</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {receiveItems.map((item, idx) => (
-                        <tr key={idx}>
-                          <td>
-                            {item.medicine?.name ||
-                              item.medicineName ||
-                              item.name ||
-                              "-"}
-                          </td>
-                          <td>{item.orderedQuantity}</td>
-                          <td>{item.prevReceivedQuantity}</td>
-                          <td>{item.pendingQuantity}</td>
-                          <td>
-                            <input
-                              required
-                              className="p-cost-input"
-                              style={{ width: "60px" }}
-                              type="number"
-                              value={item.receivedQuantity}
-                              onChange={(e) => {
-                                const newItems = [...receiveItems];
-                                newItems[idx].receivedQuantity = e.target.value;
-                                setReceiveItems(newItems);
-                              }}
-                            />
-                          </td>
-                          <td>
-                            <input
-                              required
-                              className="p-cost-input"
-                              placeholder="Batch..."
-                              value={item.batchNumber}
-                              onChange={(e) => {
-                                const newItems = [...receiveItems];
-                                newItems[idx].batchNumber = e.target.value;
-                                setReceiveItems(newItems);
-                              }}
-                            />
-                          </td>
-                          <td>
-                            <input
-                              required
-                              className="p-cost-input"
-                              type="date"
-                              value={item.expiryDate}
-                              onChange={(e) => {
-                                const newItems = [...receiveItems];
-                                newItems[idx].expiryDate = e.target.value;
-                                setReceiveItems(newItems);
-                              }}
-                            />
-                          </td>
-                          <td>
-                            <input
-                              required
-                              className="p-cost-input"
-                              style={{ width: "80px" }}
-                              type="number"
-                              step="0.01"
-                              value={item.purchasePrice}
-                              onChange={(e) => {
-                                const newItems = [...receiveItems];
-                                newItems[idx].purchasePrice = e.target.value;
-                                setReceiveItems(newItems);
-                              }}
-                            />
-                          </td>
-                          <td>
-                            <input
-                              required
-                              className="p-cost-input"
-                              style={{ width: "80px" }}
-                              type="number"
-                              step="0.01"
-                              value={item.mrp}
-                              onChange={(e) => {
-                                const newItems = [...receiveItems];
-                                newItems[idx].mrp = e.target.value;
-                                setReceiveItems(newItems);
-                              }}
-                            />
-                          </td>
-                        </tr>
-                      ))}
+                      {receiveItems.map((item, idx) => {
+                        const isDiff = differentBatch[idx] || false;
+                        const hasPrior = !!(item.batchNumber || item.expiryDate);
+                        return (
+                          <tr key={idx}>
+                            <td>
+                              {item.medicine?.name ||
+                                item.medicineName ||
+                                item.name ||
+                                "-"}
+                            </td>
+                            <td>{item.orderedQuantity}</td>
+                            <td>{item.prevReceivedQuantity}</td>
+                            <td>{item.pendingQuantity}</td>
+                            <td>
+                              <input
+                                required
+                                className="p-cost-input"
+                                style={{ width: "60px" }}
+                                type="number"
+                                min={0}
+                                max={item.pendingQuantity}
+                                value={item.receivedQuantity}
+                                onChange={(e) => {
+                                  const newItems = [...receiveItems];
+                                  newItems[idx].receivedQuantity = e.target.value;
+                                  setReceiveItems(newItems);
+                                }}
+                              />
+                            </td>
+                            <td>
+                              <input
+                                required
+                                className="p-cost-input"
+                                style={{ opacity: hasPrior && !isDiff ? 0.6 : 1 }}
+                                placeholder="Batch..."
+                                value={item.batchNumber || ""}
+                                disabled={hasPrior && !isDiff}
+                                onChange={(e) => {
+                                  const newItems = [...receiveItems];
+                                  newItems[idx].batchNumber = e.target.value;
+                                  setReceiveItems(newItems);
+                                }}
+                              />
+                            </td>
+                            <td>
+                              <input
+                                required
+                                className="p-cost-input"
+                                style={{ opacity: hasPrior && !isDiff ? 0.6 : 1 }}
+                                type="date"
+                                value={item.expiryDate || ""}
+                                disabled={hasPrior && !isDiff}
+                                onChange={(e) => {
+                                  const newItems = [...receiveItems];
+                                  newItems[idx].expiryDate = e.target.value;
+                                  setReceiveItems(newItems);
+                                }}
+                              />
+                            </td>
+                            <td>
+                              <input
+                                required
+                                className="p-cost-input"
+                                style={{ width: "80px", opacity: hasPrior && !isDiff ? 0.6 : 1 }}
+                                type="number"
+                                step="0.01"
+                                value={item.purchasePrice}
+                                disabled={hasPrior && !isDiff}
+                                onChange={(e) => {
+                                  const newItems = [...receiveItems];
+                                  newItems[idx].purchasePrice = e.target.value;
+                                  setReceiveItems(newItems);
+                                }}
+                              />
+                            </td>
+                            <td>
+                              <input
+                                required
+                                className="p-cost-input"
+                                style={{ width: "80px", opacity: hasPrior && !isDiff ? 0.6 : 1 }}
+                                type="number"
+                                step="0.01"
+                                value={item.mrp}
+                                disabled={hasPrior && !isDiff}
+                                onChange={(e) => {
+                                  const newItems = [...receiveItems];
+                                  newItems[idx].mrp = e.target.value;
+                                  setReceiveItems(newItems);
+                                }}
+                              />
+                            </td>
+                            <td style={{ textAlign: "center" }}>
+                              {hasPrior ? (
+                                <input
+                                  type="checkbox"
+                                  checked={isDiff}
+                                  onChange={() =>
+                                    setDifferentBatch((prev) => ({
+                                      ...prev,
+                                      [idx]: !isDiff,
+                                    }))
+                                  }
+                                  title="Different batch received"
+                                />
+                              ) : (
+                                <span style={{ color: "var(--text-muted)", fontSize: 11 }}>—</span>
+                              )}
+                            </td>
+                          </tr>
+                        );
+                      })}
                       {receiveItems.length === 0 && (
                         <tr>
-                          <td colSpan="9">No items to receive.</td>
+                          <td colSpan="10">No items to receive.</td>
                         </tr>
                       )}
                     </tbody>
@@ -2143,7 +2240,10 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
               <div className="stock-modal-footer">
                 <button
                   className="pos-btn outline"
-                  onClick={() => setShowReceiveModal(false)}
+                  onClick={() => {
+                    setShowReceiveModal(false);
+                    setDifferentBatch({});
+                  }}
                   disabled={isReceiving}
                 >
                   Cancel

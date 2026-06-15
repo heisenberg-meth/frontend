@@ -909,6 +909,14 @@ export default function Suppliers({ showToast }) {
                   <label>Lead Time</label>
                   <span>{viewTarget.leadTime || "—"}</span>
                 </div>
+                <div className="detail-item">
+                  <label>Drug Specialties</label>
+                  <span>
+                    {(viewTarget.drugCategories || viewTarget.categories || []).length > 0
+                      ? (viewTarget.drugCategories || viewTarget.categories || []).join(", ")
+                      : "—"}
+                  </span>
+                </div>
               </div>
               <div className="flex gap-4">
                 <button
