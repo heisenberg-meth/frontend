@@ -2,8 +2,8 @@ import api from "../api";
 import { API_ROUTES } from "../constants/api.routes.js";
 
 /* ─── Inventory / Medicine CRUD ─── */
-export const getMedicines = (params) =>
-  api.get(API_ROUTES.INVENTORY_MEDICINES, { params });
+export const getMedicines = ({ signal, ...params } = {}) =>
+  api.get(API_ROUTES.INVENTORY_MEDICINES, { params, signal });
 export const getMedicineById = (id) =>
   api.get(`${API_ROUTES.INVENTORY_MEDICINES}/${id}`);
 export const createMedicine = (data) =>

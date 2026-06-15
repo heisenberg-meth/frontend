@@ -227,7 +227,7 @@ api.interceptors.response.use(
       }
     }
 
-    if (status === 401 && !isExcluded) {
+    if (status === 401 && !isExcluded && !originalRequest._retry) {
       csrfToken = null;
       csrfPromise = null;
       clearAllAuth();

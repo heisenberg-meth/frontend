@@ -24,6 +24,10 @@
   --overlay-40: rgba(255, 255, 255, 0.4);
   --overlay-50: rgba(255, 255, 255, 0.5);
 
+  /* Modal overlay - dark by default, changes in light theme */
+  --modal-overlay: rgba(2, 6, 23, 0.42);
+  --modal-overlay-heavy: rgba(3, 20, 36, 0.85);
+
   --primary: #4fdbc8;
   --primary-glow: rgba(79, 219, 200, 0.2);
 
@@ -65,6 +69,10 @@
   --overlay-30: rgba(0, 0, 0, 0.3);
   --overlay-40: rgba(0, 0, 0, 0.4);
   --overlay-50: rgba(0, 0, 0, 0.5);
+
+  /* Modal overlay - lighter for light theme */
+  --modal-overlay: rgba(15, 23, 42, 0.25);
+  --modal-overlay-heavy: rgba(15, 23, 42, 0.50);
 
   --primary: #0d9488;
   --primary-glow: rgba(13, 148, 136, 0.15);

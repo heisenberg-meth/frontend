@@ -108,16 +108,22 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
           (gi) => gi.purchaseOrderItemId === item.id,
         );
 
+        // Pre-fill batch/expiry from: 1) prior GRN data, 2) PO item data, 3) empty
+        const batchNumber = priorItem?.batchNumber || item.batchNumber || "";
+        const expiryDate = priorItem?.expiryDate
+          ? priorItem.expiryDate.split("T")[0]
+          : item.expiryDate
+            ? item.expiryDate.split("T")[0]
+            : "";
+
         return {
           ...item,
           orderedQuantity: item.quantity || 0,
           prevReceivedQuantity: item.receivedQuantity || 0,
           pendingQuantity: remaining,
           receivedQuantity: remaining,
-          batchNumber: priorItem?.batchNumber || "",
-          expiryDate: priorItem?.expiryDate
-            ? priorItem.expiryDate.split("T")[0]
-            : "",
+          batchNumber,
+          expiryDate,
           purchasePrice: priorItem?.purchasePrice
             ? Number(priorItem.purchasePrice)
             : unitPrice,
@@ -1138,7 +1144,6 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
               <tr>
                 <th>Supplier</th>
                 <th>Date</th>
-                <th>PO #</th>
                 <th>Items</th>
                 <th>Total ₹</th>
                 <th>Delivery</th>
@@ -1156,9 +1161,6 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
                     {po.supplier?.name || po.supplierName || "-"}
                   </td>
                   <td>{po.date || formatDate(po.createdAt)}</td>
-                  <td className="result-meta" style={{ fontSize: 11 }}>
-                    {po.poNumber || ""}
-                  </td>
                   <td>{po.items?.length || po.items || 0}</td>
                   <td style={{ fontWeight: 700 }}>
                     ₹{(po.totalAmount || po.total || 0).toLocaleString()}
@@ -1237,11 +1239,10 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
                     </div>
                   </td>
                 </tr>
-              ))}
-              {filteredOrders.length === 0 && (
+              ))}                {filteredOrders.length === 0 && (
                 <tr>
                   <td
-                    colSpan="8"
+                    colSpan="7"
                     style={{ textAlign: "center", padding: "20px" }}
                   >
                     No orders found.

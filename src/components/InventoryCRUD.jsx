@@ -979,6 +979,7 @@ export default function InventoryCRUD({
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
+  const medicineAbortRef = useRef(null);
   const limit = 25;
 
   const getVisiblePages = () => {
@@ -1023,7 +1024,26 @@ export default function InventoryCRUD({
     return () => clearTimeout(handler);
   }, [search]);
 
-  const loadMedicines = useCallback(async () => {
+  const loadSummary = useCallback(async () => {
+    try {
+      const res = await getInventorySummary();
+      if (res.data?.success && res.data?.data) {
+        setSummaryStats(res.data.data);
+      }
+    } catch (err) {
+      console.error("Failed to load inventory summary", err);
+    }
+  }, []);
+
+  const loadMedicines = useCallback(async (options = {}) => {
+    const { skipSummary = true } = options;
+
+    if (medicineAbortRef.current) {
+      medicineAbortRef.current.abort();
+    }
+    const controller = new AbortController();
+    medicineAbortRef.current = controller;
+
     if (medicines.length === 0) setLoading(true);
     try {
       let categoryId = undefined;
@@ -1044,68 +1064,61 @@ export default function InventoryCRUD({
         backendStatus = "EXPIRING_SOON";
       else if (statusFilter === "Expired") backendStatus = "EXPIRED";
 
-      const [medicinesRes, summaryRes] = await Promise.allSettled([
-        getMedicines({
-          page: currentPage,
-          limit,
-          search: debouncedSearch,
-          categoryId,
-          status: backendStatus,
-        }),
-        getInventorySummary(),
-      ]);
+      const medicinesRes = await getMedicines({
+        page: currentPage,
+        limit,
+        search: debouncedSearch,
+        categoryId,
+        status: backendStatus,
+        signal: controller.signal,
+      });
 
-      if (medicinesRes.status === "fulfilled") {
-        const items = Array.isArray(medicinesRes.value.data?.data?.items)
-          ? medicinesRes.value.data.data.items
-          : Array.isArray(medicinesRes.value.data?.data)
-            ? medicinesRes.value.data.data
-            : [];
+      if (controller.signal.aborted) return;
 
-        const total = medicinesRes.value.data?.data?.total ?? items.length;
-        const pages = medicinesRes.value.data?.data?.totalPages ?? 1;
+      const items = Array.isArray(medicinesRes.data?.data?.items)
+        ? medicinesRes.data.data.items
+        : Array.isArray(medicinesRes.data?.data)
+          ? medicinesRes.data.data
+          : [];
 
-        const mapped = items.map(normalizeMedicine);
-        setMedicines(mapped);
-        setTotalItems(total);
-        setTotalPages(pages);
+      const total = medicinesRes.data?.data?.total ?? items.length;
+      const pages = medicinesRes.data?.data?.totalPages ?? 1;
 
-        if (viewTarget) {
-          const updatedViewTarget = mapped.find((m) => m.id === viewTarget.id);
-          if (updatedViewTarget) {
-            setViewTarget(updatedViewTarget);
-          }
+      const mapped = items.map(normalizeMedicine);
+      setMedicines(mapped);
+      setTotalItems(total);
+      setTotalPages(pages);
+
+      if (viewTarget) {
+        const updatedViewTarget = mapped.find((m) => m.id === viewTarget.id);
+        if (updatedViewTarget) {
+          setViewTarget(updatedViewTarget);
         }
-      } else {
-        console.error("Failed to load medicines", medicinesRes.reason);
       }
 
-      if (
-        summaryRes.status === "fulfilled" &&
-        summaryRes.value.data?.success &&
-        summaryRes.value.data?.data
-      ) {
-        setSummaryStats(summaryRes.value.data.data);
-      } else if (summaryRes.status === "rejected") {
-        console.error("Failed to load inventory summary", summaryRes.reason);
+      // Only refresh summary on explicit requests (save/delete), not on page/filter changes
+      if (!skipSummary) {
+        await loadSummary();
       }
     } catch (err) {
+      if (err?.name === "CanceledError" || controller.signal.aborted) return;
       showToast(
         "Failed to load inventory",
         err?.response?.data?.error || "error",
       );
     } finally {
-      setLoading(false);
+      if (!controller.signal.aborted) {
+        setLoading(false);
+      }
     }
   }, [
-    medicines.length,
     categoryFilter,
     statusFilter,
     currentPage,
     debouncedSearch,
     categoriesList,
-    viewTarget,
     showToast,
+    loadSummary,
   ]);
 
   const handleEditStock = (medicine) => {
@@ -1132,7 +1145,7 @@ export default function InventoryCRUD({
         showToast("Batch created successfully", "success");
       }
 
-      await loadMedicines();
+      await loadMedicines({ skipSummary: false });
       setBatchModalOpen(false);
       setEditBatchTarget(null);
       setActiveMedicineForBatch(null);
@@ -1151,7 +1164,10 @@ export default function InventoryCRUD({
     const initialize = async () => {
       try {
         setLoading(true);
-        const categoriesRes = await getCategories();
+        const [categoriesRes] = await Promise.all([
+          getCategories(),
+          loadSummary(),
+        ]);
         if (!mounted) return;
 
         setCategoriesList(
@@ -1174,7 +1190,7 @@ export default function InventoryCRUD({
     return () => {
       mounted = false;
     };
-  }, [showToast]);
+  }, [showToast, loadSummary]);
 
   useEffect(() => {
     const run = async () => {
@@ -1300,7 +1316,7 @@ export default function InventoryCRUD({
         await createMedicine(normalizedPayload);
         showToast("Medicine added successfully", "success");
       }
-      await loadMedicines();
+      await loadMedicines({ skipSummary: false });
       setModalOpen(false);
       setEditTarget(null);
     } catch (err) {
@@ -1323,7 +1339,7 @@ export default function InventoryCRUD({
     try {
       await deleteMedicine(deleteTarget.id);
       showToast("Medicine deleted successfully", "success");
-      await loadMedicines();
+      await loadMedicines({ skipSummary: false });
       setDeleteTarget(null);
     } catch (err) {
       const errorMessage =
