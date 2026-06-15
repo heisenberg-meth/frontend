@@ -29,7 +29,7 @@ let sessionExpiredDispatched = false;
 let csrfToken = null;
 let csrfPromise = null;
 
-async function getCsrfToken() {
+export async function getCsrfToken() {
   if (csrfToken) return csrfToken;
   if (csrfPromise) return csrfPromise;
 
@@ -75,7 +75,7 @@ function dispatchSessionExpired(reason) {
   }, 5000);
 }
 
-function cyrb128(str) {
+export function cyrb128(str) {
   let h1 = 1779033703,
     h2 = 3024733165,
     h3 = 3362453659,
@@ -101,11 +101,6 @@ function cyrb128(str) {
 
 api.interceptors.request.use(
   async (config) => {
-    const token = localStorage.getItem("viyan_token");
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
-
     const stateChangingMethods = ["POST", "PUT", "PATCH", "DELETE"];
     const excludeCsrfRoutes = ["csrf-token", "payments/webhook"];
 
@@ -176,8 +171,7 @@ api.interceptors.response.use(
       if (isRefreshing) {
         return new Promise((resolve, reject) => {
           failedQueue.push({ resolve, reject });
-        }).then((token) => {
-          originalRequest.headers.Authorization = `Bearer ${token}`;
+        }).then(() => {
           return api(originalRequest);
         });
       }
@@ -186,34 +180,7 @@ api.interceptors.response.use(
       isRefreshing = true;
 
       try {
-        const storedRefresh = localStorage.getItem("viyan_refresh_token");
-        const res = await axios.post(
-          `${getBaseUrl()}/auth/refresh`,
-          storedRefresh ? { refreshToken: storedRefresh } : {},
-          {
-            withCredentials: true,
-            timeout: 10000,
-            headers: {
-              "ngrok-skip-browser-warning": "69420",
-            },
-          },
-        );
-
-        const payload = res.data?.data || res.data;
-        const newToken = payload?.token || payload?.accessToken;
-        const newRefresh = payload?.refreshToken;
-
-        if (!newToken) {
-          throw new Error("No token in refresh response");
-        }
-
-        localStorage.setItem("viyan_token", newToken);
-        if (newRefresh) {
-          localStorage.setItem("viyan_refresh_token", newRefresh);
-        }
-
-        originalRequest.headers.Authorization = `Bearer ${newToken}`;
-        processQueue(null, newToken);
+        processQueue(null, null);
         return api(originalRequest);
       } catch (refreshError) {
         processQueue(refreshError, null);

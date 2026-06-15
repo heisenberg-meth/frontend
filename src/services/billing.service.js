@@ -12,7 +12,7 @@ export const scanItem = (barcode) => api.get(`billing/scan/${barcode}`);
 export const saveDraft = (data) =>
   api.post("billing/invoices", { ...data, isDraft: true });
 export const updateDraft = (id, data) =>
-  api.post(`billing/invoices/${id}`, { ...data, isDraft: true });
+  api.put(`billing/invoices/${id}`, { ...data, isDraft: true });
 
 /* ─── Billing Actions ─── */
 export const generateInvoicePDF = (id) =>

@@ -1,8 +1,7 @@
 import axios from "axios";
-import { getBaseUrl } from "../api";
+import { getBaseUrl, getCsrfToken, cyrb128 } from "../api";
 import { API_ROUTES } from "../constants/api.routes";
 
-const TOKEN_KEY = "viyan_admin_token";
 const REFRESH_KEY = "viyan_admin_refresh";
 const ADMIN_KEY = "viyan_admin_user";
 
@@ -13,11 +12,33 @@ const adminHttp = axios.create({
   headers: { "Content-Type": "application/json" },
 });
 
-adminHttp.interceptors.request.use((config) => {
-  const token = localStorage.getItem(TOKEN_KEY);
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
+adminHttp.interceptors.request.use(async (config) => {
+  const stateChangingMethods = ["POST", "PUT", "PATCH", "DELETE"];
+  const excludeCsrfRoutes = ["csrf-token"];
+
+  if (
+    stateChangingMethods.includes(config.method?.toUpperCase()) &&
+    !excludeCsrfRoutes.some((route) => config.url?.includes(route))
+  ) {
+    const activeCsrfToken = await getCsrfToken();
+    if (activeCsrfToken) {
+      config.headers["x-csrf-token"] = activeCsrfToken;
+    }
   }
+
+  const idempotentMethods = ["POST", "PUT", "PATCH", "DELETE"];
+  const excludeIdempotencyRoutes = ["admin/login", "admin/refresh"];
+
+  if (
+    idempotentMethods.includes(config.method?.toUpperCase()) &&
+    !excludeIdempotencyRoutes.some((route) => config.url?.includes(route))
+  ) {
+    if (!config.headers["X-Idempotency-Key"]) {
+      const key = `${config.method}:${config.url}:${JSON.stringify(config.data || {})}`;
+      config.headers["X-Idempotency-Key"] = cyrb128(key);
+    }
+  }
+
   return config;
 });
 
@@ -34,14 +55,9 @@ adminHttp.interceptors.response.use(
           refreshToken,
         });
         if (data.success && data.data.accessToken) {
-          localStorage.setItem(TOKEN_KEY, data.data.accessToken);
-          localStorage.setItem(REFRESH_KEY, data.data.refreshToken);
-          original.headers.Authorization = `Bearer ${data.data.accessToken}`;
           return adminHttp(original);
         }
       } catch {
-        localStorage.removeItem(TOKEN_KEY);
-        localStorage.removeItem(REFRESH_KEY);
         localStorage.removeItem(ADMIN_KEY);
         window.location.href = "/admin/login";
       }
@@ -57,22 +73,14 @@ export const adminApi = {
       password,
     });
     if (data.success && data.data.accessToken) {
-      localStorage.setItem(TOKEN_KEY, data.data.accessToken);
-      localStorage.setItem(REFRESH_KEY, data.data.refreshToken);
       localStorage.setItem(ADMIN_KEY, JSON.stringify(data.data.admin));
     }
     return data;
   },
 
   async refresh() {
-    const refreshToken = localStorage.getItem(REFRESH_KEY);
-    if (!refreshToken) throw new Error("No refresh token");
-    const { data } = await adminHttp.post(API_ROUTES.ADMIN_REFRESH, {
-      refreshToken,
-    });
+    const { data } = await adminHttp.post(API_ROUTES.ADMIN_REFRESH);
     if (data.success && data.data.accessToken) {
-      localStorage.setItem(TOKEN_KEY, data.data.accessToken);
-      localStorage.setItem(REFRESH_KEY, data.data.refreshToken);
       localStorage.setItem(ADMIN_KEY, JSON.stringify(data.data.admin));
     }
     return data;
@@ -84,8 +92,6 @@ export const adminApi = {
     } catch (err) {
       console.log(err);
     } finally {
-      localStorage.removeItem(TOKEN_KEY);
-      localStorage.removeItem(REFRESH_KEY);
       localStorage.removeItem(ADMIN_KEY);
     }
   },
@@ -100,7 +106,7 @@ export const adminApi = {
   },
 
   getStoredToken() {
-    return localStorage.getItem(TOKEN_KEY);
+    return null;
   },
 
   async getDashboardStats() {

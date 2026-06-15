@@ -18,7 +18,7 @@ export default function AuditLogs() {
 
   const fetchLogs = useCallback(() => {
     api
-      .get("/audit-logs")
+      .get("/audit")
       .then((res) => {
         const data = res.data;
         if (Array.isArray(data)) {

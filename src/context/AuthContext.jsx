@@ -95,16 +95,11 @@ export function AuthProvider({ children }) {
 
       const payload = res.data?.data || res.data;
       const newToken = payload?.token || payload?.accessToken;
-      const newRefresh = payload?.refreshToken;
 
       if (!newToken) {
         throw new Error("Token refresh failed: Invalid response from server.");
       }
 
-      localStorage.setItem("viyan_token", newToken);
-      if (newRefresh) {
-        localStorage.setItem("viyan_refresh_token", newRefresh);
-      }
       return newToken;
     } catch (error) {
       console.error("[AUTH] Token refresh failed:", error.message || error);
@@ -177,18 +172,8 @@ export function AuthProvider({ children }) {
         user: userData,
         subscriptionExpired,
         redirectTo,
-        token,
-        refreshToken: newRefreshToken,
         deviceToken,
       } = payload;
-
-      if (token) {
-        localStorage.setItem("viyan_token", token);
-      }
-
-      if (newRefreshToken) {
-        localStorage.setItem("viyan_refresh_token", newRefreshToken);
-      }
 
       if (deviceToken) {
         localStorage.setItem("viyan_device_token", deviceToken);

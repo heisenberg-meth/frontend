@@ -10,7 +10,7 @@ export const API_ROUTES = {
   USERS_PROFILE: "/users/profile",
   USERS_PROFILE_PASSWORD: "/users/profile/password",
   USERS_AVATAR: "/uploads/avatar",
-  USERS_SESSIONS: "/users/sessions",
+  USERS_SESSIONS: "/auth/sessions",
   USERS_2FA_ENABLE: "/users/2fa/enable",
   USERS_2FA_DISABLE: "/users/2fa/disable",
   USERS_2FA_VERIFY: "/users/2fa/verify",
@@ -37,27 +37,27 @@ export const API_ROUTES = {
   INVENTORY_EXPIRY_NEAR: "/inventory/expiry/near",
   INVENTORY_EXPIRY_SUMMARY: "/inventory/expiry/summary",
   INVENTORY_BARCODE_GENERATE: "/inventory/barcode/generate",
-  
+
   // Billing
   BILLING_INVOICES: "/billing/invoices",
   BILLING_RETURNS: "/billing/returns",
-  
+
   // Payments
   PAYMENTS_CREATE_ORDER: "/payments/create-order",
   PAYMENTS_VERIFY: "/payments/verify",
   PAYMENTS_HISTORY: "/payments/history",
   PAYMENTS_STATUS: "/payments/status",
   PAYMENTS_RECOVER: "/payments/recover",
-  
+
   // Analytics & AI
   ANALYTICS_STATS: "/analytics/stats",
   AI_ANOMALY: "/ai/anomaly-detection",
   AI_FORECAST: "/ai/demand-forecast",
-  
+
   // Sales
   SALES: "/sales",
   SALES_HOURLY: "/analytics/hourly-sales",
-  
+
   // Settings
   SETTINGS: "/settings",
   SETTINGS_GST: "/settings/gst",
@@ -69,7 +69,7 @@ export const API_ROUTES = {
   SETTINGS_SECURITY: "/settings/security",
   SETTINGS_INVOICE_TEMPLATE: "/settings/invoice-template",
   SETTINGS_STORE_PROFILE: "/settings/store-profile",
-  
+
   // Subscriptions
   SUBSCRIPTIONS_STATUS: "/subscriptions/status",
   SUBSCRIPTIONS_ACTIVATE: "/subscriptions/activate",
@@ -109,7 +109,7 @@ export const API_ROUTES = {
   EXPENSES: "/accounting/expenses",
 
   // Notifications & Ops
-  NOTIFICATIONS_HISTORY: "/notifications/ops/history",
+  NOTIFICATIONS_HISTORY: "/notifications/history",
   NOTIFICATIONS_METRICS: "/notifications/ops/queues/metrics",
   NOTIFICATIONS_RETRY: "/notifications/ops/retry",
 

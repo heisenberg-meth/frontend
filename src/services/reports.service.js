@@ -47,7 +47,7 @@ export const getGstReport = (params) =>
   api.get("accounting/tax/gst-summary", { params });
 
 /* ─── Audit Logs ─── */
-export const getAuditLogs = (params) => api.get("audit-logs", { params });
+export const getAuditLogs = (params) => api.get("audit", { params });
 
 /* ─── Subscriptions ─── */
 export const getSubscriptionStatus = () => api.get("subscriptions/status");
