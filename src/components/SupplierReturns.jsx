@@ -25,8 +25,8 @@ import {
   generateCreditNote,
   getCreditNotes,
 } from "../services/supplier-returns.service.js";
-
 import { formatDate } from "../utils/format.js";
+import "../styles/Supplierreturn.css";
 
 const STATUS_BADGE = {
   DRAFT: { label: "Draft", class: "badge-neutral" },
@@ -959,92 +959,6 @@ export default function SupplierReturns({ showToast }) {
           </div>
         </div>
       )}
-
-      <style>{`
-        .page-container { padding: 24px; max-width: 1400px; margin: 0 auto; display: flex; flex-direction: column; gap: 24px; }
-        .page-header { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; }
-        .page-header-left { display: flex; align-items: center; gap: 12px; }
-        .page-header-left h1 { margin: 0; font-size: 1.5rem; }
-        .page-header-left p { margin: 2px 0 0; font-size: 0.85rem; color: var(--text-secondary); }
-        .page-header-actions { display: flex; gap: 8px; }
-        .tabs-nav { display: flex; gap: 4px; border-bottom: 2px solid var(--border); padding-bottom: 0; }
-        .tab-btn { display: flex; align-items: center; gap: 6px; padding: 10px 20px; border: none; background: transparent; cursor: pointer; font-size: 0.9rem; color: var(--text-secondary); border-bottom: 2px solid transparent; margin-bottom: -2px; transition: all .2s; }
-        .tab-btn.active { color: var(--primary); border-bottom-color: var(--primary); font-weight: 600; }
-        .tab-btn:hover { color: var(--primary); }
-        .tab-content { min-height: 300px; }
-        .filters-row { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 16px; }
-        .search-box { display: flex; align-items: center; gap: 8px; padding: 8px 12px; border: 1px solid var(--border); border-radius: 8px; flex: 1; min-width: 200px; }
-        .search-box input { border: none; outline: none; flex: 1; font-size: 0.9rem; background: transparent; }
-        .filter-select { padding: 8px 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 0.9rem; background: var(--bg-card); }
-        .btn { display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px; border: none; border-radius: 8px; cursor: pointer; font-size: 0.85rem; font-weight: 500; transition: all .2s; }
-        .btn-primary { background: var(--primary); color: #fff; }
-        .btn-primary:hover { opacity: .9; }
-        .btn-success { background: #10b981; color: #fff; }
-        .btn-warning { background: #f59e0b; color: #fff; }
-        .btn-danger { background: #ef4444; color: #fff; }
-        .btn-info { background: #3b82f6; color: #fff; }
-        .btn-ghost { background: transparent; border: 1px solid var(--border); color: var(--text-primary); }
-        .btn-ghost:hover { background: var(--bg-hover); }
-        .btn-sm { padding: 4px 12px; font-size: 0.8rem; }
-        .btn:disabled { opacity: .5; cursor: not-allowed; }
-        .table-container { overflow-x: auto; }
-        .data-table { width: 100%; border-collapse: collapse; }
-        .data-table th { text-align: left; padding: 10px 12px; font-size: 0.8rem; text-transform: uppercase; color: var(--text-secondary); border-bottom: 2px solid var(--border); }
-        .data-table td { padding: 10px 12px; border-bottom: 1px solid var(--border); font-size: 0.9rem; }
-        .data-table tbody tr:hover { background: var(--bg-hover); }
-        .row-selected { background: var(--primary-light) !important; }
-        .status-badge { display: inline-block; padding: 2px 10px; border-radius: 12px; font-size: 0.75rem; font-weight: 600; }
-        .badge-neutral { background: #6b728020; color: #6b7280; }
-        .badge-warning { background: #f59e0b20; color: #f59e0b; }
-        .badge-info { background: #3b82f620; color: #3b82f6; }
-        .badge-primary { background: var(--primary-light); color: var(--primary); }
-        .badge-success { background: #10b98120; color: #10b981; }
-        .badge-danger { background: #ef444420; color: #ef4444; }
-        .return-number { font-family: monospace; font-weight: 600; font-size: 0.85rem; }
-        .action-btns { display: flex; gap: 4px; }
-        .pagination-bar { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; font-size: 0.85rem; color: var(--text-secondary); }
-        .pagination-controls { display: flex; align-items: center; gap: 8px; }
-        .pagination-controls button { padding: 4px 12px; border: 1px solid var(--border); border-radius: 6px; background: transparent; cursor: pointer; }
-        .pagination-controls button:disabled { opacity: .4; cursor: not-allowed; }
-        .pagination-current { font-weight: 600; }
-        .empty-state { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 48px; color: var(--text-secondary); }
-        .empty-state h3 { margin: 0; }
-        .empty-state p { margin: 0; font-size: 0.9rem; }
-        .stats-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 16px; margin-bottom: 24px; }
-        .stat-card { padding: 20px; border-radius: 12px; background: var(--bg-card); border: 1px solid var(--border); display: flex; flex-direction: column; gap: 4px; }
-        .stat-value { font-size: 1.5rem; font-weight: 700; }
-        .stat-label { font-size: 0.85rem; color: var(--text-secondary); }
-        .supplier-group-card { border: 1px solid var(--border); border-radius: 12px; overflow: hidden; margin-bottom: 12px; }
-        .supplier-group-header { display: flex; justify-content: space-between; align-items: center; padding: 16px; cursor: pointer; background: var(--bg-card); }
-        .supplier-group-header:hover { background: var(--bg-hover); }
-        .supplier-group-info { display: flex; align-items: center; gap: 12px; }
-        .supplier-group-info strong { font-size: 1rem; }
-        .supplier-code { font-size: 0.8rem; color: var(--text-secondary); margin-left: 8px; font-family: monospace; }
-        .supplier-group-meta { display: flex; align-items: center; gap: 16px; font-size: 0.85rem; color: var(--text-secondary); }
-        .supplier-group-items { padding: 16px; border-top: 1px solid var(--border); }
-        .supplier-group-items .btn { margin-top: 12px; }
-        .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 1000; padding: 20px; }
-        .modal-content { background: var(--bg-primary); border-radius: 16px; max-height: 90vh; overflow-y: auto; width: 100%; max-width: 480px; box-shadow: 0 20px 60px rgba(0,0,0,0.3); }
-        .modal-content.wide-modal { max-width: 800px; }
-        .modal-header { display: flex; align-items: center; gap: 12px; padding: 20px 24px 0; }
-        .modal-header h2 { margin: 0; font-size: 1.2rem; flex: 1; }
-        .modal-close { background: none; border: none; font-size: 1.5rem; cursor: pointer; color: var(--text-secondary); padding: 0 4px; }
-        .modal-close:hover { color: var(--text-primary); }
-        .modal-body { padding: 20px 24px; display: flex; flex-direction: column; gap: 16px; }
-        .modal-footer { padding: 16px 24px 20px; display: flex; justify-content: flex-end; gap: 8px; border-top: 1px solid var(--border); }
-        .detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-        .detail-item { display: flex; flex-direction: column; gap: 4px; }
-        .detail-item label { font-size: 0.75rem; text-transform: uppercase; color: var(--text-secondary); font-weight: 600; }
-        .detail-item span, .detail-item p { margin: 0; font-size: 0.9rem; }
-        .status-actions { display: flex; gap: 8px; flex-wrap: wrap; width: 100%; }
-        .form-group { display: flex; flex-direction: column; gap: 6px; }
-        .form-group label { font-size: 0.85rem; font-weight: 600; }
-        .form-group select, .form-group textarea { padding: 8px 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 0.9rem; background: var(--bg-card); }
-        .form-group select:focus, .form-group textarea:focus { outline: none; border-color: var(--primary); }
-        .loading-container { display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 48px; color: var(--text-secondary); }
-        @keyframes spin { to { transform: rotate(360deg); } }
-        .spin { animation: spin 1s linear infinite; }
-      `}</style>
     </div>
   );
 }
