@@ -3,7 +3,6 @@ import {
   AlertTriangle,
   Trash2,
   Download,
-  Printer,
   Search,
   X,
   CheckCircle2,
@@ -26,6 +25,7 @@ export default function BulkDisposal({ showToast }) {
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [reason, setReason] = useState("Expired Stock");
   const [disposing, setDisposing] = useState(false);
+  const [disposeProgress, setDisposeProgress] = useState({ current: 0, total: 0 });
   const [result, setResult] = useState(null);
   const [overview, setOverview] = useState(null);
   const [selectAll, setSelectAll] = useState(false);
@@ -103,6 +103,8 @@ export default function BulkDisposal({ showToast }) {
 
   const handleDispose = async () => {
     setDisposing(true);
+    const total = selectedData.length;
+    setDisposeProgress({ current: 0, total });
     try {
       const body = {
         items: selectedData.map((b) => ({
@@ -112,8 +114,10 @@ export default function BulkDisposal({ showToast }) {
         })),
         reason,
       };
+      setDisposeProgress({ current: 0, total });
       const res = await api.post("/inventory/disposal/bulk", body);
       const data = normalizeObjectResponse(res);
+      setDisposeProgress({ current: total, total });
       setResult({ ...data, stats: selectedStats });
     } catch (err) {
       showToast?.(
@@ -122,6 +126,7 @@ export default function BulkDisposal({ showToast }) {
         "error",
       );
       setDisposing(false);
+      setDisposeProgress({ current: 0, total: 0 });
       setShowConfirmModal(false);
     }
   };
@@ -351,24 +356,6 @@ export default function BulkDisposal({ showToast }) {
                 >
                   <Download size={14} />
                   Export
-                </button>
-                <button
-                  style={{
-                    padding: "8px 16px",
-                    borderRadius: 8,
-                    border: "1px solid var(--outline-variant)",
-                    background: "var(--surface-container)",
-                    color: "var(--text-muted)",
-                    fontSize: 13,
-                    cursor: "pointer",
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 6,
-                  }}
-                  onClick={() => window.print()}
-                >
-                  <Printer size={14} />
-                  Print
                 </button>
               </div>
             )}
@@ -696,7 +683,7 @@ export default function BulkDisposal({ showToast }) {
                   {disposing ? (
                     <>
                       <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                      Disposing...
+                      Disposing {disposeProgress.current}/{disposeProgress.total}...
                     </>
                   ) : (
                     "Confirm Disposal"

@@ -66,6 +66,8 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
   const [branches, setBranches] = useState([]);
   const [selectedBranchId, setSelectedBranchId] = useState("");
   const [showReturnModal, setShowReturnModal] = useState(false);
+  const [returnSelections, setReturnSelections] = useState([]);
+  const [loadingReturnBatches, setLoadingReturnBatches] = useState(false);
   const [showReceiveModal, setShowReceiveModal] = useState(false);
   const [medicines, setMedicines] = useState([]);
   const [suppliers, setSuppliers] = useState([]);
@@ -713,17 +715,57 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
     }
   };
 
+  const loadReturnBatches = async (invoice) => {
+    setLoadingReturnBatches(true);
+    const items = invoice?.items || [];
+    const results = [];
+    for (const item of items) {
+      const medicineId = item.medicineId || item.medicine?.id;
+      if (!medicineId) {
+        results.push({ medicineId: null, medicineName: item.medicine?.name || item.name || 'Unknown', batches: [], selectedBatchId: '', quantity: 0 });
+        continue;
+      }
+      try {
+        const { data } = await api.get(API_ROUTES.INVENTORY_BATCHES, { params: { medicineId, limit: 50 } });
+        const batches = (data?.data?.batches || data?.batches || data?.data || []).filter(b => b.quantity > 0 && b.status === 'ACTIVE');
+        results.push({
+          medicineId,
+          medicineName: item.medicine?.name || item.name || 'Unknown',
+          batches,
+          selectedBatchId: batches.length === 1 ? batches[0].id : '',
+          quantity: Math.min(item.quantity || 0, batches.length > 0 ? batches[0].quantity : 0),
+          maxQuantity: batches.length > 0 ? batches[0].quantity : 0,
+        });
+      } catch {
+        results.push({ medicineId, medicineName: item.medicine?.name || item.name || 'Unknown', batches: [], selectedBatchId: '', quantity: 0, maxQuantity: 0 });
+      }
+    }
+    setReturnSelections(results);
+    setLoadingReturnBatches(false);
+  };
+
   const handleProcessReturn = async () => {
     try {
+      const payloadItems = returnSelections
+        .filter((s) => s.selectedBatchId && s.quantity > 0)
+        .map((s) => ({
+          batchId: s.selectedBatchId,
+          quantity: Number(s.quantity),
+          medicineId: s.medicineId,
+        }));
+      if (payloadItems.length === 0) {
+        showToast("Select at least one batch and quantity to return", "error");
+        return;
+      }
       showToast("Processing return...", "info");
       await api.post(API_ROUTES.PURCHASES_RETURNS, {
-        originalInvoiceId: selectedRow.id,
-        items: selectedRow.items || [],
-        reason: "Quality Issue",
+        items: payloadItems,
+        reason: "Return",
         supplierId: selectedRow.supplierId || selectedRow.supplier?.id,
       });
       showToast("Return Submitted Successfully", "success");
       setShowReturnModal(false);
+      setReturnSelections([]);
       await refreshData();
     } catch (err) {
       console.error(err);
@@ -1007,6 +1049,7 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
                             e.stopPropagation();
                             setSelectedRow(inv);
                             setShowReturnModal(true);
+                            loadReturnBatches(inv);
                           }}
                         >
                           <ArrowLeft size={14} />
@@ -1850,47 +1893,96 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
                     style={{ width: "100%" }}
                   />
                 </div>
-                <div style={{ marginTop: "20px" }}>
-                  {(selectedRow.items || []).map((item, idx) => (
-                    <div
-                      key={idx}
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "12px",
-                        marginBottom: "12px",
-                      }}
-                    >
-                      <input required type="checkbox" defaultChecked />
-                      <div style={{ flex: 1 }}>
-                        {item.medicine?.name || item.name}
-                      </div>
-                      <input
-                        required
-                        className="p-cost-input"
-                        defaultValue={item.quantity}
-                        max={item.quantity}
-                        style={{ width: "50px" }}
-                      />
-                    </div>
-                  ))}
-                  {(!selectedRow.items || selectedRow.items.length === 0) && (
-                    <div>No items found to return.</div>
-                  )}
-                </div>
-                <div className="pos-input-group" style={{ marginTop: "20px" }}>
-                  <label>Return Reason</label>
-                  <select className="pos-input" style={{ width: "100%" }}>
-                    <option>Expired</option>
-                    <option>Wrong Item</option>
-                    <option>Quality Issue</option>
-                  </select>
-                </div>
+                {loadingReturnBatches ? (
+                  <div style={{ textAlign: "center", padding: "20px" }}>
+                    <Loader2 className="spin" size={24} />
+                    <p style={{ marginTop: 12, color: "var(--text-muted)" }}>Loading available batches...</p>
+                  </div>
+                ) : (
+                  <div style={{ marginTop: "16px" }}>
+                    {returnSelections.length === 0 ? (
+                      <div>No items found to return.</div>
+                    ) : (
+                      returnSelections.map((sel, idx) => (
+                        <div
+                          key={idx}
+                          style={{
+                            padding: "12px",
+                            marginBottom: "12px",
+                            border: "1px solid var(--border)",
+                            borderRadius: "8px",
+                            background: "var(--bg-card)",
+                          }}
+                        >
+                          <div style={{ fontWeight: 600, marginBottom: "8px", fontSize: "0.9rem" }}>
+                            {sel.medicineName}
+                          </div>
+                          <div style={{ display: "flex", gap: "8px", alignItems: "center", flexWrap: "wrap" }}>
+                            <div style={{ flex: 2, minWidth: "140px" }}>
+                              <select
+                                className="pos-input"
+                                style={{ width: "100%", fontSize: "0.8rem" }}
+                                value={sel.selectedBatchId}
+                                onChange={(e) => {
+                                  const batch = sel.batches.find((b) => b.id === e.target.value);
+                                  const newSel = [...returnSelections];
+                                  newSel[idx] = {
+                                    ...sel,
+                                    selectedBatchId: e.target.value,
+                                    quantity: batch ? Math.min(sel.quantity, batch.quantity) : 0,
+                                    maxQuantity: batch ? batch.quantity : 0,
+                                  };
+                                  setReturnSelections(newSel);
+                                }}
+                              >
+                                <option value="">Select batch</option>
+                                {sel.batches.map((b) => (
+                                  <option key={b.id} value={b.id}>
+                                    {b.batchNumber} (Qty: {b.quantity}, Exp: {b.expiryDate ? new Date(b.expiryDate).toLocaleDateString() : 'N/A'})
+                                  </option>
+                                ))}
+                              </select>
+                            </div>
+                            <div style={{ flex: 1, minWidth: "80px" }}>
+                              <input
+                                required
+                                className="p-cost-input"
+                                type="number"
+                                min={0}
+                                max={sel.maxQuantity}
+                                value={sel.quantity}
+                                onChange={(e) => {
+                                  const newSel = [...returnSelections];
+                                  newSel[idx] = { ...sel, quantity: Math.min(Number(e.target.value) || 0, sel.maxQuantity) };
+                                  setReturnSelections(newSel);
+                                }}
+                                style={{ width: "100%" }}
+                                placeholder="Qty"
+                                disabled={!sel.selectedBatchId}
+                              />
+                            </div>
+                            <span style={{ fontSize: "0.75rem", color: "var(--text-muted)", whiteSpace: "nowrap" }}>
+                              Max: {sel.maxQuantity}
+                            </span>
+                          </div>
+                          {sel.selectedBatchId && sel.quantity <= 0 && (
+                            <div style={{ color: "var(--danger)", fontSize: "0.75rem", marginTop: "4px" }}>
+                              Enter a quantity to return
+                            </div>
+                          )}
+                        </div>
+                      ))
+                    )}
+                  </div>
+                )}
               </div>
               <div className="stock-modal-footer">
                 <button
                   className="pos-btn outline"
-                  onClick={() => setShowReturnModal(false)}
+                  onClick={() => {
+                    setShowReturnModal(false);
+                    setReturnSelections([]);
+                  }}
                 >
                   Cancel
                 </button>
@@ -1902,6 +1994,7 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
                     border: "none",
                   }}
                   onClick={handleProcessReturn}
+                  disabled={loadingReturnBatches}
                 >
                   Submit Return
                 </button>

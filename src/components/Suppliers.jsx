@@ -512,6 +512,7 @@ export default function Suppliers({ showToast }) {
         phone: cleanPhone.length >= 10 ? form.phone : undefined,
         email: form.email || undefined,
         gstNumber: form.gst || undefined,
+        drugCategories: form.categories || [],
         paymentTermsDays: PAYMENT_TERMS_MAP[form.paymentTerms] ?? 30,
         leadTimeDays: LEAD_TIME_MAP[form.leadTime] ?? 7,
         status: (form.status || "active").toUpperCase(),
@@ -810,12 +811,14 @@ export default function Suppliers({ showToast }) {
                         <button
                           className="sup-row-btn active"
                           title="Raise PO"
-                          onClick={() => navigate("/purchases", {
-                            state: {
-                              action: "raise-po",
-                              supplierId: s.id,
-                            }
-                          })}
+                          onClick={() =>
+                            navigate("/purchases", {
+                              state: {
+                                action: "raise-po",
+                                supplierId: s.id,
+                              },
+                            })
+                          }
                         >
                           <ClipboardList size={14} />
                         </button>
