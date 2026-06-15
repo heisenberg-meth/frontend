@@ -528,19 +528,24 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
   };
 
   const handleOpenDrawer = (type, row = null) => {
+    if (type === "new-purchase") {
+      loadMedicines();
+      resetForm();
+      setSelectedBranchId(
+        user?.branchId || (branches.length > 0 ? branches[0].id : ""),
+      );
+      setDrawer(type);
+      return;
+    }
+
     if (!row) {
       showToast("Unable to load invoice details", "error");
       return;
     }
+
     setSelectedRow(row);
     setDrawer(type);
-    if (type === "new-purchase") {
-      loadMedicines();
-      setSelectedBranchId(
-        user?.branchId || (branches.length > 0 ? branches[0].id : ""),
-      );
-      resetForm();
-    }
+
     if (type === "edit-purchase") {
       loadMedicines();
       setSelectedSupplier(row.supplier || null);
@@ -1303,7 +1308,7 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
                     </div>
                   </td>
                 </tr>
-              ))}{" "}
+              ))}
               {filteredOrders.length === 0 && (
                 <tr>
                   <td
