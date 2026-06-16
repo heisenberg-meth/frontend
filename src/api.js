@@ -114,6 +114,11 @@ api.interceptors.request.use(
       }
     }
 
+    const token = localStorage.getItem("viyan_token");
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+
     const idempotentMethods = ["POST", "PUT", "PATCH", "DELETE"];
     const excludeIdempotencyRoutes = [
       "auth/login",
