@@ -493,7 +493,9 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
         supplierId: selectedSupplier.id,
         branchId: finalBranchId,
         supplierInvoiceNumber: supplierInvNo.trim(),
-        invoiceDate: invoiceDate || new Date().toISOString().split("T")[0],
+        invoiceDate: invoiceDate
+          ? new Date(invoiceDate).toISOString()
+          : new Date().toISOString(),
         items: purchaseItems.map((item) => ({
           medicineId: item.id,
           quantity: Number(item.qty),

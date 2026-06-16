@@ -25,7 +25,10 @@ export default function BulkDisposal({ showToast }) {
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [reason, setReason] = useState("Expired Stock");
   const [disposing, setDisposing] = useState(false);
-  const [disposeProgress, setDisposeProgress] = useState({ current: 0, total: 0 });
+  const [disposeProgress, setDisposeProgress] = useState({
+    current: 0,
+    total: 0,
+  });
   const [result, setResult] = useState(null);
   const [overview, setOverview] = useState(null);
   const [selectAll, setSelectAll] = useState(false);
@@ -115,19 +118,36 @@ export default function BulkDisposal({ showToast }) {
         reason,
       };
       setDisposeProgress({ current: 0, total });
-      const res = await api.post("/inventory/disposal/bulk", body);
-      const data = normalizeObjectResponse(res);
+      const res = await api.post("/inventory/disposal/bulk", body, {
+        timeout: 30000,
+      });
+      // The API returns an array of result objects
+      const data = Array.isArray(res.data?.data) ? res.data.data : res.data;
       setDisposeProgress({ current: total, total });
-      setResult({ ...data, stats: selectedStats });
+
+      const disposedItems = Array.isArray(data)
+        ? data.filter((d) => d.status === "DISPOSED")
+        : [];
+      const skippedItems = Array.isArray(data)
+        ? data.filter((d) => d.status === "SKIPPED")
+        : [];
+
+      setResult({
+        items: Array.isArray(data) ? data : [],
+        disposedCount: disposedItems.length,
+        skippedCount: skippedItems.length,
+        stats: selectedStats,
+      });
+      setShowConfirmModal(false);
     } catch (err) {
       showToast?.(
         "Disposal failed: " +
           (err.response?.data?.error?.message || err.message),
         "error",
       );
+    } finally {
       setDisposing(false);
       setDisposeProgress({ current: 0, total: 0 });
-      setShowConfirmModal(false);
     }
   };
 
@@ -265,20 +285,114 @@ export default function BulkDisposal({ showToast }) {
             <CheckCircle2 size={32} color="white" />
           </div>
           <h3 style={{ fontSize: 22, fontWeight: 700, marginTop: 8 }}>
-            {result.stats?.count || 0} Batches Archived Successfully
+            Disposal Processed
           </h3>
-          <p
+          <div
             style={{
-              color: "var(--text-muted)",
-              textAlign: "center",
-              lineHeight: "1.6",
+              background: "var(--surface-container)",
+              padding: 24,
+              borderRadius: 12,
+              border: "1px solid var(--outline-variant)",
+              width: "100%",
+              maxWidth: 480,
+              textAlign: "left",
             }}
           >
-            Disposed Quantity: {result.stats?.totalUnits || 0}
-            <br />
-            Inventory Value Removed: {"\u20B9"}
-            {Number(result.stats?.totalValue || 0).toLocaleString("en-IN")}
-          </p>
+            <h4 style={{ marginBottom: 16, fontSize: 16, fontWeight: 600 }}>
+              Disposal Summary
+            </h4>
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                marginBottom: 8,
+              }}
+            >
+              <span style={{ color: "var(--text-muted)" }}>Disposed</span>
+              <span style={{ fontWeight: 600, color: "var(--success)" }}>
+                {result.disposedCount || 0}
+              </span>
+            </div>
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                marginBottom: 8,
+              }}
+            >
+              <span style={{ color: "var(--text-muted)" }}>Skipped</span>
+              <span
+                style={{
+                  fontWeight: 600,
+                  color:
+                    result.skippedCount > 0 ? "var(--warning)" : "var(--text)",
+                }}
+              >
+                {result.skippedCount || 0}
+              </span>
+            </div>
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                marginBottom: 8,
+              }}
+            >
+              <span style={{ color: "var(--text-muted)" }}>Units Removed</span>
+              <span style={{ fontWeight: 600 }}>
+                {result.stats?.totalUnits || 0}
+              </span>
+            </div>
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                marginBottom: 16,
+              }}
+            >
+              <span style={{ color: "var(--text-muted)" }}>Value Removed</span>
+              <span style={{ fontWeight: 600 }}>
+                {"\u20B9"}
+                {Number(result.stats?.totalValue || 0).toLocaleString("en-IN")}
+              </span>
+            </div>
+
+            {result.skippedCount > 0 && result.items && (
+              <div
+                style={{
+                  marginTop: 16,
+                  paddingTop: 16,
+                  borderTop: "1px solid var(--outline-variant)",
+                }}
+              >
+                <h5
+                  style={{
+                    fontSize: 13,
+                    marginBottom: 8,
+                    color: "var(--text-muted)",
+                  }}
+                >
+                  Skipped Reasons:
+                </h5>
+                <ul
+                  style={{
+                    fontSize: 13,
+                    paddingLeft: 16,
+                    margin: 0,
+                    color: "var(--text-dim)",
+                  }}
+                >
+                  {result.items
+                    .filter((i) => i.status === "SKIPPED")
+                    .map((item, idx) => (
+                      <li key={idx} style={{ marginBottom: 4 }}>
+                        {item.reason || "Unknown reason"}
+                      </li>
+                    ))}
+                </ul>
+              </div>
+            )}
+          </div>
           <div
             style={{
               marginTop: 16,
@@ -683,7 +797,8 @@ export default function BulkDisposal({ showToast }) {
                   {disposing ? (
                     <>
                       <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                      Disposing {disposeProgress.current}/{disposeProgress.total}...
+                      Disposing {disposeProgress.current}/
+                      {disposeProgress.total}...
                     </>
                   ) : (
                     "Confirm Disposal"

@@ -180,11 +180,9 @@ api.interceptors.response.use(
       isRefreshing = true;
 
       try {
-        await axios.post(
+        const refreshRes = await axios.post(
           `${getBaseUrl()}/auth/refresh`,
-          localStorage.getItem("viyan_refresh_token")
-            ? { refreshToken: localStorage.getItem("viyan_refresh_token") }
-            : {},
+          {},
           {
             withCredentials: true,
             headers: {
@@ -195,9 +193,22 @@ api.interceptors.response.use(
           },
         );
 
+        if (import.meta.env.DEV) {
+          console.log("[AUTH] Refresh successful:", {
+            status: refreshRes.status,
+            data: refreshRes.data,
+          });
+        }
+
         processQueue(null, null);
         return api(originalRequest);
       } catch (refreshError) {
+        if (import.meta.env.DEV) {
+          console.error("[AUTH] Refresh failed:", {
+            status: refreshError.response?.status,
+            data: refreshError.response?.data,
+          });
+        }
         processQueue(refreshError, null);
         csrfToken = null;
         csrfPromise = null;

@@ -78,10 +78,9 @@ export function AuthProvider({ children }) {
 
   const refreshToken = useCallback(async () => {
     try {
-      const storedRefresh = localStorage.getItem("viyan_refresh_token");
       const res = await axios.post(
         `${getBaseUrl()}/auth/refresh`,
-        storedRefresh ? { refreshToken: storedRefresh } : {},
+        {},
         {
           withCredentials: true,
           timeout: 10000,
