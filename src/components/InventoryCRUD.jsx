@@ -143,6 +143,7 @@ function MedicineModal({
     batchNumber: "",
     expiryDate: "",
     mrp: "",
+    sellingPrice: "",
     purchaseCost: "",
     quantity: "",
     reorderLevel: "10",
@@ -213,12 +214,11 @@ function MedicineModal({
         newErrors.mrp = "MRP must be greater than purchase cost";
       }
       if (sellingPrice < purchasePrice) {
-        // We attach it to mrp since sellingPrice is not in the form
-        newErrors.mrp =
+        newErrors.sellingPrice =
           "Selling price must be greater than or equal to purchase cost";
       }
       if (sellingPrice > mrp) {
-        newErrors.mrp = "Selling price cannot exceed MRP";
+        newErrors.sellingPrice = "Selling price cannot exceed MRP";
       }
     }
 
@@ -234,6 +234,7 @@ function MedicineModal({
     onSave({
       ...form,
       mrp: Number(form.mrp),
+      sellingPrice: Number(form.sellingPrice),
       purchaseCost: form.purchaseCost ? Number(form.purchaseCost) : undefined,
       quantity: Number(form.quantity),
       reorderLevel: Number(form.reorderLevel) || 10,
@@ -386,6 +387,21 @@ function MedicineModal({
                   />
                   {errors.mrp && (
                     <span className="field-error">{errors.mrp}</span>
+                  )}
+                </div>
+                <div className="form-group">
+                  <label>Selling Price (₹) *</label>
+                  <input
+                    required
+                    type="number"
+                    step="0.01"
+                    placeholder="0.00"
+                    value={form.sellingPrice ?? ""}
+                    onChange={(e) => set("sellingPrice", e.target.value)}
+                    className={errors.sellingPrice ? "input-error" : ""}
+                  />
+                  {errors.sellingPrice && (
+                    <span className="field-error">{errors.sellingPrice}</span>
                   )}
                 </div>
                 <div className="form-group">
@@ -754,40 +770,54 @@ function MedicineViewModal({ medicine, onClose, onEditBatch, onAddBatch }) {
   );
 }
 
+const EMPTY_BATCH_FORM = {
+  batchNumber: "",
+  expiryDate: "",
+  mrp: "",
+  sellingPrice: "",
+  purchasePrice: "",
+  quantity: "",
+  rackLocation: "",
+};
+
 function BatchModal({
   onClose,
   onSave,
   batchData,
   medicineData,
+  isAddMode,
   showToast,
   saving,
 }) {
-  const EMPTY = {
-    batchNumber: "",
-    expiryDate: "",
-    mrp: "",
-    purchasePrice: "",
-    quantity: "",
-    rackLocation: "",
-  };
+  const batches = medicineData?.inventoryBatches || [];
 
+  // Auto-select ONLY if batchData is explicitly passed
+  const initialBatch = isAddMode ? null : batchData || null;
+
+  const [selectedBatch, setSelectedBatch] = useState(initialBatch);
   const [form, setForm] = useState(
-    batchData
+    initialBatch
       ? {
-          batchNumber: batchData.batchNumber || "",
-          expiryDate: batchData.expiryDate
-            ? batchData.expiryDate.split("T")[0]
+          batchNumber: initialBatch.batchNumber || "",
+          expiryDate: initialBatch.expiryDate
+            ? initialBatch.expiryDate.split("T")[0]
             : "",
-          mrp: batchData.mrp ? String(batchData.mrp) : "",
-          purchasePrice: batchData.purchasePrice
-            ? String(batchData.purchasePrice)
+          mrp: initialBatch.mrp ? String(initialBatch.mrp) : "",
+          sellingPrice: initialBatch.sellingPrice
+            ? String(initialBatch.sellingPrice)
             : "",
-          quantity: batchData.quantity ? String(batchData.quantity) : "",
-          rackLocation: batchData.rackLocation || "",
+          purchasePrice: initialBatch.purchasePrice
+            ? String(initialBatch.purchasePrice)
+            : "",
+          quantity:
+            initialBatch.quantity !== null &&
+            initialBatch.quantity !== undefined
+              ? String(initialBatch.quantity)
+              : "",
+          rackLocation: initialBatch.rackLocation || "",
         }
-      : EMPTY,
+      : EMPTY_BATCH_FORM,
   );
-
   const [errors, setErrors] = useState({});
 
   const set = (key, val) => {
@@ -811,6 +841,13 @@ function BatchModal({
       newErrors.quantity = "Quantity must be non-negative";
     if (form.purchasePrice === "" || Number(form.purchasePrice) < 0)
       newErrors.purchasePrice = "Purchase price must be non-negative";
+    if (
+      form.sellingPrice === "" ||
+      Number(form.sellingPrice) < Number(form.purchasePrice)
+    )
+      newErrors.sellingPrice = "Selling price must be >= purchase price";
+    if (Number(form.sellingPrice) > Number(form.mrp))
+      newErrors.sellingPrice = "Selling price cannot exceed MRP";
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -822,140 +859,349 @@ function BatchModal({
       return;
     }
     onSave({
+      id: selectedBatch ? selectedBatch.id : undefined,
       batchNumber: form.batchNumber.trim(),
       expiryDate: form.expiryDate,
       mrp: Number(form.mrp),
-      sellingPrice: Number(form.mrp),
+      sellingPrice: Number(form.sellingPrice),
       rackLocation: form.rackLocation.trim(),
       quantity: Number(form.quantity),
       purchasePrice: Number(form.purchasePrice),
-      ...(!batchData && {
+      ...(!selectedBatch && {
         medicineId: medicineData.id,
       }),
     });
   };
 
+  const totalStock = batches.reduce((sum, b) => sum + (b.quantity || 0), 0);
+
   return (
     <div className="inv-modal-overlay" onClick={onClose}>
       <motion.div
         className="inv-modal-content"
-        style={{ width: "500px" }}
+        style={{
+          width: "600px",
+          maxHeight: "90vh",
+          display: "flex",
+          flexDirection: "column",
+        }}
         initial={{ opacity: 0, scale: 0.95, y: 20 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.95, y: 20 }}
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="inv-modal-header">
+        <div className="inv-modal-header" style={{ flexShrink: 0 }}>
           <div className="header-title-group">
             <Package size={20} style={{ color: "var(--primary)" }} />
             <h3>
-              {batchData ? `Edit Batch: ${batchData.batchNumber}` : `Add Batch`}
+              {isAddMode || (!selectedBatch && batches.length === 0)
+                ? "Add New Batch"
+                : "Edit Stock"}
             </h3>
           </div>
           <button className="inv-modal-close-btn" onClick={onClose}>
             <X size={18} />
           </button>
         </div>
-        <div className="inv-modal-scroll">
-          <div className="inv-form-grid" style={{ gridTemplateColumns: "1fr" }}>
-            {/* Batch Number */}
-            <div className="form-group">
-              <label>Batch Number *</label>
-              <input
-                required
-                placeholder="e.g. B-20241"
-                value={form.batchNumber || ""}
-                onChange={(e) => set("batchNumber", e.target.value)}
-                className={errors.batchNumber ? "input-error" : ""}
-              />
-              {errors.batchNumber && (
-                <span className="field-error">{errors.batchNumber}</span>
+
+        <div
+          className="inv-modal-scroll"
+          style={{ overflowY: "auto", padding: "20px" }}
+        >
+          {!isAddMode && batches.length > 0 && (
+            <div
+              style={{
+                marginBottom: "20px",
+                background: "var(--bg-secondary)",
+                padding: "15px",
+                borderRadius: "8px",
+              }}
+            >
+              <h4 style={{ margin: "0 0 5px 0", color: "var(--text-primary)" }}>
+                {medicineData?.name}
+              </h4>
+              <p
+                style={{
+                  margin: "0 0 15px 0",
+                  color: "var(--text-secondary)",
+                  fontSize: "0.9rem",
+                }}
+              >
+                Total Stock Across All Batches:{" "}
+                <strong style={{ color: "var(--text-primary)" }}>
+                  {totalStock} Units
+                </strong>
+              </p>
+
+              {batches.length > 0 && (
+                <>
+                  <p
+                    style={{
+                      margin: "0 0 10px 0",
+                      fontWeight: "600",
+                      fontSize: "0.9rem",
+                      color: "var(--text-primary)",
+                    }}
+                  >
+                    Select Batch to Edit:
+                  </p>
+                  <div
+                    style={{
+                      maxHeight: "200px",
+                      overflowY: "auto",
+                      border: "1px solid var(--border-color)",
+                      borderRadius: "6px",
+                    }}
+                  >
+                    <table
+                      className="inv-table"
+                      style={{ margin: 0, border: "none" }}
+                    >
+                      <thead style={{ position: "sticky", top: 0, zIndex: 1 }}>
+                        <tr>
+                          <th>Batch Number</th>
+                          <th>Qty</th>
+                          <th>Expiry</th>
+                          <th style={{ width: "80px", textAlign: "center" }}>
+                            Action
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {batches.map((b) => (
+                          <tr
+                            key={b.id}
+                            style={{
+                              background:
+                                selectedBatch?.id === b.id
+                                  ? "var(--hover-bg)"
+                                  : "transparent",
+                            }}
+                          >
+                            <td>{b.batchNumber}</td>
+                            <td>{b.quantity}</td>
+                            <td>
+                              {new Date(b.expiryDate).toLocaleDateString(
+                                "en-GB",
+                                { month: "short", year: "numeric" },
+                              )}
+                            </td>
+                            <td
+                              style={{
+                                textAlign: "center",
+                                padding: "4px 8px",
+                              }}
+                            >
+                              <button
+                                className="action-btn"
+                                style={{
+                                  padding: "4px 12px",
+                                  fontSize: "0.8rem",
+                                  borderRadius: "4px",
+                                  background:
+                                    selectedBatch?.id === b.id
+                                      ? "var(--primary)"
+                                      : "transparent",
+                                  color:
+                                    selectedBatch?.id === b.id
+                                      ? "white"
+                                      : "inherit",
+                                  border:
+                                    selectedBatch?.id === b.id
+                                      ? "1px solid var(--primary)"
+                                      : "1px solid var(--border-color)",
+                                }}
+                                onClick={() => {
+                                  setSelectedBatch(b);
+                                  setForm({
+                                    batchNumber: b.batchNumber || "",
+                                    expiryDate: b.expiryDate
+                                      ? b.expiryDate.split("T")[0]
+                                      : "",
+                                    mrp: b.mrp ? String(b.mrp) : "",
+                                    sellingPrice: b.sellingPrice
+                                      ? String(b.sellingPrice)
+                                      : "",
+                                    purchasePrice: b.purchasePrice
+                                      ? String(b.purchasePrice)
+                                      : "",
+                                    quantity:
+                                      b.quantity !== null &&
+                                      b.quantity !== undefined
+                                        ? String(b.quantity)
+                                        : "",
+                                    rackLocation: b.rackLocation || "",
+                                  });
+                                  setErrors({});
+                                }}
+                              >
+                                {selectedBatch?.id === b.id
+                                  ? "Editing"
+                                  : "Edit"}
+                              </button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </>
               )}
             </div>
+          )}
 
-            {/* Expiry Date */}
-            <div className="form-group">
-              <label>Expiry Date *</label>
-              <input
-                required
-                type="date"
-                value={form.expiryDate || ""}
-                onChange={(e) => set("expiryDate", e.target.value)}
-                className={errors.expiryDate ? "input-error" : ""}
-              />
-              {errors.expiryDate && (
-                <span className="field-error">{errors.expiryDate}</span>
+          {isAddMode || selectedBatch || batches.length === 0 ? (
+            <>
+              {!isAddMode && batches.length > 0 && (
+                <h4
+                  style={{
+                    marginBottom: "15px",
+                    paddingBottom: "10px",
+                    borderBottom: "1px solid var(--border-color)",
+                    color: "var(--primary)",
+                  }}
+                >
+                  Selected Batch: {selectedBatch?.batchNumber}
+                </h4>
               )}
-            </div>
+              <div
+                className="inv-form-grid"
+                style={{ gridTemplateColumns: "1fr" }}
+              >
+                <div className="form-group">
+                  <label>Batch Number *</label>
+                  <input
+                    required
+                    placeholder="e.g. B-20241"
+                    value={form.batchNumber || ""}
+                    onChange={(e) => set("batchNumber", e.target.value)}
+                    className={errors.batchNumber ? "input-error" : ""}
+                  />
+                  {errors.batchNumber && (
+                    <span className="field-error">{errors.batchNumber}</span>
+                  )}
+                </div>
 
-            {/* MRP */}
-            <div className="form-group">
-              <label>MRP (₹) *</label>
-              <input
-                required
-                type="number"
-                step="0.01"
-                placeholder="0.00"
-                value={form.mrp ?? ""}
-                onChange={(e) => set("mrp", e.target.value)}
-                className={errors.mrp ? "input-error" : ""}
-              />
-              {errors.mrp && <span className="field-error">{errors.mrp}</span>}
-            </div>
+                <div className="form-group">
+                  <label>Expiry Date *</label>
+                  <input
+                    required
+                    type="date"
+                    value={form.expiryDate || ""}
+                    onChange={(e) => set("expiryDate", e.target.value)}
+                    className={errors.expiryDate ? "input-error" : ""}
+                  />
+                  {errors.expiryDate && (
+                    <span className="field-error">{errors.expiryDate}</span>
+                  )}
+                </div>
 
-            {/* Purchase Price */}
-            <div className="form-group">
-              <label>Purchase Price (₹) *</label>
-              <input
-                required
-                type="number"
-                step="0.01"
-                placeholder="0.00"
-                value={form.purchasePrice ?? ""}
-                onChange={(e) => set("purchasePrice", e.target.value)}
-                className={errors.purchasePrice ? "input-error" : ""}
-              />
-              {errors.purchasePrice && (
-                <span className="field-error">{errors.purchasePrice}</span>
-              )}
-            </div>
+                <div className="form-group">
+                  <label>MRP (₹) *</label>
+                  <input
+                    required
+                    type="number"
+                    step="0.01"
+                    placeholder="0.00"
+                    value={form.mrp ?? ""}
+                    onChange={(e) => set("mrp", e.target.value)}
+                    className={errors.mrp ? "input-error" : ""}
+                  />
+                  {errors.mrp && (
+                    <span className="field-error">{errors.mrp}</span>
+                  )}
+                </div>
 
-            {/* Quantity */}
-            <div className="form-group">
-              <label>Stock Quantity *</label>
-              <input
-                required
-                type="number"
-                placeholder="0"
-                value={form.quantity ?? ""}
-                onChange={(e) => set("quantity", e.target.value)}
-                className={errors.quantity ? "input-error" : ""}
-              />
-              {errors.quantity && (
-                <span className="field-error">{errors.quantity}</span>
-              )}
-            </div>
+                <div className="form-group">
+                  <label>Selling Price (₹) *</label>
+                  <input
+                    required
+                    type="number"
+                    step="0.01"
+                    placeholder="0.00"
+                    value={form.sellingPrice ?? ""}
+                    onChange={(e) => set("sellingPrice", e.target.value)}
+                    className={errors.sellingPrice ? "input-error" : ""}
+                  />
+                  {errors.sellingPrice && (
+                    <span className="field-error">{errors.sellingPrice}</span>
+                  )}
+                </div>
 
-            {/* Rack Location */}
-            <div className="form-group">
-              <label>Rack Location</label>
-              <input
-                required
-                placeholder="e.g. A-12"
-                value={form.rackLocation || ""}
-                onChange={(e) => set("rackLocation", e.target.value)}
+                <div className="form-group">
+                  <label>Purchase Price (₹) *</label>
+                  <input
+                    required
+                    type="number"
+                    step="0.01"
+                    placeholder="0.00"
+                    value={form.purchasePrice ?? ""}
+                    onChange={(e) => set("purchasePrice", e.target.value)}
+                    className={errors.purchasePrice ? "input-error" : ""}
+                  />
+                  {errors.purchasePrice && (
+                    <span className="field-error">{errors.purchasePrice}</span>
+                  )}
+                </div>
+
+                <div className="form-group">
+                  <label>Stock Quantity *</label>
+                  <input
+                    required
+                    type="number"
+                    placeholder="0"
+                    value={form.quantity ?? ""}
+                    onChange={(e) => set("quantity", e.target.value)}
+                    className={errors.quantity ? "input-error" : ""}
+                  />
+                  {errors.quantity && (
+                    <span className="field-error">{errors.quantity}</span>
+                  )}
+                </div>
+
+                <div className="form-group">
+                  <label>Rack Location</label>
+                  <input
+                    required
+                    placeholder="e.g. A-12"
+                    value={form.rackLocation || ""}
+                    onChange={(e) => set("rackLocation", e.target.value)}
+                  />
+                </div>
+              </div>
+            </>
+          ) : (
+            <div
+              style={{
+                padding: "40px 20px",
+                textAlign: "center",
+                color: "var(--text-secondary)",
+              }}
+            >
+              <Package
+                size={40}
+                style={{ margin: "0 auto 15px", opacity: 0.3 }}
               />
+              <p style={{ fontSize: "1.1rem" }}>
+                Please select a batch from the list above to edit its stock.
+              </p>
             </div>
-          </div>
+          )}
         </div>
-        <div className="inv-modal-footer">
+        <div className="inv-modal-footer" style={{ flexShrink: 0 }}>
           <button className="inv-modal-btn cancel" onClick={onClose}>
             Cancel
           </button>
           <button
             className="inv-modal-btn confirm"
             onClick={handleSave}
-            disabled={saving}
+            disabled={
+              saving || (!isAddMode && batches.length > 0 && !selectedBatch)
+            }
+            style={{
+              opacity:
+                !isAddMode && batches.length > 0 && !selectedBatch ? 0.5 : 1,
+            }}
           >
             {saving ? (
               <>
@@ -964,7 +1210,9 @@ function BatchModal({
             ) : (
               <>
                 <CheckCircle2 size={16} />{" "}
-                {batchData ? "Update Batch" : "Add Batch"}
+                {isAddMode || (!selectedBatch && batches.length === 0)
+                  ? "Add Batch"
+                  : "Update Batch"}
               </>
             )}
           </button>
@@ -997,6 +1245,7 @@ export default function InventoryCRUD({
   const [categoriesList, setCategoriesList] = useState([]);
   const [batchModalOpen, setBatchModalOpen] = useState(false);
   const [editBatchTarget, setEditBatchTarget] = useState(null);
+  const [isAddingNewBatch, setIsAddingNewBatch] = useState(false);
   const [activeMedicineForBatch, setActiveMedicineForBatch] = useState(null);
   const [savingBatch, setSavingBatch] = useState(false);
   const [showAnalyticsModal, setShowAnalyticsModal] = useState(false);
@@ -1154,22 +1403,19 @@ export default function InventoryCRUD({
   );
 
   const handleEditStock = (medicine) => {
-    const batches = medicine.inventoryBatches || [];
-    if (batches.length === 0) {
-      setActiveMedicineForBatch(medicine);
-      setEditBatchTarget(null);
-      setBatchModalOpen(true);
-    } else {
-      setActiveMedicineForBatch(medicine);
-      setEditBatchTarget(batches[0]);
-      setBatchModalOpen(true);
-    }
+    setActiveMedicineForBatch(medicine);
+    setEditBatchTarget(null);
+    setIsAddingNewBatch(false);
+    setBatchModalOpen(true);
   };
 
   const handleSaveBatch = async (payload) => {
     setSavingBatch(true);
     try {
-      if (editBatchTarget) {
+      if (payload.id) {
+        await updateBatch(payload.id, payload);
+        showToast("Batch updated successfully", "success");
+      } else if (editBatchTarget) {
         await updateBatch(editBatchTarget.id, payload);
         showToast("Batch updated successfully", "success");
       } else {
@@ -1336,7 +1582,10 @@ export default function InventoryCRUD({
           quantity: Number(form.quantity),
           expiryDate: form.expiryDate,
           mrp: Number(form.mrp),
-          sellingPrice: Number(form.mrp),
+          sellingPrice:
+            form.sellingPrice !== undefined
+              ? Number(form.sellingPrice)
+              : Number(form.mrp),
           purchasePrice: form.purchaseCost ? Number(form.purchaseCost) : 0,
         };
 
@@ -1830,11 +2079,13 @@ export default function InventoryCRUD({
             onAddBatch={(medicine) => {
               setActiveMedicineForBatch(medicine);
               setEditBatchTarget(null);
+              setIsAddingNewBatch(true);
               setBatchModalOpen(true);
             }}
             onEditBatch={(batch, medicine) => {
               setActiveMedicineForBatch(medicine);
               setEditBatchTarget(batch);
+              setIsAddingNewBatch(false);
               setBatchModalOpen(true);
             }}
           />
@@ -1845,10 +2096,12 @@ export default function InventoryCRUD({
               setBatchModalOpen(false);
               setEditBatchTarget(null);
               setActiveMedicineForBatch(null);
+              setIsAddingNewBatch(false);
             }}
             onSave={handleSaveBatch}
             batchData={editBatchTarget}
             medicineData={activeMedicineForBatch}
+            isAddMode={isAddingNewBatch}
             showToast={showToast}
             saving={savingBatch}
           />

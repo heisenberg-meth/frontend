@@ -180,6 +180,21 @@ api.interceptors.response.use(
       isRefreshing = true;
 
       try {
+        await axios.post(
+          `${getBaseUrl()}/auth/refresh`,
+          localStorage.getItem("viyan_refresh_token")
+            ? { refreshToken: localStorage.getItem("viyan_refresh_token") }
+            : {},
+          {
+            withCredentials: true,
+            headers: {
+              ...(import.meta.env.DEV && {
+                "ngrok-skip-browser-warning": "69420",
+              }),
+            },
+          },
+        );
+
         processQueue(null, null);
         return api(originalRequest);
       } catch (refreshError) {
