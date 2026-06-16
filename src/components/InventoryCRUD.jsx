@@ -198,6 +198,28 @@ function MedicineModal({
       );
       if (duplicate)
         newErrors.name = "Medicine with this name and batch already exists";
+
+      const purchasePrice = Number(form.purchaseCost || 0);
+      const mrp = Number(form.mrp || 0);
+      const sellingPrice =
+        form.sellingPrice !== undefined && form.sellingPrice !== ""
+          ? Number(form.sellingPrice)
+          : mrp;
+
+      if (purchasePrice <= 0) {
+        newErrors.purchaseCost = "Purchase cost must be greater than zero";
+      }
+      if (mrp <= purchasePrice) {
+        newErrors.mrp = "MRP must be greater than purchase cost";
+      }
+      if (sellingPrice < purchasePrice) {
+        // We attach it to mrp since sellingPrice is not in the form
+        newErrors.mrp =
+          "Selling price must be greater than or equal to purchase cost";
+      }
+      if (sellingPrice > mrp) {
+        newErrors.mrp = "Selling price cannot exceed MRP";
+      }
     }
 
     setErrors(newErrors);
@@ -375,7 +397,11 @@ function MedicineModal({
                     placeholder="0.00"
                     value={form.purchaseCost ?? ""}
                     onChange={(e) => set("purchaseCost", e.target.value)}
+                    className={errors.purchaseCost ? "input-error" : ""}
                   />
+                  {errors.purchaseCost && (
+                    <span className="field-error">{errors.purchaseCost}</span>
+                  )}
                 </div>
 
                 {/* Quantity & Reorder */}
@@ -1310,6 +1336,7 @@ export default function InventoryCRUD({
           quantity: Number(form.quantity),
           expiryDate: form.expiryDate,
           mrp: Number(form.mrp),
+          sellingPrice: Number(form.mrp),
           purchasePrice: form.purchaseCost ? Number(form.purchaseCost) : 0,
         };
 
