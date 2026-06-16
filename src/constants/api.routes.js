@@ -25,7 +25,7 @@ export const API_ROUTES = {
   INVENTORY_CATEGORIES: "/inventory/categories",
   INVENTORY_MANUFACTURERS: "/inventory/manufacturers",
   INVENTORY_BATCHES: "/inventory/batches",
-  INVENTORY_LOW_STOCK: "/inventory/medicines/low-stock",
+  INVENTORY_LOW_STOCK: "/inventory/alerts/low-stock",
   INVENTORY_MEDICINES_AUTOCOMPLETE: "/inventory/medicines/autocomplete",
   INVENTORY_MASTER: "/inventory/medicine-master",
   INVENTORY_BATCH_RECALL: "/inventory/batch-recall",

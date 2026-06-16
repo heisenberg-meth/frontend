@@ -8,6 +8,7 @@ const DashboardLayout = lazy(() => import("../layouts/DashboardLayout"));
 const Auth = lazy(() => import("../components/Auth"));
 const PageErrorBoundary = lazy(() => import("../components/PageErrorBoundary"));
 const LoadingScreen = lazy(() => import("../components/LoadingScreen"));
+const NotFound = lazy(() => import("../components/NotFound"));
 
 // Admin pages
 const AdminLogin = lazy(() => import("../pages/admin/AdminLogin"));
@@ -443,7 +444,7 @@ export default function AppRoutes({
         </Route>
 
         {/* 404 Redirect */}
-        <Route path="*" element={<Navigate to="/dashboard" replace />} />
+        <Route path="*" element={<NotFound />} />
       </Routes>
     </Suspense>
   );
