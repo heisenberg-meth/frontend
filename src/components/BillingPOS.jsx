@@ -225,7 +225,7 @@ export default function BillingPOS({
       return [];
     }
   });
-  const [discount, setDiscount] = useState(0);
+  const [discount, setDiscount] = useState("");
   const [showPreview, setShowPreview] = useState(false);
   const [activeInvoice, setActiveInvoice] = useState(null);
   const [paymentMode, setPaymentMode] = useState("CASH");
@@ -387,25 +387,25 @@ export default function BillingPOS({
 
   const subtotal = useMemo(
     () =>
-      lineItems.reduce(
-        (acc, item) => acc + safeNumber(item.price) * safeNumber(item.qty),
-        0,
-      ),
+      lineItems.reduce((acc, item) => {
+        const lineGross = safeNumber(item.price) * safeNumber(item.qty);
+        const lineDisc = lineGross * (safeNumber(item.discPercent) / 100);
+        return acc + (lineGross - lineDisc);
+      }, 0),
     [lineItems],
   );
   const tax = useMemo(
     () =>
-      lineItems.reduce(
-        (acc, item) =>
-          acc +
-          safeNumber(item.price) *
-            safeNumber(item.qty) *
-            (safeNumber(item.gst) / 100),
-        0,
-      ),
+      lineItems.reduce((acc, item) => {
+        const lineGross = safeNumber(item.price) * safeNumber(item.qty);
+        const lineDisc = lineGross * (safeNumber(item.discPercent) / 100);
+        const taxableAmount = lineGross - lineDisc;
+        return acc + taxableAmount * (safeNumber(item.gst) / 100);
+      }, 0),
     [lineItems],
   );
-  const discountAmount = subtotal * (safeNumber(discount) / 100);
+  const discountPercentage = Number(discount || 0);
+  const discountAmount = subtotal * (discountPercentage / 100);
   const grandTotal = Math.max(0, subtotal + tax - discountAmount);
 
   const avgGst =
@@ -472,6 +472,7 @@ export default function BillingPOS({
           gst: safeNumber(med.gst || med.gstPercentage || med.gstRate),
           total: price,
           discount: 0,
+          discPercent: 0,
         },
       ];
     });
@@ -549,7 +550,7 @@ export default function BillingPOS({
         subtotal,
         cgst: cgstAmt,
         sgst: sgstAmt,
-        discountPercentage: safeNumber(discount),
+        discountPercentage: discountPercentage,
         discountAmount: discountAmount,
         totalAmount: grandTotal,
         paymentMethod: paymentMode,
@@ -577,18 +578,20 @@ export default function BillingPOS({
       setDraftSaving(false);
     }
   }, [
-    user,
+    user.branchId,
     grandTotal,
     lineItems,
-    patient,
+    showToast,
     isWalkIn,
+    patient.id,
+    patient.name,
+    patient.phone,
     subtotal,
     cgstAmt,
     sgstAmt,
-    discount,
+    discountPercentage,
     discountAmount,
     paymentMode,
-    showToast,
   ]);
 
   const handlePrint = useCallback(
@@ -621,16 +624,25 @@ export default function BillingPOS({
             subtotal,
             cgst: cgstAmt,
             sgst: sgstAmt,
-            discount,
+            discount: discountAmount,
+            gstAmount: tax,
             total: grandTotal,
           };
 
       const itemsRows = resolveInvoiceItems(invData)
         .map(normalizeInvoiceItem)
-        .map(
-          (i) =>
-            `<tr><td style="padding:8px;border-bottom:1px solid #eee">${escapeHtml(i.name)}</td><td style="text-align:center;border-bottom:1px solid #eee">${escapeHtml(i.qty)}</td><td style="text-align:center;border-bottom:1px solid #eee">₹${safeNumber(i.price).toFixed(2)}</td><td style="text-align:right;border-bottom:1px solid #eee">₹${(safeNumber(i.price) * safeNumber(i.qty)).toFixed(2)}</td></tr>`,
-        )
+        .map((i) => {
+          const iPrice = safeNumber(i.price);
+          const iQty = safeNumber(i.qty);
+          const iGst = safeNumber(i.gst || i.gstPercentage);
+          const iDiscP = safeNumber(i.discPercent || i.discountPercent);
+          const lineGross = iPrice * iQty;
+          const lineDisc = lineGross * (iDiscP / 100);
+          const taxable = lineGross - lineDisc;
+          const lineTax = taxable * (iGst / 100);
+          const lineTotal = taxable + lineTax;
+          return `<tr><td style="padding:8px;border-bottom:1px solid #eee">${escapeHtml(i.name)}</td><td style="text-align:center;border-bottom:1px solid #eee">${escapeHtml(iQty)}</td><td style="text-align:center;border-bottom:1px solid #eee">₹${iPrice.toFixed(2)}</td><td style="text-align:center;border-bottom:1px solid #eee">${iGst}%</td><td style="text-align:right;border-bottom:1px solid #eee">₹${lineTax.toFixed(2)}</td><td style="text-align:right;border-bottom:1px solid #eee">₹${lineTotal.toFixed(2)}</td></tr>`;
+        })
         .join("");
 
       const printPatient = resolveInvoiceField(
@@ -672,7 +684,7 @@ table{width:100%;border-collapse:collapse}
 </div>
 <div style="display:flex;justify-content:space-between"><div><b>INVOICE #</b> ${escapeHtml(invData.id)}</div><div><b>DATE:</b> ${escapeHtml(printDate)}</div></div>
 <div style="display:flex;justify-content:space-between;margin-top:8px"><div><b>PATIENT:</b> ${escapeHtml(printPatient)}</div><div><b>PHONE:</b> ${escapeHtml(printPhone)}</div></div>
-<table><thead><tr style="border-bottom:2px solid #000"><th style="text-align:left;padding:8px">Medicine</th><th>Qty</th><th>MRP</th><th style="text-align:right">Total</th></tr></thead><tbody>${itemsRows}</tbody></table>
+<table><thead><tr style="border-bottom:2px solid #000"><th style="text-align:left;padding:8px">Medicine</th><th>Qty</th><th>MRP</th><th>GST%</th><th style="text-align:right">Tax</th><th style="text-align:right">Total</th></tr></thead><tbody>${itemsRows}</tbody></table>
 <div style="margin-top:20px;margin-left:auto;width:200px">
 <div style="display:flex;justify-content:space-between"><span>Subtotal</span><span>₹${printSubtotal.toFixed(2)}</span></div>
 <div style="display:flex;justify-content:space-between"><span>CGST</span><span>₹${printCgst.toFixed(2)}</span></div>
@@ -705,7 +717,8 @@ ${printDiscount > 0 ? `<div style="display:flex;justify-content:space-between"><
       subtotal,
       cgstAmt,
       sgstAmt,
-      discount,
+      discountAmount,
+      tax,
       grandTotal,
       showToast,
     ],
@@ -823,7 +836,11 @@ ${printDiscount > 0 ? `<div style="display:flex;justify-content:space-between"><
       if (newBills.length === 0) {
         setAllBillsLoaded(true);
       } else {
-        setBills((prev) => [...prev, ...newBills]);
+        setBills((prev) => {
+          const map = new Map();
+          [...prev, ...newBills].forEach((bill) => map.set(bill.id, bill));
+          return [...map.values()];
+        });
       }
     } catch (err) {
       console.error(err);
@@ -837,7 +854,7 @@ ${printDiscount > 0 ? `<div style="display:flex;justify-content:space-between"><
     setShowPreview(false);
     setLineItems([]);
     setPatient({ id: null, name: "", phone: "" });
-    setDiscount(0);
+    setDiscount("");
     setPaymentMode("CASH");
     setSearch("");
     setMedResults([]);
@@ -1265,8 +1282,28 @@ ${printDiscount > 0 ? `<div style="display:flex;justify-content:space-between"><
                           <input
                             required
                             className="qty-input"
+                            type="number"
+                            min="1"
+                            max={item.stock}
                             value={item.qty}
-                            readOnly
+                            onChange={(e) => {
+                              const raw = e.target.value;
+                              const qty = Math.max(
+                                1,
+                                Math.min(Number(raw) || 1, item.stock || 9999),
+                              );
+                              setLineItems((prev) =>
+                                prev.map((i) =>
+                                  i.batchId === item.batchId
+                                    ? {
+                                        ...i,
+                                        qty,
+                                        total: qty * safeNumber(i.price),
+                                      }
+                                    : i,
+                                ),
+                              );
+                            }}
                           />
                           <button
                             className="step-btn"
@@ -1280,18 +1317,46 @@ ${printDiscount > 0 ? `<div style="display:flex;justify-content:space-between"><
                         <input
                           required
                           className="pos-input"
-                          style={{ width: "60px", padding: "6px" }}
-                          value={safeNumber(item.price)}
-                          readOnly
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          style={{ width: "70px", padding: "6px" }}
+                          value={item.price}
+                          onChange={(e) => {
+                            const price = Number(e.target.value) || 0;
+                            setLineItems((prev) =>
+                              prev.map((i) =>
+                                i.batchId === item.batchId
+                                  ? {
+                                      ...i,
+                                      price,
+                                      total: price * safeNumber(i.qty),
+                                    }
+                                  : i,
+                              ),
+                            );
+                          }}
                         />
                       </td>
                       <td>
                         <input
                           required
                           className="pos-input"
-                          style={{ width: "50px", padding: "6px" }}
-                          value={safeNumber(item.discPercent)}
-                          readOnly
+                          type="number"
+                          min="0"
+                          max="100"
+                          style={{ width: "55px", padding: "6px" }}
+                          value={item.discPercent || ""}
+                          onChange={(e) => {
+                            const discPercent = Number(e.target.value) || 0;
+                            setLineItems((prev) =>
+                              prev.map((i) =>
+                                i.batchId === item.batchId
+                                  ? { ...i, discPercent }
+                                  : i,
+                              ),
+                            );
+                          }}
                         />
                       </td>
                       <td className="result-meta" style={{ fontWeight: 800 }}>
@@ -1305,9 +1370,13 @@ ${printDiscount > 0 ? `<div style="display:flex;justify-content:space-between"><
                         }}
                       >
                         ₹
-                        {(
-                          safeNumber(item.price) * safeNumber(item.qty)
-                        ).toFixed(2)}
+                        {(() => {
+                          const lineGross =
+                            safeNumber(item.price) * safeNumber(item.qty);
+                          const lineDisc =
+                            lineGross * (safeNumber(item.discPercent) / 100);
+                          return (lineGross - lineDisc).toFixed(2);
+                        })()}
                       </td>
                       <td style={{ textAlign: "right" }}>
                         <button
@@ -1368,7 +1437,7 @@ ${printDiscount > 0 ? `<div style="display:flex;justify-content:space-between"><
                         textAlign: "right",
                       }}
                       value={discount}
-                      onChange={(e) => setDiscount(safeNumber(e.target.value))}
+                      onChange={(e) => setDiscount(e.target.value)}
                       min="0"
                       max="100"
                       type="number"
@@ -1519,7 +1588,7 @@ ${printDiscount > 0 ? `<div style="display:flex;justify-content:space-between"><
                           gstPercentage: it.gst || 0,
                         })),
                         paymentMode: paymentMode,
-                        discountPercentage: safeNumber(discount),
+                        discountPercentage: discountPercentage,
                         discountAmount: discountAmount,
                         branchId: user.branchId,
                       };
@@ -1548,7 +1617,6 @@ ${printDiscount > 0 ? `<div style="display:flex;justify-content:space-between"><
                       ]);
                       setShowPreview(true);
                       showToast(`Invoice generated`, "success");
-                      // Draft is preserved allowing user to close preview and edit.
                       setTimeout(() => barcodeInputRef.current?.focus(), 300);
                     } catch (err) {
                       console.error(err);
