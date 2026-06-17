@@ -1,7 +1,7 @@
 import api from "../api";
 
 export const getNotifications = (params) =>
-  api.get("notifications/history", { params });
+  api.get("notifications", { params });
 
 export const markNotificationRead = (id) => api.put(`notifications/${id}/read`);
 
