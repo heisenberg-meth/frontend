@@ -16,8 +16,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { format } from "date-fns";
 import api from "../api";
 import { normalizeObjectResponse } from "../utils/apiNormalizer";
-import { safeNumber } from '../utils/number.js';
-
+import { safeNumber } from "../utils/number.js";
 
 export default function BulkDisposal({ showToast }) {
   const [batches, setBatches] = useState([]);
@@ -33,15 +32,17 @@ export default function BulkDisposal({ showToast }) {
   });
   const [result, setResult] = useState(null);
   const [overview, setOverview] = useState(null);
+  const [expiryMetrics, setExpiryMetrics] = useState(null);
   const [selectAll, setSelectAll] = useState(false);
 
   const fetchData = useCallback(async () => {
     try {
       setLoading(true);
 
-      const [batchRes, overviewRes] = await Promise.all([
+      const [batchRes, overviewRes, metricsRes] = await Promise.all([
         api.get("/inventory/expired"),
         api.get("/inventory/expired/overview"),
+        api.get("/inventory/expiry-metrics").catch(() => null),
       ]);
 
       const data = normalizeObjectResponse(batchRes);
@@ -49,6 +50,9 @@ export default function BulkDisposal({ showToast }) {
 
       const ov = normalizeObjectResponse(overviewRes);
       setOverview(ov);
+
+      const metrics = normalizeObjectResponse(metricsRes);
+      setExpiryMetrics(metrics);
     } catch (err) {
       console.error(err);
       showToast?.("Failed to load expired inventory", "error");
@@ -221,7 +225,9 @@ export default function BulkDisposal({ showToast }) {
               </div>
             </div>
             <div className="stat-v2-val danger text-rose-500">
-              {overview.totalExpiredProducts}
+              {expiryMetrics
+                ? expiryMetrics.expired
+                : overview.totalExpiredProducts}
             </div>
           </div>
           <div className="stat-card-v2" style={{ cursor: "default" }}>
@@ -355,7 +361,9 @@ export default function BulkDisposal({ showToast }) {
               <span style={{ color: "var(--text-muted)" }}>Value Removed</span>
               <span style={{ fontWeight: 600 }}>
                 {"\u20B9"}
-                {safeNumber(result.stats?.totalValue || 0).toLocaleString("en-IN")}
+                {safeNumber(result.stats?.totalValue || 0).toLocaleString(
+                  "en-IN",
+                )}
               </span>
             </div>
 
@@ -657,7 +665,9 @@ export default function BulkDisposal({ showToast }) {
                   Value:{" "}
                   <strong>
                     {"\u20B9"}
-                    {safeNumber(selectedStats.totalValue).toLocaleString("en-IN")}
+                    {safeNumber(selectedStats.totalValue).toLocaleString(
+                      "en-IN",
+                    )}
                   </strong>
                 </span>
               </div>
@@ -724,7 +734,9 @@ export default function BulkDisposal({ showToast }) {
                   <span>Total Value:</span>{" "}
                   <b>
                     {"\u20B9"}
-                    {safeNumber(selectedStats.totalValue).toLocaleString("en-IN")}
+                    {safeNumber(selectedStats.totalValue).toLocaleString(
+                      "en-IN",
+                    )}
                   </b>
                 </div>
               </div>

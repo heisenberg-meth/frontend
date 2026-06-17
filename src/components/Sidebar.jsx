@@ -97,6 +97,7 @@ export default function Sidebar({ user, onSignOut }) {
           </NavLink>
           <NavLink
             to="/expiry/bulk-disposal"
+            end
             className={({ isActive }) => `nav-link ${isActive ? "active" : ""}`}
           >
             <Trash2 size={18} />

@@ -179,28 +179,19 @@ export default function ExpiryBatchIntelligence({ showToast }) {
         b.batch?.toLowerCase().includes(invSearch.toLowerCase());
       if (!matchesSearch) return false;
       if (invFilter === "ALL") return true;
-      return b.status === invFilter;
+      if (invFilter === "EXPIRED") return b.days < 0;
+      if (invFilter === "DANGER" || invFilter === "< 7 DAYS")
+        return b.days >= 0 && b.days < 7;
+      if (invFilter === "WARNING" || invFilter === "< 30 DAYS")
+        return b.days >= 0 && b.days < 30;
+      if (invFilter === "< 90 DAYS") return b.days >= 0 && b.days < 90;
+      if (invFilter === "SAFE") return b.days >= 90;
+      if (invFilter === "ACTIVE") return b.days >= 0 && b.days <= 365;
+      return b.status === invFilter.toLowerCase();
     });
   }, [batches, invSearch, invFilter]);
 
-  const invFilteredBatches = useMemo(() => {
-    return batches.filter((b) => {
-      if ((b.qty || b.quantity) <= 0) return false;
-      const matchesSearch =
-        !invSearch ||
-        b.med?.toLowerCase().includes(invSearch.toLowerCase()) ||
-        b.brand?.toLowerCase().includes(invSearch.toLowerCase()) ||
-        b.batch?.toLowerCase().includes(invSearch.toLowerCase());
-      if (!matchesSearch) return false;
-      if (invFilter === "ALL") return true;
-      if (invFilter === "EXPIRED") return b.days < 0;
-      if (invFilter === "ACTIVE") return b.days >= 0 && b.days <= 365;
-      if (invFilter === "< 7 DAYS") return b.days >= 0 && b.days < 7;
-      if (invFilter === "< 30 DAYS") return b.days >= 0 && b.days < 30;
-      if (invFilter === "< 90 DAYS") return b.days >= 0 && b.days < 90;
-      return b.status === invFilter;
-    });
-  }, [batches, invSearch, invFilter]);
+  const invFilteredBatches = filteredBatches;
 
   const dynamicStats = useMemo(() => {
     const activeBatches = batches.filter((b) => (b.qty || b.quantity) > 0);
