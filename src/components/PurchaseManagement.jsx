@@ -8,6 +8,11 @@ import {
   createPurchaseOrder,
   receivePurchaseOrder,
 } from "../services/purchases.service.js";
+import {
+  getSupplierCreditBalance,
+  getCreditNotes,
+  applyCreditNote,
+} from "../services/supplier-returns.service.js";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import {
@@ -258,6 +263,15 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
   );
   const [supplierInvNo, setSupplierInvNo] = useState("");
   const [saving, setSaving] = useState(false);
+
+  /* ── Credit Application State ── */
+  const [supplierCredit, setSupplierCredit] = useState({
+    available: 0,
+    notes: [],
+  });
+  const [selectedCreditNoteId, setSelectedCreditNoteId] = useState("");
+  const [creditAmountToApply, setCreditAmountToApply] = useState(0);
+  const [applyingCredit, setApplyingCredit] = useState(false);
 
   const filteredMedicines = medicines.filter((m) =>
     (m.name || "").toLowerCase().includes(medicineSearch.toLowerCase()),
@@ -593,7 +607,83 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
   const closeDrawer = () => {
     setDrawer(null);
     setSelectedRow(null);
+    setSupplierCredit({ available: 0, notes: [] });
+    setSelectedCreditNoteId("");
+    setCreditAmountToApply(0);
     resetForm();
+  };
+
+  const fetchSupplierCredits = async (supplierId) => {
+    try {
+      const [balanceRes, notesRes] = await Promise.all([
+        getSupplierCreditBalance(supplierId),
+        getCreditNotes({ supplierId, status: "ISSUED,PARTIAL" }),
+      ]);
+      setSupplierCredit({
+        available: balanceRes.data?.data?.availableCredit || 0,
+        notes: notesRes.data?.data || [],
+      });
+    } catch (err) {
+      console.error("Failed to fetch supplier credits", err);
+    }
+  };
+
+  useEffect(() => {
+    if (drawer === "invoice-detail" && selectedRow) {
+      const supplierId = selectedRow.supplierId || selectedRow.supplier?.id;
+      if (
+        supplierId &&
+        (selectedRow.paymentStatus || selectedRow.status) !== "PAID"
+      ) {
+        setTimeout(() => {
+          fetchSupplierCredits(supplierId);
+        }, 0);
+      }
+    }
+  }, [drawer, selectedRow]);
+
+  const handleApplyCredit = async () => {
+    if (!selectedCreditNoteId || creditAmountToApply <= 0) {
+      showToast("Select a credit note and enter a valid amount", "warning");
+      return;
+    }
+    setApplyingCredit(true);
+    try {
+      await applyCreditNote(selectedCreditNoteId, {
+        purchaseInvoiceId: selectedRow.id,
+        amountToApply: safeNumber(creditAmountToApply),
+      });
+      showToast("Credit applied successfully", "success");
+
+      const supplierId = selectedRow.supplierId || selectedRow.supplier?.id;
+      if (supplierId) {
+        fetchSupplierCredits(supplierId);
+      }
+      setSelectedCreditNoteId("");
+      setCreditAmountToApply(0);
+      refreshData();
+
+      setSelectedRow((prev) => ({
+        ...prev,
+        balanceAmount:
+          (prev.balanceAmount || prev.totalAmount || prev.total || 0) -
+          creditAmountToApply,
+        paidAmount: (prev.paidAmount || 0) + creditAmountToApply,
+        paymentStatus:
+          (prev.balanceAmount || prev.totalAmount || prev.total || 0) -
+            creditAmountToApply <=
+          0
+            ? "PAID"
+            : "PARTIALLY_PAID",
+      }));
+    } catch (err) {
+      showToast(
+        err.response?.data?.message || err.message || "Failed to apply credit",
+        "error",
+      );
+    } finally {
+      setApplyingCredit(false);
+    }
   };
 
   useEffect(() => {
@@ -1978,7 +2068,151 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
                           ).toFixed(2)}
                         </span>
                       </div>
+
+                      {selectedRow?.paidAmount !== undefined && (
+                        <>
+                          <div
+                            style={{
+                              display: "flex",
+                              justifyContent: "space-between",
+                              marginBottom: "8px",
+                              marginTop: "8px",
+                              color: "var(--success)",
+                            }}
+                          >
+                            <span>Paid</span>{" "}
+                            <span>
+                              ₹
+                              {safeNumber(selectedRow?.paidAmount || 0).toFixed(
+                                2,
+                              )}
+                            </span>
+                          </div>
+                          <div
+                            style={{
+                              display: "flex",
+                              justifyContent: "space-between",
+                              fontWeight: 800,
+                              fontSize: "16px",
+                              color: "var(--danger)",
+                            }}
+                          >
+                            <span>Balance Due</span>{" "}
+                            <span>
+                              ₹
+                              {safeNumber(
+                                selectedRow?.balanceAmount || 0,
+                              ).toFixed(2)}
+                            </span>
+                          </div>
+                        </>
+                      )}
                     </div>
+
+                    {supplierCredit.notes.length > 0 &&
+                      selectedRow &&
+                      safeNumber(
+                        selectedRow.balanceAmount ||
+                          selectedRow.totalAmount ||
+                          selectedRow.total ||
+                          0,
+                      ) > 0 && (
+                        <div
+                          className="detail-summary-card"
+                          style={{
+                            marginTop: "16px",
+                            border: "1px dashed var(--primary)",
+                          }}
+                        >
+                          <h4
+                            style={{
+                              marginBottom: "12px",
+                              color: "var(--primary)",
+                            }}
+                          >
+                            Available Supplier Credit: ₹
+                            {supplierCredit.available.toFixed(2)}
+                          </h4>
+                          <div
+                            className="pos-input-group"
+                            style={{ marginBottom: "12px" }}
+                          >
+                            <label>Select Credit Note</label>
+                            <select
+                              className="pos-input"
+                              value={selectedCreditNoteId}
+                              onChange={(e) => {
+                                setSelectedCreditNoteId(e.target.value);
+                                const maxApp = Math.min(
+                                  safeNumber(
+                                    supplierCredit.notes.find(
+                                      (n) => n.id === e.target.value,
+                                    )?.remainingAmount || 0,
+                                  ),
+                                  safeNumber(
+                                    selectedRow.balanceAmount ||
+                                      selectedRow.totalAmount ||
+                                      selectedRow.total ||
+                                      0,
+                                  ),
+                                );
+                                setCreditAmountToApply(maxApp);
+                              }}
+                            >
+                              <option value="">-- Select Credit Note --</option>
+                              {supplierCredit.notes.map((note) => (
+                                <option key={note.id} value={note.id}>
+                                  {note.id.slice(-6).toUpperCase()} - Balance: ₹
+                                  {safeNumber(note.remainingAmount).toFixed(2)}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+                          {selectedCreditNoteId && (
+                            <div
+                              className="pos-input-group"
+                              style={{ marginBottom: "12px" }}
+                            >
+                              <label>Amount to Apply</label>
+                              <input
+                                type="number"
+                                className="pos-input"
+                                value={creditAmountToApply}
+                                max={Math.min(
+                                  safeNumber(
+                                    supplierCredit.notes.find(
+                                      (n) => n.id === selectedCreditNoteId,
+                                    )?.remainingAmount || 0,
+                                  ),
+                                  safeNumber(
+                                    selectedRow.balanceAmount ||
+                                      selectedRow.totalAmount ||
+                                      selectedRow.total ||
+                                      0,
+                                  ),
+                                )}
+                                onChange={(e) =>
+                                  setCreditAmountToApply(e.target.value)
+                                }
+                              />
+                            </div>
+                          )}
+                          <button
+                            className="pos-btn teal"
+                            style={{ width: "100%", marginTop: "8px" }}
+                            disabled={
+                              applyingCredit ||
+                              !selectedCreditNoteId ||
+                              creditAmountToApply <= 0
+                            }
+                            onClick={handleApplyCredit}
+                          >
+                            {applyingCredit
+                              ? "Applying..."
+                              : "Apply Credit to Invoice"}
+                          </button>
+                        </div>
+                      )}
                   </div>
                 )}
               </div>

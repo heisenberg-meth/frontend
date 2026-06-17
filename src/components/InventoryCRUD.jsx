@@ -795,7 +795,6 @@ function BatchModal({
 }) {
   const batches = medicineData?.inventoryBatches || [];
 
-  // Auto-select ONLY if batchData is explicitly passed
   const initialBatch = isAddMode ? null : batchData || null;
 
   const [selectedBatch, setSelectedBatch] = useState(initialBatch);
@@ -1253,8 +1252,6 @@ export default function InventoryCRUD({
   const [activeMedicineForBatch, setActiveMedicineForBatch] = useState(null);
   const [savingBatch, setSavingBatch] = useState(false);
   const [showAnalyticsModal, setShowAnalyticsModal] = useState(false);
-
-  // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
@@ -1285,7 +1282,6 @@ export default function InventoryCRUD({
     ];
   };
 
-  // Summary stats state
   const [summaryStats, setSummaryStats] = useState({
     totalProducts: 0,
     inStock: 0,
@@ -1345,15 +1341,6 @@ export default function InventoryCRUD({
           backendStatus = "EXPIRING_SOON";
         else if (statusFilter === "Expired") backendStatus = "EXPIRED";
 
-        console.log("REQUEST PARAMS");
-        console.table({
-          categoryFilter,
-          statusFilter,
-          backendStatus,
-          categoryId,
-          page: currentPage,
-        });
-
         const medicinesRes = await getMedicines({
           page: currentPage,
           limit,
@@ -1371,16 +1358,6 @@ export default function InventoryCRUD({
             ? medicinesRes.data.data
             : [];
 
-        console.log("API RESPONSE");
-        console.table(
-          items.map((x) => ({
-            name: x.name,
-            stock: x.stock,
-            category: x.category?.name || x.category,
-            status: x.status,
-          })),
-        );
-
         const total = medicinesRes.data?.data?.total ?? items.length;
         const pages = medicinesRes.data?.data?.totalPages ?? 1;
 
@@ -1396,7 +1373,6 @@ export default function InventoryCRUD({
           }
         }
 
-        // Only refresh summary on explicit requests (save/delete), not on page/filter changes
         if (!skipSummary) {
           await loadSummary();
         }
@@ -1507,69 +1483,42 @@ export default function InventoryCRUD({
 
   const filtered = useMemo(() => {
     return medicines.filter((m) => {
-      // 1. Search Filter
       const term = search.toLowerCase().trim();
-      const matchSearch =
+
+      const searchMatch =
         !term ||
         (m.name || "").toLowerCase().includes(term) ||
         (m.genericName || "").toLowerCase().includes(term) ||
         (m.batchNumber || "").toLowerCase().includes(term);
 
-      // 2. Category Filter
-      const matchCat =
+      const categoryMatch =
         categoryFilter === "All" ||
-        categoryFilter === "All Categories" ||
-        String(m.category?.name || m.category || "")
-          .toLowerCase()
-          .trim() === String(categoryFilter).toLowerCase().trim();
+        (m.category?.name || m.category) === categoryFilter;
 
-      // 3. Status Filter
-      let matchStatus = true;
-      if (statusFilter !== "All" && statusFilter !== "All Status") {
-        const qty = m.stock ?? 0;
-        const reorderPt = m.reorderPoint ?? m.reorderLevel ?? 10;
-        const expDate = m.inventoryBatches?.[0]?.expiryDate || m.expiryDate;
-        const isExpired = expDate && new Date(expDate) <= new Date();
-        const isLow = qty > 0 && qty <= reorderPt;
-        const isOut = qty === 0;
+      const stock = m.stock ?? 0;
+      const reorder = m.reorderLevel ?? 10;
 
-        if (statusFilter === "In Stock") {
-          matchStatus = qty > reorderPt && !isExpired;
-        } else if (statusFilter === "Low Stock") {
-          matchStatus = isLow && !isExpired;
-        } else if (
-          statusFilter === "Out of Stock" ||
-          statusFilter === "Out Of Stock"
-        ) {
-          matchStatus = isOut;
-        } else if (statusFilter === "Expired") {
-          matchStatus = isExpired;
-        } else if (statusFilter === "Expiring Soon") {
-          const daysToExpiry = expDate
-            ? Math.ceil(
-                (new Date(expDate) - new Date()) / (1000 * 60 * 60 * 24),
-              )
-            : 999;
-          matchStatus = daysToExpiry > 0 && daysToExpiry <= 30 && !isExpired;
-        }
-      }
+      const isExpired = m.expiryDate && new Date(m.expiryDate) <= new Date();
 
-      console.log(
-        JSON.stringify(
-          {
-            medicine: m.name,
-            category: m.category?.name || m.category,
-            categoryFilter,
-            statusFilter,
-            matchCat,
-            matchStatus,
-          },
-          null,
-          2,
-        ),
-      );
+      const isExpiringSoon =
+        m.expiryDate &&
+        !isExpired &&
+        new Date(m.expiryDate) <
+          new Date(new Date().setDate(new Date().getDate() + 30));
 
-      return matchSearch && matchCat && matchStatus;
+      const isOutOfStock = stock === 0;
+      const isLowStock = stock > 0 && stock <= reorder;
+      const isInStock = stock > reorder;
+
+      const statusMatch =
+        statusFilter === "All Status" ||
+        (statusFilter === "In Stock" && isInStock) ||
+        (statusFilter === "Low Stock" && isLowStock) ||
+        (statusFilter === "Out of Stock" && isOutOfStock) ||
+        (statusFilter === "Expired" && isExpired) ||
+        (statusFilter === "Expiring Soon" && isExpiringSoon);
+
+      return searchMatch && categoryMatch && statusMatch;
     });
   }, [medicines, search, categoryFilter, statusFilter]);
 

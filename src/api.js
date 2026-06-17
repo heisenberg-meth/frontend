@@ -205,6 +205,11 @@ api.interceptors.response.use(
         console.timeEnd("refresh");
         console.log("refresh completed");
 
+        const newToken = refreshRes.data?.data?.token;
+        if (newToken) {
+          localStorage.setItem("viyan_token", newToken);
+        }
+
         if (import.meta.env.DEV) {
           console.log("[AUTH] Refresh successful:", {
             status: refreshRes.status,
@@ -212,7 +217,7 @@ api.interceptors.response.use(
           });
         }
 
-        processQueue(null, null);
+        processQueue(null, newToken);
         return api(originalRequest);
       } catch (refreshError) {
         if (import.meta.env.DEV) {

@@ -89,6 +89,7 @@ export default function Sidebar({ user, onSignOut }) {
           </NavLink>
           <NavLink
             to="/expiry"
+            end
             className={({ isActive }) => `nav-link ${isActive ? "active" : ""}`}
           >
             <CalendarClock size={18} />

@@ -99,5 +99,7 @@ export const API_ROUTES = {
   SUPPLIER_RETURNS: "/supplier-returns",
   SUPPLIER_RETURNS_EXPIRED_GROUPED: "/supplier-returns/expired/grouped",
   SUPPLIER_RETURNS_EXPIRED_SUMMARY: "/supplier-returns/expired/summary",
-  SUPPLIER_RETURNS_CREDIT_NOTES: "/supplier-returns/credit-notes",
+  SUPPLIER_RETURNS_CREDIT_NOTES: "/purchase/credit-notes",
+  PURCHASE_SUPPLIER_CREDIT_BALANCE: "/purchase/suppliers/{id}/credit-balance",
+  PURCHASE_CREDIT_NOTE_APPLY: "/purchase/credit-notes/{id}/apply",
 };

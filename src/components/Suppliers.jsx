@@ -27,6 +27,7 @@ import {
   updateSupplier,
   deleteSupplier,
 } from "../services/suppliers.service.js";
+import { getSupplierCreditBalance } from "../services/supplier-returns.service.js";
 
 function CustomDropdown({ value, onChange, options, placeholder = "Select" }) {
   const [isOpen, setIsOpen] = useState(false);
@@ -434,8 +435,18 @@ export default function Suppliers({ showToast }) {
   const [modalOpen, setModalOpen] = useState(false);
   const [editTarget, setEditTarget] = useState(null);
   const [viewTarget, setViewTarget] = useState(null);
+  const [creditBalance, setCreditBalance] = useState(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    if (viewTarget) {
+      setCreditBalance(null);
+      getSupplierCreditBalance(viewTarget.id)
+        .then((res) => setCreditBalance(res.data.balance || 0))
+        .catch(() => setCreditBalance(0));
+    }
+  }, [viewTarget]);
 
   const loadSuppliers = useCallback(async () => {
     setLoading(true);
@@ -912,9 +923,22 @@ export default function Suppliers({ showToast }) {
                 <div className="detail-item">
                   <label>Drug Specialties</label>
                   <span>
-                    {(viewTarget.drugCategories || viewTarget.categories || []).length > 0
-                      ? (viewTarget.drugCategories || viewTarget.categories || []).join(", ")
+                    {(viewTarget.drugCategories || viewTarget.categories || [])
+                      .length > 0
+                      ? (
+                          viewTarget.drugCategories ||
+                          viewTarget.categories ||
+                          []
+                        ).join(", ")
                       : "—"}
+                  </span>
+                </div>
+                <div className="detail-item">
+                  <label>Available Credit</label>
+                  <span className="font-bold text-green-500">
+                    {creditBalance === null
+                      ? "Loading..."
+                      : `₹${creditBalance.toFixed(2)}`}
                   </span>
                 </div>
               </div>
