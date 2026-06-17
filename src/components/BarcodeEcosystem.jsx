@@ -810,7 +810,31 @@ export default function BarcodeEcosystem({ showToast }) {
                     gridTemplateColumns: "1fr 1fr",
                     gap: "20px",
                   }}
-                ></div>
+                >
+                  <div className="pos-input-group">
+                    <label className="p-label">LABEL QUANTITY</label>
+                    <input
+                      type="number"
+                      min="1"
+                      max="100"
+                      value={labelQty}
+                      onChange={(e) =>
+                        setLabelQty(Math.max(1, parseInt(e.target.value) || 1))
+                      }
+                      className="pos-input"
+                      style={{
+                        background: "var(--surface-container)",
+                        border: "1px solid var(--outline-variant)",
+                        borderRadius: "12px",
+                        padding: "8px 12px",
+                        color: "var(--text)",
+                        fontFamily: "'Outfit', sans-serif",
+                        fontSize: "14px",
+                        width: "100%",
+                      }}
+                    />
+                  </div>
+                </div>
                 <div
                   style={{ display: "flex", gap: "12px", marginTop: "24px" }}
                 >

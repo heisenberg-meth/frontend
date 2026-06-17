@@ -106,7 +106,12 @@ function Spinner({ size = 14 }) {
 }
 
 const safeNumber = (value) => {
-  const num = safeNumber(value);
+  if (value === null || value === undefined || value === "") {
+    return 0;
+  }
+
+  const num = Number(value);
+
   return Number.isFinite(num) ? num : 0;
 };
 
