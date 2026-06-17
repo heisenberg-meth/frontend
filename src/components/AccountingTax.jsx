@@ -16,6 +16,7 @@ import {
   CheckCircle,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { safeNumber } from "../utils/number.js";
 import {
   getAccountingData,
   createExpense,
@@ -106,7 +107,7 @@ export default function AccountingTax({ showToast }) {
         date: expenseForm.date || new Date().toISOString(),
         category: expenseForm.category,
         description: expenseForm.description,
-        amount: Number(expenseForm.amount),
+        amount: safeNumber(expenseForm.amount),
         paymentMethod: expenseForm.paymentMethod,
         hasReceipt: expenseForm.receipt,
       };

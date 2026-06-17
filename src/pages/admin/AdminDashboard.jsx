@@ -7,6 +7,7 @@ import {
   DollarSign,
   Clock,
 } from "lucide-react";
+import { safeNumber } from "../../utils/number.js";
 import {
   LineChart,
   Line,
@@ -103,7 +104,7 @@ export default function AdminDashboard() {
     },
     {
       label: "Revenue (MTD)",
-      value: `₹${Number(stats.revenue).toLocaleString()}`,
+      value: `₹${safeNumber(stats.revenue).toLocaleString()}`,
       icon: DollarSign,
       color: "#10b981",
     },

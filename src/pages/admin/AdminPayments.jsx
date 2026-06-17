@@ -1,6 +1,8 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { adminApi } from "../../services/admin.service";
 import { Search, RotateCcw, CheckCircle, XCircle } from "lucide-react";
+import { safeNumber } from '../../utils/number.js';
+
 
 const STATUS_COLORS = {
   SUCCESS: { bg: "#22c55e" },
@@ -145,7 +147,7 @@ export default function AdminPayments() {
                     </code>
                   </td>
                   <td>
-                    <strong>₹{Number(p.amount).toLocaleString()}</strong>
+                    <strong>₹{safeNumber(p.amount).toLocaleString()}</strong>
                   </td>
                   <td>{p.paymentMethod || p.paymentProvider || "—"}</td>
                   <td>

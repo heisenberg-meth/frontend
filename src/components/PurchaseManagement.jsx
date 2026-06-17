@@ -27,6 +27,8 @@ import {
   Check,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { safeNumber } from "../utils/number.js";
+
 function Spinner({ size = 14 }) {
   return (
     <Loader2 size={size} style={{ animation: "spin 0.8s linear infinite" }} />
@@ -125,13 +127,13 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
           batchNumber,
           expiryDate,
           purchasePrice: priorItem?.purchasePrice
-            ? Number(priorItem.purchasePrice)
+            ? safeNumber(priorItem.purchasePrice)
             : unitPrice,
           mrp: priorItem?.sellingPrice
-            ? Number(priorItem.sellingPrice)
+            ? safeNumber(priorItem.sellingPrice)
             : item.mrp ||
               item.sellingPrice ||
-              (unitPrice ? (Number(unitPrice) * 1.2).toFixed(2) : 0),
+              (unitPrice ? (safeNumber(unitPrice) * 1.2).toFixed(2) : 0),
         };
       }),
     );
@@ -301,7 +303,7 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
                 field === "purchasePrice" ||
                 field === "sellingPrice" ||
                 field === "gstPercentage"
-                  ? Number(value)
+                  ? safeNumber(value)
                   : value,
             }
           : item,
@@ -419,8 +421,8 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
       body: (order.items || []).map((it) => [
         it.medicine?.name || it.medicineName || it.name || "Unknown",
         String(it.quantity || it.qty || 0),
-        `Rs. ${Number(it.purchasePrice || it.unitPrice || it.price || 0).toFixed(2)}`,
-        `Rs. ${Number((it.quantity || it.qty || 0) * (it.purchasePrice || it.unitPrice || it.price || 0)).toFixed(2)}`,
+        `Rs. ${safeNumber(it.purchasePrice || it.unitPrice || it.price || 0).toFixed(2)}`,
+        `Rs. ${safeNumber((it.quantity || it.qty || 0) * (it.purchasePrice || it.unitPrice || it.price || 0)).toFixed(2)}`,
       ]),
       headStyles: { fillColor: [13, 148, 136], textColor: 255 }, // teal color (matches the theme)
       alternateRowStyles: { fillColor: [245, 245, 245] },
@@ -438,14 +440,14 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
     const totalVal = order.totalAmount || order.total || 0;
 
     doc.text(`Subtotal:`, 130, finalY);
-    doc.text(`Rs. ${Number(subtotalVal).toFixed(2)}`, 165, finalY);
+    doc.text(`Rs. ${safeNumber(subtotalVal).toFixed(2)}`, 165, finalY);
 
     doc.text(`GST:`, 130, finalY + 6);
-    doc.text(`Rs. ${Number(gstVal).toFixed(2)}`, 165, finalY + 6);
+    doc.text(`Rs. ${safeNumber(gstVal).toFixed(2)}`, 165, finalY + 6);
 
     doc.setFont("helvetica", "bold");
     doc.text(`Total Amount:`, 130, finalY + 14);
-    doc.text(`Rs. ${Number(totalVal).toFixed(2)}`, 165, finalY + 14);
+    doc.text(`Rs. ${safeNumber(totalVal).toFixed(2)}`, 165, finalY + 14);
 
     doc.save(`${docType.replace(" ", "_")}_${docNum}.pdf`);
     showToast("PDF downloaded successfully", "success");
@@ -487,6 +489,17 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
       showToast("Please enter expiry date for all medicines", "error");
       return;
     }
+
+    for (const item of purchaseItems) {
+      if (!Number.isFinite(item.qty)) {
+        showToast("Invalid Quantity", "error");
+        return;
+      }
+      if (!Number.isFinite(item.purchasePrice)) {
+        showToast("Invalid Price", "error");
+        return;
+      }
+    }
     setSaving(true);
     try {
       const payload = {
@@ -498,9 +511,9 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
           : new Date().toISOString(),
         items: purchaseItems.map((item) => ({
           medicineId: item.id,
-          quantity: Number(item.qty),
-          purchasePrice: Number(item.purchasePrice || 0),
-          sellingPrice: Number(
+          quantity: safeNumber(item.qty),
+          purchasePrice: safeNumber(item.purchasePrice || 0),
+          sellingPrice: safeNumber(
             item.sellingPrice || item.mrp || item.purchasePrice || 0,
           ),
           batchNumber: item.batchNumber.trim(),
@@ -566,10 +579,10 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
           id: item.medicineId || item.medicine?.id,
           name: item.medicine?.name || item.medicineName || item.name || "",
           qty: item.quantity || item.qty || 0,
-          purchasePrice: Number(
+          purchasePrice: safeNumber(
             item.purchasePrice || item.unitPrice || item.price || 0,
           ),
-          gstPercentage: Number(item.gstPercentage || 0),
+          gstPercentage: safeNumber(item.gstPercentage || 0),
           batchNumber: item.batchNumber || "",
           expiryDate: item.expiryDate ? item.expiryDate.split("T")[0] : "",
         })),
@@ -679,7 +692,7 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
     try {
       setIsReceiving(true);
       const itemsToReceive = receiveItems.filter(
-        (item) => Number(item.receivedQuantity) > 0,
+        (item) => safeNumber(item.receivedQuantity) > 0,
       );
       if (itemsToReceive.length === 0) {
         showToast(
@@ -703,7 +716,8 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
 
       // Validation 1: Receive Qty <= Pending Qty
       const exceedsPending = itemsToReceive.find(
-        (item) => Number(item.receivedQuantity) > Number(item.pendingQuantity),
+        (item) =>
+          safeNumber(item.receivedQuantity) > safeNumber(item.pendingQuantity),
       );
       if (exceedsPending) {
         showToast(
@@ -729,7 +743,7 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
 
       // Validation 3: Purchase Price <= 0
       const invalidPrice = itemsToReceive.find(
-        (item) => Number(item.purchasePrice) <= 0,
+        (item) => safeNumber(item.purchasePrice) <= 0,
       );
       if (invalidPrice) {
         showToast(
@@ -740,7 +754,9 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
       }
 
       // Validation 4: MRP <= 0
-      const invalidMRP = itemsToReceive.find((item) => Number(item.mrp) <= 0);
+      const invalidMRP = itemsToReceive.find(
+        (item) => safeNumber(item.mrp) <= 0,
+      );
       if (invalidMRP) {
         showToast(
           `MRP for ${invalidMRP.medicine?.name || invalidMRP.medicineName || invalidMRP.name || "item"} must be greater than 0`,
@@ -753,12 +769,12 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
       const payload = {
         receivedItems: itemsToReceive.map((item) => ({
           medicineId: item.medicineId || item.id,
-          receivedQuantity: Number(item.receivedQuantity),
+          receivedQuantity: safeNumber(item.receivedQuantity),
           batchNumber: item.batchNumber.trim(),
           expiryDate: item.expiryDate,
-          purchasePrice: Number(item.purchasePrice),
-          sellingPrice: Number(item.mrp),
-          mrp: Number(item.mrp),
+          purchasePrice: safeNumber(item.purchasePrice),
+          sellingPrice: safeNumber(item.mrp),
+          mrp: safeNumber(item.mrp),
         })),
       };
       await receivePurchaseOrder(selectedRow.id, payload);
@@ -855,7 +871,7 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
         .filter((s) => s.selectedBatchId && s.quantity > 0)
         .map((s) => ({
           batchId: s.selectedBatchId,
-          quantity: Number(s.quantity),
+          quantity: safeNumber(s.quantity),
           medicineId: s.medicineId,
         }));
 
@@ -893,7 +909,7 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
           .filter((s) => s.selectedBatchId && s.quantity > 0)
           .map((s) => ({
             batchId: s.selectedBatchId,
-            quantity: Number(s.quantity),
+            quantity: safeNumber(s.quantity),
             medicineId: s.medicineId,
           })),
         reason: "Return",
@@ -919,9 +935,9 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
     purchaseItems.some(
       (item) =>
         !item.qty ||
-        Number(item.qty) <= 0 ||
+        safeNumber(item.qty) <= 0 ||
         !item.purchasePrice ||
-        Number(item.purchasePrice) <= 0 ||
+        safeNumber(item.purchasePrice) <= 0 ||
         !item.batchNumber ||
         !item.batchNumber.trim() ||
         !item.expiryDate,
@@ -999,7 +1015,8 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
               "₹" +
               invoices
                 .reduce(
-                  (sum, inv) => sum + Number(inv.totalAmount || inv.total || 0),
+                  (sum, inv) =>
+                    sum + safeNumber(inv.totalAmount || inv.total || 0),
                   0,
                 )
                 .toLocaleString(),
@@ -1020,7 +1037,7 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
               "₹" +
               returns
                 .reduce(
-                  (sum, r) => sum + Number(r.refundAmount || r.value || 0),
+                  (sum, r) => sum + safeNumber(r.refundAmount || r.value || 0),
                   0,
                 )
                 .toLocaleString(),
@@ -1420,14 +1437,14 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
             <b style={{ color: "var(--text)" }}>
               ₹
               {filteredInvoices
-                .reduce((s, i) => s + Number(i.totalAmount || 0), 0)
+                .reduce((s, i) => s + safeNumber(i.totalAmount || 0), 0)
                 .toLocaleString()}
             </b>{" "}
             | GST input credit:{" "}
             <b style={{ color: "var(--primary)" }}>
               ₹
               {filteredInvoices
-                .reduce((s, i) => s + Number(i.gstAmount || 0), 0)
+                .reduce((s, i) => s + safeNumber(i.gstAmount || 0), 0)
                 .toLocaleString()}
             </b>
           </div>
@@ -1875,7 +1892,7 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
                               <td>{item.quantity}</td>
                               <td>
                                 ₹
-                                {Number(
+                                {safeNumber(
                                   item.purchasePrice ||
                                     item.unitPrice ||
                                     item.price ||
@@ -1884,7 +1901,7 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
                               </td>
                               <td style={{ textAlign: "right" }}>
                                 ₹
-                                {Number(
+                                {safeNumber(
                                   item.total ||
                                     item.totalAmount ||
                                     item.quantity *
@@ -1918,7 +1935,7 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
                         <span>Subtotal</span>{" "}
                         <span>
                           ₹
-                          {Number(
+                          {safeNumber(
                             selectedRow?.subtotal ||
                               (selectedRow?.totalAmount &&
                               selectedRow?.gstAmount !== undefined
@@ -1939,7 +1956,7 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
                       >
                         <span>GST</span>{" "}
                         <span>
-                          ₹{Number(selectedRow?.gstAmount || 0).toFixed(2)}
+                          ₹{safeNumber(selectedRow?.gstAmount || 0).toFixed(2)}
                         </span>
                       </div>
                       <div
@@ -1956,7 +1973,7 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
                         <span>TOTAL</span>{" "}
                         <span>
                           ₹
-                          {Number(
+                          {safeNumber(
                             selectedRow?.totalAmount || selectedRow?.total || 0,
                           ).toFixed(2)}
                         </span>
@@ -2125,7 +2142,7 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
                                   newSel[idx] = {
                                     ...sel,
                                     quantity: Math.min(
-                                      Number(e.target.value) || 0,
+                                      safeNumber(e.target.value) || 0,
                                       sel.maxQuantity,
                                     ),
                                   };

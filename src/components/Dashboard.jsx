@@ -19,6 +19,8 @@ import { differenceInDays, format } from "date-fns";
 import api from "../api";
 import { normalizeObjectResponse } from "../utils/apiNormalizer";
 import InventoryAnalyticsModal from "./inventory/InventoryAnalyticsModal";
+import { safeNumber } from '../utils/number.js';
+
 
 /* 🛠️ Helpers 🛠️ */
 const getDays = (d) => {
@@ -29,7 +31,7 @@ const getDays = (d) => {
   }
 };
 const fmt = (n) =>
-  `₹${Number(n).toLocaleString("en-IN", { maximumFractionDigits: 0 })}`;
+  `₹${safeNumber(n).toLocaleString("en-IN", { maximumFractionDigits: 0 })}`;
 
 /* ─── MAIN DASHBOARD ─── */
 export default function Dashboard({
@@ -96,7 +98,7 @@ export default function Dashboard({
       (m) => getStock(m) <= (lowStock || 10),
     ).length;
     const totalValue = (medicines || []).reduce(
-      (s, m) => s + Number(getStock(m)) * Number(getPrice(m)),
+      (s, m) => s + safeNumber(getStock(m)) * safeNumber(getPrice(m)),
       0,
     );
 
@@ -456,7 +458,7 @@ export default function Dashboard({
                     <span>Inventory Loss:</span>{" "}
                     <b className="text-rose-500">
                       ₹
-                      {Number(
+                      {safeNumber(
                         dashboardData.expiredOverview.totalInventoryValue,
                       ).toLocaleString("en-IN")}
                     </b>

@@ -13,6 +13,8 @@ import api from "../api";
 import { useAuth } from "../hooks/useAuth";
 import { API_ROUTES } from "../constants/api.routes.js";
 import SubscriptionCRUD from "./SubscriptionCRUD";
+import { safeNumber } from "../utils/number.js";
+
 export default function SystemSettings({
   user,
   lowStock,
@@ -574,7 +576,7 @@ export default function SystemSettings({
                 min="1"
                 max="100"
                 value={lowStock}
-                onChange={(e) => setLowStock(Number(e.target.value))}
+                onChange={(e) => setLowStock(safeNumber(e.target.value))}
               />
             </div>
             <div className="sys-slider-group">
@@ -589,14 +591,14 @@ export default function SystemSettings({
                 min="7"
                 max="180"
                 value={expiryDays}
-                onChange={(e) => setExpiryDays(Number(e.target.value))}
+                onChange={(e) => setExpiryDays(safeNumber(e.target.value))}
               />
             </div>
           </div>
 
           <div className="sys-card">
             <h3 className="sys-card-title" style={{ marginBottom: 16 }}>
-              🔔 Notification Channels
+              Notification Channels
             </h3>
             <div className="sys-toggle-row">
               <span className="sys-toggle-label">Email</span>

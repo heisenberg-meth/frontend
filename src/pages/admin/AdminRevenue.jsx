@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { adminApi } from "../../services/admin.service";
+import { safeNumber } from "../../utils/number.js";
 import {
   TrendingUp,
   TrendingDown,
@@ -42,7 +43,7 @@ export default function AdminRevenue() {
   if (!overview)
     return <div className="admin-loading-inline">Failed to load</div>;
 
-  const formatCurrency = (val) => `₹${Number(val).toLocaleString()}`;
+  const formatCurrency = (val) => `₹${safeNumber(val).toLocaleString()}`;
 
   const cards = [
     {

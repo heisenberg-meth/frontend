@@ -5,6 +5,8 @@ import { useAuth } from "../hooks/useAuth";
 import { ShieldCheck, Loader2, Sparkles } from "lucide-react";
 import ConfirmModal from "./ConfirmModal";
 import { loadRazorpay } from "../utils/razorpay";
+import { safeNumber } from '../utils/number.js';
+
 
 function Spinner({ size = 14 }) {
   return (
@@ -119,7 +121,7 @@ export default function SubscriptionCRUD({ showToast, user }) {
           : selectedPlan.price.monthly;
 
       const response = await api.post(API_ROUTES.PAYMENTS_CREATE_ORDER, {
-        amount: Number(amount),
+        amount: safeNumber(amount),
         planId: selectedPlan.id,
         planName: selectedPlan.name,
         billingCycle,

@@ -25,9 +25,15 @@ import { motion, AnimatePresence } from "framer-motion";
 import ExcelJS from "exceljs";
 import { saveAs } from "file-saver";
 import api from "../api";
+import { safeNumber } from "../utils/number.js";
+
 function getDays(expiryDate) {
-  const diff = new Date(expiryDate) - new Date();
-  return Math.ceil(diff / (1000 * 60 * 60 * 24));
+  const exp = new Date(expiryDate);
+  const today = new Date();
+  const diff =
+    Date.UTC(exp.getFullYear(), exp.getMonth(), exp.getDate()) -
+    Date.UTC(today.getFullYear(), today.getMonth(), today.getDate());
+  return Math.floor(diff / (1000 * 60 * 60 * 24));
 }
 
 function computeStatus(days, qty) {
@@ -80,7 +86,7 @@ export default function ExpiryBatchIntelligence({ showToast }) {
               exp: b.expiryDate,
               days,
               qty: b.quantity,
-              val: Number(b.quantity) * Number(b.purchasePrice || 0),
+              val: safeNumber(b.quantity) * safeNumber(b.purchasePrice || 0),
               status: computeStatus(days, b.quantity),
               rank: 1,
               received: b.createdAt?.split("T")[0] || "",
@@ -101,7 +107,7 @@ export default function ExpiryBatchIntelligence({ showToast }) {
                 batch: batch.batchNumber || r.id || "",
                 days,
                 qty,
-                val: Number(qty) * Number(batch.purchasePrice || 0),
+                val: safeNumber(qty) * safeNumber(batch.purchasePrice || 0),
                 urgency: days <= 7 ? "danger" : days <= 30 ? "warning" : "info",
                 supplier: batch.supplier?.name || "",
               };
@@ -189,18 +195,25 @@ export default function ExpiryBatchIntelligence({ showToast }) {
       if (invFilter === "ALL") return true;
       if (invFilter === "EXPIRED") return b.days < 0;
       if (invFilter === "ACTIVE") return b.days >= 0 && b.days <= 365;
+      if (invFilter === "< 7 DAYS") return b.days >= 0 && b.days < 7;
+      if (invFilter === "< 30 DAYS") return b.days >= 0 && b.days < 30;
+      if (invFilter === "< 90 DAYS") return b.days >= 0 && b.days < 90;
       return b.status === invFilter;
     });
   }, [batches, invSearch, invFilter]);
 
   const dynamicStats = useMemo(() => {
     const activeBatches = batches.filter((b) => (b.qty || b.quantity) > 0);
-    const expired = activeBatches.filter(
-      (b) => b.days < 0,
+    const expired = activeBatches.filter((b) => b.days < 0).length;
+    const expiring7Days = activeBatches.filter(
+      (b) => b.days >= 0 && b.days < 7,
     ).length;
-    const wk1 = activeBatches.filter((b) => b.days >= 0 && b.days < 7).length;
-    const mo1 = activeBatches.filter((b) => b.days >= 7 && b.days < 30).length;
-    const mo3 = activeBatches.filter((b) => b.days >= 30 && b.days < 90).length;
+    const expiring30Days = activeBatches.filter(
+      (b) => b.days >= 0 && b.days < 30,
+    ).length;
+    const expiring90Days = activeBatches.filter(
+      (b) => b.days >= 0 && b.days < 90,
+    ).length;
     return [
       {
         label: "EXPIRED NOW",
@@ -211,24 +224,24 @@ export default function ExpiryBatchIntelligence({ showToast }) {
       },
       {
         label: "EXPIRING < 7 DAYS",
-        val: wk1,
+        val: expiring7Days,
         col: "var(--warning)",
         icon: CalendarX,
         key: "< 7 DAYS",
       },
       {
         label: "EXPIRING < 30 DAYS",
-        val: mo1,
+        val: expiring30Days,
         col: "var(--warning)",
         icon: CalendarDays,
-        key: "7-30 DAYS",
+        key: "< 30 DAYS",
       },
       {
         label: "EXPIRING < 90 DAYS",
-        val: mo3,
+        val: expiring90Days,
         col: "var(--info)",
         icon: CalendarCheck,
-        key: "30-90 DAYS",
+        key: "< 90 DAYS",
       },
       {
         label: "TOTAL BATCHES",
@@ -247,10 +260,10 @@ export default function ExpiryBatchIntelligence({ showToast }) {
     ).length;
     const urg7 = activeBatches.filter((b) => b.days >= 0 && b.days < 7).length;
     const urg30 = activeBatches.filter(
-      (b) => b.days >= 7 && b.days < 30,
+      (b) => b.days >= 0 && b.days < 30,
     ).length;
     const urg90 = activeBatches.filter(
-      (b) => b.days >= 30 && b.days < 90,
+      (b) => b.days >= 0 && b.days < 90,
     ).length;
     const safe = activeBatches.filter(
       (b) => b.days >= 90 || b.status === "safe",
@@ -430,8 +443,8 @@ export default function ExpiryBatchIntelligence({ showToast }) {
       supplier: newBatch.supplier || newBatch.brand || "Unknown",
       exp: newBatch.exp,
       days: diffDays,
-      qty: Number(newBatch.qty),
-      val: Number(newBatch.val) || 0,
+      qty: safeNumber(newBatch.qty),
+      val: safeNumber(newBatch.val) || 0,
       status,
       rank: 1,
       received: newBatch.received || today.toISOString().split("T")[0],
@@ -466,7 +479,7 @@ export default function ExpiryBatchIntelligence({ showToast }) {
             suggestions.
           </p>
           <div className="purchases-tabs">
-            {["Timeline", "Inventory", "Traceability"].map((t) => (
+            {["Timeline", "Inventory"].map((t) => (
               <button
                 key={t}
                 className={`p-tab ${activeTab === t.toLowerCase() ? "active" : ""}`}
@@ -1414,7 +1427,7 @@ export default function ExpiryBatchIntelligence({ showToast }) {
                       onChange={(e) =>
                         setAlertSettings({
                           ...alertSettings,
-                          warning: Number(e.target.value),
+                          warning: safeNumber(e.target.value),
                         })
                       }
                       style={{ borderColor: "var(--warning)" }}
@@ -1432,66 +1445,12 @@ export default function ExpiryBatchIntelligence({ showToast }) {
                       onChange={(e) =>
                         setAlertSettings({
                           ...alertSettings,
-                          critical: Number(e.target.value),
+                          critical: safeNumber(e.target.value),
                         })
                       }
                       style={{ borderColor: "var(--danger)" }}
                     />
                     <div className="result-meta">Red Alert</div>
-                  </div>
-                </div>
-
-                <div className="config-section">
-                  <div
-                    style={{
-                      fontWeight: 700,
-                      fontSize: "13px",
-                      color: "var(--text-muted)",
-                    }}
-                  >
-                    NOTIFICATION CHANNELS
-                  </div>
-                  <div className="checkbox-row">
-                    <label className="checkbox-item">
-                      <input required type="checkbox" checked readOnly /> In-App
-                    </label>
-                    <label className="checkbox-item">
-                      <input
-                        required
-                        type="checkbox"
-                        checked={alertSettings.email}
-                        onChange={(e) =>
-                          setAlertSettings({
-                            ...alertSettings,
-                            email: e.target.checked,
-                          })
-                        }
-                      />{" "}
-                      Email
-                    </label>
-                    <label className="checkbox-item">
-                      <input
-                        required
-                        type="checkbox"
-                        checked={false}
-                        readOnly
-                      />{" "}
-                      SMS
-                    </label>
-                    <label className="checkbox-item">
-                      <input
-                        required
-                        type="checkbox"
-                        checked={alertSettings.whatsapp}
-                        onChange={(e) =>
-                          setAlertSettings({
-                            ...alertSettings,
-                            whatsapp: e.target.checked,
-                          })
-                        }
-                      />{" "}
-                      WhatsApp
-                    </label>
                   </div>
                 </div>
 
@@ -1643,7 +1602,7 @@ export default function ExpiryBatchIntelligence({ showToast }) {
                       type="number"
                       value={returnQty}
                       onChange={(e) =>
-                        setReturnQty(Math.max(1, Number(e.target.value)))
+                        setReturnQty(Math.max(1, safeNumber(e.target.value)))
                       }
                       style={{ width: "100%" }}
                       min={1}
@@ -1671,7 +1630,10 @@ export default function ExpiryBatchIntelligence({ showToast }) {
                       value={discountPct}
                       onChange={(e) =>
                         setDiscountPct(
-                          Math.max(0, Math.min(100, Number(e.target.value))),
+                          Math.max(
+                            0,
+                            Math.min(100, safeNumber(e.target.value)),
+                          ),
                         )
                       }
                       style={{ width: "100%", marginBottom: "16px" }}
@@ -1704,7 +1666,9 @@ export default function ExpiryBatchIntelligence({ showToast }) {
                       type="number"
                       value={discountDuration}
                       onChange={(e) =>
-                        setDiscountDuration(Math.max(1, Number(e.target.value)))
+                        setDiscountDuration(
+                          Math.max(1, safeNumber(e.target.value)),
+                        )
                       }
                       style={{ width: "100%" }}
                       min={1}
@@ -1944,7 +1908,7 @@ export default function ExpiryBatchIntelligence({ showToast }) {
                       onChange={(e) =>
                         setEditBatch({
                           ...editBatch,
-                          qty: Number(e.target.value),
+                          qty: safeNumber(e.target.value),
                         })
                       }
                     />
@@ -1959,7 +1923,7 @@ export default function ExpiryBatchIntelligence({ showToast }) {
                       onChange={(e) =>
                         setEditBatch({
                           ...editBatch,
-                          val: Number(e.target.value),
+                          val: safeNumber(e.target.value),
                         })
                       }
                     />

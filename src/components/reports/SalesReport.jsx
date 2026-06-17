@@ -16,6 +16,8 @@ import autoTable from "jspdf-autotable";
 import api from "../../api.js";
 import { API_ROUTES } from "../../constants/api.routes.js";
 import { escapeHtml } from "../../utils/escapeHtml";
+import { safeNumber } from '../../utils/number.js';
+
 
 export default function SalesReport({ from, to, showToast }) {
   const [loading, setLoading] = useState(false);
@@ -144,7 +146,7 @@ export default function SalesReport({ from, to, showToast }) {
     if (!data || !data.chart || data.chart.length === 0) return null;
     const width = 800;
     const height = 200;
-    const revenues = data.chart.map((d) => Number(d.revenue || 0));
+    const revenues = data.chart.map((d) => safeNumber(d.revenue || 0));
     const maxRevenue = Math.max(...revenues, 15000);
 
     const points = data.chart

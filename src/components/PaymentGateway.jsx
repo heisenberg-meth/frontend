@@ -2,6 +2,8 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import api from "../api";
 import { API_ROUTES } from "../constants/api.routes.js";
 import { loadRazorpay } from "../utils/razorpay";
+import { safeNumber } from '../utils/number.js';
+
 
 export default function PaymentGateway({ user, onPaymentComplete, amount }) {
   const [status, setStatus] = useState("checkout");
@@ -48,7 +50,7 @@ export default function PaymentGateway({ user, onPaymentComplete, amount }) {
       }
 
       const orderRes = await api.post(API_ROUTES.PAYMENTS_CREATE_ORDER, {
-        amount: Number(amount) || 1,
+        amount: safeNumber(amount) || 1,
         planName: "Subscription",
         _ts: Date.now(),
       });

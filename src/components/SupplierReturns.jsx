@@ -27,6 +27,8 @@ import {
 } from "../services/supplier-returns.service.js";
 import { formatDate } from "../utils/format.js";
 import "../styles/Supplierreturn.css";
+import { safeNumber } from '../utils/number.js';
+
 
 const STATUS_BADGE = {
   DRAFT: { label: "Draft", class: "badge-neutral" },
@@ -395,7 +397,7 @@ export default function SupplierReturns({ showToast }) {
                         </td>
                         <td>
                           {r.returnAmount
-                            ? `$${Number(r.returnAmount).toFixed(2)}`
+                            ? `$${safeNumber(r.returnAmount).toFixed(2)}`
                             : "—"}
                         </td>
                         <td>
@@ -473,7 +475,7 @@ export default function SupplierReturns({ showToast }) {
                         </td>
                         <td>{cn.supplier?.name || "—"}</td>
                         <td>{cn.return?.returnNumber || "—"}</td>
-                        <td>${Number(cn.amount).toFixed(2)}</td>
+                        <td>${safeNumber(cn.amount).toFixed(2)}</td>
                         <td>
                           <Badge status={cn.status} map={CREDIT_NOTE_STATUS} />
                         </td>
@@ -519,7 +521,7 @@ export default function SupplierReturns({ showToast }) {
                 <div className="stat-card">
                   <CreditCard size={24} />
                   <div className="stat-value">
-                    ${Number(expiredSummary.inventoryValue).toFixed(2)}
+                    ${safeNumber(expiredSummary.inventoryValue).toFixed(2)}
                   </div>
                   <div className="stat-label">Inventory Value</div>
                 </div>
@@ -554,7 +556,7 @@ export default function SupplierReturns({ showToast }) {
                       <div className="supplier-group-meta">
                         <span>{group.itemCount} items</span>
                         <span>{group.totalQty} units</span>
-                        <span>${Number(group.totalLoss).toFixed(2)}</span>
+                        <span>${safeNumber(group.totalLoss).toFixed(2)}</span>
                         {expandedGroup === idx ? (
                           <ChevronUp size={18} />
                         ) : (
@@ -584,12 +586,12 @@ export default function SupplierReturns({ showToast }) {
                                 <td>{formatDate(item.expiryDate)}</td>
                                 <td>{item.quantity}</td>
                                 <td>
-                                  ${Number(item.purchasePrice || 0).toFixed(2)}
+                                  ${safeNumber(item.purchasePrice || 0).toFixed(2)}
                                 </td>
                                 <td>
                                   $
                                   {(
-                                    Number(item.purchasePrice || 0) *
+                                    safeNumber(item.purchasePrice || 0) *
                                     item.quantity
                                   ).toFixed(2)}
                                 </td>
@@ -663,7 +665,7 @@ export default function SupplierReturns({ showToast }) {
                 <div className="detail-item">
                   <label>Amount</label>
                   <span>
-                    ${Number(selectedReturn.returnAmount || 0).toFixed(2)}
+                    ${safeNumber(selectedReturn.returnAmount || 0).toFixed(2)}
                   </span>
                 </div>
                 {selectedReturn.approvedAt && (
@@ -705,8 +707,8 @@ export default function SupplierReturns({ showToast }) {
                     <tr key={item.id}>
                       <td>{item.medicine?.name || "—"}</td>
                       <td>{item.quantity}</td>
-                      <td>${Number(item.purchasePrice || 0).toFixed(2)}</td>
-                      <td>${Number(item.lossAmount || 0).toFixed(2)}</td>
+                      <td>${safeNumber(item.purchasePrice || 0).toFixed(2)}</td>
+                      <td>${safeNumber(item.lossAmount || 0).toFixed(2)}</td>
                       <td>{item.reason || "—"}</td>
                     </tr>
                   ))}
@@ -889,12 +891,12 @@ export default function SupplierReturns({ showToast }) {
                                   <td>{item.quantity}</td>
                                   <td>
                                     $
-                                    {Number(item.purchasePrice || 0).toFixed(2)}
+                                    {safeNumber(item.purchasePrice || 0).toFixed(2)}
                                   </td>
                                   <td>
                                     $
                                     {(
-                                      Number(item.purchasePrice || 0) *
+                                      safeNumber(item.purchasePrice || 0) *
                                       item.quantity
                                     ).toFixed(2)}
                                   </td>

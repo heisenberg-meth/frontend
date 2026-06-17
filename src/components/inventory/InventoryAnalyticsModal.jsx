@@ -27,6 +27,8 @@ import {
 } from "recharts";
 import { getMedicines } from "../../services/inventory.service";
 import "../../styles/InventoryAnalyticsModal.css";
+import { safeNumber } from '../../utils/number.js';
+
 
 const fmt = (val) =>
   new Intl.NumberFormat("en-IN", {
@@ -81,10 +83,10 @@ export default function InventoryAnalyticsModal({ isOpen, onClose }) {
         if (qty <= 0) return;
 
         const batch = item.inventoryBatches?.[0] || {};
-        const purchasePrice = Number(
+        const purchasePrice = safeNumber(
           batch.purchasePrice || item.purchasePrice || item.purchaseCost || 0,
         );
-        const mrp = Number(batch.mrp || item.mrp || 0);
+        const mrp = safeNumber(batch.mrp || item.mrp || 0);
         const batchNum = batch.batchNumber || item.batchNumber || "N/A";
         const expDate = batch.expiryDate || item.expiryDate;
 

@@ -18,6 +18,8 @@ import { getLowStockMedicines } from "../services/inventory.service";
 import { getStockAlerts } from "../services/stock.service";
 import { createPurchaseOrder } from "../services/purchases.service";
 import { updateNotificationSettings } from "../services/settings.service";
+import { safeNumber } from '../utils/number.js';
+
 function Spinner({ size = 14 }) {
   return (
     <Loader2 size={size} style={{ animation: "spin 0.8s linear infinite" }} />
@@ -623,7 +625,7 @@ export default function LowStockAlerts({ showToast }) {
         items: supplier.items.map((i) => ({
           medicine: i.id,
           medicineName: i.name,
-          quantity: Number(qty),
+          quantity: safeNumber(qty),
           unitRate: i.purchaseCost || 0,
         })),
         notes: note,

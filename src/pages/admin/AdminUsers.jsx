@@ -22,6 +22,8 @@ import {
   PauseCircle,
 } from "lucide-react";
 import toast from "react-hot-toast";
+import { safeNumber } from '../../utils/number.js';
+
 
 export default function AdminUsers() {
   const [users, setUsers] = useState([]);
@@ -301,7 +303,7 @@ export default function AdminUsers() {
           <select
             value={pageSize}
             onChange={(e) => {
-              setPageSize(Number(e.target.value));
+              setPageSize(safeNumber(e.target.value));
               setPage(1);
             }}
           >

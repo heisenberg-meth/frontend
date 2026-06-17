@@ -1,3 +1,4 @@
+import { safeNumber } from '../../utils/number.js';
 export const normalizeMedicine = (data) => {
   if (!data) return {};
   const batch = data.inventoryBatches?.[0];
@@ -32,13 +33,13 @@ export const normalizeMedicine = (data) => {
     manufacturerId: manufacturerId,
     batchNumber: data.batchNumber || batch?.batchNumber || null,
     expiryDate: data.expiryDate || batch?.expiryDate || null,
-    mrp: Number(data.mrp ?? batch?.mrp ?? 0),
-    purchaseCost: Number(
+    mrp: safeNumber(data.mrp ?? batch?.mrp ?? 0),
+    purchaseCost: safeNumber(
       data.purchaseCost ?? data.purchasePrice ?? batch?.purchasePrice ?? 0,
     ),
-    stock: Number(data.currentStock ?? data.stock ?? data.quantity ?? 0),
-    reorderLevel: Number(data.reorderLevel ?? data.reorderPoint ?? 10),
-    gst: Number(data.gst ?? data.gstPercentage ?? 12),
+    stock: safeNumber(data.currentStock ?? data.stock ?? data.quantity ?? 0),
+    reorderLevel: safeNumber(data.reorderLevel ?? data.reorderPoint ?? 10),
+    gst: safeNumber(data.gst ?? data.gstPercentage ?? 12),
     supplier: data.supplier || "",
     barcode: String(data.barcode || ""),
     hsnCode: String(data.hsnCode || ""),

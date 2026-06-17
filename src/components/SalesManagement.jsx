@@ -31,6 +31,8 @@ import autoTable from "jspdf-autotable";
 import { normalizeArrayResponse } from "../utils/apiNormalizer";
 import { escapeHtml } from "../utils/escapeHtml";
 import "../styles/SalesManagement.css";
+import { safeNumber } from '../utils/number.js';
+
 
 export default function SalesManagement({ showToast, storeProfile }) {
   const { user } = useAuth();
@@ -302,8 +304,8 @@ export default function SalesManagement({ showToast, storeProfile }) {
           `<tr>
             <td>${escapeHtml(it.medicine?.name || it.name || "Unknown")}</td>
             <td>${escapeHtml(String(it.quantity || it.qty || 1))}</td>
-            <td>₹${Number(it.unitPrice || it.price || 0).toFixed(2)}</td>
-            <td>₹${Number((it.quantity || it.qty || 1) * (it.unitPrice || it.price || 0)).toFixed(2)}</td>
+            <td>₹${safeNumber(it.unitPrice || it.price || 0).toFixed(2)}</td>
+            <td>₹${safeNumber((it.quantity || it.qty || 1) * (it.unitPrice || it.price || 0)).toFixed(2)}</td>
           </tr>`,
       )
       .join("");
@@ -358,7 +360,7 @@ export default function SalesManagement({ showToast, storeProfile }) {
             <thead><tr><th>Medicine</th><th>Qty</th><th>Unit Price</th><th>Total</th></tr></thead>
             <tbody>${itemsHtml}</tbody>
           </table>
-          <div class="total">Total Amount: ₹${Number(sale.totalAmount || sale.total || 0).toFixed(2)}</div>
+          <div class="total">Total Amount: ₹${safeNumber(sale.totalAmount || sale.total || 0).toFixed(2)}</div>
         </body>
       </html>`;
 
@@ -501,8 +503,8 @@ export default function SalesManagement({ showToast, storeProfile }) {
       body: (sale.items || []).map((it) => [
         it.medicine?.name || it.name || "Unknown",
         String(it.quantity || it.qty || 1),
-        `Rs. ${Number(it.unitPrice || it.price || 0).toFixed(2)}`,
-        `Rs. ${Number((it.quantity || it.qty || 1) * (it.unitPrice || it.price || 0)).toFixed(2)}`,
+        `Rs. ${safeNumber(it.unitPrice || it.price || 0).toFixed(2)}`,
+        `Rs. ${safeNumber((it.quantity || it.qty || 1) * (it.unitPrice || it.price || 0)).toFixed(2)}`,
       ]),
       headStyles: { fillColor: [41, 128, 185], textColor: 255 },
       alternateRowStyles: { fillColor: [245, 245, 245] },
@@ -515,7 +517,7 @@ export default function SalesManagement({ showToast, storeProfile }) {
     doc.setFont("helvetica", "bold");
     const totalAmount = sale.totalAmount || sale.total || 0;
     doc.text(
-      `Total Amount: Rs. ${Number(totalAmount).toFixed(2)}`,
+      `Total Amount: Rs. ${safeNumber(totalAmount).toFixed(2)}`,
       140,
       finalY,
     );
@@ -1353,7 +1355,7 @@ export default function SalesManagement({ showToast, storeProfile }) {
                             ...prev,
                             [idx]: Math.min(
                               item.quantity,
-                              Math.max(0, Number(e.target.value)),
+                              Math.max(0, safeNumber(e.target.value)),
                             ),
                           }))
                         }

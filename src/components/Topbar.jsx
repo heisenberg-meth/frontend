@@ -24,6 +24,7 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { getBackendOrigin } from "../api.js";
+import { safeNumber } from "../utils/number.js";
 import {
   getNotifications,
   markAllNotificationsRead,
@@ -291,7 +292,7 @@ export default function Topbar({
       id: `inv-${inv.id}`,
       title: inv.id,
       subtitle: `Patient: ${inv.patient}`,
-      meta: `₹${Number(inv.amount || 0).toFixed(2)} • ${inv.status}`,
+      meta: `₹${safeNumber(inv.amount || 0).toFixed(2)} • ${inv.status}`,
       path: "/billing",
       original: inv,
     }));

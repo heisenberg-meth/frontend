@@ -29,6 +29,8 @@ import "./styles/Patients.css";
 import "./styles/Profile.css";
 import "./styles/admin.css";
 import App from "./App.jsx";
+import { safeNumber } from './utils/number.js';
+
 
 // Global logging to catch chunk load errors and unhandled promise rejections
 window.addEventListener("unhandledrejection", (event) => {
@@ -45,7 +47,7 @@ window.addEventListener("error", (event) => {
       "[Global Error] Chunk Load Error detected. Reloading page...",
     );
     const lastReload = sessionStorage.getItem("chunk_reload");
-    if (!lastReload || Date.now() - parseInt(lastReload) > 10000) {
+    if (!lastReload || Date.now() - safeNumber(lastReload) > 10000) {
       sessionStorage.setItem("chunk_reload", Date.now().toString());
       window.location.reload();
     }

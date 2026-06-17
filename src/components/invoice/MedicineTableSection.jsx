@@ -11,6 +11,8 @@ import {
 import api from "../../api.js";
 import { API_ROUTES } from "../../constants/api.routes.js";
 import { normalizeArrayResponse } from "../../utils/apiNormalizer";
+import { safeNumber } from '../../utils/number.js';
+
 
 // ─── Stable blank row factory ───────────────────────────────────────────────
 let _rowId = 0;
@@ -177,13 +179,13 @@ function MedicineRow({
   // Handle medicine selection from autocomplete
   const selectMedicine = (med) => {
     ac.clear();
-    const price = Number(
+    const price = safeNumber(
       med.price ?? med.mrp ?? med.salePrice ?? med.unitPrice ?? 0,
     );
-    const gstVal = Number(
+    const gstVal = safeNumber(
       med.gst ?? med.gstPercentage ?? med.gstRate ?? med.taxRate ?? 0,
     );
-    const stockVal = Number(
+    const stockVal = safeNumber(
       med.stock ?? med.quantity ?? med.availableStock ?? 0,
     );
 
@@ -228,7 +230,7 @@ function MedicineRow({
           found.quantity ?? found.stock ?? found.availableQty ?? item.stock,
         // Optionally override price from batch
         ...(found.mrp
-          ? { price: Number(found.mrp), mrp: Number(found.mrp) }
+          ? { price: safeNumber(found.mrp), mrp: safeNumber(found.mrp) }
           : {}),
       });
     }
@@ -314,8 +316,8 @@ function MedicineRow({
               >
                 {ac.results.length > 0 ? (
                   ac.results.map((med, mi) => {
-                    const medPrice = Number(med.price ?? med.mrp ?? 0);
-                    const medStock = Number(med.stock ?? med.quantity ?? 0);
+                    const medPrice = safeNumber(med.price ?? med.mrp ?? 0);
+                    const medStock = safeNumber(med.stock ?? med.quantity ?? 0);
                     return (
                       <button
                         key={`${med.id || med._id}-${mi}`}
@@ -419,7 +421,7 @@ function MedicineRow({
           value={item.qty || 1}
           disabled={!isSelected}
           onChange={(e) => {
-            const val = Math.max(1, Math.floor(Number(e.target.value) || 1));
+            const val = Math.max(1, Math.floor(safeNumber(e.target.value) || 1));
             if (val > (item.stock || 9999)) {
               showToast(`Only ${item.stock} units in stock`, "warning");
               onUpdate(idx, "qty", item.stock);
@@ -437,7 +439,7 @@ function MedicineRow({
           type="text"
           className="form-input text-right"
           readOnly
-          value={`₹${Number(item.mrp || 0).toFixed(2)}`}
+          value={`₹${safeNumber(item.mrp || 0).toFixed(2)}`}
           tabIndex={-1}
         />
       </div>
@@ -455,7 +457,7 @@ function MedicineRow({
           value={item.discount || ""}
           disabled={!isSelected}
           onChange={(e) => {
-            const val = Math.min(100, Math.max(0, Number(e.target.value) || 0));
+            const val = Math.min(100, Math.max(0, safeNumber(e.target.value) || 0));
             onUpdate(idx, "discount", val);
           }}
         />
@@ -467,7 +469,7 @@ function MedicineRow({
           className="form-input"
           value={item.gst || 0}
           disabled={!isSelected}
-          onChange={(e) => onUpdate(idx, "gst", Number(e.target.value))}
+          onChange={(e) => onUpdate(idx, "gst", safeNumber(e.target.value))}
         >
           <option value={0}>0%</option>
           <option value={5}>5%</option>

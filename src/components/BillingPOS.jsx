@@ -5,7 +5,6 @@ import { API_ROUTES } from "../constants/api.routes.js";
 import {
   IndianRupee,
   Receipt,
-  Clock,
   ArrowLeft,
   Plus,
   Minus,
@@ -107,7 +106,7 @@ function Spinner({ size = 14 }) {
 }
 
 const safeNumber = (value) => {
-  const num = Number(value);
+  const num = safeNumber(value);
   return Number.isFinite(num) ? num : 0;
 };
 
@@ -762,7 +761,7 @@ ${printDiscount > 0 ? `<div style="display:flex;justify-content:space-between"><
         .map((item, idx) => ({
           idx,
           item,
-          qty: Number(returnItems[idx]) || 0,
+          qty: safeNumber(returnItems[idx]) || 0,
         }))
         .filter(({ qty }) => qty > 0)
         .map(({ item, qty }) => ({
@@ -942,12 +941,6 @@ ${printDiscount > 0 ? `<div style="display:flex;justify-content:space-between"><
             val: String(todayBills.length),
             icon: Receipt,
             col: "var(--info)",
-          },
-          {
-            label: "PENDING COLLECTIONS",
-            val: "₹0",
-            icon: Clock,
-            col: "var(--warning)",
           },
           {
             label: "RETURNS TODAY",
@@ -1370,7 +1363,7 @@ ${printDiscount > 0 ? `<div style="display:flex;justify-content:space-between"><
                         textAlign: "right",
                       }}
                       value={discount}
-                      onChange={(e) => setDiscount(Number(e.target.value))}
+                      onChange={(e) => setDiscount(safeNumber(e.target.value))}
                       min="0"
                       max="100"
                       type="number"
@@ -1493,6 +1486,17 @@ ${printDiscount > 0 ? `<div style="display:flex;justify-content:space-between"><
                     if (lineItems.length === 0) {
                       showToast("Add at least one medicine", "error");
                       return;
+                    }
+
+                    for (const item of lineItems) {
+                      if (!Number.isFinite(item.qty)) {
+                        showToast("Invalid Quantity", "error");
+                        return;
+                      }
+                      if (!Number.isFinite(item.price)) {
+                        showToast("Invalid Price", "error");
+                        return;
+                      }
                     }
                     setInvoiceSaving(true);
                     try {
@@ -2322,7 +2326,7 @@ ${printDiscount > 0 ? `<div style="display:flex;justify-content:space-between"><
                                   const next = [...arr];
                                   next[idx] = Math.min(
                                     item.qty,
-                                    Math.max(0, Number(e.target.value)),
+                                    Math.max(0, safeNumber(e.target.value)),
                                   );
                                   return next;
                                 })
@@ -2616,7 +2620,7 @@ ${printDiscount > 0 ? `<div style="display:flex;justify-content:space-between"><
                                     ...prev[idx],
                                     qty: Math.min(
                                       item.qty,
-                                      Math.max(0, Number(e.target.value)),
+                                      Math.max(0, safeNumber(e.target.value)),
                                     ),
                                   },
                                 }))
@@ -2669,7 +2673,7 @@ ${printDiscount > 0 ? `<div style="display:flex;justify-content:space-between"><
                       const returnPayload = items
                         .map((item, idx) => ({
                           item,
-                          qty: Number(returnModalItems[idx]?.qty) || 0,
+                          qty: safeNumber(returnModalItems[idx]?.qty) || 0,
                           checked: returnModalItems[idx]?.checked !== false,
                         }))
                         .filter(({ qty, checked }) => checked && qty > 0)

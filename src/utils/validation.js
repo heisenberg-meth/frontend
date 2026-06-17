@@ -1,3 +1,4 @@
+import { safeNumber } from '../utils/number.js';
 export const validateRequired = (value, fieldName) => {
   if (!value || (typeof value === "string" && !value.trim())) {
     return `${fieldName} is required`;
@@ -29,7 +30,7 @@ export const validateGST = (value) => {
 
 export const validateNumber = (value, fieldName, min = 0, max = Infinity) => {
   if (value === "" || value === null || value === undefined) return null;
-  const num = Number(value);
+  const num = safeNumber(value);
   if (isNaN(num)) return `${fieldName} must be a number`;
   if (num < min) return `${fieldName} must be at least ${min}`;
   if (num > max) return `${fieldName} must be at most ${max}`;

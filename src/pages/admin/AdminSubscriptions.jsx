@@ -11,6 +11,8 @@ import {
   Download,
 } from "lucide-react";
 import toast from "react-hot-toast";
+import { safeNumber } from '../../utils/number.js';
+
 
 export default function AdminSubscriptions() {
   const [subscriptions, setSubscriptions] = useState([]);
@@ -81,11 +83,11 @@ export default function AdminSubscriptions() {
     if (!actionSub || !actionType) return;
     if (actionType === "extend")
       doAction(adminApi.extendSubscription, actionSub.id, {
-        days: parseInt(actionValue) || 30,
+        days: safeNumber(actionValue) || 30,
       });
     else if (actionType === "renew")
       doAction(adminApi.renewSubscription, actionSub.id, {
-        days: parseInt(actionValue) || 365,
+        days: safeNumber(actionValue) || 365,
       });
     else if (actionType === "cancel")
       doAction(adminApi.cancelSubscription, actionSub.id);
@@ -231,7 +233,7 @@ export default function AdminSubscriptions() {
                       </td>
                       <td>{s.tenant?.email || "—"}</td>
                       <td>{s.plan?.name || "—"}</td>
-                      <td>₹{Number(s.plan?.price || 0).toLocaleString()}</td>
+                      <td>₹{safeNumber(s.plan?.price || 0).toLocaleString()}</td>
                       <td>
                         <span
                           className="admin-badge"

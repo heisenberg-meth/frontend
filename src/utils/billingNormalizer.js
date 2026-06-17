@@ -1,3 +1,4 @@
+import { safeNumber } from '../utils/number.js';
 export function normalizeInvoice(invoice) {
   if (!invoice) return null;
 
@@ -15,12 +16,12 @@ export function normalizeInvoice(invoice) {
       item.medicineName ||
       item.medicine?.name ||
       "Unknown Medicine",
-    qty: Number(item.qty ?? item.quantity ?? 0),
-    price: Number(item.price ?? item.unitPrice ?? item.mrp ?? 0),
-    mrp: Number(item.mrp ?? item.price ?? item.unitPrice ?? 0),
-    gst: Number(item.gst ?? item.gstPercentage ?? 0),
+    qty: safeNumber(item.qty ?? item.quantity ?? 0),
+    price: safeNumber(item.price ?? item.unitPrice ?? item.mrp ?? 0),
+    mrp: safeNumber(item.mrp ?? item.price ?? item.unitPrice ?? 0),
+    gst: safeNumber(item.gst ?? item.gstPercentage ?? 0),
     batchId: item.batchId || null,
-    total: Number(item.total ?? item.totalPrice ?? item.totalAmount ?? 0),
+    total: safeNumber(item.total ?? item.totalPrice ?? item.totalAmount ?? 0),
   }));
 
   const patient =
@@ -41,7 +42,7 @@ export function normalizeInvoice(invoice) {
     invoice.customerPhone ||
     "N/A";
 
-  const total = Number(
+  const total = safeNumber(
     invoice.total ?? invoice.totalAmount ?? invoice.grandTotal ?? 0,
   );
 
@@ -53,10 +54,10 @@ export function normalizeInvoice(invoice) {
       `INV-${String(invoice.id).slice(0, 8)}`,
     patient,
     phone,
-    subtotal: Number(invoice.subtotal ?? invoice.subTotal ?? 0),
-    cgst: Number(invoice.cgst ?? 0),
-    sgst: Number(invoice.sgst ?? 0),
-    discount: Number(invoice.discount ?? invoice.discountAmount ?? 0),
+    subtotal: safeNumber(invoice.subtotal ?? invoice.subTotal ?? 0),
+    cgst: safeNumber(invoice.cgst ?? 0),
+    sgst: safeNumber(invoice.sgst ?? 0),
+    discount: safeNumber(invoice.discount ?? invoice.discountAmount ?? 0),
     total,
     amount: total,
     paymentMethod: invoice.paymentMethod || invoice.paymentMode || "CASH",

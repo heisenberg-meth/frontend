@@ -10,6 +10,8 @@ import {
 import { motion, AnimatePresence } from "framer-motion";
 import api from "../../api.js";
 import { API_ROUTES } from "../../constants/api.routes.js";
+import { safeNumber } from '../../utils/number.js';
+
 
 export default function PnLReport({ from, to, showToast }) {
   const [loading, setLoading] = useState(false);
@@ -263,7 +265,7 @@ export default function PnLReport({ from, to, showToast }) {
               style={{ flex: 2 }}
               disabled={expenseSaving || !expenseAmount}
               onClick={async () => {
-                if (!expenseAmount || Number(expenseAmount) <= 0) {
+                if (!expenseAmount || safeNumber(expenseAmount) <= 0) {
                   showToast("Enter a valid amount", "error");
                   return;
                 }
@@ -271,7 +273,7 @@ export default function PnLReport({ from, to, showToast }) {
                 try {
                   await api.post("accounting/expenses", {
                     category: expenseCategory,
-                    amount: Number(expenseAmount),
+                    amount: safeNumber(expenseAmount),
                     description: expenseDescription || undefined,
                   });
                   showToast("Expense Saved", "success");

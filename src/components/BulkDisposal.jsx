@@ -16,6 +16,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import { format } from "date-fns";
 import api from "../api";
 import { normalizeObjectResponse } from "../utils/apiNormalizer";
+import { safeNumber } from '../utils/number.js';
+
 
 export default function BulkDisposal({ showToast }) {
   const [batches, setBatches] = useState([]);
@@ -242,7 +244,7 @@ export default function BulkDisposal({ showToast }) {
             </div>
             <div className="stat-v2-val danger text-rose-500">
               {"\u20B9"}
-              {Number(overview.totalInventoryValue).toLocaleString("en-IN")}
+              {safeNumber(overview.totalInventoryValue).toLocaleString("en-IN")}
             </div>
           </div>
           <div className="stat-card-v2" style={{ cursor: "default" }}>
@@ -254,7 +256,7 @@ export default function BulkDisposal({ showToast }) {
             </div>
             <div className="stat-v2-val danger text-rose-500">
               {"\u20B9"}
-              {Number(overview.totalMrpLoss).toLocaleString("en-IN")}
+              {safeNumber(overview.totalMrpLoss).toLocaleString("en-IN")}
             </div>
           </div>
         </div>
@@ -353,7 +355,7 @@ export default function BulkDisposal({ showToast }) {
               <span style={{ color: "var(--text-muted)" }}>Value Removed</span>
               <span style={{ fontWeight: 600 }}>
                 {"\u20B9"}
-                {Number(result.stats?.totalValue || 0).toLocaleString("en-IN")}
+                {safeNumber(result.stats?.totalValue || 0).toLocaleString("en-IN")}
               </span>
             </div>
 
@@ -622,7 +624,7 @@ export default function BulkDisposal({ showToast }) {
                       </td>
                       <td style={{ padding: "10px 16px", textAlign: "right" }}>
                         {"\u20B9"}
-                        {Number(b.totalValue).toLocaleString("en-IN")}
+                        {safeNumber(b.totalValue).toLocaleString("en-IN")}
                       </td>
                     </tr>
                   ))
@@ -655,7 +657,7 @@ export default function BulkDisposal({ showToast }) {
                   Value:{" "}
                   <strong>
                     {"\u20B9"}
-                    {Number(selectedStats.totalValue).toLocaleString("en-IN")}
+                    {safeNumber(selectedStats.totalValue).toLocaleString("en-IN")}
                   </strong>
                 </span>
               </div>
@@ -722,7 +724,7 @@ export default function BulkDisposal({ showToast }) {
                   <span>Total Value:</span>{" "}
                   <b>
                     {"\u20B9"}
-                    {Number(selectedStats.totalValue).toLocaleString("en-IN")}
+                    {safeNumber(selectedStats.totalValue).toLocaleString("en-IN")}
                   </b>
                 </div>
               </div>

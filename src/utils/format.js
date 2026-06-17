@@ -1,5 +1,5 @@
 export const safeNumber = (value) => {
-  const num = Number(value);
+  const num = safeNumber(value);
   return Number.isFinite(num) ? num : 0;
 };
 

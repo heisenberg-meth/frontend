@@ -17,6 +17,8 @@ import ExcelJS from "exceljs";
 import Papa from "papaparse";
 import api from "../api";
 import { getSuppliers, createSupplier } from "../services/suppliers.service.js";
+import { safeNumber } from '../utils/number.js';
+
 export default function BulkImport({ fetchData, showToast }) {
   const navigate = useNavigate();
   const [file, setFile] = useState(null);
@@ -528,7 +530,7 @@ export default function BulkImport({ fetchData, showToast }) {
         email: supplierForm.email.trim(),
         gstNumber: supplierForm.gst.trim(),
 
-        leadTimeDays: Number(supplierForm.leadTime || 7),
+        leadTimeDays: safeNumber(supplierForm.leadTime || 7),
 
         paymentTermsDays:
           supplierForm.paymentTerms === "Net 15"

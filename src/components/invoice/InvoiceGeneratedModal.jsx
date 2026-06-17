@@ -6,6 +6,8 @@ import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
 import InvoicePreview from "../common/InvoicePreview";
 import "../../styles/InvoiceModal.css";
+import { safeNumber } from '../../utils/number.js';
+
 
 const backdropVariants = {
   hidden: { opacity: 0 },
@@ -184,13 +186,13 @@ export default function InvoiceGeneratedModal({
     let itemsText = (sale.items || [])
       .map(
         (it) =>
-          `• ${it.name} ${it.qty > 1 ? `x${it.qty}` : ""} = ₹${Number(it.price * it.qty).toFixed(2)}`,
+          `• ${it.name} ${it.qty > 1 ? `x${it.qty}` : ""} = ₹${safeNumber(it.price * it.qty).toFixed(2)}`,
       )
       .join("\n");
 
     const shopName =
       storeProfile?.shopName || storeProfile?.businessName || "VIYAN MEDASSIST";
-    const text = `${shopName}\n\nInvoice: ${invNo}\nDate: ${dateStr}\nPatient: ${patName}\n\nMedicines:\n\n${itemsText}\n\nSubtotal: ₹${Number(sale.subtotal || sale.total || 0).toFixed(2)}\nCGST: ₹${Number(sale.cgst || sale.tax / 2 || 0).toFixed(2)}\nSGST: ₹${Number(sale.sgst || sale.tax / 2 || 0).toFixed(2)}\nTOTAL: ₹${Number(sale.total || 0).toFixed(2)}\n\nThank you for visiting ${shopName}!`;
+    const text = `${shopName}\n\nInvoice: ${invNo}\nDate: ${dateStr}\nPatient: ${patName}\n\nMedicines:\n\n${itemsText}\n\nSubtotal: ₹${safeNumber(sale.subtotal || sale.total || 0).toFixed(2)}\nCGST: ₹${safeNumber(sale.cgst || sale.tax / 2 || 0).toFixed(2)}\nSGST: ₹${safeNumber(sale.sgst || sale.tax / 2 || 0).toFixed(2)}\nTOTAL: ₹${safeNumber(sale.total || 0).toFixed(2)}\n\nThank you for visiting ${shopName}!`;
     const url = `https://wa.me/?text=${encodeURIComponent(text)}`;
     window.open(url, "_blank");
     if (showToast) showToast("WhatsApp opened", "success");

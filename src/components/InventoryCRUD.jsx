@@ -110,6 +110,8 @@ import { useAuth } from "../hooks/useAuth";
 import ConfirmModal from "./ConfirmModal";
 import InventoryAnalyticsModal from "./inventory/InventoryAnalyticsModal";
 import { normalizeMedicine } from "../utils/normalizers";
+import { safeNumber } from "../utils/number.js";
+
 function Spinner({ size = 14 }) {
   return (
     <Loader2 size={size} style={{ animation: "spin 0.8s linear infinite" }} />
@@ -182,9 +184,9 @@ function MedicineModal({
 
     if (!editData) {
       const batchNumber = String(form.batchNumber || "").trim();
-      if (!form.mrp || Number(form.mrp) <= 0)
+      if (!form.mrp || safeNumber(form.mrp) <= 0)
         newErrors.mrp = "MRP must be greater than 0";
-      if (!form.quantity || Number(form.quantity) < 0)
+      if (!form.quantity || safeNumber(form.quantity) < 0)
         newErrors.quantity = "Quantity must be 0 or more";
       if (!form.expiryDate) newErrors.expiryDate = "Expiry date is required";
       else if (new Date(form.expiryDate) <= new Date())
@@ -200,11 +202,11 @@ function MedicineModal({
       if (duplicate)
         newErrors.name = "Medicine with this name and batch already exists";
 
-      const purchasePrice = Number(form.purchaseCost || 0);
-      const mrp = Number(form.mrp || 0);
+      const purchasePrice = safeNumber(form.purchaseCost || 0);
+      const mrp = safeNumber(form.mrp || 0);
       const sellingPrice =
         form.sellingPrice !== undefined && form.sellingPrice !== ""
-          ? Number(form.sellingPrice)
+          ? safeNumber(form.sellingPrice)
           : mrp;
 
       if (purchasePrice <= 0) {
@@ -233,12 +235,14 @@ function MedicineModal({
     }
     onSave({
       ...form,
-      mrp: Number(form.mrp),
-      sellingPrice: Number(form.sellingPrice),
-      purchaseCost: form.purchaseCost ? Number(form.purchaseCost) : undefined,
-      quantity: Number(form.quantity),
-      reorderLevel: Number(form.reorderLevel) || 10,
-      gst: Number(form.gst),
+      mrp: safeNumber(form.mrp),
+      sellingPrice: safeNumber(form.sellingPrice),
+      purchaseCost: form.purchaseCost
+        ? safeNumber(form.purchaseCost)
+        : undefined,
+      quantity: safeNumber(form.quantity),
+      reorderLevel: safeNumber(form.reorderLevel) || 10,
+      gst: safeNumber(form.gst),
     });
   };
 
@@ -707,7 +711,7 @@ function MedicineViewModal({ medicine, onClose, onEditBatch, onAddBatch }) {
                           {batch.quantity ?? 0}
                         </td>
                         <td style={{ padding: "10px 16px" }}>
-                          ₹{Number(batch.mrp || 0).toFixed(2)}
+                          ₹{safeNumber(batch.mrp || 0).toFixed(2)}
                         </td>
                         <td style={{ padding: "10px 16px" }}>
                           <span
@@ -834,19 +838,19 @@ function BatchModal({
     else if (new Date(form.expiryDate) <= new Date())
       newErrors.expiryDate = "Expiry date must be in the future";
 
-    if (!form.mrp || Number(form.mrp) <= 0)
+    if (!form.mrp || safeNumber(form.mrp) <= 0)
       newErrors.mrp = "MRP must be greater than 0";
 
-    if (form.quantity === "" || Number(form.quantity) < 0)
+    if (form.quantity === "" || safeNumber(form.quantity) < 0)
       newErrors.quantity = "Quantity must be non-negative";
-    if (form.purchasePrice === "" || Number(form.purchasePrice) < 0)
+    if (form.purchasePrice === "" || safeNumber(form.purchasePrice) < 0)
       newErrors.purchasePrice = "Purchase price must be non-negative";
     if (
       form.sellingPrice === "" ||
-      Number(form.sellingPrice) < Number(form.purchasePrice)
+      safeNumber(form.sellingPrice) < safeNumber(form.purchasePrice)
     )
       newErrors.sellingPrice = "Selling price must be >= purchase price";
-    if (Number(form.sellingPrice) > Number(form.mrp))
+    if (safeNumber(form.sellingPrice) > safeNumber(form.mrp))
       newErrors.sellingPrice = "Selling price cannot exceed MRP";
 
     setErrors(newErrors);
@@ -862,11 +866,11 @@ function BatchModal({
       id: selectedBatch ? selectedBatch.id : undefined,
       batchNumber: form.batchNumber.trim(),
       expiryDate: form.expiryDate,
-      mrp: Number(form.mrp),
-      sellingPrice: Number(form.sellingPrice),
+      mrp: safeNumber(form.mrp),
+      sellingPrice: safeNumber(form.sellingPrice),
       rackLocation: form.rackLocation.trim(),
-      quantity: Number(form.quantity),
-      purchasePrice: Number(form.purchasePrice),
+      quantity: safeNumber(form.quantity),
+      purchasePrice: safeNumber(form.purchasePrice),
       ...(!selectedBatch && {
         medicineId: medicineData.id,
       }),
@@ -1234,7 +1238,7 @@ export default function InventoryCRUD({
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("All");
-  const [statusFilter, setStatusFilter] = useState("All");
+  const [statusFilter, setStatusFilter] = useState("All Status");
   const [modalOpen, setModalOpen] = useState(false);
   const [editTarget, setEditTarget] = useState(null);
   const [viewTarget, setViewTarget] = useState(null);
@@ -1325,7 +1329,7 @@ export default function InventoryCRUD({
         let categoryId = undefined;
         if (categoryFilter !== "All") {
           const catObj = categoriesList.find(
-            (c) => (c.name || c) === categoryFilter,
+            (c) => (c.name || c.categoryName || c) === categoryFilter,
           );
           if (catObj) {
             categoryId = catObj.id;
@@ -1340,6 +1344,15 @@ export default function InventoryCRUD({
         else if (statusFilter === "Expiring Soon")
           backendStatus = "EXPIRING_SOON";
         else if (statusFilter === "Expired") backendStatus = "EXPIRED";
+
+        console.log("REQUEST PARAMS");
+        console.table({
+          categoryFilter,
+          statusFilter,
+          backendStatus,
+          categoryId,
+          page: currentPage,
+        });
 
         const medicinesRes = await getMedicines({
           page: currentPage,
@@ -1357,6 +1370,16 @@ export default function InventoryCRUD({
           : Array.isArray(medicinesRes.data?.data)
             ? medicinesRes.data.data
             : [];
+
+        console.log("API RESPONSE");
+        console.table(
+          items.map((x) => ({
+            name: x.name,
+            stock: x.stock,
+            category: x.category?.name || x.category,
+            status: x.status,
+          })),
+        );
 
         const total = medicinesRes.data?.data?.total ?? items.length;
         const pages = medicinesRes.data?.data?.totalPages ?? 1;
@@ -1496,7 +1519,9 @@ export default function InventoryCRUD({
       const matchCat =
         categoryFilter === "All" ||
         categoryFilter === "All Categories" ||
-        (m.category?.name || m.category) === categoryFilter;
+        String(m.category?.name || m.category || "")
+          .toLowerCase()
+          .trim() === String(categoryFilter).toLowerCase().trim();
 
       // 3. Status Filter
       let matchStatus = true;
@@ -1525,9 +1550,24 @@ export default function InventoryCRUD({
                 (new Date(expDate) - new Date()) / (1000 * 60 * 60 * 24),
               )
             : 999;
-          matchStatus = daysToExpiry > 0 && daysToExpiry <= 90 && !isExpired;
+          matchStatus = daysToExpiry > 0 && daysToExpiry <= 30 && !isExpired;
         }
       }
+
+      console.log(
+        JSON.stringify(
+          {
+            medicine: m.name,
+            category: m.category?.name || m.category,
+            categoryFilter,
+            statusFilter,
+            matchCat,
+            matchStatus,
+          },
+          null,
+          2,
+        ),
+      );
 
       return matchSearch && matchCat && matchStatus;
     });
@@ -1550,9 +1590,9 @@ export default function InventoryCRUD({
     try {
       const payload = {
         name: form.name?.trim() || "",
-        gstPercentage: Number(form.gst) || 0,
-        reorderPoint: Number(form.reorderLevel) || 10,
-        reorderLevel: Number(form.reorderLevel) || 10,
+        gstPercentage: safeNumber(form.gst) || 0,
+        reorderPoint: safeNumber(form.reorderLevel) || 10,
+        reorderLevel: safeNumber(form.reorderLevel) || 10,
         ...(form.genericName?.trim() && {
           genericName: form.genericName.trim(),
         }),
@@ -1579,14 +1619,14 @@ export default function InventoryCRUD({
       } else {
         const initialBatch = {
           batchNumber: String(form.batchNumber || "").trim(),
-          quantity: Number(form.quantity),
+          quantity: safeNumber(form.quantity),
           expiryDate: form.expiryDate,
-          mrp: Number(form.mrp),
+          mrp: safeNumber(form.mrp),
           sellingPrice:
             form.sellingPrice !== undefined
-              ? Number(form.sellingPrice)
-              : Number(form.mrp),
-          purchasePrice: form.purchaseCost ? Number(form.purchaseCost) : 0,
+              ? safeNumber(form.sellingPrice)
+              : safeNumber(form.mrp),
+          purchasePrice: form.purchaseCost ? safeNumber(form.purchaseCost) : 0,
         };
 
         const normalizedPayload = {

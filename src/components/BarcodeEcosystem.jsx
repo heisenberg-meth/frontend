@@ -8,8 +8,6 @@ import {
   XCircle,
   AlertTriangle,
   RefreshCw,
-  Plus,
-  Minus,
   Camera,
   ShieldCheck,
   Zap,
@@ -812,41 +810,7 @@ export default function BarcodeEcosystem({ showToast }) {
                     gridTemplateColumns: "1fr 1fr",
                     gap: "20px",
                   }}
-                >
-                  <div className="pos-input-group">
-                    <label className="p-label">QUANTITY</label>
-                    <div
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "12px",
-                      }}
-                    >
-                      <button
-                        className="micro-btn"
-                        onClick={() => setLabelQty(Math.max(1, labelQty - 1))}
-                      >
-                        <Minus size={16} />
-                      </button>
-                      <b style={{ minWidth: "30px", textAlign: "center" }}>
-                        {labelQty}
-                      </b>
-                      <button
-                        className="micro-btn"
-                        onClick={() => setLabelQty(labelQty + 1)}
-                      >
-                        <Plus size={16} />
-                      </button>
-                    </div>
-                  </div>
-                  <div className="pos-input-group">
-                    <label className="p-label">PRINTER</label>
-                    <select className="pos-input">
-                      <option>HP LaserJet (Default)</option>
-                      <option>TSC Label Printer</option>
-                    </select>
-                  </div>
-                </div>
+                ></div>
                 <div
                   style={{ display: "flex", gap: "12px", marginTop: "24px" }}
                 >

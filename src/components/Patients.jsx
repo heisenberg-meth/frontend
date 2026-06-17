@@ -17,6 +17,8 @@ import {
   Upload,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { safeNumber } from '../utils/number.js';
+
 function Spinner({ size = 14 }) {
   return <Loader2 size={size} className="spinner-icon" />;
 }
@@ -176,7 +178,7 @@ export default function Patients({ showToast }) {
                     className="val"
                     style={{ color: p.creditUsed > 0 ? "var(--danger)" : "" }}
                   >
-                    ₹{Number(p.creditUsed || 0).toFixed(0)}
+                    ₹{safeNumber(p.creditUsed || 0).toFixed(0)}
                   </div>
                 </div>
               </div>
@@ -264,7 +266,7 @@ export default function Patients({ showToast }) {
                       <div className="d-credit-hero">
                         <div className="bal">
                           ₹
-                          {parseFloat(
+                          {safeNumber(
                             loyaltyProfile?.outstandingBalance || 0,
                           ).toFixed(2)}
                         </div>
@@ -315,7 +317,7 @@ export default function Patients({ showToast }) {
                           }}
                         >
                           {entry.type === "CREDIT_ISSUED" ? "-" : "+"} ₹
-                          {parseFloat(
+                          {safeNumber(
                             entry.debit > 0 ? entry.debit : entry.credit,
                           ).toFixed(2)}
                         </div>

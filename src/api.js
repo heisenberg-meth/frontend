@@ -185,6 +185,10 @@ api.interceptors.response.use(
       isRefreshing = true;
 
       try {
+        console.log("refresh started");
+        console.log("document.cookie:", document.cookie);
+        console.time("refresh");
+
         const refreshRes = await axios.post(
           `${getBaseUrl()}/auth/refresh`,
           {},
@@ -197,6 +201,9 @@ api.interceptors.response.use(
             },
           },
         );
+
+        console.timeEnd("refresh");
+        console.log("refresh completed");
 
         if (import.meta.env.DEV) {
           console.log("[AUTH] Refresh successful:", {

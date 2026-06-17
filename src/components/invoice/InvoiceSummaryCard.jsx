@@ -1,4 +1,6 @@
 import { Percent, Receipt } from "lucide-react";
+import { safeNumber } from '../../utils/number.js';
+
 
 export default function InvoiceSummaryCard({
   subtotal,
@@ -56,7 +58,7 @@ export default function InvoiceSummaryCard({
               onChange={(e) => {
                 const val = Math.min(
                   100,
-                  Math.max(0, Number(e.target.value) || 0),
+                  Math.max(0, safeNumber(e.target.value) || 0),
                 );
                 setDiscount(val);
               }}
