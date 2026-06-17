@@ -27,8 +27,7 @@ import {
 } from "../services/supplier-returns.service.js";
 import { formatDate } from "../utils/format.js";
 import "../styles/Supplierreturn.css";
-import { safeNumber } from '../utils/number.js';
-
+import { safeNumber } from "../utils/number.js";
 
 const STATUS_BADGE = {
   DRAFT: { label: "Draft", class: "badge-neutral" },
@@ -586,7 +585,10 @@ export default function SupplierReturns({ showToast }) {
                                 <td>{formatDate(item.expiryDate)}</td>
                                 <td>{item.quantity}</td>
                                 <td>
-                                  ${safeNumber(item.purchasePrice || 0).toFixed(2)}
+                                  $
+                                  {safeNumber(item.purchasePrice || 0).toFixed(
+                                    2,
+                                  )}
                                 </td>
                                 <td>
                                   $
@@ -777,17 +779,6 @@ export default function SupplierReturns({ showToast }) {
                     </button>
                   </>
                 )}
-                {selectedReturn.creditNotes?.length === 0 &&
-                  selectedReturn.status === "COMPLETED" && (
-                    <button
-                      className="btn btn-info"
-                      onClick={() =>
-                        handleGenerateCreditNote(selectedReturn.id)
-                      }
-                    >
-                      <CreditCard size={14} /> Generate Credit Note
-                    </button>
-                  )}
               </div>
             </div>
           </div>
@@ -891,7 +882,9 @@ export default function SupplierReturns({ showToast }) {
                                   <td>{item.quantity}</td>
                                   <td>
                                     $
-                                    {safeNumber(item.purchasePrice || 0).toFixed(2)}
+                                    {safeNumber(
+                                      item.purchasePrice || 0,
+                                    ).toFixed(2)}
                                   </td>
                                   <td>
                                     $

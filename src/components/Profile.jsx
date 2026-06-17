@@ -10,7 +10,6 @@ import {
   Phone,
   BadgeCheck,
   Smartphone,
-  ChevronRight,
   LogOut,
   Copy,
   Eye,
@@ -359,20 +358,6 @@ export default function Profile({
               <div className="security-main">
                 <div className="security-action-row">
                   <div className="action-info">
-                    <h4>Multi-Factor Authentication</h4>
-                    <p>
-                      Add an extra layer of security to your clinical account.
-                    </p>
-                  </div>
-                  <button
-                    className="toggle-btn-v2"
-                    onClick={() => toggleModal("twoFactor")}
-                  >
-                    CONFIGURE
-                  </button>
-                </div>
-                <div className="security-action-row">
-                  <div className="action-info">
                     <h4>Access Key Management</h4>
                     <p>
                       Update your professional password frequently for maximum
@@ -386,29 +371,6 @@ export default function Profile({
                     CHANGE PASSWORD
                   </button>
                 </div>
-              </div>
-              <div className="security-stats-card">
-                <div className="stat-item">
-                  <span className="label">Last Login</span>
-                  <span className="value">Today, 09:42 AM</span>
-                </div>
-                <div className="stat-item">
-                  <span className="label">Active Device</span>
-                  <span className="value">MacBook Pro (Chrome)</span>
-                </div>
-                <div className="stat-item">
-                  <span className="label">Session Status</span>
-                  <span className="value status-active">Active Now</span>
-                </div>
-                <button
-                  className="view-sessions-btn"
-                  onClick={() => {
-                    toggleModal("sessions");
-                    loadSessions();
-                  }}
-                >
-                  VIEW ALL SESSIONS <ChevronRight size={14} />
-                </button>
               </div>
             </div>
           </div>
@@ -590,18 +552,6 @@ export default function Profile({
                     </p>
                   </div>
                   <div className="tfa-status">ACTIVE</div>
-                </div>
-                <div className="tfa-option">
-                  <div className="tfa-icon">
-                    <Smartphone size={20} />
-                  </div>
-                  <div className="tfa-info">
-                    <h4>Authenticator App</h4>
-                    <p>
-                      Use Google Authenticator or Authy for secure token access.
-                    </p>
-                  </div>
-                  <button className="option-enable-btn">ENABLE</button>
                 </div>
                 <div className="tfa-option">
                   <div className="tfa-icon">

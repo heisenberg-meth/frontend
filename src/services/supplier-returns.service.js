@@ -24,6 +24,12 @@ export const generateCreditNote = (returnId, data) =>
 export const getCreditNotes = (params) =>
   api.get(API_ROUTES.SUPPLIER_RETURNS_CREDIT_NOTES, { params });
 
+export const applyCreditNote = (id, data) =>
+  api.post(API_ROUTES.PURCHASE_CREDIT_NOTE_APPLY.replace("{id}", id), data);
+
+export const getSupplierCreditBalance = (id) =>
+  api.get(API_ROUTES.PURCHASE_SUPPLIER_CREDIT_BALANCE.replace("{id}", id));
+
 export const getSupplierInward = (supplierId, params) =>
   api.get(`${BASE}/suppliers/${supplierId}/inward`, { params });
 
