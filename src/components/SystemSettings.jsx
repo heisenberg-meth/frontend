@@ -14,7 +14,7 @@ import { useAuth } from "../hooks/useAuth";
 import { API_ROUTES } from "../constants/api.routes.js";
 import SubscriptionCRUD from "./SubscriptionCRUD";
 import { safeNumber } from "../utils/number.js";
-
+import { formatInvoiceTime } from "../utils/dateTime.js";
 export default function SystemSettings({
   user,
   lowStock,
@@ -342,7 +342,7 @@ export default function SystemSettings({
                     {n.deliveryStatus}
                   </span>
                 </td>
-                <td>{new Date(n.createdAt).toLocaleTimeString()}</td>
+                <td>{formatInvoiceTime(n.createdAt)}</td>
                 <td>
                   {n.deliveryStatus === "FAILED" && (
                     <button

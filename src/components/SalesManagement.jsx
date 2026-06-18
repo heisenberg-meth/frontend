@@ -14,7 +14,6 @@ import {
   Download,
   Printer,
   MessageCircle,
-  Eye,
   RefreshCw,
   TrendingUp,
   CreditCard,
@@ -28,11 +27,18 @@ import ExcelJS from "exceljs";
 import { saveAs } from "file-saver";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
-import { normalizeArrayResponse } from "../utils/apiNormalizer";
+import {
+  normalizeArrayResponse,
+  getMedicineName,
+} from "../utils/apiNormalizer";
 import { escapeHtml } from "../utils/escapeHtml";
 import "../styles/SalesManagement.css";
-import { safeNumber } from '../utils/number.js';
-
+import { safeNumber } from "../utils/number.js";
+import {
+  formatInvoiceTime,
+  formatCurrency,
+  formatInvoiceDate,
+} from "../utils/dateTime";
 
 export default function SalesManagement({ showToast, storeProfile }) {
   const { user } = useAuth();
@@ -60,6 +66,10 @@ export default function SalesManagement({ showToast, storeProfile }) {
     start: format(subDays(new Date(), 30), "yyyy-MM-dd"),
     end: format(new Date(), "yyyy-MM-dd"),
   });
+  const [tempDateRange, setTempDateRange] = useState({
+    start: format(subDays(new Date(), 30), "yyyy-MM-dd"),
+    end: format(new Date(), "yyyy-MM-dd"),
+  });
 
   const [filters, setFilters] = useState({
     search: "",
@@ -77,12 +87,7 @@ export default function SalesManagement({ showToast, storeProfile }) {
             endDate: dateRange.end,
           },
         }),
-        api.get(API_ROUTES.BILLING_RETURNS, {
-          params: {
-            startDate: dateRange.start,
-            endDate: dateRange.end,
-          },
-        }),
+        api.get(API_ROUTES.BILLING_RETURNS),
         api.get(API_ROUTES.SALES_HOURLY),
       ]);
 
@@ -116,12 +121,7 @@ export default function SalesManagement({ showToast, storeProfile }) {
               endDate: dateRange.end,
             },
           }),
-          api.get(API_ROUTES.BILLING_RETURNS, {
-            params: {
-              startDate: dateRange.start,
-              endDate: dateRange.end,
-            },
-          }),
+          api.get(API_ROUTES.BILLING_RETURNS),
           api.get(API_ROUTES.SALES_HOURLY),
         ]);
 
@@ -174,25 +174,28 @@ export default function SalesManagement({ showToast, storeProfile }) {
           (sale.paymentMode || sale.payment) === filters.payment;
 
         // Extract yyyy-MM-dd part of the sale date safely
-        const saleDateOnly = sale.date ? sale.date.split("T")[0] : "";
+        const saleDateOnly = new Date(
+          formatInvoiceDate(sale.createdAt || sale.date),
+        );
         const matchesDate =
-          (!dateRange.start || saleDateOnly >= dateRange.start) &&
-          (!dateRange.end || saleDateOnly <= dateRange.end);
+          (!dateRange.start || saleDateOnly >= new Date(dateRange.start)) &&
+          (!dateRange.end || saleDateOnly <= new Date(dateRange.end));
 
         return matchesSearch && matchesPayment && matchesDate;
       }),
     [sales, filters, dateRange],
   );
 
-  const dailySales = useMemo(
-    () =>
-      filteredSales.filter((sale) => {
-        const formattedTarget = format(currentDate, "yyyy-MM-dd");
-        const saleDateOnly = sale.date ? sale.date.split("T")[0] : "";
-        return saleDateOnly === formattedTarget;
-      }),
-    [filteredSales, currentDate],
-  );
+  const dailySales = useMemo(() => {
+    if (dateRange.start || dateRange.end) {
+      return filteredSales;
+    }
+    return filteredSales.filter((sale) => {
+      const formattedTarget = format(currentDate, "yyyy-MM-dd");
+      const saleDateOnly = formatInvoiceDate(sale.createdAt || sale.date);
+      return saleDateOnly === formattedTarget;
+    });
+  }, [filteredSales, currentDate, dateRange]);
 
   const filteredReturns = useMemo(
     () =>
@@ -210,30 +213,63 @@ export default function SalesManagement({ showToast, storeProfile }) {
         const matchesStatus =
           filters.status === "All Status" ||
           (ret.status || "").toUpperCase() === filters.status;
-        return matchesSearch && matchesStatus;
+        const returnDateOnly = new Date(
+          formatInvoiceDate(ret.createdAt || ret.date),
+        );
+        const matchesDate =
+          (!dateRange.start || returnDateOnly >= new Date(dateRange.start)) &&
+          (!dateRange.end || returnDateOnly <= new Date(dateRange.end));
+
+        return matchesSearch && matchesStatus && matchesDate;
       }),
-    [returns, filters],
+    [returns, filters, dateRange],
   );
 
   const handlePrevDate = () => setCurrentDate((prev) => subDays(prev, 1));
   const handleNextDate = () => setCurrentDate((prev) => addDays(prev, 1));
 
-  const handleOpenDetail = (sale) => {
-    setSelectedSale(sale);
-    setShowDetailModal(true);
+  const fetchInvoiceDetail = async (invoiceId) => {
+    try {
+      setLoading(true);
+      const res = await api.get(`${API_ROUTES.SALES}/${invoiceId}`);
+      if (res.data && res.data.data) {
+        return res.data.data;
+      }
+      return null;
+    } catch (err) {
+      console.error(err);
+      showToast("Failed to fetch full invoice details", "error");
+      return null;
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleWhatsApp = (sale) => {
-    setSelectedSale(sale);
-    setShowWhatsAppModal(true);
+  const handleOpenDetail = async (sale) => {
+    const fullSale = await fetchInvoiceDetail(sale.id);
+    if (fullSale) {
+      setSelectedSale(fullSale);
+      setShowDetailModal(true);
+    }
   };
 
-  const handleReturn = (sale) => {
-    setSelectedSale(sale);
-    setReturnQuantities({});
-    setReturnChecked({});
-    setReturnModalReason("Patient Request");
-    setShowReturnModal(true);
+  const handleWhatsApp = async (sale) => {
+    const fullSale = await fetchInvoiceDetail(sale.id);
+    if (fullSale) {
+      setSelectedSale(fullSale);
+      setShowWhatsAppModal(true);
+    }
+  };
+
+  const handleReturn = async (sale) => {
+    const fullSale = await fetchInvoiceDetail(sale.id);
+    if (fullSale) {
+      setSelectedSale(fullSale);
+      setReturnQuantities({});
+      setReturnChecked({});
+      setReturnModalReason("Patient Request");
+      setShowReturnModal(true);
+    }
   };
 
   const processReturnApi = async () => {
@@ -294,15 +330,23 @@ export default function SalesManagement({ showToast, storeProfile }) {
     }
   };
 
-  const handlePrintBill = (sale) => {
+  const handlePrintBill = async (sale) => {
     const printWindow = window.open("", "_blank");
     if (!printWindow) return;
+    printWindow.document.write(
+      "<html><body><h2>Loading Invoice...</h2></body></html>",
+    );
+    const fullSale = await fetchInvoiceDetail(sale.id);
+    if (!fullSale) {
+      printWindow.close();
+      return;
+    }
 
-    const itemsHtml = (sale.items || [])
+    const itemsHtml = (fullSale.items || [])
       .map(
         (it) =>
           `<tr>
-            <td>${escapeHtml(it.medicine?.name || it.name || "Unknown")}</td>
+            <td>${escapeHtml(getMedicineName(it))}</td>
             <td>${escapeHtml(String(it.quantity || it.qty || 1))}</td>
             <td>₹${safeNumber(it.unitPrice || it.price || 0).toFixed(2)}</td>
             <td>₹${safeNumber((it.quantity || it.qty || 1) * (it.unitPrice || it.price || 0)).toFixed(2)}</td>
@@ -316,20 +360,18 @@ export default function SalesManagement({ showToast, storeProfile }) {
     const email = storeProfile?.email || "";
     const gstin = storeProfile?.gstin || "";
 
-    const invoiceNum = sale.invoiceNumber || sale.id;
+    const invoiceNum = fullSale.invoiceNumber || fullSale.id;
     const patientName =
-      sale.patient?.fullName ||
-      sale.patientName ||
-      sale.customerName ||
-      sale.patient ||
+      fullSale.patient?.name ||
+      fullSale.patient?.fullName ||
+      fullSale.patientName ||
+      fullSale.customerName ||
       "Walk-in";
     const dateStr =
-      sale.date || sale.createdAt
-        ? format(new Date(sale.date || sale.createdAt), "dd MMM yyyy")
+      fullSale.date || fullSale.createdAt
+        ? format(new Date(fullSale.date || fullSale.createdAt), "dd MMM yyyy")
         : "";
-    const timeStr =
-      sale.time ||
-      (sale.createdAt ? format(new Date(sale.createdAt), "hh:mm a") : "");
+    const timeStr = formatInvoiceTime(fullSale.createdAt || fullSale.date);
 
     const html = `
       <html>
@@ -355,15 +397,16 @@ export default function SalesManagement({ showToast, storeProfile }) {
           <p><b>Invoice No:</b> ${escapeHtml(invoiceNum)}</p>
           <p><b>Date:</b> ${escapeHtml(dateStr)} ${escapeHtml(timeStr)}</p>
           <p><b>Patient:</b> ${escapeHtml(patientName)}</p>
-          <p><b>Payment:</b> ${escapeHtml(sale.paymentMode || sale.payment || "Cash")}</p>
+          <p><b>Payment:</b> ${escapeHtml(fullSale.paymentMode || fullSale.payment || "Unknown Payment Method")}</p>
           <table>
             <thead><tr><th>Medicine</th><th>Qty</th><th>Unit Price</th><th>Total</th></tr></thead>
             <tbody>${itemsHtml}</tbody>
           </table>
-          <div class="total">Total Amount: ₹${safeNumber(sale.totalAmount || sale.total || 0).toFixed(2)}</div>
+          <div class="total">Total Amount: ₹${safeNumber(fullSale.totalAmount || fullSale.total || 0).toFixed(2)}</div>
         </body>
       </html>`;
 
+    printWindow.document.open();
     printWindow.document.write(html);
     printWindow.document.close();
     setTimeout(() => {
@@ -377,32 +420,86 @@ export default function SalesManagement({ showToast, storeProfile }) {
       const worksheet = workbook.addWorksheet("Sales");
 
       worksheet.columns = [
-        { header: "Invoice", key: "Invoice", width: 15 },
+        { header: "Invoice No", key: "Invoice No", width: 18 },
         { header: "Date", key: "Date", width: 12 },
         { header: "Time", key: "Time", width: 10 },
-        { header: "Patient", key: "Patient", width: 20 },
-        { header: "Items", key: "Items", width: 30 },
+        { header: "Patient Name", key: "Patient Name", width: 20 },
+        { header: "Phone", key: "Phone", width: 15 },
+        { header: "Medicine Names", key: "Medicine Names", width: 35 },
         { header: "Discount", key: "Discount", width: 10 },
         { header: "GST", key: "GST", width: 10 },
         { header: "Total", key: "Total", width: 12 },
-        { header: "Payment", key: "Payment", width: 12 },
+        { header: "Payment Type", key: "Payment Type", width: 15 },
+        { header: "Payment Status", key: "Payment Status", width: 15 },
+        { header: "Invoice Status", key: "Invoice Status", width: 15 },
+        { header: "Returned Amount", key: "Returned Amount", width: 15 },
+        { header: "Return Count", key: "Return Count", width: 12 },
+        { header: "Created By", key: "Created By", width: 15 },
       ];
 
-      const exportData = filteredSales.map((sale) => ({
-        Invoice: sale.id,
-        Date: sale.date,
-        Time: sale.time,
-        Patient: sale.patient,
-        Items: (sale.items || [])
-          .map((it) => `${it.name} x${it.qty}`)
-          .join("; "),
-        Discount: sale.disc,
-        GST: sale.gst,
-        Total: sale.total,
-        Payment: sale.payment,
-      }));
+      const exportData = filteredSales.map((sale) => {
+        if (
+          !sale.invoiceNumber ||
+          !sale.createdAt ||
+          !sale.paymentMode ||
+          !sale.items
+        ) {
+          console.warn("Export Validation Warning: Incomplete Record", sale);
+        }
+
+        return {
+          "Invoice No": sale.invoiceNumber || sale.id || "DATA MISSING",
+          Date: formatInvoiceDate(sale.createdAt || sale.date),
+          Time: formatInvoiceTime(sale.createdAt || sale.date),
+          "Patient Name":
+            sale.patient?.fullName ||
+            sale.patient?.name ||
+            sale.patientName ||
+            sale.customerName ||
+            "Walk-in Customer",
+          Phone: sale.patient?.phone || sale.phone || sale.patientPhone || "",
+          "Medicine Names": (sale.items || [])
+            .map(
+              (item) =>
+                `${getMedicineName(item)} x${item.quantity || item.qty || 1}`,
+            )
+            .join(", "),
+          Discount: sale.discountAmount || sale.discount || sale.disc || 0,
+          GST: sale.taxAmount || sale.gstAmount || sale.gst || 0,
+          Total: sale.totalAmount || sale.total || 0,
+          "Payment Type":
+            sale.paymentMode || sale.paymentMethod || sale.payment || "UNKNOWN",
+          "Payment Status": sale.paymentStatus || "UNKNOWN",
+          "Invoice Status": sale.invoiceStatus || sale.status || "UNKNOWN",
+          "Returned Amount": sale.returnedAmount || 0,
+          "Return Count": sale.returnCount || 0,
+          "Created By": sale.createdBy?.name || sale.user?.name || "",
+        };
+      });
 
       worksheet.addRows(exportData);
+
+      const metadataSheet = workbook.addWorksheet("Metadata");
+      metadataSheet.columns = [
+        { header: "Property", key: "Property", width: 20 },
+        { header: "Value", key: "Value", width: 30 },
+      ];
+
+      const totalRevenue = filteredSales.reduce(
+        (sum, sale) => sum + (sale.totalAmount || sale.total || 0),
+        0,
+      );
+
+      metadataSheet.addRows([
+        {
+          Property: "Generated On",
+          Value: `${format(new Date(), "dd MMM yyyy")} ${format(new Date(), "hh:mm a")}`,
+        },
+        { Property: "Generated By", Value: user?.name || "Admin" },
+        { Property: "Store", Value: "Viyan MedAssist" },
+        { Property: "Total Records", Value: filteredSales.length },
+        { Property: "Total Revenue", Value: `₹${totalRevenue.toFixed(2)}` },
+      ]);
 
       const buffer = await workbook.xlsx.writeBuffer();
       const data = new Blob([buffer], {
@@ -417,17 +514,33 @@ export default function SalesManagement({ showToast, storeProfile }) {
   };
 
   const sendWhatsApp = (sale) => {
-    const phone = sale.phone || "919840012345";
-    const text = `Hello ${sale.patient}, Your bill ${sale.id} of ₹${sale.total} from Viyan MedAssist is ready.`;
-    window.open(
-      `https://wa.me/${phone}?text=${encodeURIComponent(text)}`,
-      "_blank",
-    );
+    const fullSale = selectedSale || sale;
+    const phone =
+      fullSale.phone ||
+      fullSale.patientPhone ||
+      fullSale.patient?.phone ||
+      "919840012345";
+    const patientName =
+      fullSale.patient?.name ||
+      fullSale.patient?.fullName ||
+      fullSale.patientName ||
+      "Customer";
+
+    let itemsText = (fullSale.items || [])
+      .map((it) => `• ${getMedicineName(it)} x${it.qty || it.quantity || 1}`)
+      .join("%0A");
+
+    const text = `Hello ${patientName},%0A%0AInvoice: ${fullSale.invoiceNumber || fullSale.id}%0AAmount: ₹${fullSale.totalAmount || fullSale.total}%0APayment: ${fullSale.paymentMode || fullSale.payment || "Unknown Payment Method"}%0A%0AMedicines:%0A${itemsText}%0A%0AThank you for choosing Viyan MedAssist.`;
+
+    window.open(`https://wa.me/${phone}?text=${text}`, "_blank");
     setShowWhatsAppModal(false);
     showToast("WhatsApp opened", "success");
   };
 
-  const downloadInvoicePDF = (sale) => {
+  const downloadInvoicePDF = async (sale) => {
+    const fullSale = await fetchInvoiceDetail(sale.id);
+    if (!fullSale) return;
+
     const doc = new jsPDF();
 
     // Store Profile
@@ -474,34 +587,36 @@ export default function SalesManagement({ showToast, storeProfile }) {
     doc.setFontSize(10);
     doc.setFont("helvetica", "normal");
 
-    const invoiceNum = sale.invoiceNumber || sale.id;
+    const invoiceNum = fullSale.invoiceNumber || fullSale.id;
     const patientName =
-      sale.patient?.fullName ||
-      sale.patientName ||
-      sale.customerName ||
-      sale.patient ||
+      fullSale.patient?.name ||
+      fullSale.patient?.fullName ||
+      fullSale.patientName ||
+      fullSale.customerName ||
       "Walk-in";
     const dateStr =
-      sale.date || sale.createdAt
-        ? format(new Date(sale.date || sale.createdAt), "dd MMM yyyy")
+      fullSale.date || fullSale.createdAt
+        ? format(new Date(fullSale.date || fullSale.createdAt), "dd MMM yyyy")
         : "";
-    const timeStr =
-      sale.time ||
-      (sale.createdAt ? format(new Date(sale.createdAt), "hh:mm a") : "");
+    const timeStr = formatInvoiceTime(fullSale.createdAt || fullSale.date);
 
     doc.text(`Invoice No: ${invoiceNum}`, 14, y);
     doc.text(`Date: ${dateStr} ${timeStr}`, 120, y);
     y += 8;
     doc.text(`Patient: ${patientName}`, 14, y);
-    doc.text(`Payment: ${sale.paymentMode || sale.payment || "Cash"}`, 120, y);
+    doc.text(
+      `Payment: ${fullSale.paymentMode || fullSale.payment || "Unknown Payment Method"}`,
+      120,
+      y,
+    );
     y += 12;
 
     // Table
     autoTable(doc, {
       startY: y,
       head: [["Medicine", "Qty", "Unit Price", "Total"]],
-      body: (sale.items || []).map((it) => [
-        it.medicine?.name || it.name || "Unknown",
+      body: (fullSale.items || []).map((it) => [
+        getMedicineName(it),
         String(it.quantity || it.qty || 1),
         `Rs. ${safeNumber(it.unitPrice || it.price || 0).toFixed(2)}`,
         `Rs. ${safeNumber((it.quantity || it.qty || 1) * (it.unitPrice || it.price || 0)).toFixed(2)}`,
@@ -515,7 +630,7 @@ export default function SalesManagement({ showToast, storeProfile }) {
 
     doc.setFontSize(12);
     doc.setFont("helvetica", "bold");
-    const totalAmount = sale.totalAmount || sale.total || 0;
+    const totalAmount = fullSale.totalAmount || fullSale.total || 0;
     doc.text(
       `Total Amount: Rs. ${safeNumber(totalAmount).toFixed(2)}`,
       140,
@@ -559,7 +674,10 @@ export default function SalesManagement({ showToast, storeProfile }) {
         <div className="header-actions">
           <button
             className="pos-btn outline"
-            onClick={() => setShowDateRangeModal(true)}
+            onClick={() => {
+              setTempDateRange(dateRange);
+              setShowDateRangeModal(true);
+            }}
           >
             <Calendar size={16} /> Date Range
           </button>
@@ -582,9 +700,12 @@ export default function SalesManagement({ showToast, storeProfile }) {
             label: "TODAY'S SALES",
             val:
               "₹" +
-              dailySales
-                .reduce((sum, s) => sum + (s.totalAmount || s.total || 0), 0)
-                .toLocaleString(),
+              formatCurrency(
+                dailySales.reduce(
+                  (sum, s) => sum + (s.totalAmount || s.total || 0),
+                  0,
+                ),
+              ),
             icon: TrendingUp,
             col: "var(--primary)",
           },
@@ -592,9 +713,12 @@ export default function SalesManagement({ showToast, storeProfile }) {
             label: "SELECTED RANGE",
             val:
               "₹" +
-              filteredSales
-                .reduce((sum, s) => sum + (s.totalAmount || s.total || 0), 0)
-                .toLocaleString(),
+              formatCurrency(
+                filteredSales.reduce(
+                  (sum, s) => sum + (s.totalAmount || s.total || 0),
+                  0,
+                ),
+              ),
             icon: Calendar,
             col: "var(--info)",
           },
@@ -608,9 +732,14 @@ export default function SalesManagement({ showToast, storeProfile }) {
             label: "RETURNS",
             val:
               "₹" +
-              filteredReturns
-                .reduce((sum, r) => sum + (r.refundAmount || r.value || 0), 0)
-                .toLocaleString(),
+              formatCurrency(
+                filteredReturns.reduce(
+                  (sum, r) =>
+                    sum +
+                    (r.refundAmount || r.totalReturnAmount || r.value || 0),
+                  0,
+                ),
+              ),
             icon: ArrowLeft,
             col: "var(--danger)",
           },
@@ -634,6 +763,47 @@ export default function SalesManagement({ showToast, storeProfile }) {
         ))}
       </div>
 
+      {/* ── Active Filter Banner ── */}
+      <div
+        style={{
+          marginBottom: "20px",
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          background: "var(--surface)",
+          padding: "12px 16px",
+          borderRadius: "8px",
+          border: "1px solid var(--outline-variant)",
+        }}
+      >
+        <div style={{ fontSize: "14px", color: "var(--text-secondary)" }}>
+          Showing Records:{" "}
+          <strong style={{ color: "var(--text)" }}>
+            {dateRange.start
+              ? format(new Date(dateRange.start), "dd MMM yyyy")
+              : "All Time"}
+          </strong>{" "}
+          →{" "}
+          <strong style={{ color: "var(--text)" }}>
+            {dateRange.end
+              ? format(new Date(dateRange.end), "dd MMM yyyy")
+              : "All Time"}
+          </strong>
+        </div>
+        {(dateRange.start || dateRange.end) && (
+          <button
+            className="pos-btn outline"
+            style={{ padding: "4px 12px", fontSize: "12px" }}
+            onClick={() => {
+              setDateRange({ start: "", end: "" });
+              setTempDateRange({ start: "", end: "" });
+            }}
+          >
+            Reset Filter
+          </button>
+        )}
+      </div>
+
       {loading ? (
         <div
           style={{
@@ -642,7 +812,9 @@ export default function SalesManagement({ showToast, storeProfile }) {
             color: "var(--on-surface-variant)",
           }}
         >
-          Loading live data...
+          {dateRange.start || dateRange.end
+            ? "Applying Date Filter..."
+            : "Loading live data..."}
         </div>
       ) : error ? (
         <div
@@ -657,17 +829,19 @@ export default function SalesManagement({ showToast, storeProfile }) {
       ) : (
         activeTab === "daily" && (
           <>
-            <div className="date-navigator">
-              <button className="micro-btn" onClick={handlePrevDate}>
-                <ChevronLeft size={18} />
-              </button>
-              <span className="date-display">
-                {format(currentDate, "dd MMM yyyy")}
-              </span>
-              <button className="micro-btn" onClick={handleNextDate}>
-                <ChevronRight size={18} />
-              </button>
-            </div>
+            {!dateRange.start && !dateRange.end && (
+              <div className="date-navigator">
+                <button className="micro-btn" onClick={handlePrevDate}>
+                  <ChevronLeft size={18} />
+                </button>
+                <span className="date-display">
+                  {format(currentDate, "dd MMM yyyy")}
+                </span>
+                <button className="micro-btn" onClick={handleNextDate}>
+                  <ChevronRight size={18} />
+                </button>
+              </div>
+            )}
 
             <div className="sales-summary-bar">
               <div className="summary-stats-left">
@@ -678,9 +852,11 @@ export default function SalesManagement({ showToast, storeProfile }) {
                   Revenue:{" "}
                   <b>
                     ₹
-                    {dailySales.reduce(
-                      (sum, s) => sum + (s.totalAmount || s.total || 0),
-                      0,
+                    {formatCurrency(
+                      dailySales.reduce(
+                        (sum, s) => sum + (s.totalAmount || s.total || 0),
+                        0,
+                      ),
                     )}
                   </b>
                 </span>
@@ -698,56 +874,111 @@ export default function SalesManagement({ showToast, storeProfile }) {
                     <th>Disc</th>
                     <th>GST</th>
                     <th>Total</th>
-                    <th>Payment</th>
-                    <th>Actions</th>
+                    <th>Payment Type</th>
+                    <th>Payment Status</th>
+                    <th>Invoice Status</th>
                   </tr>
                 </thead>
                 <tbody>
                   {dailySales.length === 0 ? (
                     <tr>
                       <td
-                        colSpan="9"
+                        colSpan="10"
                         style={{
                           textAlign: "center",
-                          padding: "30px",
-                          color: "var(--text-muted)",
+                          padding: "40px",
+                          color: "var(--on-surface-variant)",
                         }}
                       >
-                        No sales for this date
+                        {dateRange.start || dateRange.end
+                          ? `No sales found between ${format(new Date(dateRange.start), "dd MMM yyyy")} and ${format(new Date(dateRange.end), "dd MMM yyyy")}`
+                          : "No sales found for this date"}
                       </td>
                     </tr>
                   ) : (
                     dailySales.map((sale) => (
-                      <tr key={sale.id}>
+                      <tr
+                        key={sale.id}
+                        onClick={() => handleOpenDetail(sale)}
+                        style={{ cursor: "pointer" }}
+                        className="table-row-hover"
+                      >
                         <td className="result-meta">
-                          {sale.time ||
-                            (sale.createdAt && !isNaN(new Date(sale.createdAt))
-                              ? new Date(sale.createdAt).toLocaleTimeString()
-                              : "--")}
-                        </td>
-                        <td style={{ fontWeight: 700 }}>
-                          {sale.invoiceNumber || sale.id}
-                        </td>
-                        <td>
-                          {sale.patient?.fullName ||
-                            sale.patientName ||
-                            sale.customerName ||
-                            "Walk-in"}
-                        </td>
-                        <td>
-                          {sale.items
-                            ? sale.items.length
-                            : sale.medicinesCount || 0}{" "}
-                          medicines
-                        </td>
-                        <td>₹{sale.discountAmount || sale.disc || 0}</td>
-                        <td className="result-meta">
-                          ₹{sale.taxAmount || sale.gst || 0}
+                          {formatInvoiceTime(sale.createdAt || sale.date) ||
+                            "--"}
                         </td>
                         <td
                           style={{ fontWeight: 700, color: "var(--primary)" }}
                         >
-                          ₹{sale.totalAmount || sale.total || 0}
+                          {sale.invoiceNumber || sale.id}
+                        </td>
+                        <td>
+                          <div>
+                            {sale.patient?.fullName ||
+                              sale.patient?.name ||
+                              sale.patientName ||
+                              sale.customerName ||
+                              "Walk-in"}
+                          </div>
+                          {(sale.patient?.phone || sale.phone) && (
+                            <div
+                              className="result-meta"
+                              style={{ fontSize: "12px", marginTop: "2px" }}
+                            >
+                              {sale.patient?.phone || sale.phone}
+                            </div>
+                          )}
+                        </td>
+                        <td>
+                          {sale.items && sale.items.length > 0 ? (
+                            <div>
+                              {sale.items.slice(0, 2).map((it, idx) => (
+                                <div
+                                  key={idx}
+                                  style={{
+                                    fontSize: "12px",
+                                    whiteSpace: "nowrap",
+                                    overflow: "hidden",
+                                    textOverflow: "ellipsis",
+                                    maxWidth: "180px",
+                                  }}
+                                >
+                                  {getMedicineName(it)} x
+                                  {it.quantity || it.qty || 1}
+                                </div>
+                              ))}
+                              {sale.items.length > 2 && (
+                                <div
+                                  className="result-meta"
+                                  style={{ fontSize: "11px", marginTop: "2px" }}
+                                >
+                                  +{sale.items.length - 2} More
+                                </div>
+                              )}
+                            </div>
+                          ) : (
+                            <span className="result-meta">—</span>
+                          )}
+                        </td>
+                        <td>
+                          ₹
+                          {parseFloat(
+                            sale.discountAmount || sale.disc || 0,
+                          ).toFixed(2)}
+                        </td>
+                        <td className="result-meta">
+                          ₹
+                          {parseFloat(
+                            sale.taxAmount || sale.gstAmount || sale.gst || 0,
+                          ).toFixed(2)}
+                        </td>
+                        <td
+                          style={{ fontWeight: 700, color: "var(--primary)" }}
+                        >
+                          ₹
+                          {parseFloat(
+                            sale.totalAmount || sale.total || 0,
+                          ).toFixed(2)}
                         </td>
                         <td>
                           <div
@@ -768,40 +999,60 @@ export default function SalesManagement({ showToast, storeProfile }) {
                             {(sale.paymentMode || sale.payment) === "CARD" && (
                               <CreditCard size={12} color="var(--info)" />
                             )}
-                            {sale.paymentMode || sale.payment}
+                            <span className="payment-badge">
+                              {sale.paymentMode ||
+                                sale.payment ||
+                                sale.paymentMethod ||
+                                "UNKNOWN"}
+                            </span>
                           </div>
                         </td>
                         <td>
-                          <div style={{ display: "flex", gap: "12px" }}>
-                            <button
-                              className="micro-btn"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleOpenDetail(sale);
-                              }}
-                            >
-                              <Eye size={14} />
-                            </button>
-                            <button
-                              className="micro-btn"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handlePrintBill(sale);
-                              }}
-                            >
-                              <Printer size={14} />
-                            </button>
-                            <button
-                              className="micro-btn"
-                              style={{ color: "var(--danger)" }}
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleReturn(sale);
-                              }}
-                            >
-                              <RefreshCw size={14} />
-                            </button>
-                          </div>
+                          <span
+                            className={`p-status ${
+                              sale.paymentStatus === "PAID"
+                                ? "paid"
+                                : sale.paymentStatus === "FAILED"
+                                  ? "cancelled"
+                                  : sale.paymentStatus === "PENDING"
+                                    ? "low"
+                                    : sale.paymentStatus === "PARTIAL"
+                                      ? "low"
+                                      : sale.paymentStatus === "REFUNDED"
+                                        ? "expired"
+                                        : "low"
+                            }`}
+                          >
+                            {(sale.paymentStatus || "UNKNOWN").toUpperCase()}
+                          </span>
+                        </td>
+                        <td>
+                          <span
+                            className={`p-status ${
+                              (sale.invoiceStatus || sale.status) ===
+                              "COMPLETED"
+                                ? "paid"
+                                : (sale.invoiceStatus || sale.status) ===
+                                    "CANCELLED"
+                                  ? "cancelled"
+                                  : (sale.invoiceStatus || sale.status) ===
+                                      "PARTIAL_RETURN"
+                                    ? "low"
+                                    : (sale.invoiceStatus || sale.status) ===
+                                        "REFUNDED"
+                                      ? "expired"
+                                      : (sale.invoiceStatus || sale.status) ===
+                                          "PENDING"
+                                        ? "low"
+                                        : "low"
+                            }`}
+                          >
+                            {(
+                              sale.invoiceStatus ||
+                              sale.status ||
+                              "UNKNOWN"
+                            ).toUpperCase()}
+                          </span>
                         </td>
                       </tr>
                     ))
@@ -920,25 +1171,27 @@ export default function SalesManagement({ showToast, storeProfile }) {
                 <th>Date</th>
                 <th>Invoice #</th>
                 <th>Patient</th>
-                <th>Items</th>
+                <th>Medicines</th>
                 <th>Amount</th>
-                <th>Payment</th>
-                <th>Status</th>
-                <th>Actions</th>
+                <th>Payment Method</th>
+                <th>Payment Status</th>
+                <th>Invoice Status</th>
               </tr>
             </thead>
             <tbody>
               {filteredSales.length === 0 ? (
                 <tr>
                   <td
-                    colSpan="9"
+                    colSpan="8"
                     style={{
                       textAlign: "center",
-                      padding: "30px",
-                      color: "var(--text-muted)",
+                      padding: "40px",
+                      color: "var(--on-surface-variant)",
                     }}
                   >
-                    No sales found
+                    {dateRange.start || dateRange.end
+                      ? `No sales found between ${format(new Date(dateRange.start), "dd MMM yyyy")} and ${format(new Date(dateRange.end), "dd MMM yyyy")}`
+                      : "No sales found"}
                   </td>
                 </tr>
               ) : (
@@ -954,50 +1207,117 @@ export default function SalesManagement({ showToast, storeProfile }) {
                       {sale.invoiceNumber || sale.id}
                     </td>
                     <td>
-                      {sale.patient?.fullName ||
-                        sale.patientName ||
-                        sale.customerName ||
-                        "Walk-in"}
-                    </td>
-                    <td className="result-meta">
-                      {sale.patient?.phone || sale.phone || "—"}
+                      <div>
+                        {sale.patient?.fullName ||
+                          sale.patient?.name ||
+                          sale.patientName ||
+                          sale.customerName ||
+                          "Walk-in"}
+                      </div>
+                      {(sale.patient?.phone || sale.phone) && (
+                        <div
+                          className="result-meta"
+                          style={{ fontSize: "12px", marginTop: "2px" }}
+                        >
+                          {sale.patient?.phone || sale.phone}
+                        </div>
+                      )}
                     </td>
                     <td>
-                      {sale.items
-                        ? sale.items.length
-                        : sale.medicinesCount || 0}
+                      {sale.items && sale.items.length > 0 ? (
+                        <div>
+                          {sale.items.slice(0, 2).map((it, idx) => (
+                            <div
+                              key={idx}
+                              style={{
+                                fontSize: "12px",
+                                whiteSpace: "nowrap",
+                                overflow: "hidden",
+                                textOverflow: "ellipsis",
+                                maxWidth: "180px",
+                              }}
+                            >
+                              {getMedicineName(it)} x
+                              {it.quantity || it.qty || 1}
+                            </div>
+                          ))}
+                          {sale.items.length > 2 && (
+                            <div
+                              className="result-meta"
+                              style={{ fontSize: "11px", marginTop: "2px" }}
+                            >
+                              +{sale.items.length - 2} More
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        <span className="result-meta">—</span>
+                      )}
                     </td>
                     <td style={{ fontWeight: 700 }}>
                       ₹{sale.totalAmount || sale.total || 0}
                     </td>
-                    <td>{sale.paymentMode || sale.payment}</td>
                     <td>
-                      <span className="p-status paid">
-                        {(sale.status || "PAID").toUpperCase()}
+                      <span
+                        className="badge-outline"
+                        style={{
+                          fontSize: "11px",
+                          padding: "2px 6px",
+                          border: "1px solid var(--outline)",
+                          borderRadius: "4px",
+                        }}
+                      >
+                        {sale.paymentMode ||
+                          sale.payment ||
+                          sale.paymentMethod ||
+                          "UNKNOWN"}
                       </span>
                     </td>
                     <td>
-                      <div style={{ display: "flex", gap: "12px" }}>
-                        <button
-                          className="micro-btn"
-                          style={{ color: "var(--success)" }}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleWhatsApp(sale);
-                          }}
-                        >
-                          <MessageCircle size={14} />
-                        </button>
-                        <button
-                          className="micro-btn"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleOpenDetail(sale);
-                          }}
-                        >
-                          <Eye size={14} />
-                        </button>
-                      </div>
+                      <span
+                        className={`p-status ${
+                          sale.paymentStatus === "PAID"
+                            ? "paid"
+                            : sale.paymentStatus === "FAILED"
+                              ? "cancelled"
+                              : sale.paymentStatus === "PENDING"
+                                ? "low"
+                                : sale.paymentStatus === "PARTIAL"
+                                  ? "low"
+                                  : sale.paymentStatus === "REFUNDED"
+                                    ? "expired"
+                                    : "paid"
+                        }`}
+                      >
+                        {(sale.paymentStatus || "PAID").toUpperCase()}
+                      </span>
+                    </td>
+                    <td>
+                      <span
+                        className={`p-status ${
+                          (sale.invoiceStatus || sale.status) === "COMPLETED"
+                            ? "paid"
+                            : (sale.invoiceStatus || sale.status) ===
+                                "CANCELLED"
+                              ? "cancelled"
+                              : (sale.invoiceStatus || sale.status) ===
+                                  "PARTIAL_RETURN"
+                                ? "low"
+                                : (sale.invoiceStatus || sale.status) ===
+                                    "REFUNDED"
+                                  ? "expired"
+                                  : (sale.invoiceStatus || sale.status) ===
+                                      "PENDING"
+                                    ? "low"
+                                    : "low"
+                        }`}
+                      >
+                        {(
+                          sale.invoiceStatus ||
+                          sale.status ||
+                          "COMPLETED"
+                        ).toUpperCase()}
+                      </span>
                     </td>
                   </tr>
                 ))
@@ -1056,7 +1376,13 @@ export default function SalesManagement({ showToast, storeProfile }) {
                     </td>
                     <td>{ret.items?.length || ret.itemsCount || 0}</td>
                     <td style={{ fontWeight: 700, color: "var(--danger)" }}>
-                      ₹{ret.refundAmount || ret.value || 0}
+                      ₹
+                      {formatCurrency(
+                        ret.refundAmount ||
+                          ret.totalReturnAmount ||
+                          ret.value ||
+                          0,
+                      )}
                     </td>
                     <td>
                       <span
@@ -1108,31 +1434,50 @@ export default function SalesManagement({ showToast, storeProfile }) {
               <div className="stock-modal-body">
                 <div
                   style={{
-                    display: "flex",
-                    justifyContent: "space-between",
+                    display: "grid",
+                    gridTemplateColumns: "1fr 1fr",
+                    gap: "16px",
                     marginBottom: "20px",
                   }}
                 >
                   <div>
                     <div className="result-meta">Patient</div>
                     <div style={{ fontWeight: 700 }}>
-                      {selectedSale.patient?.fullName ||
+                      {selectedSale.patient?.name ||
+                        selectedSale.patient?.fullName ||
                         selectedSale.patientName ||
                         selectedSale.customerName ||
                         "Walk-in"}
                     </div>
-                  </div>
-                  <div>
-                    <div className="result-meta">Time</div>
+                    <div className="result-meta" style={{ marginTop: "4px" }}>
+                      Phone
+                    </div>
                     <div style={{ fontWeight: 700 }}>
-                      {selectedSale.time ||
-                        new Date(selectedSale.createdAt).toLocaleTimeString()}
+                      {selectedSale.patient?.phone ||
+                        selectedSale.patientPhone ||
+                        "N/A"}
                     </div>
                   </div>
                   <div>
-                    <div className="result-meta">Payment</div>
+                    <div className="result-meta">Date & Time</div>
                     <div style={{ fontWeight: 700 }}>
-                      {selectedSale.paymentMode || selectedSale.payment}
+                      {formatInvoiceDate(
+                        selectedSale.createdAt || selectedSale.date,
+                      )}{" "}
+                      {formatInvoiceTime(
+                        selectedSale.createdAt || selectedSale.date,
+                      )}
+                    </div>
+                    <div className="result-meta" style={{ marginTop: "4px" }}>
+                      Payment
+                    </div>
+                    <div style={{ fontWeight: 700 }}>
+                      {selectedSale.paymentMode ||
+                        selectedSale.payment ||
+                        "Unknown Payment Method"}
+                      {selectedSale.paymentStatus
+                        ? ` (${selectedSale.paymentStatus})`
+                        : ""}
                     </div>
                   </div>
                 </div>
@@ -1141,40 +1486,156 @@ export default function SalesManagement({ showToast, storeProfile }) {
                   <label>Bill Items</label>
                   <div
                     style={{
-                      padding: "12px",
                       background: "var(--surface-container)",
                       borderRadius: "8px",
+                      overflow: "hidden",
                     }}
                   >
-                    {(selectedSale.items || []).map((it, idx) => (
+                    <table
+                      style={{
+                        width: "100%",
+                        fontSize: "14px",
+                        borderCollapse: "collapse",
+                      }}
+                    >
+                      <thead>
+                        <tr
+                          style={{
+                            background: "rgba(0,0,0,0.05)",
+                            textAlign: "left",
+                          }}
+                        >
+                          <th style={{ padding: "8px" }}>Medicine</th>
+                          <th style={{ padding: "8px" }}>Batch</th>
+                          <th style={{ padding: "8px", textAlign: "right" }}>
+                            Qty
+                          </th>
+                          <th style={{ padding: "8px", textAlign: "right" }}>
+                            Price
+                          </th>
+                          <th style={{ padding: "8px", textAlign: "right" }}>
+                            GST
+                          </th>
+                          <th style={{ padding: "8px", textAlign: "right" }}>
+                            Total
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {(selectedSale.items || []).map((it, idx) => (
+                          <tr
+                            key={idx}
+                            style={{
+                              borderBottom: "1px solid var(--outline-variant)",
+                            }}
+                          >
+                            <td style={{ padding: "8px" }}>
+                              {getMedicineName(it)}
+                            </td>
+                            <td style={{ padding: "8px" }}>
+                              {it.batchNumber || it.batch?.batchNumber || "N/A"}
+                            </td>
+                            <td style={{ padding: "8px", textAlign: "right" }}>
+                              {it.quantity || it.qty || 1}
+                            </td>
+                            <td style={{ padding: "8px", textAlign: "right" }}>
+                              ₹
+                              {safeNumber(
+                                it.unitPrice || it.price || 0,
+                              ).toFixed(2)}
+                            </td>
+                            <td style={{ padding: "8px", textAlign: "right" }}>
+                              ₹{safeNumber(it.gstAmount || 0).toFixed(2)} (
+                              {it.gstRate || it.gst || 0}%)
+                            </td>
+                            <td style={{ padding: "8px", textAlign: "right" }}>
+                              ₹
+                              {safeNumber(
+                                it.lineTotal ||
+                                  it.totalAmount ||
+                                  it.total ||
+                                  it.totalPrice ||
+                                  (it.quantity || it.qty || 1) *
+                                    (it.unitPrice || it.price || 0),
+                              ).toFixed(2)}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+
+                    <div
+                      style={{
+                        padding: "12px",
+                        borderTop: "2px solid var(--outline-variant)",
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: "4px",
+                        alignItems: "flex-end",
+                      }}
+                    >
                       <div
-                        key={idx}
                         style={{
                           display: "flex",
                           justifyContent: "space-between",
-                          marginBottom: "8px",
+                          width: "200px",
                         }}
                       >
+                        <span className="result-meta">Subtotal</span>
                         <span>
-                          {it.name} x{it.qty}
+                          ₹{safeNumber(selectedSale.subtotal || 0).toFixed(2)}
                         </span>
-                        <span>₹{it.price * it.qty}</span>
                       </div>
-                    ))}
-                    <div
-                      style={{
-                        display: "flex",
-                        justifyContent: "space-between",
-                        borderTop: "1px solid var(--outline-variant)",
-                        paddingTop: "8px",
-                        marginTop: "8px",
-                        fontWeight: 700,
-                      }}
-                    >
-                      <span>Total Amount</span>
-                      <span style={{ color: "var(--primary)" }}>
-                        ₹{selectedSale.totalAmount || selectedSale.total || 0}
-                      </span>
+                      <div
+                        style={{
+                          display: "flex",
+                          justifyContent: "space-between",
+                          width: "200px",
+                        }}
+                      >
+                        <span className="result-meta">Discount</span>
+                        <span>
+                          ₹
+                          {safeNumber(
+                            selectedSale.discountAmount ||
+                              selectedSale.discount ||
+                              0,
+                          ).toFixed(2)}
+                        </span>
+                      </div>
+                      <div
+                        style={{
+                          display: "flex",
+                          justifyContent: "space-between",
+                          width: "200px",
+                        }}
+                      >
+                        <span className="result-meta">GST</span>
+                        <span>
+                          ₹
+                          {safeNumber(
+                            selectedSale.gstAmount || selectedSale.gst || 0,
+                          ).toFixed(2)}
+                        </span>
+                      </div>
+                      <div
+                        style={{
+                          display: "flex",
+                          justifyContent: "space-between",
+                          width: "200px",
+                          fontWeight: 700,
+                          fontSize: "16px",
+                          marginTop: "4px",
+                        }}
+                      >
+                        <span>Grand Total</span>
+                        <span style={{ color: "var(--primary)" }}>
+                          ₹
+                          {safeNumber(
+                            selectedSale.totalAmount || selectedSale.total || 0,
+                          ).toFixed(2)}
+                        </span>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -1196,6 +1657,32 @@ export default function SalesManagement({ showToast, storeProfile }) {
                   }}
                 >
                   <Download size={16} /> PDF
+                </button>
+                <button
+                  className="pos-btn outline"
+                  style={{
+                    color: "var(--danger)",
+                    borderColor: "var(--danger)",
+                  }}
+                  onClick={() => {
+                    handleReturn(selectedSale);
+                    setShowDetailModal(false);
+                  }}
+                >
+                  <RefreshCw size={16} /> Return Items
+                </button>
+                <button
+                  className="pos-btn outline"
+                  style={{
+                    color: "var(--success)",
+                    borderColor: "var(--success)",
+                  }}
+                  onClick={() => {
+                    handleWhatsApp(selectedSale);
+                    setShowDetailModal(false);
+                  }}
+                >
+                  <MessageCircle size={16} /> WhatsApp
                 </button>
                 <button
                   className="pos-btn teal"
@@ -1340,26 +1827,51 @@ export default function SalesManagement({ showToast, storeProfile }) {
                         }
                       />
                       <div style={{ flex: 1 }}>
-                        {item.medicine?.name || item.name}
+                        <div style={{ fontWeight: 600 }}>
+                          {getMedicineName(item)}
+                        </div>
+                        <div
+                          className="result-meta"
+                          style={{ fontSize: "12px" }}
+                        >
+                          Sold Qty: {item.quantity || item.qty || 1}
+                        </div>
                       </div>
-                      <input
-                        required
-                        className="p-cost-input"
-                        style={{ width: "50px" }}
-                        type="number"
-                        min={0}
-                        max={item.quantity}
-                        value={returnQuantities[idx] ?? item.quantity}
-                        onChange={(e) =>
-                          setReturnQuantities((prev) => ({
-                            ...prev,
-                            [idx]: Math.min(
-                              item.quantity,
-                              Math.max(0, safeNumber(e.target.value)),
-                            ),
-                          }))
-                        }
-                      />
+                      <div
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "8px",
+                        }}
+                      >
+                        <span
+                          className="result-meta"
+                          style={{ fontSize: "12px" }}
+                        >
+                          Return Qty:
+                        </span>
+                        <input
+                          required
+                          className="p-cost-input"
+                          style={{ width: "60px", padding: "4px 8px" }}
+                          type="number"
+                          min={0}
+                          max={item.quantity || item.qty || 1}
+                          value={
+                            returnQuantities[idx] ??
+                            (item.quantity || item.qty || 1)
+                          }
+                          onChange={(e) =>
+                            setReturnQuantities((prev) => ({
+                              ...prev,
+                              [idx]: Math.min(
+                                item.quantity || item.qty || 1,
+                                Math.max(0, safeNumber(e.target.value)),
+                              ),
+                            }))
+                          }
+                        />
+                      </div>
                     </div>
                   ))}
                   {(!selectedSale.items || selectedSale.items.length === 0) && (
@@ -1435,9 +1947,12 @@ export default function SalesManagement({ showToast, storeProfile }) {
                     type="date"
                     className="pos-input"
                     style={{ width: "100%" }}
-                    value={dateRange.start}
+                    value={tempDateRange.start}
                     onChange={(e) =>
-                      setDateRange({ ...dateRange, start: e.target.value })
+                      setTempDateRange({
+                        ...tempDateRange,
+                        start: e.target.value,
+                      })
                     }
                   />
                 </div>
@@ -1448,9 +1963,12 @@ export default function SalesManagement({ showToast, storeProfile }) {
                     type="date"
                     className="pos-input"
                     style={{ width: "100%" }}
-                    value={dateRange.end}
+                    value={tempDateRange.end}
                     onChange={(e) =>
-                      setDateRange({ ...dateRange, end: e.target.value })
+                      setTempDateRange({
+                        ...tempDateRange,
+                        end: e.target.value,
+                      })
                     }
                   />
                 </div>
@@ -1468,7 +1986,7 @@ export default function SalesManagement({ showToast, storeProfile }) {
                     className="pos-btn outline"
                     style={{ fontSize: "12px", padding: "8px" }}
                     onClick={() =>
-                      setDateRange({
+                      setTempDateRange({
                         start: format(new Date(), "yyyy-MM-dd"),
                         end: format(new Date(), "yyyy-MM-dd"),
                       })
@@ -1480,13 +1998,83 @@ export default function SalesManagement({ showToast, storeProfile }) {
                     className="pos-btn outline"
                     style={{ fontSize: "12px", padding: "8px" }}
                     onClick={() =>
-                      setDateRange({
+                      setTempDateRange({
+                        start: format(subDays(new Date(), 1), "yyyy-MM-dd"),
+                        end: format(subDays(new Date(), 1), "yyyy-MM-dd"),
+                      })
+                    }
+                  >
+                    Yesterday
+                  </button>
+                  <button
+                    className="pos-btn outline"
+                    style={{ fontSize: "12px", padding: "8px" }}
+                    onClick={() =>
+                      setTempDateRange({
+                        start: format(subDays(new Date(), 7), "yyyy-MM-dd"),
+                        end: format(new Date(), "yyyy-MM-dd"),
+                      })
+                    }
+                  >
+                    Last 7 Days
+                  </button>
+                  <button
+                    className="pos-btn outline"
+                    style={{ fontSize: "12px", padding: "8px" }}
+                    onClick={() =>
+                      setTempDateRange({
                         start: format(subDays(new Date(), 30), "yyyy-MM-dd"),
                         end: format(new Date(), "yyyy-MM-dd"),
                       })
                     }
                   >
+                    Last 30 Days
+                  </button>
+                  <button
+                    className="pos-btn outline"
+                    style={{ fontSize: "12px", padding: "8px" }}
+                    onClick={() => {
+                      const today = new Date();
+                      setTempDateRange({
+                        start: format(
+                          new Date(today.getFullYear(), today.getMonth(), 1),
+                          "yyyy-MM-dd",
+                        ),
+                        end: format(
+                          new Date(
+                            today.getFullYear(),
+                            today.getMonth() + 1,
+                            0,
+                          ),
+                          "yyyy-MM-dd",
+                        ),
+                      });
+                    }}
+                  >
                     This Month
+                  </button>
+                  <button
+                    className="pos-btn outline"
+                    style={{ fontSize: "12px", padding: "8px" }}
+                    onClick={() => {
+                      const today = new Date();
+                      setTempDateRange({
+                        start: format(
+                          new Date(
+                            today.getFullYear(),
+                            today.getMonth() - 1,
+                            1,
+                          ),
+                          "yyyy-MM-dd",
+                        ),
+                        end: format(
+                          new Date(today.getFullYear(), today.getMonth(), 0),
+                          "yyyy-MM-dd",
+                        ),
+                      });
+                    }}
+                  >
+                    Previous Month
                   </button>
                 </div>
               </div>
@@ -1500,8 +2088,17 @@ export default function SalesManagement({ showToast, storeProfile }) {
                 <button
                   className="pos-btn teal"
                   onClick={() => {
-                    showToast("Date Filter Applied", "success");
+                    if (
+                      tempDateRange.start &&
+                      tempDateRange.end &&
+                      tempDateRange.start > tempDateRange.end
+                    ) {
+                      showToast("End date must be after start date", "error");
+                      return;
+                    }
+                    setDateRange(tempDateRange);
                     setShowDateRangeModal(false);
+                    showToast("Date Filter Applied", "success");
                   }}
                 >
                   Apply Filter

@@ -28,6 +28,8 @@ import {
 import { formatDate } from "../utils/format.js";
 import "../styles/Supplierreturn.css";
 import { safeNumber } from "../utils/number.js";
+import api from "../api.js";
+import { API_ROUTES } from "../constants/api.routes.js";
 
 const STATUS_BADGE = {
   DRAFT: { label: "Draft", class: "badge-neutral" },
@@ -107,10 +109,13 @@ export default function SupplierReturns({ showToast }) {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [createData, setCreateData] = useState({
     supplierId: "",
-    reason: "EXPIRED",
-    notes: "",
+    reason: "",
     items: [],
+    notes: "",
   });
+  const [suppliers, setSuppliers] = useState([]);
+  const [eligibleBatches, setEligibleBatches] = useState([]);
+  const [loadingBatches, setLoadingBatches] = useState(false);
   const [expandedGroup, setExpandedGroup] = useState(null);
 
   const notify = useCallback(
@@ -175,18 +180,55 @@ export default function SupplierReturns({ showToast }) {
   const fetchExpiredData = useCallback(async () => {
     setLoading(true);
     try {
-      const [groupedRes, summaryRes] = await Promise.all([
-        getExpiredGroupedBySupplier(),
-        getExpiredInventorySummary(),
-      ]);
-      if (groupedRes.data.success) setExpiredBySupplier(groupedRes.data.data);
-      if (summaryRes.data.success) setExpiredSummary(summaryRes.data.data);
+      const [returnsRes, creditRes, groupRes, sumRes, supRes] =
+        await Promise.all([
+          getSupplierReturns({ page: 1, limit: 10 }),
+          getCreditNotes({ page: 1, limit: 10 }),
+          getExpiredGroupedBySupplier(),
+          getExpiredInventorySummary(),
+          api.get(API_ROUTES.SUPPLIERS).catch(() => ({ data: { data: [] } })),
+        ]);
+
+      setReturns(returnsRes.data?.data?.returns || []);
+      setCreditNotes(creditRes.data?.data?.notes || []);
+      setExpiredBySupplier(groupRes.data?.data || []);
+      setExpiredSummary(sumRes.data?.data);
+
+      const supData = supRes.data?.data?.suppliers || supRes.data?.data || [];
+      setSuppliers(supData);
     } catch (err) {
       notify(getErrorMessage(err) || "Failed to load expired data", "error");
     } finally {
       setLoading(false);
     }
   }, [notify]);
+
+  const loadEligibleBatches = async (supplierId, reason) => {
+    if (!supplierId || !reason) {
+      setEligibleBatches([]);
+      return;
+    }
+    setLoadingBatches(true);
+    try {
+      const res = await api.get(
+        `${API_ROUTES.SUPPLIER_RETURNS}/suppliers/${supplierId}/inward`,
+        { params: { limit: 1000 } },
+      );
+      let batches = res.data?.data?.transactions || [];
+      if (reason === "EXPIRED") {
+        const now = new Date();
+        now.setHours(0, 0, 0, 0);
+        batches = batches.filter(
+          (b) => new Date(b.expiryDate) < now || b.status === "EXPIRED",
+        );
+      }
+      setEligibleBatches(batches);
+    } catch (err) {
+      showToast("Failed to load batches", "error", err);
+    } finally {
+      setLoadingBatches(false);
+    }
+  };
 
   useEffect(() => {
     const loadData = async () => {
@@ -203,35 +245,39 @@ export default function SupplierReturns({ showToast }) {
   }, [activeTab, fetchCreditNotes, fetchExpiredData, fetchReturns]);
 
   const handleCreateReturn = async () => {
-    if (!createData.supplierId || createData.items.length === 0) {
-      notify("Select a supplier and at least one item", "error");
-      return;
-    }
     try {
-      const { data } = await createSupplierReturn({
-        supplierId: createData.supplierId,
-        reason: createData.reason,
-        notes: createData.notes,
-        items: createData.items.map((i) => ({
-          batchId: i.id,
-          medicineId: i.medicineId,
-          quantity: i.quantity,
-          reason: i.reason || createData.reason,
-        })),
-      });
-      if (data.success) {
-        notify(`Return ${data.data.returnNumber} created`);
-        setShowCreateModal(false);
-        setCreateData({
-          supplierId: "",
-          reason: "EXPIRED",
-          notes: "",
-          items: [],
-        });
-        fetchReturns();
+      if (
+        !createData.supplierId ||
+        createData.items.length === 0 ||
+        !createData.reason
+      ) {
+        showToast(
+          "Please select a supplier, reason, and at least one item",
+          "error",
+        );
+        return;
       }
-    } catch (err) {
-      notify(getErrorMessage(err) || "Failed to create return", "error");
+      const payload = {
+        supplierId: createData.supplierId,
+        notes: createData.notes,
+        reason: createData.reason,
+        items: createData.items.map((i) => ({
+          medicineId: i.medicineId,
+          batchId: i.id,
+          quantity: i.returnQty,
+          reason: createData.reason,
+        })),
+      };
+      await createSupplierReturn(payload);
+      showToast("Return created successfully", "success");
+      setShowCreateModal(false);
+      setCreateData({ supplierId: "", reason: "", items: [], notes: "" });
+      fetchReturns();
+    } catch (error) {
+      showToast(
+        error.response?.data?.message || "Failed to create return",
+        "error",
+      );
     }
   };
 
@@ -250,28 +296,16 @@ export default function SupplierReturns({ showToast }) {
 
   const handleGenerateCreditNote = async (returnId) => {
     try {
-      const { data } = await generateCreditNote(returnId, {});
-      if (data.success) {
-        notify(`Credit note ${data.data.creditNoteNumber} generated`);
-        fetchReturns();
-      }
-    } catch (err) {
-      notify(getErrorMessage(err) || "Failed to generate credit note", "error");
-    }
-  };
-
-  const toggleItemSelection = (group, item) => {
-    const exists = createData.items.find((i) => i.id === item.id);
-    if (exists) {
-      setCreateData((prev) => ({
-        ...prev,
-        items: prev.items.filter((i) => i.id !== item.id),
-      }));
-    } else {
-      setCreateData((prev) => ({
-        ...prev,
-        items: [...prev.items, { ...item, quantity: item.quantity }],
-      }));
+      const res = await generateCreditNote(returnId, {
+        notes: "Auto-generated credit note",
+      });
+      showToast("Credit note generated successfully", "success", res);
+      fetchReturns();
+    } catch (error) {
+      showToast(
+        error.response?.data?.message || "Failed to generate credit note",
+        "error",
+      );
     }
   };
 
@@ -613,10 +647,11 @@ export default function SupplierReturns({ showToast }) {
                               notes: "",
                               items: group.items.map((i) => ({
                                 ...i,
-                                quantity: i.quantity,
+                                returnQty: i.availableQuantity || i.quantity,
                                 reason: "EXPIRED",
                               })),
                             });
+                            setEligibleBatches(group.items);
                             setShowCreateModal(true);
                           }}
                         >
@@ -812,10 +847,10 @@ export default function SupplierReturns({ showToast }) {
               </button>
             </div>
             <div className="modal-body">
-              {expiredBySupplier.length === 0 ? (
+              {suppliers.length === 0 ? (
                 <div className="empty-state">
                   <PackageX size={36} />
-                  <p>No expired stock available for return</p>
+                  <p>No suppliers available</p>
                 </div>
               ) : (
                 <>
@@ -824,106 +859,169 @@ export default function SupplierReturns({ showToast }) {
                     <select
                       value={createData.supplierId}
                       onChange={(e) => {
+                        const sid = e.target.value;
                         setCreateData((prev) => ({
                           ...prev,
-                          supplierId: e.target.value,
+                          supplierId: sid,
                           items: [],
                         }));
+                        loadEligibleBatches(sid, createData.reason);
                       }}
                     >
                       <option value="">Select...</option>
-                      {expiredBySupplier.map((g, i) => (
-                        <option key={i} value={g.supplier.id}>
-                          {g.supplier.name}
+                      {suppliers.map((s) => (
+                        <option key={s.id} value={s.id}>
+                          {s.name}
                         </option>
                       ))}
                     </select>
                   </div>
-                  {createData.supplierId && (
+
+                  <div className="form-group">
+                    <label>Select Reason</label>
+                    <select
+                      value={createData.reason}
+                      onChange={(e) => {
+                        const reason = e.target.value;
+                        setCreateData((prev) => ({
+                          ...prev,
+                          reason,
+                          items: [],
+                        }));
+                        loadEligibleBatches(createData.supplierId, reason);
+                      }}
+                    >
+                      <option value="">Select...</option>
+                      {REASONS.map((r) => (
+                        <option key={r} value={r}>
+                          {r.replace("_", " ")}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {createData.supplierId && createData.reason && (
                     <>
-                      <h3>Select Items to Return</h3>
-                      <table className="data-table">
-                        <thead>
-                          <tr>
-                            <th></th>
-                            <th>Medicine</th>
-                            <th>Batch</th>
-                            <th>Expiry</th>
-                            <th>Available</th>
-                            <th>Price</th>
-                            <th>Loss</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {expiredBySupplier
-                            .find(
-                              (g) => g.supplier.id === createData.supplierId,
-                            )
-                            ?.items.map((item) => {
-                              const selected = createData.items.find(
-                                (i) => i.id === item.id,
-                              );
-                              return (
-                                <tr
-                                  key={item.id}
-                                  className={selected ? "row-selected" : ""}
-                                >
-                                  <td>
-                                    <input
-                                      type="checkbox"
-                                      checked={!!selected}
-                                      onChange={() =>
-                                        toggleItemSelection(
-                                          expiredBySupplier.find(
-                                            (g) =>
-                                              g.supplier.id ===
-                                              createData.supplierId,
-                                          ),
-                                          item,
-                                        )
-                                      }
-                                    />
-                                  </td>
-                                  <td>{item.medicine?.name || "—"}</td>
-                                  <td>{item.batchNumber || "—"}</td>
-                                  <td>{formatDate(item.expiryDate)}</td>
-                                  <td>{item.quantity}</td>
-                                  <td>
-                                    $
-                                    {safeNumber(
-                                      item.purchasePrice || 0,
-                                    ).toFixed(2)}
-                                  </td>
-                                  <td>
-                                    $
-                                    {(
-                                      safeNumber(item.purchasePrice || 0) *
-                                      item.quantity
-                                    ).toFixed(2)}
+                      {loadingBatches ? (
+                        <Loading message="Loading eligible batches..." />
+                      ) : (
+                        <>
+                          <h3>Select Items to Return</h3>
+                          <table className="data-table">
+                            <thead>
+                              <tr>
+                                <th></th>
+                                <th>Medicine</th>
+                                <th>Batch</th>
+                                <th>Expiry</th>
+                                <th>Available</th>
+                                <th>Price</th>
+                                <th>Return Qty</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {eligibleBatches.map((item) => {
+                                const selected = createData.items.find(
+                                  (i) => i.id === item.id,
+                                );
+                                return (
+                                  <tr
+                                    key={item.id}
+                                    className={selected ? "row-selected" : ""}
+                                  >
+                                    <td>
+                                      <input
+                                        type="checkbox"
+                                        checked={!!selected}
+                                        onChange={(e) => {
+                                          if (e.target.checked) {
+                                            setCreateData((prev) => ({
+                                              ...prev,
+                                              items: [
+                                                ...prev.items,
+                                                {
+                                                  ...item,
+                                                  returnQty:
+                                                    item.availableQuantity ||
+                                                    item.quantity,
+                                                },
+                                              ],
+                                            }));
+                                          } else {
+                                            setCreateData((prev) => ({
+                                              ...prev,
+                                              items: prev.items.filter(
+                                                (i) => i.id !== item.id,
+                                              ),
+                                            }));
+                                          }
+                                        }}
+                                      />
+                                    </td>
+                                    <td>{item.medicine?.name || "—"}</td>
+                                    <td>{item.batchNumber || "—"}</td>
+                                    <td>{formatDate(item.expiryDate)}</td>
+                                    <td>
+                                      {item.availableQuantity || item.quantity}
+                                    </td>
+                                    <td>
+                                      ₹
+                                      {safeNumber(
+                                        item.purchasePrice || 0,
+                                      ).toFixed(2)}
+                                    </td>
+                                    <td>
+                                      {selected && (
+                                        <input
+                                          type="number"
+                                          className="form-control"
+                                          style={{
+                                            width: "80px",
+                                            padding: "4px",
+                                          }}
+                                          value={selected.returnQty}
+                                          max={
+                                            item.availableQuantity ||
+                                            item.quantity
+                                          }
+                                          min={1}
+                                          onChange={(e) => {
+                                            const val = Math.min(
+                                              Number(e.target.value),
+                                              item.availableQuantity ||
+                                                item.quantity,
+                                            );
+                                            setCreateData((prev) => ({
+                                              ...prev,
+                                              items: prev.items.map((i) =>
+                                                i.id === item.id
+                                                  ? { ...i, returnQty: val }
+                                                  : i,
+                                              ),
+                                            }));
+                                          }}
+                                        />
+                                      )}
+                                    </td>
+                                  </tr>
+                                );
+                              })}
+                              {eligibleBatches.length === 0 && (
+                                <tr>
+                                  <td
+                                    colSpan="7"
+                                    style={{ textAlign: "center" }}
+                                  >
+                                    No eligible batches found for this supplier
+                                    and reason.
                                   </td>
                                 </tr>
-                              );
-                            })}
-                        </tbody>
-                      </table>
-                      <div className="form-group">
-                        <label>Reason</label>
-                        <select
-                          value={createData.reason}
-                          onChange={(e) =>
-                            setCreateData((prev) => ({
-                              ...prev,
-                              reason: e.target.value,
-                            }))
-                          }
-                        >
-                          {REASONS.map((r) => (
-                            <option key={r} value={r}>
-                              {r.replace(/_/g, " ")}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
+                              )}
+                            </tbody>
+                          </table>
+                        </>
+                      )}
+
                       <div className="form-group">
                         <label>Notes</label>
                         <textarea

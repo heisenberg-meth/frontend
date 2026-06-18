@@ -47,7 +47,12 @@ export default function BarcodeScanner({ onResult, onClose, showToast }) {
       const res = await api.get(API_ROUTES.INVENTORY_SEARCH, {
         params: { q: code },
       });
-      const medicines = res.data.medicines || res.data;
+      const responseData = res.data?.data || res.data;
+      const medicines =
+        responseData?.items ||
+        responseData?.medicines ||
+        (Array.isArray(responseData) ? responseData : []) ||
+        [];
       if (medicines.length > 0) {
         setLookupResult({ found: true, medicine: medicines[0] });
       } else {
@@ -235,12 +240,25 @@ export default function BarcodeScanner({ onResult, onClose, showToast }) {
                     }}
                   >
                     {[
-                      ["Name", lookupResult.medicine.name],
-                      ["Stock", `${lookupResult.medicine.quantity} units`],
-                      ["Batch", lookupResult.medicine.batchNumber],
-                      ["Expiry", lookupResult.medicine.expiry],
-                      ["Price", `₹${lookupResult.medicine.price}`],
-                      ["Supplier", lookupResult.medicine.supplier],
+                      ["Name", lookupResult.medicine.name || "N/A"],
+                      [
+                        "Stock",
+                        `${lookupResult.medicine.stock || lookupResult.medicine.currentStock || 0} units`,
+                      ],
+                      ["Batch", lookupResult.medicine.batchNumber || "N/A"],
+                      [
+                        "Expiry",
+                        lookupResult.medicine.expiryDate
+                          ? new Date(
+                              lookupResult.medicine.expiryDate,
+                            ).toLocaleDateString()
+                          : "N/A",
+                      ],
+                      ["Price", `₹${lookupResult.medicine.mrp || 0}`],
+                      [
+                        "Supplier",
+                        lookupResult.medicine.manufacturer?.name || "N/A",
+                      ],
                     ].map(([label, val]) => (
                       <div key={label}>
                         <div

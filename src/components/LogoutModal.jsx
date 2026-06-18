@@ -10,6 +10,7 @@ import {
   Loader2,
   CheckCircle2,
 } from "lucide-react";
+import { formatInvoiceTime } from "../utils/dateTime.js";
 export default function LogoutModal({
   isOpen,
   onClose,
@@ -61,11 +62,7 @@ export default function LogoutModal({
     }
   };
 
-  const currentTime = new Date().toLocaleTimeString("en-US", {
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: true,
-  });
+  const currentTime = formatInvoiceTime(new Date());
 
   return (
     <AnimatePresence>

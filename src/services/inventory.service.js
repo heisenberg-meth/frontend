@@ -52,8 +52,11 @@ export const deleteBatch = (batchId) =>
   api.delete(`${API_ROUTES.INVENTORY_BATCHES}/${batchId}`);
 
 /* ─── Barcode ─── */
-export const generateBarcode = () =>
-  api.get(API_ROUTES.INVENTORY_BARCODE_GENERATE);
+export const generateBarcode = (text, type = "code128") =>
+  api.get(API_ROUTES.INVENTORY_BARCODE_GENERATE, {
+    params: { text, type },
+    responseType: "blob",
+  });
 
 /* ─── Bulk Import ─── */
 export const bulkImportMedicines = (data) =>
@@ -71,3 +74,17 @@ export const getHighValueStock = () =>
 
 export const getExpiryRisk = () =>
   api.get(API_ROUTES.INVENTORY_ANALYTICS_EXPIRY_RISK);
+
+/* ─── Unified Expiry Metrics (Single Source of Truth) ─── */
+export const getExpiryMetrics = (params) =>
+  api.get(API_ROUTES.INVENTORY_EXPIRY_METRICS, { params });
+export const getExpiryAudit = () =>
+  api.get(API_ROUTES.INVENTORY_EXPIRY_AUDIT);
+
+/* ─── Unified Inventory Reconciliation (Single Source of Truth) ─── */
+export const getInventoryReconciliation = (params) =>
+  api.get(API_ROUTES.INVENTORY_RECONCILIATION, { params });
+
+/* ─── Unified Inventory Reconciliation (Single Source of Truth) ─── */
+export const getInventoryReconciliation = (params) =>
+  api.get(API_ROUTES.INVENTORY_RECONCILIATION, { params });

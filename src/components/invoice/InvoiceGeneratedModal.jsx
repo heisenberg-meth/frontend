@@ -6,8 +6,8 @@ import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
 import InvoicePreview from "../common/InvoicePreview";
 import "../../styles/InvoiceModal.css";
-import { safeNumber } from '../../utils/number.js';
-
+import { safeNumber } from "../../utils/number.js";
+import { formatInvoiceTime } from "../../utils/dateTime.js";
 
 const backdropVariants = {
   hidden: { opacity: 0 },
@@ -97,7 +97,7 @@ export default function InvoiceGeneratedModal({
       "Walk-in Customer",
     phone: invoice.patientPhone || invoice.patient?.phone || invoice.phone,
     date: invoice.date || new Date().toLocaleDateString(),
-    time: invoice.time || new Date().toLocaleTimeString(),
+    time: invoice.time || formatInvoiceTime(invoice.createdAt || new Date()),
     payment: invoice.paymentMode || invoice.paymentTerms || invoice.payment,
     total: invoice.totalAmount || invoice.total || 0,
     items: (invoice.items || []).map((i) => ({

@@ -226,7 +226,7 @@ export default function BulkDisposal({ showToast }) {
             </div>
             <div className="stat-v2-val danger text-rose-500">
               {expiryMetrics
-                ? expiryMetrics.expired
+                ? (expiryMetrics.expiredProducts ?? expiryMetrics.expired)
                 : overview.totalExpiredProducts}
             </div>
           </div>

@@ -1,4 +1,4 @@
-import { safeNumber } from '../utils/number.js';
+import { safeNumber } from "../utils/number.js";
 export function normalizeArrayResponse(response, fallbackKey = null) {
   if (!response) return [];
 
@@ -60,4 +60,11 @@ export const normalizeInvoiceItem = (item = {}) => {
     total: safeNumber(item.total || 0),
     batchId: item.batchId || item.batch || "",
   };
+};
+
+export const getMedicineName = (item) => {
+  if (!item) return "Unknown Medicine";
+  return (
+    item.medicineName || item.medicine?.name || item.name || "Unknown Medicine"
+  );
 };

@@ -52,22 +52,25 @@ export default function Dashboard({
     const fetchDashboard = async () => {
       try {
         setIsLoading(true);
-        const [overviewRes, salesRes, expiredRes, metricsRes] =
+        const [overviewRes, salesRes, expiredRes, metricsRes, reconRes] =
           await Promise.all([
             api.get("/dashboard/overview"),
             api.get("/dashboard/sales-summary"),
             api.get("/inventory/expired/overview").catch(() => null),
             api.get("/inventory/expiry-metrics").catch(() => null),
+            api.get("/inventory/reconciliation").catch(() => null),
           ]);
         const overview = normalizeObjectResponse(overviewRes);
         const sales = normalizeObjectResponse(salesRes);
         const expiredOv = normalizeObjectResponse(expiredRes);
         const expiryMetrics = normalizeObjectResponse(metricsRes);
+        const reconciliation = normalizeObjectResponse(reconRes);
         setDashboardData({
           ...overview,
           salesSummary: sales,
           expiredOverview: expiredOv,
           expiryMetrics,
+          reconciliation,
         });
       } catch (error) {
         console.error("Dashboard fetch error:", error);
@@ -83,13 +86,32 @@ export default function Dashboard({
   const getExpiry = (m) => m.expiryDate || m.expiry;
 
   const stats = useMemo(() => {
+    const recon = dashboardData?.reconciliation;
     const backendInv = dashboardData?.inventory;
     const expiryMetrics = dashboardData?.expiryMetrics;
+    
+    // Use reconciliation data if available (single source of truth)
+    if (recon) {
+      return {
+        total: recon.totalSku ?? 0,
+        inStock: recon.inStock ?? 0,
+        lowStock: recon.lowStock ?? 0,
+        outOfStock: recon.outOfStock ?? 0,
+        expired: recon.expired ?? 0,
+        expiring: recon.expiring30Combined ?? recon.expiring30 ?? 0,
+        expiring7: recon.expiring7 ?? 0,
+        expiring90: recon.expiring90 ?? 0,
+        inventoryValue: recon.inventoryValue ?? 0,
+        reconciliationOk: recon.reconciliationOk ?? false,
+      };
+    }
+    
+    // Fallback to backend overview
     if (backendInv) {
       return {
         total: backendInv.totalSku ?? medicines.length,
         expiring: expiryMetrics
-          ? (expiryMetrics.expiring30 ?? 0)
+          ? (expiryMetrics.expiring30Products ?? expiryMetrics.expiring30 ?? 0)
           : (backendInv.expiring30d ?? 0),
         low: backendInv.lowStock ?? 0,
         inventoryValue: backendInv.inventoryValue ?? 0,
@@ -445,7 +467,8 @@ export default function Dashboard({
                 <h3>Products Expired</h3>
                 <p>
                   {dashboardData?.expiryMetrics
-                    ? dashboardData.expiryMetrics.expired
+                    ? (dashboardData.expiryMetrics.expiredProducts ??
+                      dashboardData.expiryMetrics.expired)
                     : (dashboardData?.expiredOverview?.totalExpiredProducts ??
                       expiring.length)}{" "}
                   products require disposal
@@ -460,20 +483,27 @@ export default function Dashboard({
                     <span>Expired Products:</span>{" "}
                     <b>
                       {dashboardData?.expiryMetrics
-                        ? dashboardData.expiryMetrics.expired
+                        ? (dashboardData.expiryMetrics.expiredProducts ??
+                          dashboardData.expiryMetrics.expired)
                         : dashboardData.expiredOverview.totalExpiredProducts}
                     </b>
                   </div>
                   <div>
                     <span>Total Units:</span>{" "}
-                    <b>{dashboardData.expiredOverview.totalUnits}</b>
+                    <b>
+                      {dashboardData?.expiryMetrics?.expiredUnits != null
+                        ? dashboardData.expiryMetrics.expiredUnits
+                        : dashboardData.expiredOverview.totalUnits}
+                    </b>
                   </div>
                   <div>
                     <span>Inventory Loss:</span>{" "}
                     <b className="text-rose-500">
                       ₹
                       {safeNumber(
-                        dashboardData.expiredOverview.totalInventoryValue,
+                        dashboardData?.expiryMetrics?.expiredValue != null
+                          ? dashboardData.expiryMetrics.expiredValue
+                          : dashboardData.expiredOverview.totalInventoryValue,
                       ).toLocaleString("en-IN")}
                     </b>
                   </div>
@@ -525,8 +555,8 @@ export default function Dashboard({
                                 className={`urgent-badge ${isOverdue ? "overdue" : "warning"}`}
                               >
                                 {isOverdue
-                                  ? `🔴 ${displayDays} Days Overdue`
-                                  : `🟠 ${displayDays} Days Left`}
+                                  ? ` ${displayDays} Days Overdue`
+                                  : ` ${displayDays} Days Left`}
                               </div>
                             </span>
                             <span className="urgent-qty">
@@ -540,7 +570,8 @@ export default function Dashboard({
                 </div>
 
                 {(dashboardData?.expiryMetrics
-                  ? dashboardData.expiryMetrics.expired
+                  ? (dashboardData.expiryMetrics.expiredProducts ??
+                    dashboardData.expiryMetrics.expired)
                   : (dashboardData?.expiredOverview?.totalExpiredProducts ??
                     expiring.length)) > 0 && (
                   <button

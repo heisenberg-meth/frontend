@@ -18,7 +18,11 @@ import {
   ChevronDown,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { searchByBarcode, getMedicines } from "../services/inventory.service";
+import {
+  searchByBarcode,
+  getMedicines,
+  generateBarcode,
+} from "../services/inventory.service";
 import { getBarcodes, verifyBarcode } from "../services/reports.service";
 import { escapeHtml } from "../utils/escapeHtml";
 import "../styles/BarcodeEcosystem.css";
@@ -81,9 +85,12 @@ export default function BarcodeEcosystem({ showToast }) {
   useEffect(() => {
     getMedicines({ limit: 100 })
       .then((res) => {
-        const data = res.data.data || res.data;
+        const responseData = res.data?.data || res.data;
         const list =
-          Array.isArray(data) && data.length > 0 ? data : data.medicines || [];
+          responseData?.items ||
+          responseData?.medicines ||
+          (Array.isArray(responseData) ? responseData : []) ||
+          [];
         setMedicines(list);
       })
       .catch(() => {
@@ -223,6 +230,28 @@ export default function BarcodeEcosystem({ showToast }) {
           })
         : "—";
 
+      let barcodeDataUri = "";
+      if (labelFields.barcode) {
+        try {
+          const barcodeText =
+            labelItem.barcode ||
+            labelItem.sku ||
+            labelItem.batchNumber ||
+            labelItem.id.substring(0, 8);
+          const res = await generateBarcode(barcodeText);
+          const blob = new Blob([res.data], {
+            type: res.headers["content-type"] || "image/png",
+          });
+          barcodeDataUri = await new Promise((resolve) => {
+            const reader = new FileReader();
+            reader.onloadend = () => resolve(reader.result);
+            reader.readAsDataURL(blob);
+          });
+        } catch (err) {
+          console.error("Barcode fetch failed:", err);
+        }
+      }
+
       const labelHtml = `
         <html>
           <head>
@@ -246,7 +275,8 @@ export default function BarcodeEcosystem({ showToast }) {
               .generic { font-size: 8px; color: #555; }
               .meta { font-size: 8px; display: flex; justify-content: space-between; margin-top: 2px; }
               .mrp { font-size: 9px; font-weight: bold; margin-top: 2px; }
-              .barcode { margin-top: 2px; height: 18px; width: 100%; }
+              .barcode { margin-top: 2px; height: 18px; width: 100%; display: flex; align-items: center; justify-content: center; }
+              .barcode img { max-width: 100%; max-height: 100%; object-fit: contain; }
               .qr-code { position: absolute; bottom: 2px; right: 2px; width: 18px; height: 18px; border: 1px solid black; display: flex; align-items: center; justify-content: center; font-size: 6px; }
             </style>
           </head>
@@ -255,7 +285,7 @@ export default function BarcodeEcosystem({ showToast }) {
             ${labelFields.generic ? `<div class="generic">(${escapeHtml(labelItem.genericName || labelItem.name)})</div>` : ""}
             ${labelFields.batch || labelFields.expiry ? `<div class="meta">${labelFields.batch ? `Batch: ${escapeHtml(labelItem.batchNumber || "—")}` : ""}${labelFields.expiry ? ` Exp: ${escapeHtml(expiryStr)}` : ""}</div>` : ""}
             ${labelFields.mrp ? `<div class="mrp">MRP: ₹${(labelItem.mrp || 0).toFixed(2)}/tab</div>` : ""}
-            ${labelFields.barcode ? `<div class="barcode"><svg viewBox="0 0 100 18" preserveAspectRatio="none" style="width:100%;height:100%">${Array.from({ length: 30 }, (_, i) => `<rect x="${i * 3.3}" y="0" width="${(i * 7) % 10 > 4 ? 1 : 2}" height="18" fill="black" />`).join("")}</svg></div>` : ""}
+            ${labelFields.barcode ? `<div class="barcode">${barcodeDataUri ? `<img src="${barcodeDataUri}" />` : "Barcode Error"}</div>` : ""}
             ${labelFields.qr ? `<div class="qr-code">QR</div>` : ""}
           </body>
         </html>

@@ -16,8 +16,7 @@ import autoTable from "jspdf-autotable";
 import api from "../../api.js";
 import { API_ROUTES } from "../../constants/api.routes.js";
 import { escapeHtml } from "../../utils/escapeHtml";
-import { safeNumber } from '../../utils/number.js';
-
+import { safeNumber } from "../../utils/number.js";
 
 export default function SalesReport({ from, to, showToast }) {
   const [loading, setLoading] = useState(false);
@@ -62,10 +61,12 @@ export default function SalesReport({ from, to, showToast }) {
       item.bills,
       item.revenue,
     ]);
-    const csvContent = "\uFEFF" + [
-      headers.join(","),
-      ...rows.map((r) => r.map((v) => `"${v}"`).join(",")),
-    ].join("\n");
+    const csvContent =
+      "\uFEFF" +
+      [
+        headers.join(","),
+        ...rows.map((r) => r.map((v) => `"${v}"`).join(",")),
+      ].join("\n");
 
     const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
@@ -256,25 +257,35 @@ export default function SalesReport({ from, to, showToast }) {
     {
       method: "Cash",
       percentage:
-        summary.totalRevenue > 0
-          ? Math.round((paymentDistribution.cash / summary.totalRevenue) * 100)
+        summary.grossRevenue > 0
+          ? Math.round((paymentDistribution.cash / summary.grossRevenue) * 100)
           : 0,
     },
     {
       method: "UPI",
       percentage:
-        summary.totalRevenue > 0
-          ? Math.round((paymentDistribution.upi / summary.totalRevenue) * 100)
+        summary.grossRevenue > 0
+          ? Math.round((paymentDistribution.upi / summary.grossRevenue) * 100)
           : 0,
     },
     {
       method: "Card",
       percentage:
-        summary.totalRevenue > 0
-          ? Math.round((paymentDistribution.card / summary.totalRevenue) * 100)
+        summary.grossRevenue > 0
+          ? Math.round((paymentDistribution.card / summary.grossRevenue) * 100)
           : 0,
     },
   ];
+
+  const totalPercent = paymentMethods.reduce(
+    (sum, method) => sum + method.percentage,
+    0,
+  );
+  if (totalPercent > 100.1) {
+    console.error(
+      `[Validation Error] Payment distribution exceeds 100%: ${totalPercent}%`,
+    );
+  }
 
   return (
     <>
@@ -425,21 +436,38 @@ export default function SalesReport({ from, to, showToast }) {
               <tr>
                 <th style={{ width: "30%" }}>Date</th>
                 <th style={{ textAlign: "right", width: "30%" }}>Invoices</th>
-                <th style={{ textAlign: "right", width: "40%" }}>Revenue Amount</th>
+                <th style={{ textAlign: "right", width: "40%" }}>
+                  Revenue Amount
+                </th>
               </tr>
             </thead>
             <tbody>
               {data.chart.map((d, i) => (
                 <tr key={i}>
                   <td>{d.date}</td>
-                  <td style={{ fontWeight: 700, textAlign: "right" }}>{d.bills}</td>
-                  <td style={{ fontWeight: 800, color: "var(--primary)", textAlign: "right" }}>
+                  <td style={{ fontWeight: 700, textAlign: "right" }}>
+                    {d.bills}
+                  </td>
+                  <td
+                    style={{
+                      fontWeight: 800,
+                      color: "var(--primary)",
+                      textAlign: "right",
+                    }}
+                  >
                     ₹{(d.revenue || 0).toLocaleString()}
                   </td>
                 </tr>
               ))}
               <tr style={{ background: "rgba(79, 219, 200, 0.05)" }}>
-                <td colSpan={2} style={{ textAlign: "right", fontWeight: 800, paddingRight: "20px" }}>
+                <td
+                  colSpan={2}
+                  style={{
+                    textAlign: "right",
+                    fontWeight: 800,
+                    paddingRight: "20px",
+                  }}
+                >
                   TOTAL THIS PERIOD:
                 </td>
                 <td
@@ -447,7 +475,7 @@ export default function SalesReport({ from, to, showToast }) {
                     fontWeight: 800,
                     color: "var(--primary)",
                     fontSize: "16px",
-                    textAlign: "right"
+                    textAlign: "right",
                   }}
                 >
                   ₹{(summary.totalRevenue || 0).toLocaleString()}

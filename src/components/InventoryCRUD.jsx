@@ -22,6 +22,7 @@ import {
   Check,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { getMedicineStatus, STATUS_OPTIONS } from "../utils/inventoryStatus";
 
 function CustomDropdown({ value, onChange, options, placeholder = "Select" }) {
   const [isOpen, setIsOpen] = useState(false);
@@ -538,13 +539,13 @@ function MedicineModal({
 /* ─── View Medicine Modal ─── */
 function MedicineViewModal({ medicine, onClose, onEditBatch, onAddBatch }) {
   if (!medicine) return null;
-  const isExpiringSoon =
-    medicine.expiryDate &&
-    new Date(medicine.expiryDate) <
-      new Date(new Date().setDate(new Date().getDate() + 30));
-  const isExpired =
-    medicine.expiryDate && new Date(medicine.expiryDate) <= new Date();
-  const isLowStock = medicine.stock <= (medicine.reorderLevel || 10);
+
+  // Use centralized status calculation
+  const medicineStatus = getMedicineStatus(medicine);
+  const isExpired = medicineStatus === "Expired";
+  const isExpiringSoon = medicineStatus === "Expiring Soon";
+  const isLowStock = medicineStatus === "Low Stock";
+  const isOutOfStock = medicineStatus === "Out of Stock";
 
   return (
     <div className="inv-modal-overlay" onClick={onClose}>
@@ -577,11 +578,14 @@ function MedicineViewModal({ medicine, onClose, onEditBatch, onAddBatch }) {
         <div style={{ flex: 1, overflowY: "auto" }}>
           <div className="inv-view-badges">
             {isExpired && <span className="inv-badge danger">EXPIRED</span>}
-            {isExpiringSoon && !isExpired && (
+            {isExpiringSoon && (
               <span className="inv-badge warning">EXPIRING SOON</span>
             )}
+            {isOutOfStock && (
+              <span className="inv-badge danger">OUT OF STOCK</span>
+            )}
             {isLowStock && <span className="inv-badge warning">LOW STOCK</span>}
-            {!isExpired && !isLowStock && (
+            {!isExpired && !isExpiringSoon && !isOutOfStock && !isLowStock && (
               <span className="inv-badge success">IN STOCK</span>
             )}
             <span className="inv-badge info">
@@ -1495,28 +1499,11 @@ export default function InventoryCRUD({
         categoryFilter === "All" ||
         (m.category?.name || m.category) === categoryFilter;
 
-      const stock = m.stock ?? 0;
-      const reorder = m.reorderLevel ?? 10;
-
-      const isExpired = m.expiryDate && new Date(m.expiryDate) <= new Date();
-
-      const isExpiringSoon =
-        m.expiryDate &&
-        !isExpired &&
-        new Date(m.expiryDate) <
-          new Date(new Date().setDate(new Date().getDate() + 30));
-
-      const isOutOfStock = stock === 0;
-      const isLowStock = stock > 0 && stock <= reorder;
-      const isInStock = stock > reorder;
+      // Use centralized status calculation
+      const medicineStatus = getMedicineStatus(m);
 
       const statusMatch =
-        statusFilter === "All Status" ||
-        (statusFilter === "In Stock" && isInStock) ||
-        (statusFilter === "Low Stock" && isLowStock) ||
-        (statusFilter === "Out of Stock" && isOutOfStock) ||
-        (statusFilter === "Expired" && isExpired) ||
-        (statusFilter === "Expiring Soon" && isExpiringSoon);
+        statusFilter === "All Status" || medicineStatus === statusFilter;
 
       return searchMatch && categoryMatch && statusMatch;
     });
@@ -1819,14 +1806,7 @@ export default function InventoryCRUD({
                 setStatusFilter(val);
                 setCurrentPage(1);
               }}
-              options={[
-                "All Status",
-                "In Stock",
-                "Low Stock",
-                "Out of Stock",
-                "Expiring Soon",
-                "Expired",
-              ]}
+              options={STATUS_OPTIONS}
               placeholder="All Status"
             />
           </div>
@@ -1862,32 +1842,24 @@ export default function InventoryCRUD({
                 </tr>
               ) : (
                 filtered.map((m) => {
-                  const isExpired =
-                    m.stock > 0 &&
-                    m.expiryDate &&
-                    new Date(m.expiryDate) <= new Date();
-                  const isExpiringSoon =
-                    m.expiryDate &&
-                    !isExpired &&
-                    new Date(m.expiryDate) <
-                      new Date(new Date().setDate(new Date().getDate() + 30));
-                  const isLowStock =
-                    m.stock > 0 && m.stock <= (m.reorderLevel || 10);
-                  const isOutOfStock = m.stock === 0;
+                  // Use centralized status calculation
+                  const medicineStatus = getMedicineStatus(m);
+                  const isExpired = medicineStatus === "Expired";
+                  const isExpiringSoon = medicineStatus === "Expiring Soon";
+                  const isLowStock = medicineStatus === "Low Stock";
+                  const isOutOfStock = medicineStatus === "Out of Stock";
+
                   const statusClass = isExpired
                     ? "expired"
                     : isOutOfStock
                       ? "out-of-stock"
                       : isLowStock
                         ? "low-stock"
-                        : "in-stock";
-                  const statusText = isExpired
-                    ? "EXPIRED"
-                    : isOutOfStock
-                      ? "OUT OF STOCK"
-                      : isLowStock
-                        ? "LOW STOCK"
-                        : "IN STOCK";
+                        : isExpiringSoon
+                          ? "expiring-soon"
+                          : "in-stock";
+
+                  const statusText = medicineStatus.toUpperCase();
 
                   return (
                     <tr key={m.id}>

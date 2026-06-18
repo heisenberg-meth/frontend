@@ -60,14 +60,16 @@ export default function ExpiryBatchIntelligence({ showToast }) {
   const [reminders, setReminders] = useState([]);
   const [fifoEnabled, setFifoEnabled] = useState(true);
   const [expandedMed, setExpandedMed] = useState(null);
+  const [expiryMetrics, setExpiryMetrics] = useState(null);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
         setLoading(true);
-        const [batchRes, recRes] = await Promise.all([
+        const [batchRes, recRes, metricsRes] = await Promise.all([
           api.get("/intelligence/batches"),
           api.get("/intelligence/recommendations").catch(() => null),
+          api.get("/inventory/expiry-metrics").catch(() => null),
         ]);
 
         const rawBatches = Array.isArray(batchRes.data?.data)
@@ -82,7 +84,6 @@ export default function ExpiryBatchIntelligence({ showToast }) {
             return {
               id: b.batchNumber || b.id,
               med: b.medicine?.name || "Unknown",
-              brand: "",
               exp: b.expiryDate,
               days,
               qty: b.quantity,
@@ -92,9 +93,22 @@ export default function ExpiryBatchIntelligence({ showToast }) {
               received: b.createdAt?.split("T")[0] || "",
               mfg: b.manufacturingDate?.split("T")[0] || "",
               supplier: b.supplier?.name || "",
+              manufacturer: b.manufacturerName || "",
+              purchaseInvoice: b.purchaseInvoiceNumber || "",
+              purchaseDate: b.purchaseDate?.split("T")[0] || "",
+              purchasePrice: safeNumber(b.purchasePrice || 0),
+              returnEligible:
+                days < 0 && (b.supplier || b.supplierId) ? "YES" : "NO",
+              returnStatus: "PENDING",
             };
           });
         setBatches(mapped);
+
+        // Store unified expiry metrics from backend
+        const metrics = metricsRes?.data?.data || metricsRes?.data || null;
+        if (metrics) {
+          setExpiryMetrics(metrics);
+        }
 
         const recs = recRes?.data?.data || recRes?.data || [];
         const mappedRecs = Array.isArray(recs)
@@ -175,7 +189,7 @@ export default function ExpiryBatchIntelligence({ showToast }) {
       const matchesSearch =
         !invSearch ||
         b.med?.toLowerCase().includes(invSearch.toLowerCase()) ||
-        b.brand?.toLowerCase().includes(invSearch.toLowerCase()) ||
+        b.supplier?.toLowerCase().includes(invSearch.toLowerCase()) ||
         b.batch?.toLowerCase().includes(invSearch.toLowerCase());
       if (!matchesSearch) return false;
       if (invFilter === "ALL") return true;
@@ -194,6 +208,51 @@ export default function ExpiryBatchIntelligence({ showToast }) {
   const invFilteredBatches = filteredBatches;
 
   const dynamicStats = useMemo(() => {
+    // Use unified backend metrics if available, fallback to local calculation
+    if (expiryMetrics) {
+      return [
+        {
+          label: "EXPIRED NOW",
+          val: expiryMetrics.expiredBatches ?? 0,
+          col: "var(--danger)",
+          icon: CalendarX,
+          key: "EXPIRED",
+        },
+        {
+          label: "EXPIRING < 7 DAYS",
+          val: expiryMetrics.expiring7Batches ?? 0,
+          col: "var(--warning)",
+          icon: CalendarX,
+          key: "< 7 DAYS",
+        },
+        {
+          label: "EXPIRING < 30 DAYS",
+          val:
+            expiryMetrics.expiring30CombinedBatches ??
+            expiryMetrics.expiring30Batches ??
+            0,
+          col: "var(--warning)",
+          icon: CalendarDays,
+          key: "< 30 DAYS",
+        },
+        {
+          label: "EXPIRING < 90 DAYS",
+          val: expiryMetrics.expiring90Batches ?? 0,
+          col: "var(--info)",
+          icon: CalendarCheck,
+          key: "< 90 DAYS",
+        },
+        {
+          label: "TOTAL BATCHES",
+          val: expiryMetrics.totalBatches ?? batches.length,
+          col: "var(--primary)",
+          icon: Layers,
+          key: "ALL",
+        },
+      ];
+    }
+
+    // Fallback: local calculation from batch data
     const activeBatches = batches.filter((b) => (b.qty || b.quantity) > 0);
     const expired = activeBatches.filter((b) => b.days < 0).length;
     const expiring7Days = activeBatches.filter(
@@ -242,9 +301,28 @@ export default function ExpiryBatchIntelligence({ showToast }) {
         key: "ALL",
       },
     ];
-  }, [batches]);
+  }, [batches, expiryMetrics]);
 
   const timelineCounts = useMemo(() => {
+    // Use unified backend metrics if available
+    if (expiryMetrics) {
+      return {
+        expired: expiryMetrics.expiredBatches ?? 0,
+        urg7: expiryMetrics.expiring7Batches ?? 0,
+        urg30:
+          expiryMetrics.expiring30CombinedBatches ??
+          expiryMetrics.expiring30Batches ??
+          0,
+        urg90: expiryMetrics.expiring90Batches ?? 0,
+        safe:
+          (expiryMetrics.totalBatches ?? 0) -
+          (expiryMetrics.expiredBatches ?? 0) -
+          (expiryMetrics.expiring90Batches ?? 0),
+        total: expiryMetrics.totalBatches ?? 1,
+      };
+    }
+
+    // Fallback: local calculation
     const activeBatches = batches.filter((b) => (b.qty || b.quantity) > 0);
     const expired = activeBatches.filter(
       (b) => b.status === "expired" || b.days < 0,
@@ -261,7 +339,7 @@ export default function ExpiryBatchIntelligence({ showToast }) {
     ).length;
     const total = activeBatches.length || 1;
     return { expired, urg7, urg30, urg90, safe, total };
-  }, [batches]);
+  }, [batches, expiryMetrics]);
 
   const fifoMedicines = useMemo(() => {
     const grouped = {};
@@ -286,27 +364,41 @@ export default function ExpiryBatchIntelligence({ showToast }) {
       const worksheet = workbook.addWorksheet("Expiry Report");
 
       worksheet.columns = [
-        { header: "Medicine", key: "Medicine", width: 25 },
-        { header: "Batch", key: "Batch", width: 15 },
-        { header: "Supplier", key: "Supplier", width: 20 },
-        { header: "MFG", key: "MFG", width: 12 },
-        { header: "Expiry", key: "Expiry", width: 12 },
+        { header: "Medicine Name", key: "Medicine", width: 25 },
+        { header: "Batch Number", key: "Batch", width: 15 },
+        { header: "Supplier Name", key: "Supplier", width: 20 },
+        { header: "Manufacturer Name", key: "Manufacturer", width: 20 },
+        { header: "Purchase Invoice", key: "PurchaseInvoice", width: 15 },
+        { header: "Purchase Date", key: "PurchaseDate", width: 12 },
+        { header: "Received Date", key: "ReceivedDate", width: 12 },
+        { header: "Manufacturing Date", key: "MFG", width: 12 },
+        { header: "Expiry Date", key: "Expiry", width: 12 },
         { header: "Days Left", key: "DaysLeft", width: 12 },
         { header: "Quantity", key: "Quantity", width: 10 },
-        { header: "Value ₹", key: "Value", width: 12 },
+        { header: "Purchase Price", key: "PurchasePrice", width: 15 },
+        { header: "Stock Value", key: "Value", width: 12 },
         { header: "Status", key: "Status", width: 12 },
+        { header: "Return Eligible", key: "ReturnEligible", width: 15 },
+        { header: "Return Status", key: "ReturnStatus", width: 15 },
       ];
 
       const reportData = batches.map((b) => ({
         Medicine: b.med,
         Batch: b.id,
-        Supplier: b.brand,
+        Supplier: b.supplier || "Unknown",
+        Manufacturer: b.manufacturer || "Unknown",
+        PurchaseInvoice: b.purchaseInvoice || "N/A",
+        PurchaseDate: b.purchaseDate || "N/A",
+        ReceivedDate: b.received || "N/A",
         MFG: b.mfg,
         Expiry: b.exp,
         DaysLeft: b.days < 0 ? "EXPIRED" : `${b.days} Days`,
         Quantity: b.qty,
-        Value: b.val,
+        PurchasePrice: `₹${b.purchasePrice.toFixed(2)}`,
+        Value: `₹${b.val.toFixed(2)}`,
         Status: b.status.toUpperCase(),
+        ReturnEligible: b.returnEligible,
+        ReturnStatus: b.returnStatus,
       }));
 
       worksheet.addRows(reportData);
@@ -741,14 +833,14 @@ export default function ExpiryBatchIntelligence({ showToast }) {
                               </span>
                             )}
                           </div>
-                          <div className="result-meta">{b.brand}</div>
+                          <div className="result-meta">{b.supplier}</div>
                         </td>
                         <td className="result-meta">{b.id}</td>
                         <td
                           className="result-meta"
                           style={{ fontWeight: 600, color: "var(--text-main)" }}
                         >
-                          {b.brand}
+                          {b.supplier}
                         </td>
                         <td className="result-meta">{b.mfg}</td>
                         <td>{b.exp}</td>
@@ -970,7 +1062,7 @@ export default function ExpiryBatchIntelligence({ showToast }) {
                       <td>{b.exp}</td>
                       <td className="result-meta">{b.received}</td>
                       <td>{b.qty} units</td>
-                      <td className="result-meta">{b.brand}</td>
+                      <td className="result-meta">{b.supplier || "Unknown"}</td>
                       <td>
                         <span
                           className={`fifo-badge ${b.rank === 1 ? "active" : b.rank === 2 ? "next" : "queued"}`}

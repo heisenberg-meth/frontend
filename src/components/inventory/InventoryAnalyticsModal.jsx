@@ -27,8 +27,8 @@ import {
 } from "recharts";
 import { getMedicines } from "../../services/inventory.service";
 import "../../styles/InventoryAnalyticsModal.css";
-import { safeNumber } from '../../utils/number.js';
-
+import { safeNumber } from "../../utils/number.js";
+import { formatInvoiceTime } from "../../utils/dateTime.js";
 
 const fmt = (val) =>
   new Intl.NumberFormat("en-IN", {
@@ -339,7 +339,7 @@ export default function InventoryAnalyticsModal({ isOpen, onClose }) {
               {summary?.lastUpdated && (
                 <span>
                   <Clock size={14} />
-                  Updated {new Date(summary.lastUpdated).toLocaleTimeString()}
+                  Updated {formatInvoiceTime(summary.lastUpdated)}
                 </span>
               )}
             </div>

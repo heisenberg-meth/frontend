@@ -389,23 +389,24 @@ export default function BillingPOS({
     () =>
       lineItems.reduce((acc, item) => {
         const lineGross = safeNumber(item.price) * safeNumber(item.qty);
-        const lineDisc = lineGross * (safeNumber(item.discPercent) / 100);
-        return acc + (lineGross - lineDisc);
+        return acc + lineGross;
       }, 0),
     [lineItems],
   );
-  const tax = useMemo(
-    () =>
-      lineItems.reduce((acc, item) => {
-        const lineGross = safeNumber(item.price) * safeNumber(item.qty);
-        const lineDisc = lineGross * (safeNumber(item.discPercent) / 100);
-        const taxableAmount = lineGross - lineDisc;
-        return acc + taxableAmount * (safeNumber(item.gst) / 100);
-      }, 0),
-    [lineItems],
-  );
+
   const discountPercentage = Number(discount || 0);
   const discountAmount = subtotal * (discountPercentage / 100);
+
+  const tax = useMemo(() => {
+    const discountRatio = subtotal > 0 ? discountAmount / subtotal : 0;
+    return lineItems.reduce((acc, item) => {
+      const lineGross = safeNumber(item.price) * safeNumber(item.qty);
+      const itemDisc = lineGross * discountRatio;
+      const taxableAmount = lineGross - itemDisc;
+      return acc + taxableAmount * (safeNumber(item.gst) / 100);
+    }, 0);
+  }, [lineItems, subtotal, discountAmount]);
+
   const grandTotal = Math.max(0, subtotal + tax - discountAmount);
 
   const avgGst =
@@ -472,7 +473,6 @@ export default function BillingPOS({
           gst: safeNumber(med.gst || med.gstPercentage || med.gstRate),
           total: price,
           discount: 0,
-          discPercent: 0,
         },
       ];
     });
@@ -552,6 +552,7 @@ export default function BillingPOS({
         sgst: sgstAmt,
         discountPercentage: discountPercentage,
         discountAmount: discountAmount,
+        discountType: "PERCENTAGE",
         totalAmount: grandTotal,
         paymentMethod: paymentMode,
         isDraft: true,
@@ -1233,7 +1234,6 @@ ${printDiscount > 0 ? `<div style="display:flex;justify-content:space-between"><
                     <th>Item</th>
                     <th>Qty</th>
                     <th>MRP</th>
-                    <th>Disc%</th>
                     <th>GST%</th>
                     <th>Total</th>
                     <th></th>
@@ -1338,27 +1338,7 @@ ${printDiscount > 0 ? `<div style="display:flex;justify-content:space-between"><
                           }}
                         />
                       </td>
-                      <td>
-                        <input
-                          required
-                          className="pos-input"
-                          type="number"
-                          min="0"
-                          max="100"
-                          style={{ width: "55px", padding: "6px" }}
-                          value={item.discPercent || ""}
-                          onChange={(e) => {
-                            const discPercent = Number(e.target.value) || 0;
-                            setLineItems((prev) =>
-                              prev.map((i) =>
-                                i.batchId === item.batchId
-                                  ? { ...i, discPercent }
-                                  : i,
-                              ),
-                            );
-                          }}
-                        />
-                      </td>
+
                       <td className="result-meta" style={{ fontWeight: 800 }}>
                         {safeNumber(item.gst)}%
                       </td>
@@ -1373,8 +1353,9 @@ ${printDiscount > 0 ? `<div style="display:flex;justify-content:space-between"><
                         {(() => {
                           const lineGross =
                             safeNumber(item.price) * safeNumber(item.qty);
-                          const lineDisc =
-                            lineGross * (safeNumber(item.discPercent) / 100);
+                          const discountRatio =
+                            subtotal > 0 ? discountAmount / subtotal : 0;
+                          const lineDisc = lineGross * discountRatio;
                           return (lineGross - lineDisc).toFixed(2);
                         })()}
                       </td>
@@ -1590,6 +1571,7 @@ ${printDiscount > 0 ? `<div style="display:flex;justify-content:space-between"><
                         paymentMode: paymentMode,
                         discountPercentage: discountPercentage,
                         discountAmount: discountAmount,
+                        discountType: "PERCENTAGE",
                         branchId: user.branchId,
                       };
                       const res = await api.post(

@@ -30,6 +30,10 @@ export const getExpiryRecommendations = () =>
 export const triggerRecommendationGeneration = () =>
   api.post("intelligence/recommendations/generate");
 
+/* ─── Unified Expiry Metrics (Single Source of Truth) ─── */
+export const getExpiryMetrics = (params) =>
+  api.get("inventory/expiry-metrics", { params });
+
 /* ─── Barcodes ─── */
 export const getBarcodes = (params) =>
   api.get("inventory/barcode/generate", { params });
