@@ -19,8 +19,7 @@ import { differenceInDays, format } from "date-fns";
 import api from "../api";
 import { normalizeObjectResponse } from "../utils/apiNormalizer";
 import InventoryAnalyticsModal from "./inventory/InventoryAnalyticsModal";
-import { safeNumber } from '../utils/number.js';
-
+import { safeNumber } from "../utils/number.js";
 
 /* 🛠️ Helpers 🛠️ */
 const getDays = (d) => {
@@ -53,18 +52,22 @@ export default function Dashboard({
     const fetchDashboard = async () => {
       try {
         setIsLoading(true);
-        const [overviewRes, salesRes, expiredRes] = await Promise.all([
-          api.get("/dashboard/overview"),
-          api.get("/dashboard/sales-summary"),
-          api.get("/inventory/expired/overview").catch(() => null),
-        ]);
+        const [overviewRes, salesRes, expiredRes, metricsRes] =
+          await Promise.all([
+            api.get("/dashboard/overview"),
+            api.get("/dashboard/sales-summary"),
+            api.get("/inventory/expired/overview").catch(() => null),
+            api.get("/inventory/expiry-metrics").catch(() => null),
+          ]);
         const overview = normalizeObjectResponse(overviewRes);
         const sales = normalizeObjectResponse(salesRes);
         const expiredOv = normalizeObjectResponse(expiredRes);
+        const expiryMetrics = normalizeObjectResponse(metricsRes);
         setDashboardData({
           ...overview,
           salesSummary: sales,
           expiredOverview: expiredOv,
+          expiryMetrics,
         });
       } catch (error) {
         console.error("Dashboard fetch error:", error);
@@ -81,10 +84,13 @@ export default function Dashboard({
 
   const stats = useMemo(() => {
     const backendInv = dashboardData?.inventory;
+    const expiryMetrics = dashboardData?.expiryMetrics;
     if (backendInv) {
       return {
         total: backendInv.totalSku ?? medicines.length,
-        expiring: backendInv.expiring30d ?? 0,
+        expiring: expiryMetrics
+          ? (expiryMetrics.expiring30 ?? 0)
+          : (backendInv.expiring30d ?? 0),
         low: backendInv.lowStock ?? 0,
         inventoryValue: backendInv.inventoryValue ?? 0,
       };
@@ -403,11 +409,13 @@ export default function Dashboard({
                                 medicine: {
                                   id: item.id,
                                   name: item.name,
-                                  purchasePrice: item.purchasePrice || item.price || 0,
-                                  reorderQty: item.reorderLevel || item.minStock || 50,
+                                  purchasePrice:
+                                    item.purchasePrice || item.price || 0,
+                                  reorderQty:
+                                    item.reorderLevel || item.minStock || 50,
                                   gstPercentage: item.gstPercentage || 12,
-                                }
-                              }
+                                },
+                              },
                             });
                           }}
                         >
@@ -436,8 +444,10 @@ export default function Dashboard({
               <div className="urgent-header-text">
                 <h3>Products Expired</h3>
                 <p>
-                  {dashboardData?.expiredOverview?.totalExpiredProducts ??
-                    expiring.length}{" "}
+                  {dashboardData?.expiryMetrics
+                    ? dashboardData.expiryMetrics.expired
+                    : (dashboardData?.expiredOverview?.totalExpiredProducts ??
+                      expiring.length)}{" "}
                   products require disposal
                 </p>
               </div>
@@ -448,7 +458,11 @@ export default function Dashboard({
                 <div className="disposal-summary-card compact-summary">
                   <div>
                     <span>Expired Products:</span>{" "}
-                    <b>{dashboardData.expiredOverview.totalExpiredProducts}</b>
+                    <b>
+                      {dashboardData?.expiryMetrics
+                        ? dashboardData.expiryMetrics.expired
+                        : dashboardData.expiredOverview.totalExpiredProducts}
+                    </b>
                   </div>
                   <div>
                     <span>Total Units:</span>{" "}
@@ -525,8 +539,10 @@ export default function Dashboard({
                   </div>
                 </div>
 
-                {(dashboardData?.expiredOverview?.totalExpiredProducts ??
-                  expiring.length) > 0 && (
+                {(dashboardData?.expiryMetrics
+                  ? dashboardData.expiryMetrics.expired
+                  : (dashboardData?.expiredOverview?.totalExpiredProducts ??
+                    expiring.length)) > 0 && (
                   <button
                     className="urgent-disposal-btn"
                     onClick={(e) => {

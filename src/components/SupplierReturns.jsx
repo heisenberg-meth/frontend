@@ -779,6 +779,14 @@ export default function SupplierReturns({ showToast }) {
                     </button>
                   </>
                 )}
+                {selectedReturn.status === "COMPLETED" && (
+                  <button
+                    className="btn btn-primary"
+                    onClick={() => handleGenerateCreditNote(selectedReturn.id)}
+                  >
+                    <CreditCard size={14} /> Generate Credit Note
+                  </button>
+                )}
               </div>
             </div>
           </div>

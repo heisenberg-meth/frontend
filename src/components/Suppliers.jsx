@@ -439,9 +439,13 @@ export default function Suppliers({ showToast }) {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
+  const handleView = (s) => {
+    setCreditBalance(null);
+    setViewTarget(s);
+  };
+
   useEffect(() => {
     if (viewTarget) {
-      setCreditBalance(null);
       getSupplierCreditBalance(viewTarget.id)
         .then((res) => setCreditBalance(res.data.balance || 0))
         .catch(() => setCreditBalance(0));
@@ -805,7 +809,7 @@ export default function Suppliers({ showToast }) {
                         <button
                           className="sup-row-btn"
                           title="View Details"
-                          onClick={() => setViewTarget(s)}
+                          onClick={() => handleView(s)}
                         >
                           <Eye size={14} />
                         </button>
