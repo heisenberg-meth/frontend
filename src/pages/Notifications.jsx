@@ -65,6 +65,7 @@ export default function Notifications({ showToast }) {
       setLoading(true);
       try {
         const res = await getNotifications();
+        console.log("Notifications API:", res.data);
         const data = Array.isArray(res.data?.data)
           ? res.data.data
           : Array.isArray(res.data)

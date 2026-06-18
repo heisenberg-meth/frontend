@@ -188,6 +188,7 @@ export default function Topbar({
       try {
         setNotificationsLoading(true);
         const res = await getNotifications();
+        console.log("Notifications API:", res.data);
         setNotifications(
           Array.isArray(res.data?.data)
             ? res.data.data
