@@ -26,7 +26,7 @@ const PLANS = [
   {
     id: "basic-monthly",
     name: "MedAssist Basic",
-    price: { monthly: 299, annual: 2990 },
+    price: { monthly: 599, annual: 5990 },
     features: ["Unlimited Medicines", "Basic Analytics", "Up to 3 users"],
     missing: ["Advanced Reports", "AI Features"],
     color: "var(--info)",
@@ -34,7 +34,7 @@ const PLANS = [
   {
     id: "pro-monthly",
     name: "MedAssist Pro",
-    price: { monthly: 499, annual: 4990 },
+    price: { monthly: 999, annual: 9990 },
     features: [
       "Unlimited Medicines",
       "Advanced Analytics",

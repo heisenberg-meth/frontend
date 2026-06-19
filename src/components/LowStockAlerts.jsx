@@ -18,7 +18,7 @@ import { getLowStockMedicines } from "../services/inventory.service";
 import { getStockAlerts } from "../services/stock.service";
 import { createPurchaseOrder } from "../services/purchases.service";
 import { updateNotificationSettings } from "../services/settings.service";
-import { safeNumber } from '../utils/number.js';
+import { safeNumber } from "../utils/number.js";
 
 function Spinner({ size = 14 }) {
   return (
