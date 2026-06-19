@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import api from "../api.js";
 import { useAuth } from "../hooks/useAuth.js";
@@ -88,6 +88,32 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
   const [isReceiving, setIsReceiving] = useState(false);
 
   const [differentBatch, setDifferentBatch] = useState({});
+
+  const selectAllBatches = useMemo(() => {
+    if (receiveItems.length === 0) return false;
+
+    const itemsWithPrior = receiveItems.filter(
+      (item) => !!(item.batchNumber || item.expiryDate),
+    );
+
+    if (itemsWithPrior.length === 0) return false;
+
+    return itemsWithPrior.every((item) => {
+      const idx = receiveItems.indexOf(item);
+      return differentBatch[idx] || false;
+    });
+  }, [differentBatch, receiveItems]);
+
+  const handleSelectAllBatches = (checked) => {
+    const updated = {};
+    receiveItems.forEach((item, idx) => {
+      const hasPrior = !!(item.batchNumber || item.expiryDate);
+      if (hasPrior) {
+        updated[idx] = checked;
+      }
+    });
+    setDifferentBatch(updated);
+  };
 
   const handleOpenReceiveModal = async (po) => {
     setSelectedRow(po);
@@ -2459,7 +2485,10 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
                 </h3>
                 <button
                   className="micro-btn"
-                  onClick={() => setShowReceiveModal(false)}
+                  onClick={() => {
+                    setShowReceiveModal(false);
+                    setDifferentBatch({});
+                  }}
                 >
                   <X size={20} />
                 </button>
@@ -2483,7 +2512,25 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
                         <th>Expiry</th>
                         <th>Purchase Price</th>
                         <th>MRP</th>
-                        <th style={{ width: 70 }}>Diff Batch</th>
+                        <th style={{ width: 70 }}>
+                          <div
+                            style={{
+                              display: "flex",
+                              alignItems: "center",
+                              gap: "8px",
+                              justifyContent: "center",
+                            }}
+                          >
+                            <input
+                              type="checkbox"
+                              checked={selectAllBatches}
+                              onChange={(e) =>
+                                handleSelectAllBatches(e.target.checked)
+                              }
+                            />
+                            <span>Diff Batch</span>
+                          </div>
+                        </th>
                       </tr>
                     </thead>
                     <tbody>
@@ -2597,12 +2644,13 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
                                 <input
                                   type="checkbox"
                                   checked={isDiff}
-                                  onChange={() =>
+                                  onChange={(e) => {
+                                    const checked = e.target.checked;
                                     setDifferentBatch((prev) => ({
                                       ...prev,
-                                      [idx]: !isDiff,
-                                    }))
-                                  }
+                                      [idx]: checked,
+                                    }));
+                                  }}
                                   title="Different batch received"
                                 />
                               ) : (

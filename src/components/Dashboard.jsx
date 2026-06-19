@@ -21,7 +21,6 @@ import { normalizeObjectResponse } from "../utils/apiNormalizer";
 import InventoryAnalyticsModal from "./inventory/InventoryAnalyticsModal";
 import { safeNumber } from "../utils/number.js";
 
-/* 🛠️ Helpers 🛠️ */
 const getDays = (d) => {
   try {
     return differenceInDays(new Date(d), new Date());
@@ -89,7 +88,7 @@ export default function Dashboard({
     const recon = dashboardData?.reconciliation;
     const backendInv = dashboardData?.inventory;
     const expiryMetrics = dashboardData?.expiryMetrics;
-    
+
     // Use reconciliation data if available (single source of truth)
     if (recon) {
       return {
@@ -105,7 +104,7 @@ export default function Dashboard({
         reconciliationOk: recon.reconciliationOk ?? false,
       };
     }
-    
+
     // Fallback to backend overview
     if (backendInv) {
       return {
