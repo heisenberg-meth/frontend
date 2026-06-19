@@ -78,12 +78,7 @@ export const getExpiryRisk = () =>
 /* ─── Unified Expiry Metrics (Single Source of Truth) ─── */
 export const getExpiryMetrics = (params) =>
   api.get(API_ROUTES.INVENTORY_EXPIRY_METRICS, { params });
-export const getExpiryAudit = () =>
-  api.get(API_ROUTES.INVENTORY_EXPIRY_AUDIT);
-
-/* ─── Unified Inventory Reconciliation (Single Source of Truth) ─── */
-export const getInventoryReconciliation = (params) =>
-  api.get(API_ROUTES.INVENTORY_RECONCILIATION, { params });
+export const getExpiryAudit = () => api.get(API_ROUTES.INVENTORY_EXPIRY_AUDIT);
 
 /* ─── Unified Inventory Reconciliation (Single Source of Truth) ─── */
 export const getInventoryReconciliation = (params) =>

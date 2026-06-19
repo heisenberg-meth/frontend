@@ -406,9 +406,16 @@
 
 .lsa-modal-header {
   display: flex;
-  justify-content: space-between;
+  justify-content: space-evenly;
   align-items: center;
   margin-bottom: 32px;
+  gap: 20px;
+}
+
+.lsa-group-header-right{
+  display: flex;
+  align-items: center;
+  gap: 12px;
 }
 
 .lsa-modal-header h3 {

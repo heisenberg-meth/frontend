@@ -497,6 +497,7 @@ export default function LowStockAlerts({ showToast }) {
 
           if (!grouped[supName]) {
             grouped[supName] = {
+              supplierId: item.supplierId || null,
               name: supName,
               contact: item.supplierPhone || "",
               email: item.supplierEmail || "",
@@ -573,19 +574,49 @@ export default function LowStockAlerts({ showToast }) {
       const criticalItems = lowStockItems
         .flatMap((s) => s.items)
         .filter((i) => i.urgency === "critical");
+
       if (criticalItems.length > 0) {
-        await createPurchaseOrder({
-          supplier: criticalItems[0].supplierId,
-          items: criticalItems.map((i) => ({
-            medicine: i.id,
-            medicineName: i.name,
-            quantity: i.reorderLevel || 50,
-            unitRate: i.purchaseCost || 0,
-          })),
+        // Group items by supplierId
+        const itemsBySupplier = {};
+        criticalItems.forEach((item) => {
+          const sId = item.supplierId || "unknown";
+          if (!itemsBySupplier[sId]) {
+            itemsBySupplier[sId] = [];
+          }
+          itemsBySupplier[sId].push(item);
         });
+
+        // Create a PO for each supplier
+        const promises = Object.entries(itemsBySupplier).map(
+          async ([supplierId, items]) => {
+            if (supplierId === "unknown" || !supplierId) return;
+
+            const mappedItems = items.map((i) => ({
+              medicineId: i.id,
+              quantity: i.reorderLevel || 50,
+              purchasePrice: i.purchaseCost || 0,
+            }));
+
+            const subtotal = mappedItems.reduce(
+              (acc, i) => acc + i.quantity * i.purchasePrice,
+              0,
+            );
+
+            await createPurchaseOrder({
+              supplierId,
+              items: mappedItems,
+              subtotal,
+              totalAmount: subtotal,
+              notes: "Auto-reorder for critical low stock items",
+            });
+          },
+        );
+
+        await Promise.all(promises);
         showToast("Auto-reorder initiated for critical items ✓", "success");
       }
-    } catch {
+    } catch (err) {
+      console.error(err);
       showToast("Failed to auto-reorder", "error");
     } finally {
       setReord(false);
@@ -602,6 +633,7 @@ export default function LowStockAlerts({ showToast }) {
           i.quantity,
           i.reorderLevel || 10,
           i.urgency,
+          i.purchaseCost || 0,
         ]),
       ),
     ]
@@ -620,14 +652,21 @@ export default function LowStockAlerts({ showToast }) {
   const handleCreatePO = async (supplier, qty, note) => {
     setPoSaving(true);
     try {
+      const items = supplier.items.map((i) => ({
+        medicineId: i.id,
+        quantity: safeNumber(qty),
+        purchasePrice: i.purchaseCost || 0,
+      }));
+      const subtotal = items.reduce(
+        (acc, i) => acc + i.quantity * i.purchasePrice,
+        0,
+      );
+
       await createPurchaseOrder({
-        supplier: supplier.supplierId,
-        items: supplier.items.map((i) => ({
-          medicine: i.id,
-          medicineName: i.name,
-          quantity: safeNumber(qty),
-          unitRate: i.purchaseCost || 0,
-        })),
+        supplierId: supplier.supplierId,
+        items,
+        subtotal,
+        totalAmount: subtotal,
         notes: note,
       });
       showToast(`Purchase Order raised for ${supplier.name}`, "success");
