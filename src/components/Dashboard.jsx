@@ -112,7 +112,7 @@ export default function Dashboard({
         expiring: expiryMetrics
           ? (expiryMetrics.expiring30Products ?? expiryMetrics.expiring30 ?? 0)
           : (backendInv.expiring30d ?? 0),
-        low: backendInv.lowStock ?? 0,
+        lowStock: backendInv.lowStock ?? 0,
         inventoryValue: backendInv.inventoryValue ?? 0,
       };
     }
@@ -122,7 +122,8 @@ export default function Dashboard({
       (m) => getStock(m) > 0 && getDays(getExpiry(m)) <= (expiryDays || 30),
     ).length;
     const lowCount = (medicines || []).filter(
-      (m) => getStock(m) <= (lowStock || 10),
+      (m) =>
+        getStock(m) <= (m.reorderLevel ?? m.reorderPoint ?? lowStock ?? 10),
     ).length;
     const totalValue = (medicines || []).reduce(
       (s, m) => s + safeNumber(getStock(m)) * safeNumber(getPrice(m)),
@@ -132,7 +133,7 @@ export default function Dashboard({
     return {
       total,
       expiring: expiringCount,
-      low: lowCount,
+      lowStock: lowCount,
       inventoryValue: totalValue,
     };
   }, [medicines, expiryDays, lowStock, dashboardData]);
@@ -144,7 +145,11 @@ export default function Dashboard({
     .sort((a, b) => getDays(getExpiry(a)) - getDays(getExpiry(b)));
 
   const needsReorderList = (medicines || [])
-    .filter((m) => getStock(m) > 0 && getStock(m) <= (lowStock || 10))
+    .filter(
+      (m) =>
+        getStock(m) > 0 &&
+        getStock(m) <= (m.reorderLevel ?? m.reorderPoint ?? lowStock ?? 10),
+    )
     .slice(0, 5);
 
   const handleMouseMove = (e) => {
@@ -311,9 +316,9 @@ export default function Dashboard({
           </div>
           <div className="flex items-center gap-3">
             <div className="stat-v2-val warning text-yellow-500">
-              {stats.low}
+              {stats.lowStock}
             </div>
-            {stats.low > 0 && <div className="pulsing-dot-orange" />}
+            {stats.lowStock > 0 && <div className="pulsing-dot-orange" />}
           </div>
         </div>
 
@@ -389,8 +394,8 @@ export default function Dashboard({
               <div className="flex items-center gap-3">
                 <AlertTriangle size={20} className="text-yellow-500" />
                 <h3 className="bento-title !mb-0">Needs Reorder</h3>
-                {stats.low > 0 && (
-                  <span className="count-badge warning">{stats.low}</span>
+                {stats.lowStock > 0 && (
+                  <span className="count-badge warning">{stats.lowStock}</span>
                 )}
               </div>
               <button
