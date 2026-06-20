@@ -447,12 +447,8 @@ export default function BillingPOS({
   }, [returnItems, selectedBill]);
 
   const addToLineItems = (med) => {
-    // Use availableStock (from FEFO batch) as the authoritative quantity
-    const availableQty =
-      med.availableStock !== undefined ? med.availableStock : (med.stock ?? 0);
-
-    if (availableQty <= 0 || med.isOutOfStock) {
-      showToast("Medicine is out of stock", "error");
+    if (med.availableStock <= 0 || med.isOutOfStock) {
+      showToast("Medicine out of stock", "error");
       return;
     }
     if (!med.batchId) {
@@ -477,7 +473,7 @@ export default function BillingPOS({
           gst: safeNumber(med.gst || med.gstPercentage || med.gstRate),
           total: price,
           discount: 0,
-          availableStock: availableQty,
+          availableStock: med.availableStock,
         },
       ];
     });
@@ -493,7 +489,7 @@ export default function BillingPOS({
       prev.map((i) => {
         if (i.batchId === batchId) {
           const newQty = Math.max(1, i.qty + delta);
-          const maxAvail = i.availableStock ?? i.stock ?? Infinity;
+          const maxAvail = i.availableStock ?? Infinity;
           if (newQty > maxAvail) {
             showToast(
               `Only ${maxAvail} unit${maxAvail !== 1 ? "s" : ""} available in stock`,
@@ -1188,10 +1184,7 @@ ${printDiscount > 0 ? `<div style="display:flex;justify-content:space-between"><
                     onClick={(e) => e.stopPropagation()}
                   >
                     {medResults.map((res) => {
-                      const availQty =
-                        res.availableStock !== undefined
-                          ? res.availableStock
-                          : (res.stock ?? 0);
+                      const availQty = res.availableStock ?? 0;
                       const isOOS = availQty <= 0 || res.isOutOfStock;
                       return (
                         <div
