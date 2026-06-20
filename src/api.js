@@ -194,6 +194,7 @@ api.interceptors.response.use(
           {},
           {
             withCredentials: true,
+            timeout: 60000,
             headers: {
               ...(import.meta.env.DEV && {
                 "ngrok-skip-browser-warning": "69420",

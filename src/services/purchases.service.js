@@ -20,3 +20,18 @@ export const receivePurchaseOrder = (id, data) =>
   api.post(`${API_ROUTES.PURCHASES_ORDERS}/${id}/receive`, data);
 
 export const getPurchaseInvoices = () => api.get(API_ROUTES.PURCHASES_INVOICES);
+
+/* ─── Smart Reorder ─── */
+export const createReorder = (data) =>
+  api.post(`${API_ROUTES.PURCHASES_ORDERS}/reorder`, data);
+
+/* ─── PO PDF URL ─── */
+export const getPurchaseOrderPdfUrl = (id) => {
+  const base =
+    api.defaults?.baseURL ??
+    import.meta.env.VITE_API_BASE_URL ??
+    "http://localhost:3000/api";
+  return `${base}/purchase-orders/${id}/pdf`;
+};
+
+

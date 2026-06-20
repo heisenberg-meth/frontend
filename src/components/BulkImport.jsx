@@ -106,7 +106,7 @@ export default function BulkImport({ fetchData, showToast }) {
       const usedHeaders = new Set();
       const fieldKeywords = {
         nameColumn: ["name", "med", "medicine", "drug", "item"],
-        qtyColumn: ["qty", "quantity", "stock", "units", "count"],
+        qtyColumn: ["qty", "quantity", "stock", "unit", "units", "count", "on hand", "available"],
         expiryColumn: ["expiry", "exp", "date", "valid"],
         priceColumn: ["price", "rate", "cost", "inr"],
         batchColumn: ["batch", "lot", "no", "code"],
@@ -125,6 +125,22 @@ export default function BulkImport({ fetchData, showToast }) {
         dosageFormColumn: ["dosage", "form", "type", "drug_form"],
         hsnCodeColumn: ["hsn", "hsn_code", "hsncode", "sac", "tariff"],
         gstPercentageColumn: ["gst", "gst%", "tax", "tax_percent"],
+      };
+
+      const fieldExcludes = {
+        nameColumn: ["generic", "price", "rate", "cost", "qty", "quantity", "stock", "expiry", "date", "batch", "barcode", "sku"],
+        qtyColumn: ["price", "rate", "cost", "inr", "date", "expiry", "name", "med", "batch", "barcode", "sku"],
+        expiryColumn: ["name", "med", "price", "qty", "batch", "barcode", "sku"],
+        priceColumn: ["qty", "quantity", "stock", "units", "count", "name", "med", "expiry", "date", "batch", "barcode", "sku"],
+        batchColumn: ["name", "med", "price", "qty", "expiry", "date", "barcode", "hsn"],
+        barcodeColumn: ["name", "med", "price", "qty", "expiry", "date", "batch"],
+        categoryColumn: ["name", "med", "price", "qty", "expiry", "date", "batch", "barcode", "generic"],
+        manufacturerColumn: ["name", "med", "price", "qty", "expiry", "date", "batch", "barcode", "generic", "category"],
+        genericNameColumn: ["name", "med", "price", "qty", "expiry", "date", "batch", "barcode"],
+        strengthColumn: ["name", "med", "price", "qty", "expiry", "date", "batch", "barcode"],
+        dosageFormColumn: ["name", "med", "price", "qty", "expiry", "date", "batch", "barcode"],
+        hsnCodeColumn: ["name", "med", "price", "qty", "expiry", "date", "batch", "barcode"],
+        gstPercentageColumn: ["name", "med", "price", "qty", "expiry", "date", "batch", "barcode"],
       };
 
       if (fileHeaders.length <= 1) {
@@ -155,6 +171,10 @@ export default function BulkImport({ fetchData, showToast }) {
         const match = fileHeaders.find((header) => {
           if (usedHeaders.has(header)) return false;
           const lower = header.toLowerCase();
+          const excludes = fieldExcludes[field] || [];
+          const hasExclude = excludes.some((ex) => lower.includes(ex));
+          if (hasExclude) return false;
+
           return fieldKeywords[field].some((keyword) =>
             lower.includes(keyword),
           );
@@ -173,9 +193,9 @@ export default function BulkImport({ fetchData, showToast }) {
   const getMappedMedicines = useCallback(() => {
     const result = parsedRows.map((row) => ({
       name: String(row[mapping.nameColumn] || "").trim(),
-      qty: String(row[mapping.qtyColumn] || "0").trim(),
+      qty: mapping.qtyColumn ? String(row[mapping.qtyColumn] ?? "").trim() : "",
       expiry: String(row[mapping.expiryColumn] || "").trim(),
-      price: String(row[mapping.priceColumn] || "0").trim(),
+      price: mapping.priceColumn ? String(row[mapping.priceColumn] ?? "").trim() : "",
       batch: String(row[mapping.batchColumn] || "").trim(),
       barcode: String(row[mapping.barcodeColumn] || "").trim(),
       category: String(row[mapping.categoryColumn] || "").trim(),

@@ -20,6 +20,8 @@ import {
   Calendar,
   ChevronDown,
   Check,
+  ShoppingCart,
+  FileText,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { getMedicineStatus, STATUS_OPTIONS } from "../utils/inventoryStatus";
@@ -107,6 +109,10 @@ import {
   updateBatch,
   getInventorySummary,
 } from "../services/inventory.service";
+import {
+  createReorder,
+  getPurchaseOrderPdfUrl,
+} from "../services/purchases.service";
 import { useAuth } from "../hooks/useAuth";
 import ConfirmModal from "./ConfirmModal";
 import InventoryAnalyticsModal from "./inventory/InventoryAnalyticsModal";
@@ -120,6 +126,189 @@ function Spinner({ size = 14 }) {
 }
 
 const GST_OPTIONS = [0, 5, 12, 18, 28];
+
+/* ─── Reorder Modal ─── */
+function ReorderModal({ medicine, onClose, showToast }) {
+  const [quantity, setQuantity] = useState(
+    Math.max(20, (medicine.reorderLevel ?? medicine.reorderPoint ?? 20) * 3)
+  );
+  const [submitting, setSubmitting] = useState(false);
+
+  const currentStock = medicine.stock ?? medicine.currentStock ?? 0;
+  const reorderLevel = medicine.reorderLevel ?? medicine.reorderPoint ?? 10;
+  const purchasePrice =
+    safeNumber(medicine.inventoryBatches?.[0]?.purchasePrice ?? medicine.purchaseCost ?? 0);
+  const gstPct = safeNumber(medicine.gstPercentage ?? medicine.gst ?? 0);
+  const subtotal = Number((quantity * purchasePrice).toFixed(2));
+  const gstAmount = Number((subtotal * gstPct / 100).toFixed(2));
+  const total = Number((subtotal + gstAmount).toFixed(2));
+
+  const supplierName =
+    medicine.inventoryBatches?.[0]?.supplier?.name ??
+    medicine.supplier ??
+    "Not assigned";
+
+  const handleSubmit = async () => {
+    if (!quantity || quantity <= 0) {
+      showToast("Quantity must be greater than zero", "error");
+      return;
+    }
+    setSubmitting(true);
+    try {
+      const res = await createReorder({ medicineId: medicine.id, quantity });
+      const po = res.data?.data?.purchaseOrder ?? res.data?.data;
+      const poId = po?.id;
+      const poNumber = po?.orderNumber ?? "PO";
+
+      showToast(
+        `Purchase Order ${poNumber} created successfully!`,
+        "success"
+      );
+
+      // Auto-download PDF
+      if (poId) {
+        const pdfUrl = getPurchaseOrderPdfUrl(poId);
+        const link = document.createElement("a");
+        link.href = pdfUrl;
+        link.target = "_blank";
+        link.download = `${poNumber}.html`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      }
+
+      onClose();
+    } catch (err) {
+      const msg =
+        err?.response?.data?.error ??
+        err?.message ??
+        "Failed to create reorder";
+      showToast(msg, "error");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <div className="inv-modal-overlay" onClick={onClose}>
+      <motion.div
+        className="inv-modal-content"
+        style={{ width: "480px", maxWidth: "95vw" }}
+        initial={{ opacity: 0, scale: 0.95, y: 20 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        exit={{ opacity: 0, scale: 0.95, y: 20 }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="inv-modal-header">
+          <div className="header-title-group">
+            <ShoppingCart size={20} style={{ color: "var(--primary)" }} />
+            <h3>Reorder Medicine</h3>
+          </div>
+          <button className="inv-modal-close-btn" onClick={onClose}>
+            <X size={18} />
+          </button>
+        </div>
+
+        <div className="inv-modal-scroll" style={{ padding: "24px" }}>
+          {/* Medicine Info */}
+          <div style={{
+            background: "var(--surface-2, #f8f9ff)",
+            borderRadius: "12px",
+            padding: "16px",
+            marginBottom: "20px",
+            border: "1px solid var(--overlay-06, rgba(108,99,255,0.1))"
+          }}>
+            <div style={{ fontWeight: 700, fontSize: "16px", marginBottom: "12px", color: "var(--primary)" }}>
+              {medicine.name}
+            </div>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px", fontSize: "13px" }}>
+              <div>
+                <div style={{ color: "var(--text-muted)", fontWeight: 600, fontSize: "11px", textTransform: "uppercase", letterSpacing: "0.05em" }}>Current Stock</div>
+                <div style={{ fontWeight: 700, color: currentStock <= reorderLevel ? "var(--danger)" : "var(--success)" }}>
+                  {currentStock} units
+                </div>
+              </div>
+              <div>
+                <div style={{ color: "var(--text-muted)", fontWeight: 600, fontSize: "11px", textTransform: "uppercase", letterSpacing: "0.05em" }}>Reorder Level</div>
+                <div style={{ fontWeight: 700 }}>{reorderLevel} units</div>
+              </div>
+              <div>
+                <div style={{ color: "var(--text-muted)", fontWeight: 600, fontSize: "11px", textTransform: "uppercase", letterSpacing: "0.05em" }}>Supplier</div>
+                <div style={{ fontWeight: 600 }}>{supplierName}</div>
+              </div>
+              <div>
+                <div style={{ color: "var(--text-muted)", fontWeight: 600, fontSize: "11px", textTransform: "uppercase", letterSpacing: "0.05em" }}>Purchase Price</div>
+                <div style={{ fontWeight: 700 }}>₹{purchasePrice.toFixed(2)}</div>
+              </div>
+              <div>
+                <div style={{ color: "var(--text-muted)", fontWeight: 600, fontSize: "11px", textTransform: "uppercase", letterSpacing: "0.05em" }}>GST</div>
+                <div style={{ fontWeight: 600 }}>{gstPct}%</div>
+              </div>
+            </div>
+          </div>
+
+          {/* Quantity Input */}
+          <div className="form-group full" style={{ marginBottom: "20px" }}>
+            <label style={{ fontWeight: 700 }}>Order Quantity *</label>
+            <input
+              type="number"
+              min="1"
+              value={quantity}
+              onChange={(e) => setQuantity(Math.max(1, parseInt(e.target.value) || 1))}
+              style={{ fontSize: "18px", fontWeight: 700, textAlign: "center" }}
+              autoFocus
+            />
+          </div>
+
+          {/* Order Summary */}
+          <div style={{
+            background: "var(--primary-alpha, rgba(108,99,255,0.08))",
+            borderRadius: "12px",
+            padding: "16px",
+            border: "1px solid var(--primary-alpha-30, rgba(108,99,255,0.2))"
+          }}>
+            <div style={{ fontWeight: 700, fontSize: "12px", textTransform: "uppercase", letterSpacing: "0.05em", color: "var(--primary)", marginBottom: "10px" }}>Order Summary</div>
+            <div style={{ display: "flex", justifyContent: "space-between", fontSize: "13px", marginBottom: "6px" }}>
+              <span>Subtotal ({quantity} × ₹{purchasePrice.toFixed(2)})</span>
+              <span style={{ fontWeight: 600 }}>₹{subtotal.toFixed(2)}</span>
+            </div>
+            <div style={{ display: "flex", justifyContent: "space-between", fontSize: "13px", marginBottom: "6px" }}>
+              <span>GST ({gstPct}%)</span>
+              <span style={{ fontWeight: 600 }}>₹{gstAmount.toFixed(2)}</span>
+            </div>
+            <div style={{ borderTop: "1px solid var(--primary-alpha-30, rgba(108,99,255,0.2))", paddingTop: "10px", marginTop: "4px", display: "flex", justifyContent: "space-between", fontWeight: 800, fontSize: "16px", color: "var(--primary)" }}>
+              <span>Total</span>
+              <span>₹{total.toFixed(2)}</span>
+            </div>
+          </div>
+
+          {supplierName === "Not assigned" && (
+            <div style={{ background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.2)", borderRadius: "10px", padding: "10px 14px", marginTop: "14px", fontSize: "12px", color: "var(--danger)" }}>
+              ⚠️ No supplier linked to this medicine. A supplier must be assigned (via a batch receipt) before reordering.
+            </div>
+          )}
+        </div>
+
+        <div className="inv-modal-footer">
+          <button className="inv-modal-btn cancel" onClick={onClose}>
+            Cancel
+          </button>
+          <button
+            className="inv-modal-btn confirm"
+            onClick={handleSubmit}
+            disabled={submitting || quantity <= 0}
+          >
+            {submitting ? (
+              <><Spinner size={16} /> Creating PO...</>
+            ) : (
+              <><FileText size={16} /> Generate Purchase Order</>
+            )}
+          </button>
+        </div>
+      </motion.div>
+    </div>
+  );
+}
 
 const getInitials = (name) =>
   name
@@ -1246,6 +1435,8 @@ export default function InventoryCRUD({
   const [editTarget, setEditTarget] = useState(null);
   const [viewTarget, setViewTarget] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
+  const [reorderTarget, setReorderTarget] = useState(null);
+
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -1948,6 +2139,14 @@ export default function InventoryCRUD({
                             <Pencil size={14} />
                           </button>
                           <button
+                            className="inv-row-btn reorder"
+                            title="Reorder — Create Purchase Order"
+                            onClick={() => setReorderTarget(m)}
+                            style={{ color: "var(--primary)" }}
+                          >
+                            <ShoppingCart size={14} />
+                          </button>
+                          <button
                             className="inv-row-btn danger"
                             title="Delete"
                             onClick={() => setDeleteTarget(m)}
@@ -1955,6 +2154,7 @@ export default function InventoryCRUD({
                             <Trash2 size={14} />
                           </button>
                         </div>
+
                       </td>
                     </tr>
                   );
@@ -2084,6 +2284,16 @@ export default function InventoryCRUD({
         isOpen={showAnalyticsModal}
         onClose={() => setShowAnalyticsModal(false)}
       />
+
+      <AnimatePresence>
+        {reorderTarget && (
+          <ReorderModal
+            medicine={reorderTarget}
+            onClose={() => setReorderTarget(null)}
+            showToast={showToast}
+          />
+        )}
+      </AnimatePresence>
     </div>
   );
 }

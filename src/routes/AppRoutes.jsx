@@ -67,6 +67,7 @@ const InventoryCRUD = lazy(() => import("../components/InventoryCRUD"));
 const SubscriptionCRUD = lazy(() => import("../components/SubscriptionCRUD"));
 const AccountingTax = lazy(() => import("../components/AccountingTax"));
 const Notifications = lazy(() => import("../pages/Notifications"));
+const CheckoutPage = lazy(() => import("../pages/CheckoutPage"));
 const InventoryAnalyticsFull = lazy(
   () => import("../components/inventory/InventoryAnalyticsFull"),
 );
@@ -123,6 +124,9 @@ export default function AppRoutes({
             )
           }
         />
+
+        {/* Public Checkout Route (Desktop Payment Flow) */}
+        <Route path="/checkout" element={<CheckoutPage />} />
 
         {/* Guarded Routes */}
         <Route

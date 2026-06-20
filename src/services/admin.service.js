@@ -51,9 +51,11 @@ adminHttp.interceptors.response.use(
       try {
         const refreshToken = localStorage.getItem(REFRESH_KEY);
         if (!refreshToken) throw new Error("No refresh token");
-        const { data } = await axios.post(`${getBaseUrl()}/admin/refresh`, {
-          refreshToken,
-        });
+        const { data } = await axios.post(
+          `${getBaseUrl()}/admin/refresh`,
+          { refreshToken },
+          { timeout: 60000 }
+        );
         if (data.success && data.data.accessToken) {
           return adminHttp(original);
         }
