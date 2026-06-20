@@ -231,3 +231,72 @@
   color: var(--primary);
   transform: scale(1.1);
 }
+
+/* ── Sale Details Modal Enhancements ── */
+.sale-details-modal.stock-modal-content {
+  width: 95vw;
+  max-width: 1400px;
+  height: 90vh;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden; /* Prevent container scroll, let body scroll */
+}
+
+.sale-details-modal .stock-modal-body {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: auto;
+  padding: 24px 32px;
+}
+
+.sale-details-modal .stock-modal-footer.modal-footer {
+  position: sticky;
+  bottom: 0;
+  z-index: 100;
+  background: var(--surface);
+  border-top: 1px solid var(--outline-variant);
+  padding: 16px 32px;
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.sale-details-modal .stock-modal-footer.modal-footer button {
+  min-width: 180px;
+  flex: 1;
+}
+
+/* Table Wrapper for Horizontal Scroll */
+.table-wrapper {
+  overflow-x: auto;
+  width: 100%;
+}
+
+.bill-items-table {
+  min-width: 1000px;
+  width: 100%;
+  border-collapse: collapse;
+}
+
+/* Mobile Media Queries */
+@media (max-width: 768px) {
+  .sale-details-modal.stock-modal-content {
+    width: 100vw !important;
+    max-width: 100vw !important;
+    height: 100vh !important;
+    max-height: 100vh !important;
+    border-radius: 0;
+  }
+
+  .sale-details-modal .stock-modal-footer.modal-footer {
+    flex-direction: column;
+    padding: 16px;
+  }
+
+  .sale-details-modal .stock-modal-footer.modal-footer button {
+    width: 100% !important;
+    min-width: 0 !important;
+  }
+}
+

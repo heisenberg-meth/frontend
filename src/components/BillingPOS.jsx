@@ -447,8 +447,12 @@ export default function BillingPOS({
   }, [returnItems, selectedBill]);
 
   const addToLineItems = (med) => {
-    if (med.stock === 0) {
-      showToast("Item out of stock", "error");
+    // Use availableStock (from FEFO batch) as the authoritative quantity
+    const availableQty =
+      med.availableStock !== undefined ? med.availableStock : (med.stock ?? 0);
+
+    if (availableQty <= 0 || med.isOutOfStock) {
+      showToast("Medicine is out of stock", "error");
       return;
     }
     if (!med.batchId) {
@@ -473,6 +477,7 @@ export default function BillingPOS({
           gst: safeNumber(med.gst || med.gstPercentage || med.gstRate),
           total: price,
           discount: 0,
+          availableStock: availableQty,
         },
       ];
     });
@@ -488,8 +493,12 @@ export default function BillingPOS({
       prev.map((i) => {
         if (i.batchId === batchId) {
           const newQty = Math.max(1, i.qty + delta);
-          if (newQty > i.stock) {
-            showToast(`Only ${i.stock} units available`, "error");
+          const maxAvail = i.availableStock ?? i.stock ?? Infinity;
+          if (newQty > maxAvail) {
+            showToast(
+              `Only ${maxAvail} unit${maxAvail !== 1 ? "s" : ""} available in stock`,
+              "error",
+            );
             return i;
           }
           return {
@@ -1178,50 +1187,82 @@ ${printDiscount > 0 ? `<div style="display:flex;justify-content:space-between"><
                     exit={{ opacity: 0, y: -10 }}
                     onClick={(e) => e.stopPropagation()}
                   >
-                    {medResults.map((res) => (
-                      <div
-                        key={res.id}
-                        className={`result-row ${res.stock === 0 ? "oos" : ""}`}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          addToLineItems(res);
-                        }}
-                      >
-                        <div className="result-info">
-                          <span className="result-name">{res.name}</span>
-                          <span className="result-meta">
-                            {res.genericName || res.generic}
-                          </span>
-                        </div>
+                    {medResults.map((res) => {
+                      const availQty =
+                        res.availableStock !== undefined
+                          ? res.availableStock
+                          : (res.stock ?? 0);
+                      const isOOS = availQty <= 0 || res.isOutOfStock;
+                      return (
                         <div
-                          className="result-info"
-                          style={{ textAlign: "center" }}
+                          key={res.id}
+                          className={`result-row${isOOS ? " oos" : ""}`}
+                          style={
+                            isOOS
+                              ? {
+                                  opacity: 0.55,
+                                  pointerEvents: "none",
+                                  cursor: "not-allowed",
+                                }
+                              : {}
+                          }
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (!isOOS) addToLineItems(res);
+                          }}
                         >
-                          <span className="result-meta">
-                            Batch: {res.batchNumber || res.batch || res.batchId}
-                          </span>
-                          <span className="result-meta">
-                            Exp:{" "}
-                            {res.expiryDate
-                              ? new Date(res.expiryDate).toLocaleDateString(
-                                  "en-IN",
-                                )
-                              : res.exp || res.expiry || "N/A"}
-                          </span>
-                        </div>
-                        <div style={{ textAlign: "right" }}>
-                          <div
-                            className="result-name"
-                            style={{ color: "var(--primary)" }}
-                          >
-                            ₹{safeNumber(res.price || res.mrp).toFixed(2)}
+                          <div className="result-info">
+                            <span className="result-name">{res.name}</span>
+                            <span className="result-meta">
+                              {res.genericName || res.generic}
+                            </span>
                           </div>
-                          <span className="result-meta">
-                            {res.stock} in stock
-                          </span>
+                          <div
+                            className="result-info"
+                            style={{ textAlign: "center" }}
+                          >
+                            <span className="result-meta">
+                              Batch:{" "}
+                              {res.batchNumber ||
+                                res.batch ||
+                                res.batchId ||
+                                "N/A"}
+                            </span>
+                            <span className="result-meta">
+                              Exp:{" "}
+                              {res.expiryDate
+                                ? new Date(res.expiryDate).toLocaleDateString(
+                                    "en-IN",
+                                  )
+                                : res.exp || res.expiry || "N/A"}
+                            </span>
+                          </div>
+                          <div style={{ textAlign: "right" }}>
+                            <div
+                              className="result-name"
+                              style={{ color: "var(--primary)" }}
+                            >
+                              ₹{safeNumber(res.price || res.mrp).toFixed(2)}
+                            </div>
+                            {isOOS ? (
+                              <span
+                                className="result-meta"
+                                style={{
+                                  color: "var(--danger)",
+                                  fontWeight: 700,
+                                }}
+                              >
+                                OUT OF STOCK
+                              </span>
+                            ) : (
+                              <span className="result-meta">
+                                {availQty} in stock
+                              </span>
+                            )}
+                          </div>
                         </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </motion.div>
                 )}
               </AnimatePresence>

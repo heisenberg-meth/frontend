@@ -197,6 +197,15 @@ export default function SalesManagement({ showToast, storeProfile }) {
     });
   }, [filteredSales, currentDate, dateRange]);
 
+  // Always shows only today's invoices, independent of any date-range filter
+  const todaysSales = useMemo(() => {
+    const todayStr = format(new Date(), "yyyy-MM-dd");
+    return sales.filter((sale) => {
+      const saleDateOnly = formatInvoiceDate(sale.createdAt || sale.date);
+      return saleDateOnly === todayStr;
+    });
+  }, [sales]);
+
   const filteredReturns = useMemo(
     () =>
       returns.filter((ret) => {
@@ -701,11 +710,12 @@ export default function SalesManagement({ showToast, storeProfile }) {
             val:
               "₹" +
               formatCurrency(
-                dailySales.reduce(
+                todaysSales.reduce(
                   (sum, s) => sum + (s.totalAmount || s.total || 0),
                   0,
                 ),
               ),
+            sub: `${todaysSales.length} bill${todaysSales.length !== 1 ? "s" : ""}`,
             icon: TrendingUp,
             col: "var(--primary)",
           },
@@ -719,12 +729,14 @@ export default function SalesManagement({ showToast, storeProfile }) {
                   0,
                 ),
               ),
+            sub: `${filteredSales.length} bill${filteredSales.length !== 1 ? "s" : ""}`,
             icon: Calendar,
             col: "var(--info)",
           },
           {
             label: "TOTAL BILLS",
             val: filteredSales.length,
+            sub: `in selected range`,
             icon: FileText,
             col: "var(--info)",
           },
@@ -740,15 +752,12 @@ export default function SalesManagement({ showToast, storeProfile }) {
                   0,
                 ),
               ),
+            sub: `${filteredReturns.length} return${filteredReturns.length !== 1 ? "s" : ""}`,
             icon: ArrowLeft,
             col: "var(--danger)",
           },
         ].map((s, i) => (
-          <div
-            key={i}
-            className="pos-stat-card"
-            onClick={() => setActiveTab("daily")}
-          >
+          <div key={i} className="pos-stat-card" style={{ cursor: "default" }}>
             <div className="stat-card-header">
               <span className="stat-label">{s.label}</span>
               <div
@@ -759,6 +768,17 @@ export default function SalesManagement({ showToast, storeProfile }) {
               </div>
             </div>
             <div className="stat-value">{s.val}</div>
+            {s.sub && (
+              <div
+                style={{
+                  fontSize: "11px",
+                  color: "var(--text-secondary)",
+                  marginTop: "4px",
+                }}
+              >
+                {s.sub}
+              </div>
+            )}
           </div>
         ))}
       </div>
@@ -846,14 +866,14 @@ export default function SalesManagement({ showToast, storeProfile }) {
             <div className="sales-summary-bar">
               <div className="summary-stats-left">
                 <span>
-                  Total Bills: <b>{dailySales.length}</b>
+                  Total Bills: <b>{filteredSales.length}</b>
                 </span>
                 <span>
                   Revenue:{" "}
                   <b>
                     ₹
                     {formatCurrency(
-                      dailySales.reduce(
+                      filteredSales.reduce(
                         (sum, s) => sum + (s.totalAmount || s.total || 0),
                         0,
                       ),
@@ -1414,8 +1434,15 @@ export default function SalesManagement({ showToast, storeProfile }) {
         {showDetailModal && selectedSale && (
           <div className="stock-modal-overlay">
             <motion.div
-              className="stock-modal-content"
-              style={{ width: "500px" }}
+              className="sale-details-modal stock-modal-content"
+              style={{
+                width: "95vw",
+                maxWidth: "1400px",
+                height: "90vh",
+                maxHeight: "90vh",
+                display: "flex",
+                flexDirection: "column",
+              }}
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.9 }}
@@ -1485,15 +1512,15 @@ export default function SalesManagement({ showToast, storeProfile }) {
                 <div className="pos-input-group">
                   <label>Bill Items</label>
                   <div
+                    className="table-wrapper"
                     style={{
                       background: "var(--surface-container)",
                       borderRadius: "8px",
-                      overflow: "hidden",
                     }}
                   >
                     <table
+                      className="bill-items-table"
                       style={{
-                        width: "100%",
                         fontSize: "14px",
                         borderCollapse: "collapse",
                       }}
@@ -1640,7 +1667,17 @@ export default function SalesManagement({ showToast, storeProfile }) {
                   </div>
                 </div>
               </div>
-              <div className="stock-modal-footer">
+              <div
+                className="stock-modal-footer modal-footer"
+                style={{
+                  position: "sticky",
+                  bottom: 0,
+                  background: "var(--surface)",
+                  zIndex: 100,
+                  padding: "16px",
+                  borderTop: "1px solid var(--outline-variant)",
+                }}
+              >
                 <button
                   className="pos-btn outline"
                   onClick={() => {

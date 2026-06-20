@@ -1,9 +1,9 @@
 /**
  * Inventory Status Utility - Single Source of Truth
- * 
+ *
  * All inventory status calculations MUST use this function.
  * No module may calculate status independently.
- * 
+ *
  * Usage:
  *   import { getMedicineStatus } from '../utils/inventoryStatus';
  *   const status = getMedicineStatus(medicine);
@@ -11,7 +11,7 @@
 
 /**
  * Calculate the status of a medicine based on stock and expiry
- * 
+ *
  * @param {Object} medicine - Medicine object with stock/batches data
  * @returns {string} Status: "Expired" | "Out of Stock" | "Low Stock" | "Expiring Soon" | "In Stock"
  */
@@ -20,18 +20,15 @@ export function getMedicineStatus(medicine) {
 
   // Get stock quantity - try multiple field names
   const stock = Number(
-    medicine.stock ??
-    medicine.currentStock ??
-    medicine.availableQuantity ??
-    0
+    medicine.availableStock ??
+      medicine.stock ??
+      medicine.currentStock ??
+      medicine.availableQuantity ??
+      0,
   );
 
   // Get reorder level - try multiple field names
-  const reorder = Number(
-    medicine.reorderLevel ??
-    medicine.reorderPoint ??
-    10
-  );
+  const reorder = Number(medicine.reorderLevel ?? medicine.reorderPoint ?? 10);
 
   // Get expiry date - try multiple sources
   const expiryDate = getExpiryDate(medicine);
@@ -76,7 +73,7 @@ export function getMedicineStatus(medicine) {
 /**
  * Get the nearest expiry date from a medicine
  * Checks both medicine.expiryDate and inventoryBatches
- * 
+ *
  * @param {Object} medicine - Medicine object
  * @returns {Date|string|null} Expiry date or null
  */
@@ -91,9 +88,9 @@ export function getExpiryDate(medicine) {
   // Check inventoryBatches array
   if (medicine.inventoryBatches && Array.isArray(medicine.inventoryBatches)) {
     const activeBatches = medicine.inventoryBatches
-      .filter(b => b.quantity > 0 && b.expiryDate)
+      .filter((b) => b.quantity > 0 && b.expiryDate)
       .sort((a, b) => new Date(a.expiryDate) - new Date(b.expiryDate));
-    
+
     if (activeBatches.length > 0) {
       return activeBatches[0].expiryDate;
     }
@@ -107,9 +104,9 @@ export function getExpiryDate(medicine) {
   // Check batches array
   if (medicine.batches && Array.isArray(medicine.batches)) {
     const activeBatches = medicine.batches
-      .filter(b => b.quantity > 0 && b.expiryDate)
+      .filter((b) => b.quantity > 0 && b.expiryDate)
       .sort((a, b) => new Date(a.expiryDate) - new Date(b.expiryDate));
-    
+
     if (activeBatches.length > 0) {
       return activeBatches[0].expiryDate;
     }
@@ -120,33 +117,30 @@ export function getExpiryDate(medicine) {
 
 /**
  * Get stock quantity from a medicine
- * 
+ *
  * @param {Object} medicine - Medicine object
  * @returns {number} Stock quantity
  */
 export function getStock(medicine) {
   if (!medicine) return 0;
   return Number(
-    medicine.stock ??
-    medicine.currentStock ??
-    medicine.availableQuantity ??
-    0
+    medicine.availableStock ??
+      medicine.stock ??
+      medicine.currentStock ??
+      medicine.availableQuantity ??
+      0,
   );
 }
 
 /**
  * Get reorder level from a medicine
- * 
+ *
  * @param {Object} medicine - Medicine object
  * @returns {number} Reorder level
  */
 export function getReorderLevel(medicine) {
   if (!medicine) return 10;
-  return Number(
-    medicine.reorderLevel ??
-    medicine.reorderPoint ??
-    10
-  );
+  return Number(medicine.reorderLevel ?? medicine.reorderPoint ?? 10);
 }
 
 /**
@@ -163,7 +157,7 @@ export const STATUS_OPTIONS = [
 
 /**
  * Get status color for badge display
- * 
+ *
  * @param {string} status - Medicine status
  * @returns {string} CSS color class
  */

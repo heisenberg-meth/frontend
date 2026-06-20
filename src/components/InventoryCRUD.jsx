@@ -130,17 +130,19 @@ const GST_OPTIONS = [0, 5, 12, 18, 28];
 /* ─── Reorder Modal ─── */
 function ReorderModal({ medicine, onClose, showToast }) {
   const [quantity, setQuantity] = useState(
-    Math.max(20, (medicine.reorderLevel ?? medicine.reorderPoint ?? 20) * 3)
+    Math.max(20, (medicine.reorderLevel ?? medicine.reorderPoint ?? 20) * 3),
   );
   const [submitting, setSubmitting] = useState(false);
 
-  const currentStock = medicine.stock ?? medicine.currentStock ?? 0;
+  const currentStock =
+    medicine.availableStock ?? medicine.stock ?? medicine.currentStock ?? 0;
   const reorderLevel = medicine.reorderLevel ?? medicine.reorderPoint ?? 10;
-  const purchasePrice =
-    safeNumber(medicine.inventoryBatches?.[0]?.purchasePrice ?? medicine.purchaseCost ?? 0);
+  const purchasePrice = safeNumber(
+    medicine.inventoryBatches?.[0]?.purchasePrice ?? medicine.purchaseCost ?? 0,
+  );
   const gstPct = safeNumber(medicine.gstPercentage ?? medicine.gst ?? 0);
   const subtotal = Number((quantity * purchasePrice).toFixed(2));
-  const gstAmount = Number((subtotal * gstPct / 100).toFixed(2));
+  const gstAmount = Number(((subtotal * gstPct) / 100).toFixed(2));
   const total = Number((subtotal + gstAmount).toFixed(2));
 
   const supplierName =
@@ -160,10 +162,7 @@ function ReorderModal({ medicine, onClose, showToast }) {
       const poId = po?.id;
       const poNumber = po?.orderNumber ?? "PO";
 
-      showToast(
-        `Purchase Order ${poNumber} created successfully!`,
-        "success"
-      );
+      showToast(`Purchase Order ${poNumber} created successfully!`, "success");
 
       // Auto-download PDF
       if (poId) {
@@ -211,37 +210,113 @@ function ReorderModal({ medicine, onClose, showToast }) {
 
         <div className="inv-modal-scroll" style={{ padding: "24px" }}>
           {/* Medicine Info */}
-          <div style={{
-            background: "var(--surface-2, #f8f9ff)",
-            borderRadius: "12px",
-            padding: "16px",
-            marginBottom: "20px",
-            border: "1px solid var(--overlay-06, rgba(108,99,255,0.1))"
-          }}>
-            <div style={{ fontWeight: 700, fontSize: "16px", marginBottom: "12px", color: "var(--primary)" }}>
+          <div
+            style={{
+              background: "var(--surface-2, #f8f9ff)",
+              borderRadius: "12px",
+              padding: "16px",
+              marginBottom: "20px",
+              border: "1px solid var(--overlay-06, rgba(108,99,255,0.1))",
+            }}
+          >
+            <div
+              style={{
+                fontWeight: 700,
+                fontSize: "16px",
+                marginBottom: "12px",
+                color: "var(--primary)",
+              }}
+            >
               {medicine.name}
             </div>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px", fontSize: "13px" }}>
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "1fr 1fr",
+                gap: "12px",
+                fontSize: "13px",
+              }}
+            >
               <div>
-                <div style={{ color: "var(--text-muted)", fontWeight: 600, fontSize: "11px", textTransform: "uppercase", letterSpacing: "0.05em" }}>Current Stock</div>
-                <div style={{ fontWeight: 700, color: currentStock <= reorderLevel ? "var(--danger)" : "var(--success)" }}>
+                <div
+                  style={{
+                    color: "var(--text-muted)",
+                    fontWeight: 600,
+                    fontSize: "11px",
+                    textTransform: "uppercase",
+                    letterSpacing: "0.05em",
+                  }}
+                >
+                  Current Stock
+                </div>
+                <div
+                  style={{
+                    fontWeight: 700,
+                    color:
+                      currentStock <= reorderLevel
+                        ? "var(--danger)"
+                        : "var(--success)",
+                  }}
+                >
                   {currentStock} units
                 </div>
               </div>
               <div>
-                <div style={{ color: "var(--text-muted)", fontWeight: 600, fontSize: "11px", textTransform: "uppercase", letterSpacing: "0.05em" }}>Reorder Level</div>
+                <div
+                  style={{
+                    color: "var(--text-muted)",
+                    fontWeight: 600,
+                    fontSize: "11px",
+                    textTransform: "uppercase",
+                    letterSpacing: "0.05em",
+                  }}
+                >
+                  Reorder Level
+                </div>
                 <div style={{ fontWeight: 700 }}>{reorderLevel} units</div>
               </div>
               <div>
-                <div style={{ color: "var(--text-muted)", fontWeight: 600, fontSize: "11px", textTransform: "uppercase", letterSpacing: "0.05em" }}>Supplier</div>
+                <div
+                  style={{
+                    color: "var(--text-muted)",
+                    fontWeight: 600,
+                    fontSize: "11px",
+                    textTransform: "uppercase",
+                    letterSpacing: "0.05em",
+                  }}
+                >
+                  Supplier
+                </div>
                 <div style={{ fontWeight: 600 }}>{supplierName}</div>
               </div>
               <div>
-                <div style={{ color: "var(--text-muted)", fontWeight: 600, fontSize: "11px", textTransform: "uppercase", letterSpacing: "0.05em" }}>Purchase Price</div>
-                <div style={{ fontWeight: 700 }}>₹{purchasePrice.toFixed(2)}</div>
+                <div
+                  style={{
+                    color: "var(--text-muted)",
+                    fontWeight: 600,
+                    fontSize: "11px",
+                    textTransform: "uppercase",
+                    letterSpacing: "0.05em",
+                  }}
+                >
+                  Purchase Price
+                </div>
+                <div style={{ fontWeight: 700 }}>
+                  ₹{purchasePrice.toFixed(2)}
+                </div>
               </div>
               <div>
-                <div style={{ color: "var(--text-muted)", fontWeight: 600, fontSize: "11px", textTransform: "uppercase", letterSpacing: "0.05em" }}>GST</div>
+                <div
+                  style={{
+                    color: "var(--text-muted)",
+                    fontWeight: 600,
+                    fontSize: "11px",
+                    textTransform: "uppercase",
+                    letterSpacing: "0.05em",
+                  }}
+                >
+                  GST
+                </div>
                 <div style={{ fontWeight: 600 }}>{gstPct}%</div>
               </div>
             </div>
@@ -254,37 +329,91 @@ function ReorderModal({ medicine, onClose, showToast }) {
               type="number"
               min="1"
               value={quantity}
-              onChange={(e) => setQuantity(Math.max(1, parseInt(e.target.value) || 1))}
+              onChange={(e) =>
+                setQuantity(Math.max(1, parseInt(e.target.value) || 1))
+              }
               style={{ fontSize: "18px", fontWeight: 700, textAlign: "center" }}
               autoFocus
             />
           </div>
 
           {/* Order Summary */}
-          <div style={{
-            background: "var(--primary-alpha, rgba(108,99,255,0.08))",
-            borderRadius: "12px",
-            padding: "16px",
-            border: "1px solid var(--primary-alpha-30, rgba(108,99,255,0.2))"
-          }}>
-            <div style={{ fontWeight: 700, fontSize: "12px", textTransform: "uppercase", letterSpacing: "0.05em", color: "var(--primary)", marginBottom: "10px" }}>Order Summary</div>
-            <div style={{ display: "flex", justifyContent: "space-between", fontSize: "13px", marginBottom: "6px" }}>
-              <span>Subtotal ({quantity} × ₹{purchasePrice.toFixed(2)})</span>
+          <div
+            style={{
+              background: "var(--primary-alpha, rgba(108,99,255,0.08))",
+              borderRadius: "12px",
+              padding: "16px",
+              border: "1px solid var(--primary-alpha-30, rgba(108,99,255,0.2))",
+            }}
+          >
+            <div
+              style={{
+                fontWeight: 700,
+                fontSize: "12px",
+                textTransform: "uppercase",
+                letterSpacing: "0.05em",
+                color: "var(--primary)",
+                marginBottom: "10px",
+              }}
+            >
+              Order Summary
+            </div>
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                fontSize: "13px",
+                marginBottom: "6px",
+              }}
+            >
+              <span>
+                Subtotal ({quantity} × ₹{purchasePrice.toFixed(2)})
+              </span>
               <span style={{ fontWeight: 600 }}>₹{subtotal.toFixed(2)}</span>
             </div>
-            <div style={{ display: "flex", justifyContent: "space-between", fontSize: "13px", marginBottom: "6px" }}>
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                fontSize: "13px",
+                marginBottom: "6px",
+              }}
+            >
               <span>GST ({gstPct}%)</span>
               <span style={{ fontWeight: 600 }}>₹{gstAmount.toFixed(2)}</span>
             </div>
-            <div style={{ borderTop: "1px solid var(--primary-alpha-30, rgba(108,99,255,0.2))", paddingTop: "10px", marginTop: "4px", display: "flex", justifyContent: "space-between", fontWeight: 800, fontSize: "16px", color: "var(--primary)" }}>
+            <div
+              style={{
+                borderTop:
+                  "1px solid var(--primary-alpha-30, rgba(108,99,255,0.2))",
+                paddingTop: "10px",
+                marginTop: "4px",
+                display: "flex",
+                justifyContent: "space-between",
+                fontWeight: 800,
+                fontSize: "16px",
+                color: "var(--primary)",
+              }}
+            >
               <span>Total</span>
               <span>₹{total.toFixed(2)}</span>
             </div>
           </div>
 
           {supplierName === "Not assigned" && (
-            <div style={{ background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.2)", borderRadius: "10px", padding: "10px 14px", marginTop: "14px", fontSize: "12px", color: "var(--danger)" }}>
-              ⚠️ No supplier linked to this medicine. A supplier must be assigned (via a batch receipt) before reordering.
+            <div
+              style={{
+                background: "rgba(239,68,68,0.08)",
+                border: "1px solid rgba(239,68,68,0.2)",
+                borderRadius: "10px",
+                padding: "10px 14px",
+                marginTop: "14px",
+                fontSize: "12px",
+                color: "var(--danger)",
+              }}
+            >
+              ⚠️ No supplier linked to this medicine. A supplier must be
+              assigned (via a batch receipt) before reordering.
             </div>
           )}
         </div>
@@ -299,9 +428,13 @@ function ReorderModal({ medicine, onClose, showToast }) {
             disabled={submitting || quantity <= 0}
           >
             {submitting ? (
-              <><Spinner size={16} /> Creating PO...</>
+              <>
+                <Spinner size={16} /> Creating PO...
+              </>
             ) : (
-              <><FileText size={16} /> Generate Purchase Order</>
+              <>
+                <FileText size={16} /> Generate Purchase Order
+              </>
             )}
           </button>
         </div>
@@ -821,7 +954,7 @@ function MedicineViewModal({ medicine, onClose, onEditBatch, onAddBatch }) {
                   fontWeight: 800,
                 }}
               >
-                {medicine.stock ?? 0} units
+                {medicine.availableStock ?? medicine.stock ?? 0} units
               </span>
             </div>
           </div>
@@ -1817,7 +1950,7 @@ export default function InventoryCRUD({
       "Status",
     ];
     const rows = filtered.map((m) => {
-      const currentQty = m.stock ?? 0;
+      const currentQty = m.availableStock ?? m.stock ?? 0;
       const reorderPt = m.reorderPoint ?? m.reorderLevel ?? 10;
       const batchNum =
         m.inventoryBatches?.[0]?.batchNumber || m.batchNumber || "—";
@@ -2102,7 +2235,7 @@ export default function InventoryCRUD({
                               : "var(--success)",
                         }}
                       >
-                        {m.stock ?? 0}
+                        {m.availableStock ?? m.stock ?? 0}
                       </td>
                       <td>₹{(m.mrp || 0).toFixed(2)}</td>
                       <td>
@@ -2154,7 +2287,6 @@ export default function InventoryCRUD({
                             <Trash2 size={14} />
                           </button>
                         </div>
-
                       </td>
                     </tr>
                   );
