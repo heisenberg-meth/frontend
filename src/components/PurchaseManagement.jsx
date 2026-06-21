@@ -563,8 +563,13 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
         gstAmount: gstTotal,
         totalAmount: grandTotal,
       };
-      await createPurchaseOrder(payload);
-      showToast("Purchase Saved Successfully", "success");
+      if (drawer === "edit-purchase" && selectedRow?.id) {
+        await api.patch(`/purchase-orders/${selectedRow.id}/status`, { status: "DRAFT" });
+        showToast("Purchase order updated", "success");
+      } else {
+        await createPurchaseOrder(payload);
+        showToast("Purchase Saved Successfully", "success");
+      }
       closeDrawer();
       await refreshData();
     } catch (err) {

@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { adminApi } from "../../services/admin.service";
 import { Plus, ToggleLeft, ToggleRight } from "lucide-react";
+import toast from "react-hot-toast";
 
 export default function AdminFeatureFlags() {
   const [flags, setFlags] = useState([]);
@@ -32,8 +33,13 @@ export default function AdminFeatureFlags() {
   }, [fetchFlags]);
 
   const handleToggle = async (id, current) => {
-    await adminApi.toggleFeatureFlag(id, !current);
-    fetchFlags();
+    try {
+      await adminApi.toggleFeatureFlag(id, !current);
+      toast.success("Feature flag updated");
+      fetchFlags();
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Failed to toggle feature flag");
+    }
   };
 
   const handleCreate = async (e) => {

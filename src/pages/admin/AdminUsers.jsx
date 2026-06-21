@@ -113,18 +113,20 @@ export default function AdminUsers() {
   const handleStatusChange = async (id, status) => {
     try {
       await adminApi.updateTenantStatus(id, status);
+      toast.success(`Tenant status updated to ${status}`);
       fetchUsers();
     } catch (err) {
-      console.error(err);
+      toast.error(err.response?.data?.message || "Failed to update status");
     }
   };
 
   const handleVerify = async (id) => {
     try {
       await adminApi.verifyTenant(id);
+      toast.success("Tenant verified");
       fetchUsers();
     } catch (err) {
-      console.error(err);
+      toast.error(err.response?.data?.message || "Failed to verify tenant");
     }
   };
 
@@ -133,9 +135,10 @@ export default function AdminUsers() {
     if (!reason) return;
     try {
       await adminApi.blacklistTenant(id, reason);
+      toast.success("Tenant blacklisted");
       fetchUsers();
     } catch (err) {
-      console.error(err);
+      toast.error(err.response?.data?.message || "Failed to blacklist tenant");
     }
   };
 
@@ -143,9 +146,10 @@ export default function AdminUsers() {
     if (!confirm("Remove blacklist for this shop?")) return;
     try {
       await adminApi.unblacklistTenant(id);
+      toast.success("Blacklist removed");
       fetchUsers();
     } catch (err) {
-      console.error(err);
+      toast.error(err.response?.data?.message || "Failed to remove blacklist");
     }
   };
 
@@ -156,7 +160,7 @@ export default function AdminUsers() {
       const res = await adminApi.getTenantDetail(id);
       if (res.success) setDetail(res.data);
     } catch (err) {
-      console.error(err);
+      toast.error(err.response?.data?.message || "Failed to load tenant details");
     } finally {
       setDetailLoading(false);
     }

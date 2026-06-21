@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { adminApi } from "../../services/admin.service";
+import toast from "react-hot-toast";
 import {
   Ticket,
   MessageSquare,
@@ -64,10 +65,11 @@ export default function AdminSupportTickets() {
       });
       if (res.success) {
         setReplyText("");
+        toast.success("Reply sent");
         fetchTickets();
       }
     } catch (err) {
-      console.error(err);
+      toast.error(err.response?.data?.message || "Failed to send reply");
     } finally {
       setSending(false);
     }
@@ -78,9 +80,12 @@ export default function AdminSupportTickets() {
       const res = await adminApi.updateSupportTicketStatus(ticketId, {
         status,
       });
-      if (res.success) fetchTickets();
+      if (res.success) {
+        toast.success(`Ticket status updated to ${status}`);
+        fetchTickets();
+      }
     } catch (err) {
-      console.error(err);
+      toast.error(err.response?.data?.message || "Failed to update ticket status");
     }
   };
 

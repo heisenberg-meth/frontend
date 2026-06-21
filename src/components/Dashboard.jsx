@@ -73,6 +73,7 @@ export default function Dashboard({
         });
       } catch (error) {
         console.error("Dashboard fetch error:", error);
+        setDashboardData(null);
       } finally {
         setIsLoading(false);
       }
@@ -195,6 +196,42 @@ export default function Dashboard({
         >
           Synchronizing executive insights...
         </p>
+      </div>
+    );
+  }
+
+  if (!isLoading && !dashboardData) {
+    return (
+      <div
+        className="hub-container"
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          height: "60vh",
+          gap: 16,
+        }}
+      >
+        <AlertTriangle size={40} style={{ color: "var(--danger)" }} />
+        <h3 style={{ fontSize: 18, fontWeight: 700 }}>Failed to load dashboard</h3>
+        <p style={{ color: "var(--text-muted)", textAlign: "center", maxWidth: 400 }}>
+          Could not fetch dashboard data. Please check your connection and try again.
+        </p>
+        <button
+          onClick={() => window.location.reload()}
+          style={{
+            padding: "8px 20px",
+            borderRadius: 8,
+            background: "var(--primary)",
+            color: "white",
+            border: "none",
+            cursor: "pointer",
+            fontWeight: 600,
+          }}
+        >
+          Retry
+        </button>
       </div>
     );
   }

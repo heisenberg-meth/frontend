@@ -302,6 +302,7 @@ function NotifySettings({ showToast, settings }) {
     settings?.notificationChannels?.email ?? true,
   );
   const [phone, setPhone] = useState(settings?.alertPhone || "+91 98765 43210");
+  const [smsPhone, setSmsPhone] = useState(settings?.smsPhone || settings?.alertPhone || "+91 98765 43210");
   const [mail, setMail] = useState(
     settings?.alertEmail || "admin@viyanmedassist.in",
   );
@@ -403,9 +404,9 @@ function NotifySettings({ showToast, settings }) {
             required
             className="lsa-notify-input"
             placeholder="SMS phone number"
-            value={phone}
+            value={smsPhone}
             disabled={!sms}
-            onChange={(e) => setPhone(e.target.value)}
+            onChange={(e) => setSmsPhone(e.target.value)}
           />
         </div>
         <div className="lsa-notify-row">

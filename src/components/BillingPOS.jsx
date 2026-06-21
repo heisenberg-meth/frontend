@@ -99,7 +99,7 @@ function numberToWords(n) {
 }
 
 const generateInvoiceId = () =>
-  `INV-2026-${crypto.randomUUID().slice(0, 8).toUpperCase()}`;
+  `INV-${new Date().getFullYear()}-${crypto.randomUUID().slice(0, 8).toUpperCase()}`;
 
 function Spinner({ size = 14 }) {
   return <Loader2 size={size} className="spinner-icon" />;
@@ -203,28 +203,29 @@ export default function BillingPOS({
 }) {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const userKey = user?.id || 'default';
   const showToast = useMemo(
     () => parentShowToast || (() => {}),
     [parentShowToast],
   );
   const [patient, setPatient] = useState(() => {
     try {
-      const saved = localStorage.getItem("currentBillingPatient");
+      const saved = localStorage.getItem(`currentBillingPatient_${userKey}`);
       return saved ? JSON.parse(saved) : { id: null, name: "", phone: "" };
     } catch {
       return { id: null, name: "", phone: "" };
     }
   });
-  const [search, setSearch] = useState("");
-  const [showDropdown, setShowDropdown] = useState(false);
   const [lineItems, setLineItems] = useState(() => {
     try {
-      const saved = localStorage.getItem("currentBillingItems");
+      const saved = localStorage.getItem(`currentBillingItems_${userKey}`);
       return saved ? JSON.parse(saved) : [];
     } catch {
       return [];
     }
   });
+  const [search, setSearch] = useState("");
+  const [showDropdown, setShowDropdown] = useState(false);
   const [discount, setDiscount] = useState("");
   const [showPreview, setShowPreview] = useState(false);
   const [activeInvoice, setActiveInvoice] = useState(null);
@@ -266,12 +267,12 @@ export default function BillingPOS({
   const [returnReason, setReturnReason] = useState("Customer Request");
   const [returnNotes, setReturnNotes] = useState("");
   useEffect(() => {
-    localStorage.setItem("currentBillingItems", JSON.stringify(lineItems));
-  }, [lineItems]);
+    localStorage.setItem(`currentBillingItems_${userKey}`, JSON.stringify(lineItems));
+  }, [lineItems, userKey]);
 
   useEffect(() => {
-    localStorage.setItem("currentBillingPatient", JSON.stringify(patient));
-  }, [patient]);
+    localStorage.setItem(`currentBillingPatient_${userKey}`, JSON.stringify(patient));
+  }, [patient, userKey]);
 
   useEffect(() => {
     let mounted = true;
@@ -706,6 +707,11 @@ ${printDiscount > 0 ? `<div style="display:flex;justify-content:space-between"><
 </body></html>`;
 
       const printWindow = window.open("", "_blank");
+      if (!printWindow) {
+        showToast("Popup blocked. Please allow popups for this site.", "error");
+        setPrintLoading(false);
+        return;
+      }
       printWindow.document.write(html);
       printWindow.document.close();
       printWindow.focus();

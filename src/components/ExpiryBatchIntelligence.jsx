@@ -446,10 +446,22 @@ export default function ExpiryBatchIntelligence({ showToast }) {
     return false;
   };
 
-  const confirmAction = () => {
+  const confirmAction = async () => {
     setProcessing(true);
-    setTimeout(() => {
+    try {
       if (actionType === "RETURN") {
+        const selectedItemData = batches.find((b) => matchesSelectedItem(b));
+        if (!selectedItemData) throw new Error("Batch not found");
+        await api.post("/supplier-returns", {
+          supplierId: selectedItemData.supplierId || null,
+          items: [{
+            medicineId: selectedItemData.batchId ? undefined : undefined,
+            batchId: selectedItemData.batchId,
+            quantity: returnQty || 1,
+            reason: "Expired Stock Return",
+          }],
+          reason: "Expired stock returned to supplier",
+        });
         setBatches((prev) =>
           prev.map((item) => {
             if (matchesSelectedItem(item)) {
@@ -471,9 +483,12 @@ export default function ExpiryBatchIntelligence({ showToast }) {
         );
         showToast(`${discountPct}% discount applied`, "success");
       }
+    } catch (err) {
+      showToast(err.response?.data?.message || "Action failed", "error");
+    } finally {
       setProcessing(false);
       setShowActionModal(false);
-    }, 1200);
+    }
   };
 
   // ─── Bulk Disposal helpers ───────────────────────────────────
@@ -560,12 +575,22 @@ export default function ExpiryBatchIntelligence({ showToast }) {
     setShowEditBatchModal(true);
   };
 
-  const saveEditBatch = () => {
-    setBatches((prev) =>
-      prev.map((b) => (b.id === editBatch.id ? editBatch : b)),
-    );
-    setShowEditBatchModal(false);
-    showToast("Batch updated successfully", "success");
+  const saveEditBatch = async () => {
+    try {
+      await api.put(`/inventory/batches/${editBatch.batchId}`, {
+        batchNumber: editBatch.batch,
+        expiryDate: editBatch.exp,
+        purchasePrice: editBatch.purchasePrice,
+        rackLocation: editBatch.rackLocation || undefined,
+      });
+      setBatches((prev) =>
+        prev.map((b) => (b.batchId === editBatch.batchId ? { ...b, ...editBatch } : b)),
+      );
+      setShowEditBatchModal(false);
+      showToast("Batch updated successfully", "success");
+    } catch (err) {
+      showToast(err.response?.data?.message || "Failed to update batch", "error");
+    }
   };
 
   const handleDeleteClick = (b) => {
@@ -573,14 +598,19 @@ export default function ExpiryBatchIntelligence({ showToast }) {
     setShowDeleteModal(true);
   };
 
-  const confirmDeleteBatch = () => {
+  const confirmDeleteBatch = async () => {
     if (!selectedBatchForDelete) return;
-    setBatches((prev) =>
-      prev.filter((item) => item.id !== selectedBatchForDelete.id),
-    );
-    showToast("Batch deleted successfully", "success");
-    setShowDeleteModal(false);
-    setSelectedBatchForDelete(null);
+    try {
+      await api.delete(`/inventory/batches/${selectedBatchForDelete.batchId}`);
+      setBatches((prev) =>
+        prev.filter((item) => item.batchId !== selectedBatchForDelete.batchId),
+      );
+      showToast("Batch deleted successfully", "success");
+      setShowDeleteModal(false);
+      setSelectedBatchForDelete(null);
+    } catch (err) {
+      showToast(err.response?.data?.message || "Failed to delete batch", "error");
+    }
   };
 
   const addNewBatch = () => {
@@ -1746,9 +1776,17 @@ export default function ExpiryBatchIntelligence({ showToast }) {
                 <button
                   className="pos-btn teal"
                   style={{ flex: 2 }}
-                  onClick={() => {
-                    showToast("Settings saved", "success");
-                    setShowConfigModal(false);
+                  onClick={async () => {
+                    try {
+                      await api.put("/settings/inventory", {
+                        expiryWarningDays: alertSettings.warning,
+                        expiryCriticalDays: alertSettings.critical,
+                      });
+                      showToast("Settings saved", "success");
+                      setShowConfigModal(false);
+                    } catch (err) {
+                      showToast(err.response?.data?.message || "Failed to save settings", "error");
+                    }
                   }}
                 >
                   Save Settings

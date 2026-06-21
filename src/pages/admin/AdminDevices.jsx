@@ -46,15 +46,23 @@ export default function AdminDevices() {
 
   const handleBlock = async (id) => {
     if (!confirm("Block this device?")) return;
-    await adminApi.blockDevice(id, "Admin action");
-    toast.success("Device blocked");
-    fetchDevices();
+    try {
+      await adminApi.blockDevice(id, "Admin action");
+      toast.success("Device blocked");
+      fetchDevices();
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Failed to block device");
+    }
   };
 
   const handleUnblock = async (id) => {
-    await adminApi.unblockDevice(id);
-    toast.success("Device unblocked");
-    fetchDevices();
+    try {
+      await adminApi.unblockDevice(id);
+      toast.success("Device unblocked");
+      fetchDevices();
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Failed to unblock device");
+    }
   };
 
   const handleUnlink = async (id) => {

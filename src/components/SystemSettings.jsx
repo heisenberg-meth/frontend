@@ -68,9 +68,7 @@ export default function SystemSettings({
   useEffect(() => {
     const loadSettings = async () => {
       try {
-        const settingsRes = await api
-          .get(API_ROUTES.SETTINGS)
-          .catch(() => null);
+        const settingsRes = await api.get(API_ROUTES.SETTINGS);
 
         if (settingsRes?.data?.data) {
           const s = settingsRes.data.data;
@@ -144,6 +142,7 @@ export default function SystemSettings({
         }
       } catch (err) {
         console.error("Failed to load settings:", err);
+        showToast?.("Failed to load settings", "error");
       }
     };
     loadSettings();
@@ -159,7 +158,8 @@ export default function SystemSettings({
       setNotifHistory(histRes.data?.notifications || []);
       setQueueMetrics(metricsRes.data?.data || null);
     } catch (err) {
-      console.error(err);
+      console.error("Failed to load ops data:", err);
+      showToast?.("Failed to load notification data", "error");
     } finally {
       setIsOpsLoading(false);
     }
