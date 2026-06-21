@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import {
   AlertTriangle,
   Bell,
@@ -20,12 +20,16 @@ import {
   Eye,
   Edit3,
   Save,
+  CheckSquare,
+  Square,
+  Archive,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import ExcelJS from "exceljs";
 import { saveAs } from "file-saver";
 import api from "../api";
 import { safeNumber } from "../utils/number.js";
+import { disposeInventory } from "../services/inventory.service";
 
 function getDays(expiryDate) {
   const exp = new Date(expiryDate);
@@ -61,6 +65,10 @@ export default function ExpiryBatchIntelligence({ showToast }) {
   const [fifoEnabled, setFifoEnabled] = useState(true);
   const [expandedMed, setExpandedMed] = useState(null);
   const [expiryMetrics, setExpiryMetrics] = useState(null);
+  // Bulk disposal state
+  const [selectedBatchIds, setSelectedBatchIds] = useState(new Set());
+  const [showDisposeModal, setShowDisposeModal] = useState(false);
+  const [disposing, setDisposing] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -83,12 +91,16 @@ export default function ExpiryBatchIntelligence({ showToast }) {
             const days = getDays(b.expiryDate);
             return {
               id: b.batchNumber || b.id,
+              batchId: b.id, // real UUID for API calls
               med: b.medicine?.name || "Unknown",
               exp: b.expiryDate,
               days,
-              qty: b.quantity,
-              val: safeNumber(b.quantity) * safeNumber(b.purchasePrice || 0),
-              status: computeStatus(days, b.quantity),
+              qty: b.availableQuantity ?? b.quantity,
+              val:
+                safeNumber(b.availableQuantity ?? b.quantity) *
+                safeNumber(b.purchasePrice || 0),
+              status:
+                b.status?.toLowerCase() || computeStatus(days, b.quantity),
               rank: 1,
               received: b.createdAt?.split("T")[0] || "",
               mfg: b.manufacturingDate?.split("T")[0] || "",
@@ -437,10 +449,7 @@ export default function ExpiryBatchIntelligence({ showToast }) {
   const confirmAction = () => {
     setProcessing(true);
     setTimeout(() => {
-      if (actionType === "DISPOSE") {
-        setBatches((prev) => prev.filter((item) => !matchesSelectedItem(item)));
-        showToast("Batch disposed successfully", "success");
-      } else if (actionType === "RETURN") {
+      if (actionType === "RETURN") {
         setBatches((prev) =>
           prev.map((item) => {
             if (matchesSelectedItem(item)) {
@@ -465,6 +474,75 @@ export default function ExpiryBatchIntelligence({ showToast }) {
       setProcessing(false);
       setShowActionModal(false);
     }, 1200);
+  };
+
+  // ─── Bulk Disposal helpers ───────────────────────────────────
+  const expiredBatches = useMemo(
+    () => filteredBatches.filter((b) => b.days < 0 || b.status === "expired"),
+    [filteredBatches],
+  );
+
+  const toggleBatch = useCallback((batchId) => {
+    setSelectedBatchIds((prev) => {
+      const next = new Set(prev);
+      next.has(batchId) ? next.delete(batchId) : next.add(batchId);
+      return next;
+    });
+  }, []);
+
+  const toggleSelectAll = useCallback(() => {
+    setSelectedBatchIds((prev) => {
+      if (prev.size === expiredBatches.length) return new Set();
+      return new Set(expiredBatches.map((b) => b.batchId));
+    });
+  }, [expiredBatches]);
+
+  const selectedExpiredBatches = useMemo(
+    () => expiredBatches.filter((b) => selectedBatchIds.has(b.batchId)),
+    [expiredBatches, selectedBatchIds],
+  );
+
+  const disposalSummary = useMemo(() => {
+    const units = selectedExpiredBatches.reduce((s, b) => s + (b.qty || 0), 0);
+    const loss = selectedExpiredBatches.reduce((s, b) => s + (b.val || 0), 0);
+    return { count: selectedExpiredBatches.length, units, loss };
+  }, [selectedExpiredBatches]);
+
+  const handleBulkDispose = async () => {
+    if (!selectedBatchIds.size) return;
+    setDisposing(true);
+    try {
+      const batchIds = [...selectedBatchIds];
+      const res = await disposeInventory({
+        batchIds,
+        reason: "EXPIRED",
+        notes: "Bulk disposal via Expiry & Batch Intelligence",
+      });
+      const data = res.data?.data || res.data || {};
+      showToast(
+        `✅ ${data.disposedBatches ?? batchIds.length} batches disposed — ₹${(
+          data.inventoryLoss ?? disposalSummary.loss
+        ).toLocaleString("en-IN", {
+          maximumFractionDigits: 2,
+        })} written off`,
+        "success",
+      );
+      // Remove disposed batches from local state immediately
+      setBatches((prev) =>
+        prev.filter((b) => !selectedBatchIds.has(b.batchId)),
+      );
+      setSelectedBatchIds(new Set());
+      setShowDisposeModal(false);
+    } catch (err) {
+      const msg =
+        err?.response?.data?.error ??
+        err?.response?.data?.message ??
+        err?.message ??
+        "Disposal failed";
+      showToast(msg, "error");
+    } finally {
+      setDisposing(false);
+    }
   };
 
   const handleRemindPos = (item) => {
@@ -765,16 +843,36 @@ export default function ExpiryBatchIntelligence({ showToast }) {
                   </button>
                 ))}
               </div>
-              <div className="table-search-wrapper">
-                <Search size={16} />
-                <input
-                  required
-                  type="text"
-                  placeholder="Search medicine or batch..."
-                  className="table-search-input"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                />
+              <div
+                style={{ display: "flex", alignItems: "center", gap: "10px" }}
+              >
+                {selectedBatchIds.size > 0 && (
+                  <button
+                    className="pos-btn danger"
+                    style={{
+                      padding: "6px 14px",
+                      fontSize: "13px",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "6px",
+                    }}
+                    onClick={() => setShowDisposeModal(true)}
+                  >
+                    <Archive size={14} />
+                    Dispose Selected ({selectedBatchIds.size})
+                  </button>
+                )}
+                <div className="table-search-wrapper">
+                  <Search size={16} />
+                  <input
+                    required
+                    type="text"
+                    placeholder="Search medicine or batch..."
+                    className="table-search-input"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                  />
+                </div>
               </div>
             </div>
 
@@ -782,6 +880,32 @@ export default function ExpiryBatchIntelligence({ showToast }) {
               <table className="purchase-table">
                 <thead>
                   <tr>
+                    <th style={{ width: 36 }}>
+                      {expiredBatches.length > 0 && (
+                        <button
+                          style={{
+                            background: "none",
+                            border: "none",
+                            cursor: "pointer",
+                            display: "flex",
+                            color: "var(--text-muted)",
+                          }}
+                          title={
+                            selectedBatchIds.size === expiredBatches.length
+                              ? "Deselect all"
+                              : "Select all expired"
+                          }
+                          onClick={toggleSelectAll}
+                        >
+                          {selectedBatchIds.size === expiredBatches.length &&
+                          expiredBatches.length > 0 ? (
+                            <CheckSquare size={16} color="var(--danger)" />
+                          ) : (
+                            <Square size={16} />
+                          )}
+                        </button>
+                      )}
+                    </th>
                     <th>Medicine</th>
                     <th>Batch #</th>
                     <th>Supplier</th>
@@ -797,7 +921,7 @@ export default function ExpiryBatchIntelligence({ showToast }) {
                   {filteredBatches.length === 0 ? (
                     <tr>
                       <td
-                        colSpan="9"
+                        colSpan="10"
                         style={{
                           textAlign: "center",
                           padding: "30px",
@@ -819,86 +943,133 @@ export default function ExpiryBatchIntelligence({ showToast }) {
                       </td>
                     </tr>
                   ) : (
-                    filteredBatches.map((b) => (
-                      <tr key={b.id} className={`expiry-row-${b.status}`}>
-                        <td>
-                          <div style={{ fontWeight: 700 }}>
-                            {b.med}
-                            {b.discountApplied && (
-                              <span
-                                className="discount-badge"
-                                style={{ marginLeft: "8px" }}
-                              >
-                                DISCOUNTED
-                              </span>
-                            )}
-                          </div>
-                          <div className="result-meta">{b.supplier}</div>
-                        </td>
-                        <td className="result-meta">{b.id}</td>
-                        <td
-                          className="result-meta"
-                          style={{ fontWeight: 600, color: "var(--text-main)" }}
+                    filteredBatches.map((b) => {
+                      const isExpiredRow = b.days < 0 || b.status === "expired";
+                      const isChecked =
+                        isExpiredRow && selectedBatchIds.has(b.batchId);
+                      return (
+                        <tr
+                          key={b.id}
+                          className={`expiry-row-${b.status}${isChecked ? " selected-for-disposal" : ""}`}
+                          style={
+                            isChecked
+                              ? {
+                                  background: "rgba(239,68,68,0.06)",
+                                  outline: "1px solid rgba(239,68,68,0.25)",
+                                }
+                              : {}
+                          }
                         >
-                          {b.supplier}
-                        </td>
-                        <td className="result-meta">{b.mfg}</td>
-                        <td>{b.exp}</td>
-                        <td>
-                          <b
+                          <td>
+                            {isExpiredRow ? (
+                              <button
+                                style={{
+                                  background: "none",
+                                  border: "none",
+                                  cursor: "pointer",
+                                  display: "flex",
+                                  paddingLeft: 4,
+                                }}
+                                onClick={() => toggleBatch(b.batchId)}
+                              >
+                                {isChecked ? (
+                                  <CheckSquare
+                                    size={16}
+                                    color="var(--danger)"
+                                  />
+                                ) : (
+                                  <Square size={16} color="var(--text-muted)" />
+                                )}
+                              </button>
+                            ) : null}
+                          </td>
+                          <td>
+                            <div style={{ fontWeight: 700 }}>
+                              {b.med}
+                              {b.discountApplied && (
+                                <span
+                                  className="discount-badge"
+                                  style={{ marginLeft: "8px" }}
+                                >
+                                  DISCOUNTED
+                                </span>
+                              )}
+                            </div>
+                            <div className="result-meta">{b.supplier}</div>
+                          </td>
+                          <td className="result-meta">{b.id}</td>
+                          <td
+                            className="result-meta"
                             style={{
-                              color:
-                                b.days < 0
-                                  ? "var(--danger)"
-                                  : b.days < 7
-                                    ? "var(--warning)"
-                                    : b.days < 30
-                                      ? "var(--warning)"
-                                      : b.days < 90
-                                        ? "var(--info)"
-                                        : "var(--success)",
-                              fontFamily: "Outfit",
+                              fontWeight: 600,
+                              color: "var(--text-main)",
                             }}
                           >
-                            {b.days < 0
-                              ? "EXPIRED"
-                              : b.days > 120
-                                ? "120+ Days"
-                                : `${b.days} Days`}
-                          </b>
-                        </td>
-                        <td>{b.qty}</td>
-                        <td style={{ fontWeight: 700 }}>₹{b.val}</td>
-                        <td>
-                          <div className="action-buttons">
-                            <button
-                              className="micro-btn action-btn"
-                              style={{ color: "var(--warning)" }}
-                              title="Return"
-                              onClick={() => handleAction("RETURN", b)}
+                            {b.supplier}
+                          </td>
+                          <td className="result-meta">{b.mfg}</td>
+                          <td>{b.exp}</td>
+                          <td>
+                            <b
+                              style={{
+                                color:
+                                  b.days < 0
+                                    ? "var(--danger)"
+                                    : b.days < 7
+                                      ? "var(--warning)"
+                                      : b.days < 30
+                                        ? "var(--warning)"
+                                        : b.days < 90
+                                          ? "var(--info)"
+                                          : "var(--success)",
+                                fontFamily: "Outfit",
+                              }}
                             >
-                              <RotateCcw size={14} />
-                            </button>
-                            <button
-                              className="micro-btn action-btn"
-                              style={{ color: "var(--info)" }}
-                              title="Discount"
-                              onClick={() => handleAction("DISCOUNT", b)}
-                            >
-                              <TrendingUp size={14} />
-                            </button>
-                            <button
-                              className="micro-btn action-btn"
-                              style={{ color: "var(--danger)" }}
-                              title="Dispose"
-                              onClick={() => handleAction("DISPOSE", b)}
-                            >
-                              <Trash2 size={14} />
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))
+                              {b.days < 0
+                                ? "EXPIRED"
+                                : b.days > 120
+                                  ? "120+ Days"
+                                  : `${b.days} Days`}
+                            </b>
+                          </td>
+                          <td>{b.qty}</td>
+                          <td style={{ fontWeight: 700 }}>₹{b.val}</td>
+                          <td>
+                            <div className="action-buttons">
+                              <button
+                                className="micro-btn action-btn"
+                                style={{ color: "var(--warning)" }}
+                                title="Return"
+                                onClick={() => handleAction("RETURN", b)}
+                              >
+                                <RotateCcw size={14} />
+                              </button>
+                              <button
+                                className="micro-btn action-btn"
+                                style={{ color: "var(--info)" }}
+                                title="Discount"
+                                onClick={() => handleAction("DISCOUNT", b)}
+                              >
+                                <TrendingUp size={14} />
+                              </button>
+                              {isExpiredRow && (
+                                <button
+                                  className="micro-btn action-btn"
+                                  style={{ color: "var(--danger)" }}
+                                  title="Dispose this batch"
+                                  onClick={() => {
+                                    setSelectedBatchIds(new Set([b.batchId]));
+                                    setShowDisposeModal(true);
+                                  }}
+                                >
+                                  <Archive size={14} />
+                                </button>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })
                   )}
                 </tbody>
               </table>
@@ -2291,6 +2462,183 @@ export default function ExpiryBatchIntelligence({ showToast }) {
                   onClick={confirmDeleteBatch}
                 >
                   <Trash2 size={14} /> Delete Batch
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* ── Disposal Confirmation Modal ── */}
+      <AnimatePresence>
+        {showDisposeModal && (
+          <div
+            className="stock-modal-overlay"
+            onClick={() => !disposing && setShowDisposeModal(false)}
+            style={{ zIndex: 1100 }}
+          >
+            <motion.div
+              className="stock-modal"
+              style={{ maxWidth: 480, width: "95vw" }}
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="stock-modal-header">
+                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                  <Archive size={20} color="var(--danger)" />
+                  <h3
+                    style={{
+                      fontFamily: "Outfit",
+                      fontWeight: 700,
+                      color: "var(--danger)",
+                    }}
+                  >
+                    Dispose Expired Inventory
+                  </h3>
+                </div>
+                {!disposing && (
+                  <button
+                    className="micro-btn"
+                    onClick={() => setShowDisposeModal(false)}
+                  >
+                    <X size={18} />
+                  </button>
+                )}
+              </div>
+
+              <div className="stock-modal-body">
+                {/* Summary cards */}
+                <div
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: "1fr 1fr 1fr",
+                    gap: 10,
+                    marginBottom: 18,
+                  }}
+                >
+                  {[
+                    {
+                      label: "Selected Batches",
+                      value: disposalSummary.count,
+                      color: "var(--danger)",
+                    },
+                    {
+                      label: "Total Units",
+                      value: disposalSummary.units.toLocaleString("en-IN"),
+                      color: "var(--warning)",
+                    },
+                    {
+                      label: "Inventory Loss",
+                      value: `₹${disposalSummary.loss.toLocaleString("en-IN", { maximumFractionDigits: 2 })}`,
+                      color: "var(--danger)",
+                    },
+                  ].map((card) => (
+                    <div
+                      key={card.label}
+                      style={{
+                        background: "rgba(239,68,68,0.07)",
+                        borderRadius: 10,
+                        padding: "12px 10px",
+                        textAlign: "center",
+                        border: "1px solid rgba(239,68,68,0.15)",
+                      }}
+                    >
+                      <div
+                        style={{
+                          fontSize: 11,
+                          fontWeight: 600,
+                          textTransform: "uppercase",
+                          letterSpacing: "0.05em",
+                          color: "var(--text-muted)",
+                          marginBottom: 4,
+                        }}
+                      >
+                        {card.label}
+                      </div>
+                      <div
+                        style={{
+                          fontSize: 18,
+                          fontWeight: 800,
+                          color: card.color,
+                          fontFamily: "Outfit",
+                        }}
+                      >
+                        {card.value}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Reason */}
+                <div
+                  style={{
+                    background: "var(--surface-2, #f8f9ff)",
+                    borderRadius: 10,
+                    padding: "12px 14px",
+                    marginBottom: 14,
+                    border: "1px solid var(--outline-variant)",
+                  }}
+                >
+                  <div
+                    style={{
+                      fontSize: 12,
+                      fontWeight: 600,
+                      color: "var(--text-muted)",
+                      marginBottom: 4,
+                    }}
+                  >
+                    Reason
+                  </div>
+                  <div style={{ fontWeight: 600 }}>Expired Stock</div>
+                </div>
+
+                <p
+                  style={{
+                    fontSize: 13,
+                    color: "var(--text-muted)",
+                    lineHeight: 1.6,
+                    marginBottom: 0,
+                  }}
+                >
+                  Batches will be archived and{" "}
+                  <strong style={{ color: "var(--danger)" }}>
+                    available quantity set to zero
+                  </strong>
+                  . This updates inventory value immediately. No records will be
+                  deleted.
+                </p>
+              </div>
+
+              <div className="stock-modal-footer">
+                <button
+                  className="pos-btn outline"
+                  style={{ flex: 1 }}
+                  disabled={disposing}
+                  onClick={() => setShowDisposeModal(false)}
+                >
+                  Cancel
+                </button>
+                <button
+                  className="pos-btn danger"
+                  style={{
+                    flex: 2,
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 8,
+                    justifyContent: "center",
+                  }}
+                  disabled={disposing}
+                  onClick={handleBulkDispose}
+                >
+                  {disposing ? (
+                    <>Processing...</>
+                  ) : (
+                    <>
+                      <Archive size={14} /> Confirm Disposal
+                    </>
+                  )}
                 </button>
               </div>
             </motion.div>

@@ -83,3 +83,8 @@ export const getExpiryAudit = () => api.get(API_ROUTES.INVENTORY_EXPIRY_AUDIT);
 /* ─── Unified Inventory Reconciliation (Single Source of Truth) ─── */
 export const getInventoryReconciliation = (params) =>
   api.get(API_ROUTES.INVENTORY_RECONCILIATION, { params });
+
+/* ─── Expired Stock Disposal ─── */
+export const disposeInventory = (data) => api.post("/inventory/dispose", data);
+export const getDisposalHistory = (params) =>
+  api.get("/inventory/disposal-history", { params });

@@ -25,9 +25,13 @@ import {
   Tooltip as RechartsTooltip,
   ResponsiveContainer,
 } from "recharts";
-import { getMedicines } from "../../services/inventory.service";
+import {
+  getInventoryValueSummary,
+  getInventoryCategoryBreakdown,
+  getHighValueStock,
+  getExpiryRisk,
+} from "../../services/inventory.service";
 import "../../styles/InventoryAnalyticsModal.css";
-import { safeNumber } from "../../utils/number.js";
 import { formatInvoiceTime } from "../../utils/dateTime.js";
 
 const fmt = (val) =>
@@ -58,138 +62,33 @@ export default function InventoryAnalyticsModal({ isOpen, onClose }) {
   const fetchAnalytics = useCallback(async () => {
     try {
       setLoading(true);
-      const res = await getMedicines({ limit: 10000 });
-      const items = Array.isArray(res.data?.data?.items)
-        ? res.data.data.items
-        : Array.isArray(res.data?.data)
-          ? res.data.data
-          : [];
+      const [summaryRes, categoriesRes, highValueRes, expiryRiskRes] =
+        await Promise.all([
+          getInventoryValueSummary(),
+          getInventoryCategoryBreakdown(),
+          getHighValueStock(),
+          getExpiryRisk(),
+        ]);
 
-      let totalVal = 0;
-      let estProfit = 0;
-      let riskVal = 0;
-      let deadVal = 0;
-
-      const categoryMap = {};
-      const highValue = [];
-      const days30 = [];
-      const days60 = [];
-      const deadStock = [];
-
-      const today = new Date();
-
-      items.forEach((item) => {
-        const qty = item.stock ?? 0;
-        if (qty <= 0) return;
-
-        const batch = item.inventoryBatches?.[0] || {};
-        const purchasePrice = safeNumber(
-          batch.purchasePrice || item.purchasePrice || item.purchaseCost || 0,
-        );
-        const mrp = safeNumber(batch.mrp || item.mrp || 0);
-        const batchNum = batch.batchNumber || item.batchNumber || "N/A";
-        const expDate = batch.expiryDate || item.expiryDate;
-
-        const itemValue = qty * purchasePrice;
-        const itemProfit = qty * (mrp - purchasePrice);
-
-        totalVal += itemValue;
-        estProfit += itemProfit;
-
-        const catName = item.category?.name || item.category || "Uncategorized";
-        if (!categoryMap[catName])
-          categoryMap[catName] = { count: 0, value: 0 };
-        categoryMap[catName].count += 1;
-        categoryMap[catName].value += itemValue;
-
-        const margin =
-          purchasePrice > 0
-            ? Math.round(((mrp - purchasePrice) / mrp) * 100)
-            : 0;
-        highValue.push({
-          id: item.id,
-          name: item.name,
-          batch: batchNum,
-          qty,
-          purchaseValue: itemValue,
-          sellingValue: qty * mrp,
-          margin,
-        });
-
-        if (expDate) {
-          const exp = new Date(expDate);
-          const diffTime = exp - today;
-          const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-
-          if (diffDays <= 30 && diffDays > 0) {
-            days30.push({
-              id: item.id,
-              name: item.name,
-              qty,
-              value: itemValue,
-              daysLeft: diffDays,
-            });
-            riskVal += itemValue;
-          } else if (diffDays <= 60 && diffDays > 30) {
-            days60.push({
-              id: item.id,
-              name: item.name,
-              qty,
-              value: itemValue,
-              daysLeft: diffDays,
-            });
-            riskVal += itemValue;
-          } else if (diffDays <= 0) {
-            deadStock.push({
-              id: item.id,
-              name: item.name,
-              qty,
-              value: itemValue,
-              inactiveDays: Math.abs(diffDays),
-            });
-            deadVal += itemValue;
-          }
-        }
-
-        if (!expDate) {
-          const updated = new Date(item.updatedAt || item.createdAt);
-          const inactiveDays = Math.ceil(
-            (today - updated) / (1000 * 60 * 60 * 24),
-          );
-          if (inactiveDays > 180) {
-            deadStock.push({
-              id: item.id,
-              name: item.name,
-              qty,
-              value: itemValue,
-              inactiveDays,
-            });
-            deadVal += itemValue;
-          }
-        }
-      });
-
-      highValue.sort((a, b) => b.purchaseValue - a.purchaseValue);
-      const topHighValue = highValue.slice(0, 10);
-
-      const categoriesData = Object.keys(categoryMap)
-        .map((k) => ({
-          category: k,
-          count: categoryMap[k].count,
-          value: categoryMap[k].value,
-        }))
-        .sort((a, b) => b.value - a.value);
+      const summaryData = summaryRes.data?.data || summaryRes.data || {};
+      const categoriesData =
+        categoriesRes.data?.data || categoriesRes.data || [];
+      const highValueData = highValueRes.data?.data || highValueRes.data || [];
+      const expiryRiskData =
+        expiryRiskRes.data?.data || expiryRiskRes.data || {};
 
       setSummary({
-        totalValue: totalVal,
-        estimatedProfit: estProfit,
-        expiryRiskValue: riskVal,
-        deadStockValue: deadVal,
+        totalValue: summaryData.totalValue || 0,
+        estimatedProfit: summaryData.potentialProfit || 0,
+        expiryRiskValue:
+          (expiryRiskData.risk30?.value || 0) +
+          (expiryRiskData.risk90?.value || 0),
+        deadStockValue: expiryRiskData.expired?.value || 0,
       });
 
       setCategories(categoriesData);
-      setHighValueStock(topHighValue);
-      setExpiryRisk({ days30, days60, deadStock });
+      setHighValueStock(highValueData);
+      setExpiryRisk(expiryRiskData);
     } catch (err) {
       console.error("Error fetching inventory analytics:", err);
       toast.error("Unable to load inventory analytics");
@@ -266,39 +165,31 @@ export default function InventoryAnalyticsModal({ isOpen, onClose }) {
 
       // High Value Medicines
       csvContent += "=== HIGH VALUE MEDICINES ===\n";
-      csvContent +=
-        "Medicine Name,Batch,Quantity,Purchase Value,Selling Value,Margin %\n";
+      csvContent += "Medicine Name,Generic Name,Quantity,Total Value\n";
       (highValueStock || []).forEach((item) => {
-        csvContent += `"${item.name}","${item.batch}",${item.qty},${item.purchaseValue},${item.sellingValue},${item.margin}\n`;
+        csvContent += `"${item.name}","${item.genericName || ""}",${item.quantity},${item.totalValue}\n`;
       });
       csvContent += "\n";
 
       // Category Breakdown
       csvContent += "=== CATEGORY BREAKDOWN ===\n";
-      csvContent += "Category,Item Count,Value\n";
+      csvContent += "Category,Item Quantity,Value\n";
       (categories || []).forEach((cat) => {
-        csvContent += `"${cat.category}",${cat.count},${cat.value}\n`;
+        csvContent += `"${cat.category}",${cat.quantity},${cat.value}\n`;
       });
       csvContent += "\n";
 
       // Expiry Risk
       csvContent += "=== EXPIRY RISK ===\n";
-      csvContent += "Medicine,Quantity,Risk Value,Days Left\n";
-      const riskItems = [
-        ...(expiryRisk?.days30 || []),
-        ...(expiryRisk?.days60 || []),
-      ];
-      riskItems.forEach((item) => {
-        csvContent += `"${item.name}",${item.qty},${item.value},${item.daysLeft}\n`;
-      });
+      csvContent += "Risk Category,Item Count,Risk Value\n";
+      csvContent += `"Risk < 30 Days",${expiryRisk?.risk30?.count || 0},${expiryRisk?.risk30?.value || 0}\n`;
+      csvContent += `"Risk 30-90 Days",${expiryRisk?.risk90?.count || 0},${expiryRisk?.risk90?.value || 0}\n`;
       csvContent += "\n";
 
       // Dead Stock
       csvContent += "=== DEAD STOCK ===\n";
-      csvContent += "Medicine,Quantity,Blocked Value,Inactive Days\n";
-      (expiryRisk?.deadStock || []).forEach((item) => {
-        csvContent += `"${item.name}",${item.qty},${item.value},${item.inactiveDays}\n`;
-      });
+      csvContent += "Status,Item Count,Blocked Value\n";
+      csvContent += `"Expired",${expiryRisk?.expired?.count || 0},${expiryRisk?.expired?.value || 0}\n`;
 
       const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
       const url = URL.createObjectURL(blob);
@@ -441,7 +332,7 @@ export default function InventoryAnalyticsModal({ isOpen, onClose }) {
                           {fmt(summary?.expiryRiskValue)}
                         </div>
                         <div className="inventory-summary-trend negative">
-                          Expiring in 60 days
+                          Expiring in 90 days
                         </div>
                       </div>
 
@@ -474,33 +365,23 @@ export default function InventoryAnalyticsModal({ isOpen, onClose }) {
                             <thead>
                               <tr>
                                 <th>Medicine Name</th>
-                                <th>Batch</th>
+                                <th>Generic Name</th>
                                 <th className="numeric">Qty</th>
-                                <th className="numeric">Purchase Value</th>
-                                <th className="numeric">Selling Value</th>
-                                <th className="numeric">Margin</th>
+                                <th className="numeric">Total Value</th>
                               </tr>
                             </thead>
                             <tbody>
-                              {highValueStock.map((item) => (
-                                <tr key={item.id}>
+                              {highValueStock.map((item, idx) => (
+                                <tr key={item.id || idx}>
                                   <td className="font-semibold">{item.name}</td>
                                   <td className="text-on-surface-variant">
-                                    {item.batch}
+                                    {item.genericName || "-"}
                                   </td>
                                   <td className="numeric font-medium">
-                                    {item.qty}
+                                    {item.quantity}
                                   </td>
                                   <td className="numeric">
-                                    {fmt(item.purchaseValue)}
-                                  </td>
-                                  <td className="numeric font-medium">
-                                    {fmt(item.sellingValue)}
-                                  </td>
-                                  <td className="numeric">
-                                    <span className="profit-margin">
-                                      {item.margin}%
-                                    </span>
+                                    {fmt(item.totalValue)}
                                   </td>
                                 </tr>
                               ))}
@@ -595,7 +476,7 @@ export default function InventoryAnalyticsModal({ isOpen, onClose }) {
                                   <span className="name">
                                     {cat.category}{" "}
                                     <span className="text-on-surface-variant font-normal text-xs ml-1">
-                                      ({cat.count} items)
+                                      ({cat.quantity} items)
                                     </span>
                                   </span>
                                   <span className="value">
@@ -638,53 +519,43 @@ export default function InventoryAnalyticsModal({ isOpen, onClose }) {
                     <div>
                       <h3 className="inventory-section-title mb-4">
                         <AlertTriangle className="text-rose-500" size={20} />
-                        Expiry Risk (Next 60 Days)
+                        Expiry Risk (Next 90 Days)
                       </h3>
                       <div className="inventory-table-wrapper">
                         <div className="inventory-table-scroll">
-                          {(expiryRisk?.days30 || []).length > 0 ||
-                          (expiryRisk?.days60 || []).length > 0 ? (
-                            <table className="inventory-analytics-table">
-                              <thead>
-                                <tr>
-                                  <th>Medicine</th>
-                                  <th className="numeric">Qty</th>
-                                  <th className="numeric">Risk Value</th>
-                                  <th>Status</th>
-                                </tr>
-                              </thead>
-                              <tbody>
-                                {/* Merge 30 and 60 days for a unified view if needed, but here just map 30 days then 60 days */}
-                                {[
-                                  ...(expiryRisk?.days30 || []),
-                                  ...(expiryRisk?.days60 || []),
-                                ].map((item, index) => (
-                                  <tr key={item.id || index}>
-                                    <td className="font-semibold">
-                                      {item.name}
-                                    </td>
-                                    <td className="numeric font-medium">
-                                      {item.qty}
-                                    </td>
-                                    <td className="numeric text-rose-500 font-bold">
-                                      {fmt(item.value)}
-                                    </td>
-                                    <td>
-                                      <span
-                                        className={`risk-badge ${item.daysLeft <= 30 ? "high" : "medium"}`}
-                                      >
-                                        {item.daysLeft} days left
-                                      </span>
-                                    </td>
-                                  </tr>
-                                ))}
-                              </tbody>
-                            </table>
-                          ) : (
-                            <div className="flex items-center justify-center p-8 text-on-surface-variant font-medium text-sm border-t border-outline-variant">
-                              No expiry-risk medicines found.
-                            </div>
-                          )}
+                          <table className="inventory-analytics-table">
+                            <thead>
+                              <tr>
+                                <th>Risk Category</th>
+                                <th className="numeric">Batches Affected</th>
+                                <th className="numeric">Risk Value</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              <tr>
+                                <td className="font-semibold">
+                                  Expiring in &lt; 30 Days
+                                </td>
+                                <td className="numeric font-medium">
+                                  {expiryRisk?.risk30?.count || 0}
+                                </td>
+                                <td className="numeric text-rose-500 font-bold">
+                                  {fmt(expiryRisk?.risk30?.value)}
+                                </td>
+                              </tr>
+                              <tr>
+                                <td className="font-semibold">
+                                  Expiring in 30 - 90 Days
+                                </td>
+                                <td className="numeric font-medium">
+                                  {expiryRisk?.risk90?.count || 0}
+                                </td>
+                                <td className="numeric text-amber-500 font-bold">
+                                  {fmt(expiryRisk?.risk90?.value)}
+                                </td>
+                              </tr>
+                            </tbody>
+                          </table>
                         </div>
                       </div>
                     </div>
@@ -692,47 +563,30 @@ export default function InventoryAnalyticsModal({ isOpen, onClose }) {
                     <div className="mt-4">
                       <h3 className="inventory-section-title mb-4">
                         <PackageX className="text-amber-500" size={20} />
-                        Dead Stock / Slow Moving
+                        Dead Stock / Expired
                       </h3>
                       <div className="inventory-table-wrapper">
                         <div className="inventory-table-scroll">
-                          {expiryRisk?.deadStock &&
-                          expiryRisk.deadStock.length > 0 ? (
-                            <table className="inventory-analytics-table">
-                              <thead>
-                                <tr>
-                                  <th>Medicine</th>
-                                  <th className="numeric">Qty</th>
-                                  <th className="numeric">Blocked Value</th>
-                                  <th>Inactive Duration</th>
-                                </tr>
-                              </thead>
-                              <tbody>
-                                {expiryRisk.deadStock.map((item) => (
-                                  <tr key={item.id}>
-                                    <td className="font-semibold">
-                                      {item.name}
-                                    </td>
-                                    <td className="numeric font-medium">
-                                      {item.qty}
-                                    </td>
-                                    <td className="numeric text-amber-500 font-bold">
-                                      {fmt(item.value)}
-                                    </td>
-                                    <td>
-                                      <span className="text-on-surface-variant font-medium">
-                                        &gt; {item.inactiveDays} days
-                                      </span>
-                                    </td>
-                                  </tr>
-                                ))}
-                              </tbody>
-                            </table>
-                          ) : (
-                            <div className="flex items-center justify-center p-8 text-on-surface-variant font-medium text-sm border-t border-outline-variant">
-                              No dead stock available.
-                            </div>
-                          )}
+                          <table className="inventory-analytics-table">
+                            <thead>
+                              <tr>
+                                <th>Status</th>
+                                <th className="numeric">Batches Affected</th>
+                                <th className="numeric">Blocked Value</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              <tr>
+                                <td className="font-semibold">Expired Stock</td>
+                                <td className="numeric font-medium">
+                                  {expiryRisk?.expired?.count || 0}
+                                </td>
+                                <td className="numeric text-rose-500 font-bold">
+                                  {fmt(expiryRisk?.expired?.value)}
+                                </td>
+                              </tr>
+                            </tbody>
+                          </table>
                         </div>
                       </div>
                     </div>

@@ -42,6 +42,7 @@ const AdminShops = lazy(() => import("../pages/admin/AdminShops"));
 const Dashboard = lazy(() => import("../components/Dashboard"));
 const BulkImport = lazy(() => import("../components/BulkImport"));
 const BulkDisposal = lazy(() => import("../components/BulkDisposal"));
+const DisposalHistory = lazy(() => import("../components/DisposalHistory"));
 const ManageTeam = lazy(() => import("../components/ManageTeam"));
 const SystemSettings = lazy(() => import("../components/SystemSettings"));
 const SalesManagement = lazy(() => import("../components/SalesManagement"));
@@ -257,6 +258,14 @@ export default function AppRoutes({
             element={
               <PageErrorBoundary>
                 <BulkDisposal showToast={showToast} />
+              </PageErrorBoundary>
+            }
+          />
+          <Route
+            path="/expiry/disposal-history"
+            element={
+              <PageErrorBoundary>
+                <DisposalHistory showToast={showToast} />
               </PageErrorBoundary>
             }
           />

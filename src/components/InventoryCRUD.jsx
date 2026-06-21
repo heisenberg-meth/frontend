@@ -412,8 +412,8 @@ function ReorderModal({ medicine, onClose, showToast }) {
                 color: "var(--danger)",
               }}
             >
-              ⚠️ No supplier linked to this medicine. A supplier must be
-              assigned (via a batch receipt) before reordering.
+              No supplier linked to this medicine. A supplier must be assigned
+              (via a batch receipt) before reordering.
             </div>
           )}
         </div>
@@ -1569,7 +1569,6 @@ export default function InventoryCRUD({
   const [viewTarget, setViewTarget] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [reorderTarget, setReorderTarget] = useState(null);
-
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -2068,7 +2067,7 @@ export default function InventoryCRUD({
         </div>
         <div className="inv-stat-card" onMouseMove={handleMouseMove}>
           <div className="inv-stat-header">
-            <span className="inv-stat-label">EXPIRED</span>
+            <span className="inv-stat-label">EXPIRED BATCHES</span>
             <div className="inv-stat-icon bg-danger">
               <Calendar size={14} />
             </div>

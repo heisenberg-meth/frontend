@@ -14,6 +14,7 @@ import {
   ShieldCheck,
   Trash2,
   PackageX,
+  History,
 } from "lucide-react";
 
 export default function Sidebar({ user, onSignOut }) {
@@ -102,6 +103,14 @@ export default function Sidebar({ user, onSignOut }) {
           >
             <Trash2 size={18} />
             <span>Bulk Disposal</span>
+          </NavLink>
+          <NavLink
+            to="/expiry/disposal-history"
+            end
+            className={({ isActive }) => `nav-link ${isActive ? "active" : ""}`}
+          >
+            <History size={18} />
+            <span>Disposal History</span>
           </NavLink>
           <NavLink
             to="/barcode"
