@@ -3,6 +3,9 @@ import { API_ROUTES } from "../constants/api.routes";
 
 const BASE = API_ROUTES.SUPPLIER_RETURNS;
 
+export const getDashboardMetrics = () =>
+  api.get(`${BASE}/dashboard/metrics`);
+
 export const getExpiredGroupedBySupplier = () =>
   api.get(API_ROUTES.SUPPLIER_RETURNS_EXPIRED_GROUPED);
 
@@ -24,6 +27,9 @@ export const generateCreditNote = (returnId, data) =>
 export const getCreditNotes = (params) =>
   api.get(API_ROUTES.SUPPLIER_RETURNS_CREDIT_NOTES, { params });
 
+export const generateCreditNotePdf = (id) =>
+  api.post(`${BASE}/credit-notes/${id}/pdf`);
+
 export const applyCreditNote = (id, data) =>
   api.post(API_ROUTES.PURCHASE_CREDIT_NOTE_APPLY.replace("{id}", id), data);
 
@@ -32,6 +38,9 @@ export const getSupplierCreditBalance = (id) =>
 
 export const getSupplierInward = (supplierId, params) =>
   api.get(`${BASE}/suppliers/${supplierId}/inward`, { params });
+
+export const updateDispatchStatus = (id, dispatchStatus) =>
+  api.patch(`${BASE}/${id}/dispatch-status`, { dispatchStatus });
 
 export const getSupplierReturnsTxn = (supplierId, params) =>
   api.get(`${BASE}/suppliers/${supplierId}/returns`, { params });

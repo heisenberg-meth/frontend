@@ -16,13 +16,16 @@ import {
   CreditCard,
 } from "lucide-react";
 import {
+  getDashboardMetrics,
   getExpiredGroupedBySupplier,
   getExpiredInventorySummary,
   createSupplierReturn,
   getSupplierReturns,
   getSupplierReturnById,
   updateReturnStatus,
+  updateDispatchStatus,
   generateCreditNote,
+  generateCreditNotePdf,
   getCreditNotes,
 } from "../services/supplier-returns.service.js";
 import { formatDate } from "../utils/format.js";
@@ -45,6 +48,14 @@ const CREDIT_NOTE_STATUS = {
   APPLIED: { label: "Applied", class: "badge-success" },
   VOIDED: { label: "Voided", class: "badge-danger" },
   EXPIRED: { label: "Expired", class: "badge-neutral" },
+};
+
+const DISPATCH_STATUS = {
+  PENDING: { label: "Pending", class: "badge-neutral" },
+  READY_TO_SEND: { label: "Ready To Send", class: "badge-info" },
+  SENT_TO_SUPPLIER: { label: "Sent To Supplier", class: "badge-primary" },
+  RECEIVED_BY_SUPPLIER: { label: "Received By Supplier", class: "badge-warning" },
+  CREDIT_NOTE_RECEIVED: { label: "Credit Note Received", class: "badge-success" },
 };
 
 const REASONS = [
@@ -117,6 +128,7 @@ export default function SupplierReturns({ showToast }) {
   const [eligibleBatches, setEligibleBatches] = useState([]);
   const [loadingBatches, setLoadingBatches] = useState(false);
   const [expandedGroup, setExpandedGroup] = useState(null);
+  const [metrics, setMetrics] = useState(null);
 
   const notify = useCallback(
     (msg, type = "success") => {
@@ -244,6 +256,12 @@ export default function SupplierReturns({ showToast }) {
     loadData();
   }, [activeTab, fetchCreditNotes, fetchExpiredData, fetchReturns]);
 
+  useEffect(() => {
+    getDashboardMetrics()
+      .then((res) => setMetrics(res.data?.data || null))
+      .catch(() => {});
+  }, []);
+
   const handleCreateReturn = async () => {
     try {
       if (
@@ -363,6 +381,43 @@ export default function SupplierReturns({ showToast }) {
         ))}
       </div>
 
+      {metrics && (
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
+            gap: "12px",
+            marginBottom: "20px",
+          }}
+        >
+          {[
+            { label: "Pending", value: metrics.pending, color: "var(--warning)" },
+            { label: "Ready to Send", value: metrics.readyToSend, color: "var(--info)" },
+            { label: "Sent", value: metrics.sent, color: "var(--primary)" },
+            { label: "Received", value: metrics.received, color: "var(--success)" },
+            { label: "Credit Received", value: metrics.creditReceived, color: "var(--success)" },
+            { label: "Total Returns", value: metrics.totalReturns, color: "var(--text-main)" },
+          ].map((card) => (
+            <div
+              key={card.label}
+              style={{
+                padding: "14px 16px",
+                borderRadius: "10px",
+                background: "var(--card-bg, white)",
+                border: "1px solid var(--border-color)",
+              }}
+            >
+              <div style={{ fontSize: "12px", color: "var(--text-muted)", marginBottom: "4px" }}>
+                {card.label}
+              </div>
+              <div style={{ fontSize: "22px", fontWeight: 700, color: card.color }}>
+                {card.value}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
       <div className="tab-content">
         {loading && <Loading message={`Loading ${activeTab}...`} />}
         {!loading && activeTab === "returns" && (
@@ -409,6 +464,7 @@ export default function SupplierReturns({ showToast }) {
                       <th>Items</th>
                       <th>Amount</th>
                       <th>Status</th>
+                      <th>Dispatch</th>
                       <th>Created</th>
                       <th>Actions</th>
                     </tr>
@@ -435,6 +491,30 @@ export default function SupplierReturns({ showToast }) {
                         </td>
                         <td>
                           <Badge status={r.status} />
+                        </td>
+                        <td>
+                          <select
+                            className="filter-select"
+                            value={r.dispatchStatus || "PENDING"}
+                            onChange={async (e) => {
+                              try {
+                                await updateDispatchStatus(r.id, e.target.value);
+                                notify("Dispatch status updated", "success");
+                                fetchReturns();
+                              } catch (err) {
+                                notify(
+                                  getErrorMessage(err) || "Failed to update dispatch status",
+                                  "error",
+                                );
+                              }
+                            }}
+                          >
+                            {Object.entries(DISPATCH_STATUS).map(([k, v]) => (
+                              <option key={k} value={k}>
+                                {v.label}
+                              </option>
+                            ))}
+                          </select>
                         </td>
                         <td>{formatDate(r.createdAt)}</td>
                         <td>
@@ -496,6 +576,7 @@ export default function SupplierReturns({ showToast }) {
                       <th>Amount</th>
                       <th>Status</th>
                       <th>Issued</th>
+                      <th>Actions</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -513,6 +594,27 @@ export default function SupplierReturns({ showToast }) {
                           <Badge status={cn.status} map={CREDIT_NOTE_STATUS} />
                         </td>
                         <td>{formatDate(cn.issuedAt)}</td>
+                        <td>
+                          <button
+                            className="btn btn-sm btn-ghost"
+                            onClick={async () => {
+                              try {
+                                const res = await generateCreditNotePdf(cn.id);
+                                if (res.data?.data?.pdfUrl) {
+                                  window.open(res.data.data.pdfUrl, "_blank");
+                                }
+                                notify("PDF generated", "success");
+                              } catch (err) {
+                                notify(
+                                  getErrorMessage(err) || "Failed to generate PDF",
+                                  "error",
+                                );
+                              }
+                            }}
+                          >
+                            PDF
+                          </button>
+                        </td>
                       </tr>
                     ))}
                   </tbody>

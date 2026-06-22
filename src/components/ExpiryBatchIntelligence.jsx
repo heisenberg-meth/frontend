@@ -23,13 +23,21 @@ import {
   CheckSquare,
   Square,
   Archive,
+  Truck,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import ExcelJS from "exceljs";
 import { saveAs } from "file-saver";
 import api from "../api";
 import { safeNumber } from "../utils/number.js";
-import { disposeInventory } from "../services/inventory.service";
+import {
+  disposeInventory,
+  bulkAssignBatchSupplier,
+  backfillBatchSupplier,
+  exportBatchesWithoutSupplier,
+  importSupplierAssignments,
+} from "../services/inventory.service";
+import { getSuppliers } from "../services/suppliers.service";
 
 function getDays(expiryDate) {
   const exp = new Date(expiryDate);
@@ -70,6 +78,27 @@ export default function ExpiryBatchIntelligence({ showToast }) {
   const [showDisposeModal, setShowDisposeModal] = useState(false);
   const [disposing, setDisposing] = useState(false);
 
+  // Bulk supplier assignment state
+  const [showBulkSupplierModal, setShowBulkSupplierModal] = useState(false);
+  const [bulkSupplierId, setBulkSupplierId] = useState("");
+  const [suppliers, setSuppliers] = useState([]);
+  const [bulkAssigning, setBulkAssigning] = useState(false);
+  const [bulkReturning, setBulkReturning] = useState(false);
+  const [backfilling, setBackfilling] = useState(false);
+  const [showImportModal, setShowImportModal] = useState(false);
+  const [importFile, setImportFile] = useState(null);
+  const [importing, setImporting] = useState(false);
+  const [importResult, setImportResult] = useState(null);
+
+  useEffect(() => {
+    getSuppliers({ limit: 500 })
+      .then((res) => {
+        const data = res.data?.data || res.data || [];
+        setSuppliers(Array.isArray(data) ? data : []);
+      })
+      .catch(() => {});
+  }, []);
+
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -105,6 +134,8 @@ export default function ExpiryBatchIntelligence({ showToast }) {
               received: b.createdAt?.split("T")[0] || "",
               mfg: b.manufacturingDate?.split("T")[0] || "",
               supplier: b.supplier?.name || "",
+              supplierId: b.supplierId || b.supplier?.id || null,
+              medicineId: b.medicineId || b.medicine?.id || null,
               manufacturer: b.manufacturerName || "",
               purchaseInvoice: b.purchaseInvoiceNumber || "",
               purchaseDate: b.purchaseDate?.split("T")[0] || "",
@@ -452,15 +483,18 @@ export default function ExpiryBatchIntelligence({ showToast }) {
       if (actionType === "RETURN") {
         const selectedItemData = batches.find((b) => matchesSelectedItem(b));
         if (!selectedItemData) throw new Error("Batch not found");
+        if (!selectedItemData.supplierId) {
+          throw new Error("No supplier assigned to this batch. Please assign a supplier first using the 'Assign Supplier' button.");
+        }
         await api.post("/supplier-returns", {
-          supplierId: selectedItemData.supplierId || null,
+          supplierId: selectedItemData.supplierId,
           items: [{
-            medicineId: selectedItemData.batchId ? undefined : undefined,
+            medicineId: selectedItemData.medicineId,
             batchId: selectedItemData.batchId,
             quantity: returnQty || 1,
-            reason: "Expired Stock Return",
+            reason: returnReason || "Expired Stock Return",
           }],
-          reason: "Expired stock returned to supplier",
+          reason: returnReason || "Expired stock returned to supplier",
         });
         setBatches((prev) =>
           prev.map((item) => {
@@ -557,6 +591,191 @@ export default function ExpiryBatchIntelligence({ showToast }) {
       showToast(msg, "error");
     } finally {
       setDisposing(false);
+    }
+  };
+
+  const handleBulkAssignSupplier = async () => {
+    if (!selectedBatchIds.size || !bulkSupplierId) return;
+    setBulkAssigning(true);
+    try {
+      const batchIds = [...selectedBatchIds];
+      await bulkAssignBatchSupplier(batchIds, bulkSupplierId);
+      const supplierName = suppliers.find((s) => s.id === bulkSupplierId)?.name || "";
+      showToast(
+        `Supplier "${supplierName}" assigned to ${batchIds.length} batches`,
+        "success",
+      );
+      setBatches((prev) =>
+        prev.map((b) =>
+          selectedBatchIds.has(b.batchId)
+            ? { ...b, supplierId: bulkSupplierId, supplier: supplierName }
+            : b,
+        ),
+      );
+      setSelectedBatchIds(new Set());
+      setShowBulkSupplierModal(false);
+      setBulkSupplierId("");
+    } catch (err) {
+      const msg =
+        err?.response?.data?.error ??
+        err?.response?.data?.message ??
+        err?.message ??
+        "Assignment failed";
+      showToast(msg, "error");
+    } finally {
+      setBulkAssigning(false);
+    }
+  };
+
+  const handleBulkReturnToSupplier = async () => {
+    if (!selectedBatchIds.size) return;
+
+    const selectedBatches = batches.filter((b) => selectedBatchIds.has(b.batchId));
+    const withoutSupplier = selectedBatches.filter((b) => !b.supplierId);
+    if (withoutSupplier.length > 0) {
+      showToast(
+        `${withoutSupplier.length} batches have no supplier assigned. Please assign suppliers first.`,
+        "error",
+      );
+      return;
+    }
+
+    const grouped = {};
+    for (const b of selectedBatches) {
+      if (!grouped[b.supplierId]) grouped[b.supplierId] = [];
+      grouped[b.supplierId].push(b);
+    }
+
+    setBulkReturning(true);
+    try {
+      let totalReturns = 0;
+      for (const [supplierId, items] of Object.entries(grouped)) {
+        await api.post("/supplier-returns", {
+          supplierId,
+          items: items.map((b) => ({
+            medicineId: b.medicineId,
+            batchId: b.batchId,
+            quantity: b.qty || 1,
+            reason: "EXPIRED",
+          })),
+          reason: "Bulk expired stock return to supplier",
+        });
+        totalReturns += items.length;
+      }
+      showToast(
+        `${totalReturns} batches returned across ${Object.keys(grouped).length} supplier(s)`,
+        "success",
+      );
+      setBatches((prev) =>
+        prev.filter((b) => !selectedBatchIds.has(b.batchId)),
+      );
+      setSelectedBatchIds(new Set());
+    } catch (err) {
+      const msg =
+        err?.response?.data?.error ??
+        err?.response?.data?.message ??
+        err?.message ??
+        "Return failed";
+      showToast(msg, "error");
+    } finally {
+      setBulkReturning(false);
+    }
+  };
+
+  const handleExportNoSupplier = async () => {
+    try {
+      const res = await exportBatchesWithoutSupplier();
+      const { batches, suppliers } = res.data?.data || {};
+
+      const supplierNames = suppliers.map((s) => s.name);
+      const rows = [
+        ["batchId", "batchNumber", "medicineName", "expiryDate", "quantity", "supplierName"],
+        ...batches.map((b) => [
+          b.id,
+          b.batchNumber,
+          b.medicine?.name || "",
+          b.expiryDate?.split("T")[0] || "",
+          b.availableQuantity ?? b.quantity ?? 0,
+          "",
+        ]),
+      ];
+
+      const csv = rows.map((r) => r.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(",")).join("\n");
+      const supplierList = "\n\n# Available suppliers:\n" + supplierNames.join("\n");
+      const blob = new Blob([csv + supplierList], { type: "text/csv" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `batches-no-supplier-${new Date().toISOString().slice(0, 10)}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+      showToast(`Exported ${batches.length} batches. Edit supplierName column and import back.`, "success");
+    } catch (err) {
+      showToast("Export failed: " + (err.message || "Unknown error"), "error");
+    }
+  };
+
+  const handleImportCsv = async () => {
+    if (!importFile) return;
+    setImporting(true);
+    setImportResult(null);
+    try {
+      const text = await importFile.text();
+      const lines = text.split("\n").filter((l) => l.trim() && !l.startsWith("#"));
+      if (lines.length < 2) throw new Error("CSV must have a header row and at least one data row");
+
+      const header = lines[0].split(",").map((h) => h.trim().toLowerCase().replace(/"/g, ""));
+      const batchIdIdx = header.indexOf("batchid");
+      const supplierIdx = header.indexOf("suppliername");
+
+      if (batchIdIdx === -1 || supplierIdx === -1) {
+        throw new Error("CSV must have 'batchId' and 'supplierName' columns");
+      }
+
+      const assignments = [];
+      for (let i = 1; i < lines.length; i++) {
+        const cols = lines[i].split(",").map((c) => c.trim().replace(/"/g, ""));
+        const batchId = cols[batchIdIdx];
+        const supplierName = cols[supplierIdx];
+        if (batchId && supplierName) {
+          assignments.push({ batchId, supplierName });
+        }
+      }
+
+      if (assignments.length === 0) throw new Error("No valid assignments found in CSV");
+
+      const res = await importSupplierAssignments(assignments);
+      const data = res.data?.data || {};
+      setImportResult(data);
+      showToast(
+        `Import complete: ${data.updated || 0} updated, ${data.skipped || 0} skipped`,
+        "success",
+      );
+    } catch (err) {
+      showToast("Import failed: " + (err.message || "Unknown error"), "error");
+    } finally {
+      setImporting(false);
+    }
+  };
+
+  const handleBackfillSuppliers = async () => {
+    setBackfilling(true);
+    try {
+      const res = await backfillBatchSupplier();
+      const data = res.data?.data || {};
+      showToast(
+        `Backfill complete: ${data.batchesUpdated || 0} batches updated across ${data.medicinesProcessed || 0} medicines`,
+        "success",
+      );
+    } catch (err) {
+      const msg =
+        err?.response?.data?.error ??
+        err?.response?.data?.message ??
+        err?.message ??
+        "Backfill failed";
+      showToast(msg, "error");
+    } finally {
+      setBackfilling(false);
     }
   };
 
@@ -876,21 +1095,96 @@ export default function ExpiryBatchIntelligence({ showToast }) {
               <div
                 style={{ display: "flex", alignItems: "center", gap: "10px" }}
               >
+                <button
+                  className="pos-btn outline"
+                  style={{
+                    padding: "6px 14px",
+                    fontSize: "13px",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "6px",
+                  }}
+                  onClick={handleExportNoSupplier}
+                >
+                  Export CSV
+                </button>
+                <button
+                  className="pos-btn outline"
+                  style={{
+                    padding: "6px 14px",
+                    fontSize: "13px",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "6px",
+                  }}
+                  onClick={() => setShowImportModal(true)}
+                >
+                  Import CSV
+                </button>
+                <button
+                  className="pos-btn outline"
+                  style={{
+                    padding: "6px 14px",
+                    fontSize: "13px",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "6px",
+                  }}
+                  onClick={handleBackfillSuppliers}
+                  disabled={backfilling}
+                >
+                  {backfilling ? "Backfilling..." : "Auto-Link Suppliers"}
+                </button>
                 {selectedBatchIds.size > 0 && (
-                  <button
-                    className="pos-btn danger"
-                    style={{
-                      padding: "6px 14px",
-                      fontSize: "13px",
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "6px",
-                    }}
-                    onClick={() => setShowDisposeModal(true)}
-                  >
-                    <Archive size={14} />
-                    Dispose Selected ({selectedBatchIds.size})
-                  </button>
+                  <>
+                    <button
+                      className="pos-btn"
+                      style={{
+                        padding: "6px 14px",
+                        fontSize: "13px",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "6px",
+                        background: "var(--primary)",
+                        color: "white",
+                      }}
+                      onClick={() => setShowBulkSupplierModal(true)}
+                    >
+                      <Truck size={14} />
+                      Assign Supplier ({selectedBatchIds.size})
+                    </button>
+                    <button
+                      className="pos-btn"
+                      style={{
+                        padding: "6px 14px",
+                        fontSize: "13px",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "6px",
+                        background: "var(--warning)",
+                        color: "white",
+                      }}
+                      onClick={handleBulkReturnToSupplier}
+                      disabled={bulkReturning}
+                    >
+                      <RotateCcw size={14} />
+                      {bulkReturning ? "Returning..." : `Return to Supplier (${selectedBatchIds.size})`}
+                    </button>
+                    <button
+                      className="pos-btn danger"
+                      style={{
+                        padding: "6px 14px",
+                        fontSize: "13px",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "6px",
+                      }}
+                      onClick={() => setShowDisposeModal(true)}
+                    >
+                      <Archive size={14} />
+                      Dispose Selected ({selectedBatchIds.size})
+                    </button>
+                  </>
                 )}
                 <div className="table-search-wrapper">
                   <Search size={16} />
@@ -2678,6 +2972,227 @@ export default function ExpiryBatchIntelligence({ showToast }) {
                     </>
                   )}
                 </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* ── Bulk Assign Supplier Modal ── */}
+      <AnimatePresence>
+        {showBulkSupplierModal && (
+          <div
+            className="stock-modal-overlay"
+            onClick={() => !bulkAssigning && setShowBulkSupplierModal(false)}
+            style={{ zIndex: 1100 }}
+          >
+            <motion.div
+              className="stock-modal"
+              style={{ maxWidth: 480, width: "95vw" }}
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="stock-modal-header">
+                <h3 style={{ margin: 0 }}>
+                  <Truck size={18} style={{ marginRight: 8 }} />
+                  Assign Supplier to {selectedBatchIds.size} Batches
+                </h3>
+                <button
+                  className="stock-modal-close"
+                  onClick={() => setShowBulkSupplierModal(false)}
+                  disabled={bulkAssigning}
+                >
+                  <X size={18} />
+                </button>
+              </div>
+
+              <div className="stock-modal-body">
+                <div
+                  style={{
+                    padding: "14px",
+                    background: "rgba(59,130,246,0.08)",
+                    borderRadius: "10px",
+                    marginBottom: "18px",
+                  }}
+                >
+                  <p
+                    style={{
+                      fontSize: 13,
+                      color: "var(--text-muted)",
+                      lineHeight: 1.6,
+                      margin: 0,
+                    }}
+                  >
+                    Select a supplier to assign to all{" "}
+                    <strong>{selectedBatchIds.size}</strong> selected batches.
+                    This links the batches to the supplier for return tracking.
+                  </p>
+                </div>
+
+                <div style={{ marginBottom: "16px" }}>
+                  <label
+                    style={{
+                      display: "block",
+                      fontSize: 13,
+                      fontWeight: 600,
+                      marginBottom: 6,
+                    }}
+                  >
+                    Supplier *
+                  </label>
+                  <select
+                    value={bulkSupplierId}
+                    onChange={(e) => setBulkSupplierId(e.target.value)}
+                    style={{
+                      width: "100%",
+                      padding: "10px 12px",
+                      borderRadius: "8px",
+                      border: "1px solid var(--border-color)",
+                      fontSize: 14,
+                    }}
+                  >
+                    <option value="">Select a supplier...</option>
+                    {suppliers.map((s) => (
+                      <option key={s.id} value={s.id}>
+                        {s.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              <div className="stock-modal-footer">
+                <button
+                  className="pos-btn outline"
+                  style={{ flex: 1 }}
+                  disabled={bulkAssigning}
+                  onClick={() => setShowBulkSupplierModal(false)}
+                >
+                  Cancel
+                </button>
+                <button
+                  className="pos-btn"
+                  style={{
+                    flex: 2,
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 8,
+                    justifyContent: "center",
+                    background: "var(--primary)",
+                    color: "white",
+                  }}
+                  disabled={bulkAssigning || !bulkSupplierId}
+                  onClick={handleBulkAssignSupplier}
+                >
+                  {bulkAssigning ? (
+                    <>Assigning...</>
+                  ) : (
+                    <>
+                      <Truck size={14} /> Assign Supplier
+                    </>
+                  )}
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* ── Import CSV Modal ── */}
+      <AnimatePresence>
+        {showImportModal && (
+          <div
+            className="stock-modal-overlay"
+            onClick={() => !importing && setShowImportModal(false)}
+            style={{ zIndex: 1100 }}
+          >
+            <motion.div
+              className="stock-modal"
+              style={{ maxWidth: 520, width: "95vw" }}
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="stock-modal-header">
+                <h3 style={{ margin: 0 }}>Import Supplier Assignments (CSV)</h3>
+                <button
+                  className="stock-modal-close"
+                  onClick={() => { setShowImportModal(false); setImportResult(null); setImportFile(null); }}
+                  disabled={importing}
+                >
+                  <X size={18} />
+                </button>
+              </div>
+
+              <div className="stock-modal-body">
+                <p style={{ fontSize: 13, color: "var(--text-muted)", marginBottom: 16 }}>
+                  Upload a CSV with columns: <strong>batchId</strong> and <strong>supplierName</strong>.
+                  Export CSV first to get the batch IDs and available supplier names.
+                </p>
+
+                <input
+                  type="file"
+                  accept=".csv"
+                  onChange={(e) => setImportFile(e.target.files?.[0] || null)}
+                  style={{ marginBottom: 16 }}
+                />
+
+                {importResult && (
+                  <div
+                    style={{
+                      padding: 12,
+                      borderRadius: 8,
+                      background: importResult.errors?.length ? "rgba(234,179,8,0.08)" : "rgba(34,197,94,0.08)",
+                      marginBottom: 16,
+                      fontSize: 13,
+                    }}
+                  >
+                    <div><strong>Updated:</strong> {importResult.updated}</div>
+                    <div><strong>Skipped:</strong> {importResult.skipped}</div>
+                    {importResult.errors?.length > 0 && (
+                      <div style={{ marginTop: 8 }}>
+                        <strong>Errors ({importResult.errors.length}):</strong>
+                        <ul style={{ margin: "4px 0", paddingLeft: 20 }}>
+                          {importResult.errors.slice(0, 10).map((e, i) => (
+                            <li key={i}>{e.batchId?.slice(0,8)} — {e.reason}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              <div className="stock-modal-footer">
+                <button
+                  className="pos-btn outline"
+                  style={{ flex: 1 }}
+                  disabled={importing}
+                  onClick={() => { setShowImportModal(false); setImportResult(null); setImportFile(null); }}
+                >
+                  {importResult ? "Close" : "Cancel"}
+                </button>
+                {!importResult && (
+                  <button
+                    className="pos-btn"
+                    style={{
+                      flex: 2,
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 8,
+                      justifyContent: "center",
+                      background: "var(--primary)",
+                      color: "white",
+                    }}
+                    disabled={importing || !importFile}
+                    onClick={handleImportCsv}
+                  >
+                    {importing ? "Importing..." : "Import"}
+                  </button>
+                )}
               </div>
             </motion.div>
           </div>

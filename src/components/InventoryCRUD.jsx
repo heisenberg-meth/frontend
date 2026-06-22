@@ -25,6 +25,8 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { getMedicineStatus, STATUS_OPTIONS } from "../utils/inventoryStatus";
+import { getSuppliers } from "../services/suppliers.service";
+import { assignBatchSupplier } from "../services/inventory.service";
 
 function CustomDropdown({ value, onChange, options, placeholder = "Select" }) {
   const [isOpen, setIsOpen] = useState(false);
@@ -1144,10 +1146,62 @@ function BatchModal({
               ? String(initialBatch.quantity)
               : "",
           rackLocation: initialBatch.rackLocation || "",
+          supplierId: initialBatch?.supplierId || "",
         }
-      : EMPTY_BATCH_FORM,
+      : { ...EMPTY_BATCH_FORM, supplierId: "" },
   );
   const [errors, setErrors] = useState({});
+  const [suppliers, setSuppliers] = useState([]);
+  const [savingSupplier, setSavingSupplier] = useState(false);
+
+  useEffect(() => {
+    getSuppliers({ limit: 500 })
+      .then((res) => {
+        const data = res.data?.data || res.data || [];
+        setSuppliers(Array.isArray(data) ? data : []);
+      })
+      .catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    if (selectedBatch) {
+      setForm({
+        batchNumber: selectedBatch.batchNumber || "",
+        expiryDate: selectedBatch.expiryDate
+          ? selectedBatch.expiryDate.split("T")[0]
+          : "",
+        mrp: selectedBatch.mrp ? String(selectedBatch.mrp) : "",
+        sellingPrice: selectedBatch.sellingPrice
+          ? String(selectedBatch.sellingPrice)
+          : "",
+        purchasePrice: selectedBatch.purchasePrice
+          ? String(selectedBatch.purchasePrice)
+          : "",
+        quantity:
+          selectedBatch.quantity !== null &&
+          selectedBatch.quantity !== undefined
+            ? String(selectedBatch.quantity)
+            : "",
+        rackLocation: selectedBatch.rackLocation || "",
+        supplierId: selectedBatch.supplierId || "",
+      });
+    }
+  }, [selectedBatch]);
+
+  const handleSupplierChange = async (supplierId) => {
+    if (!selectedBatch) return;
+    setSavingSupplier(true);
+    try {
+      await assignBatchSupplier(selectedBatch.id, supplierId || null);
+      setSelectedBatch((b) => ({ ...b, supplierId: supplierId || null }));
+      setForm((f) => ({ ...f, supplierId: supplierId || "" }));
+      showToast("Supplier updated", "success");
+    } catch (err) {
+      showToast("Failed to update supplier", "error");
+    } finally {
+      setSavingSupplier(false);
+    }
+  };
 
   const set = (key, val) => {
     setForm((f) => ({ ...f, [key]: val }));
@@ -1497,6 +1551,29 @@ function BatchModal({
                     onChange={(e) => set("rackLocation", e.target.value)}
                   />
                 </div>
+
+                {selectedBatch && (
+                  <div className="form-group">
+                    <label>Supplier</label>
+                    <select
+                      value={form.supplierId || ""}
+                      onChange={(e) => handleSupplierChange(e.target.value)}
+                      disabled={savingSupplier}
+                    >
+                      <option value="">No Supplier</option>
+                      {suppliers.map((s) => (
+                        <option key={s.id} value={s.id}>
+                          {s.name}
+                        </option>
+                      ))}
+                    </select>
+                    {savingSupplier && (
+                      <span style={{ fontSize: "12px", color: "var(--text-muted)" }}>
+                        Saving...
+                      </span>
+                    )}
+                  </div>
+                )}
               </div>
             </>
           ) : (

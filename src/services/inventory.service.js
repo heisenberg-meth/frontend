@@ -50,6 +50,16 @@ export const updateBatch = (batchId, data) =>
   api.put(`${API_ROUTES.INVENTORY_BATCHES}/${batchId}`, data);
 export const deleteBatch = (batchId) =>
   api.delete(`${API_ROUTES.INVENTORY_BATCHES}/${batchId}`);
+export const assignBatchSupplier = (batchId, supplierId) =>
+  api.patch(`${API_ROUTES.INVENTORY_BATCHES}/${batchId}/supplier`, { supplierId });
+export const bulkAssignBatchSupplier = (batchIds, supplierId) =>
+  api.post(`${API_ROUTES.INVENTORY_BATCHES}/bulk-assign-supplier`, { batchIds, supplierId });
+export const backfillBatchSupplier = () =>
+  api.post(`${API_ROUTES.INVENTORY_BATCHES}/backfill-supplier`);
+export const exportBatchesWithoutSupplier = () =>
+  api.get(`${API_ROUTES.INVENTORY_BATCHES}/export-no-supplier`);
+export const importSupplierAssignments = (assignments) =>
+  api.post(`${API_ROUTES.INVENTORY_BATCHES}/import-supplier-assignments`, { assignments });
 
 /* ─── Barcode ─── */
 export const generateBarcode = (text, type = "code128") =>
