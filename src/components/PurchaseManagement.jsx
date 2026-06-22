@@ -193,6 +193,19 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
     }
   };
 
+  const updatePaymentStatus = async (invoiceId, status) => {
+    try {
+      await api.patch(
+        `${API_ROUTES.PURCHASES_INVOICES_PAYMENT}/${invoiceId}/payment-status`,
+        { paymentStatus: status },
+      );
+      showToast("Payment status updated", "success");
+      await refreshData();
+    } catch (err) {
+      showToast("Failed to update payment status", err);
+    }
+  };
+
   useEffect(() => {
     let mounted = true;
 
@@ -564,7 +577,9 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
         totalAmount: grandTotal,
       };
       if (drawer === "edit-purchase" && selectedRow?.id) {
-        await api.patch(`/purchase-orders/${selectedRow.id}/status`, { status: "DRAFT" });
+        await api.patch(`/purchase-orders/${selectedRow.id}/status`, {
+          status: "DRAFT",
+        });
         showToast("Purchase order updated", "success");
       } else {
         await createPurchaseOrder(payload);
@@ -648,7 +663,7 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
     try {
       const [balanceRes, notesRes] = await Promise.all([
         getSupplierCreditBalance(supplierId),
-        getCreditNotes({ supplierId, status: "ISSUED,PARTIAL" }),
+        getCreditNotes({ supplierId, status: "ISSUED,APPLIED" }),
       ]);
       setSupplierCredit({
         available: balanceRes.data?.data?.availableCredit || 0,
@@ -1286,12 +1301,18 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
                       ₹{(inv.totalAmount || inv.total || 0).toLocaleString()}
                     </td>
                     <td className="result-meta">₹{inv.gstAmount || 0}</td>
-                    <td>
-                      <span
-                        className={`p-status ${(inv.paymentStatus || inv.status || "PENDING").toLowerCase().replace(/[\s_-]+/g, "")}`}
+                    <td onClick={(e) => e.stopPropagation()}>
+                      <select
+                        className="payment-status-dropdown"
+                        value={inv.paymentStatus || "PENDING"}
+                        onChange={(e) =>
+                          updatePaymentStatus(inv.id, e.target.value)
+                        }
                       >
-                        {inv.paymentStatus || inv.status || "PENDING"}
-                      </span>
+                        <option value="PENDING">Pending</option>
+                        <option value="PARTIAL">Partially Paid</option>
+                        <option value="PAID">Paid</option>
+                      </select>
                     </td>
                     <td>
                       <div style={{ display: "flex", gap: "8px" }}>

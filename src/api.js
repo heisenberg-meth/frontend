@@ -26,6 +26,8 @@ const api = axios.create({
 let isRefreshing = false;
 let failedQueue = [];
 let sessionExpiredDispatched = false;
+let refreshAttempts = 0;
+const MAX_REFRESH_ATTEMPTS = 3;
 let csrfToken = null;
 let csrfPromise = null;
 
@@ -65,6 +67,7 @@ function processQueue(error, token = null) {
 function dispatchSessionExpired(reason) {
   if (sessionExpiredDispatched) return;
   sessionExpiredDispatched = true;
+  refreshAttempts = 0;
   window.dispatchEvent(
     new CustomEvent("auth:sessionExpired", {
       detail: { reason },
@@ -173,16 +176,26 @@ api.interceptors.response.use(
         return Promise.reject(error);
       }
 
+      if (refreshAttempts >= MAX_REFRESH_ATTEMPTS) {
+        csrfToken = null;
+        csrfPromise = null;
+        clearAllAuth();
+        dispatchSessionExpired("Session expired. Please log in again.");
+        return Promise.reject(error);
+      }
+
       if (isRefreshing) {
         return new Promise((resolve, reject) => {
           failedQueue.push({ resolve, reject });
         }).then(() => {
+          originalRequest._retry = true;
           return api(originalRequest);
         });
       }
 
       originalRequest._retry = true;
       isRefreshing = true;
+      refreshAttempts++;
 
       try {
         console.log("refresh started");
@@ -218,6 +231,7 @@ api.interceptors.response.use(
           });
         }
 
+        refreshAttempts = 0;
         processQueue(null, newToken);
         return api(originalRequest);
       } catch (refreshError) {
