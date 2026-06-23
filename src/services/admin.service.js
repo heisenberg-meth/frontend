@@ -91,8 +91,8 @@ export const adminApi = {
   async logout() {
     try {
       await adminHttp.post(API_ROUTES.ADMIN_LOGOUT);
-    } catch (err) {
-      console.log(err);
+    } catch {
+      // logout errors are non-critical
     } finally {
       localStorage.removeItem(ADMIN_KEY);
     }

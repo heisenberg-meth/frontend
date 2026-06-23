@@ -67,9 +67,7 @@ export default function SubscriptionCRUD({ showToast, user }) {
       setSubscription(subRes.data?.data || subRes.data);
 
       setPaymentHistory(payRes.data?.data || payRes.data || []);
-    } catch (err) {
-      console.error("Failed to load canonical subscription:", err);
-
+    } catch {
       showToast("Could not verify subscription status", "error");
     }
   };
@@ -91,9 +89,7 @@ export default function SubscriptionCRUD({ showToast, user }) {
         setSubscription(subRes.data?.data || subRes.data);
 
         setPaymentHistory(payRes.data?.data || payRes.data || []);
-      } catch (err) {
-        console.error(err);
-
+      } catch {
         if (mounted) {
           showToast("Could not verify subscription status", "error");
         }
@@ -146,8 +142,7 @@ export default function SubscriptionCRUD({ showToast, user }) {
             showToast("Payment verified. Subscription activated!", "success");
             await refreshUser();
             await refreshSubscriptionData();
-          } catch (verErr) {
-            console.error("Verification failed:", verErr);
+          } catch {
             showToast(
               "Payment verification failed. Please contact support.",
               "error",
@@ -177,15 +172,13 @@ export default function SubscriptionCRUD({ showToast, user }) {
 
       const rzp = new window.Razorpay(cleanOptions);
       rzp.on("payment.failed", function (response) {
-        console.error("PAYMENT FAILED =", response.error);
         showToast(`Payment failed: ${response.error.description}`, "error");
       });
       rzp.open();
 
       setShowConfirmModal(false);
       setSelectedPlan(null);
-    } catch (err) {
-      console.error(err);
+    } catch {
       showToast("Payment failed", "error");
     } finally {
       setUpgrading(false);

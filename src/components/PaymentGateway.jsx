@@ -82,8 +82,7 @@ export default function PaymentGateway({ user, onPaymentComplete, amount }) {
           try {
             await api.post(API_ROUTES.PAYMENTS_VERIFY, response);
             setStatus("success");
-          } catch (err) {
-            console.error(err);
+          } catch {
             setPaymentError("Verification failed");
             setStatus("checkout");
           } finally {
@@ -118,7 +117,6 @@ export default function PaymentGateway({ user, onPaymentComplete, amount }) {
       razorpayRef.current = rzp;
       rzp.open();
     } catch (error) {
-      console.error(error);
       setRetryCount((prev) => prev + 1);
       setStatus("checkout");
       const errorMessage =

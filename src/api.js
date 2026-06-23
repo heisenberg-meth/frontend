@@ -80,9 +80,8 @@ export async function getCsrfToken() {
       csrfPromise = null;
       return csrfToken;
     })
-    .catch((err) => {
+    .catch(() => {
       csrfPromise = null;
-      console.error("[CSRF] Failed to fetch CSRF token:", err);
       return null;
     });
 
@@ -236,10 +235,6 @@ api.interceptors.response.use(
       refreshAttempts++;
 
       try {
-        console.log("refresh started");
-        console.log("document.cookie:", document.cookie);
-        console.time("refresh");
-
         const refreshRes = await axios.post(
           `${getBaseUrl()}/auth/refresh`,
           {},
@@ -253,9 +248,6 @@ api.interceptors.response.use(
             },
           },
         );
-
-        console.timeEnd("refresh");
-        console.log("refresh completed");
 
         const newToken = refreshRes.data?.data?.token;
         if (newToken) {

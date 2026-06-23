@@ -8,6 +8,7 @@ import {
   Package,
   ShoppingCart,
   TrendingUp,
+  LifeBuoy,
   BarChart3,
   CalendarClock,
   QrCode,
@@ -125,6 +126,13 @@ export default function Sidebar({ user, onSignOut }) {
           >
             <PackageX size={18} />
             <span>Supplier Returns</span>
+          </NavLink>
+          <NavLink
+            to="/support"
+            className={({ isActive }) => `nav-link ${isActive ? "active" : ""}`}
+          >
+            <LifeBuoy size={18} />
+            <span>Support</span>
           </NavLink>
 
           {user?.role === "OWNER" && (

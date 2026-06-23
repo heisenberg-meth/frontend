@@ -62,15 +62,9 @@ export default function BulkImport({ fetchData, showToast }) {
   const [historyLoading, setHistoryLoading] = useState(false);
   const [suppliersList, setSuppliersList] = useState([]);
   const [showAddSupplierModal, setShowAddSupplierModal] = useState(false);
+  useEffect(() => {}, [showAddSupplierModal]);
   useEffect(() => {
-    console.log("showAddSupplierModal Changed : ", showAddSupplierModal);
-  }, [showAddSupplierModal]);
-  useEffect(() => {
-    console.log("BulkImport mounted");
-
-    return () => {
-      console.log("BulkImport unmounted");
-    };
+    return () => {};
   }, []);
   const [showSaveMappingModal, setShowSaveMappingModal] = useState(false);
   const [showLoadMappingModal, setShowLoadMappingModal] = useState(false);
@@ -535,9 +529,6 @@ export default function BulkImport({ fetchData, showToast }) {
   };
 
   const saveSupplier = async () => {
-    console.trace("SAVE SUPPLIER CALLED");
-    console.log("SUPPLIER FORM:", supplierForm);
-
     if (!supplierForm.name.trim()) {
       showToast("Supplier name required", "error");
       return;
@@ -561,12 +552,8 @@ export default function BulkImport({ fetchData, showToast }) {
 
         status: "ACTIVE",
       };
-      console.log("BEFORE CREATE SUPPLIER");
 
       const res = await createSupplier(payload);
-
-      console.log("AFTER CREATE SUPPLIER");
-      console.log("CREATE SUPPLIER RESPONSE", res);
 
       if (res.data?.success) {
         await getSuppliers().then((r) => {
@@ -588,8 +575,6 @@ export default function BulkImport({ fetchData, showToast }) {
         showToast("Supplier Added", "success");
       }
     } catch (err) {
-      console.log("BACKEND ERROR", JSON.stringify(err.response?.data, null, 2));
-
       showToast(
         err.response?.data?.message || "Failed to add Supplier",
         "error",
@@ -614,9 +599,6 @@ export default function BulkImport({ fetchData, showToast }) {
     try {
       setImportProgress(45);
 
-      console.log("MEDICINES PAYLOAD");
-      console.log(JSON.stringify(medicines, null, 2));
-
       const res = await api.post("/import/bulk", {
         medicines,
         supplier: selectedSupplier,
@@ -640,91 +622,7 @@ export default function BulkImport({ fetchData, showToast }) {
         throw new Error(res.data?.message || "Failed to commit import");
       }
     } catch (error) {
-      console.log("IMPORT ERROR");
-      console.log(error.response?.data);
-      console.log(error.response?.status);
-      console.log(error.response);
-      setImportStatus("idle");
-      showToast(error.message || "Import failed", "error");
-    }
-  };
-
-  const handleFileUploadImport = async () => {
-    if (!file) {
-      showToast("Upload a file first", "error");
-      return;
-    }
-
-    setImportStatus("processing");
-    setImportProgress(10);
-
-    try {
-      const text = await file.text();
-
-      setImportProgress(25);
-
-      const res = await api.post("/import/upload", {
-        fileName: file.name,
-        fileContent: text,
-        duplicateStrategy,
-        barcodeOptions,
-        supplier: selectedSupplier,
-      });
-
-      if (!res.data?.success) {
-        throw new Error(res.data?.message || "Upload failed");
-      }
-
-      const { jobId } = res.data.data;
-      setImportJobId(jobId);
-      setImportProgress(30);
-
-      await pollImportProgress(jobId);
-
-      if (fetchData) fetchData();
-    } catch (err) {
-      console.error(err);
-      setImportStatus("idle");
-      setImportJobId(null);
-      showToast(err.message || "Upload import failed", "error");
-    }
-  };
-
-  const pollImportProgress = async (jobId) => {
-    const maxAttempts = 600;
-    let attempts = 0;
-
-    return new Promise((resolve, reject) => {
-      const poll = async () => {
-        attempts++;
-        try {
-          const res = await api.get(`/import/status/${jobId}`);
-          const data = res.data?.data;
-
-          if (!data) {
-            if (attempts >= maxAttempts) {
-              reject(new Error("Import timed out"));
-              return;
-            }
-            setTimeout(poll, 2000);
-            return;
-          }
-
-          const { processed, total, status, summary } = data;
-          const pct =
-            total > 0
-              ? Math.min(90, Math.round((processed / total) * 85) + 10)
-              : 50;
-          setImportProgress(pct);
-
-          if (status === "completed" || status === "complete") {
-            setImportProgress(100);
-            setImportStatus("complete");
-            setCommitResult(summary || null);
-            setImportSummary(summary);
-            const imported = summary?.importedCount ?? summary?.created ?? 0;
-            const skipped = summary?.skippedCount ?? summary?.skipped ?? 0;
-            showToast(
+      showToast(
               `Import complete: ${imported} imported, ${skipped} skipped`,
               imported > 0 ? "success" : "warning",
             );
@@ -1029,10 +927,7 @@ export default function BulkImport({ fetchData, showToast }) {
                       className="pos-input"
                       value={selectedSupplier}
                       onChange={(e) => {
-                        console.log("SUPPLIER SELECT:", e.target.value);
-
                         if (e.target.value === "ADD_NEW") {
-                          console.log("OPENING MODAL");
                           setShowAddSupplierModal(true);
                         } else {
                           setSelectedSupplier(e.target.value);
@@ -1599,7 +1494,6 @@ export default function BulkImport({ fetchData, showToast }) {
         )}
       </AnimatePresence>
 
-      {showAddSupplierModal && console.log("MODAL RENDERING")}
       {showAddSupplierModal && (
         <div className="modal-overlay-v2">
           <div className="modal-content-v2">

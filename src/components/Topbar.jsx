@@ -171,8 +171,8 @@ export default function Topbar({
     if (saved) {
       try {
         return JSON.parse(saved);
-      } catch (e) {
-        console.error(e);
+      } catch {
+        return [];
       }
     }
     return [];
@@ -188,7 +188,6 @@ export default function Topbar({
       try {
         setNotificationsLoading(true);
         const res = await getNotifications();
-        console.log("Notifications API:", res.data);
         setNotifications(
           Array.isArray(res.data?.data)
             ? res.data.data
@@ -196,8 +195,8 @@ export default function Topbar({
               ? res.data
               : [],
         );
-      } catch (err) {
-        console.error("Notification fetch failed", err);
+      } catch {
+        // notification errors are non-critical
       } finally {
         setNotificationsLoading(false);
       }
@@ -356,8 +355,8 @@ export default function Topbar({
     try {
       await markAllNotificationsRead();
       setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })));
-    } catch (err) {
-      console.error("Failed to mark all read", err);
+    } catch {
+      // non-critical
     }
   };
 

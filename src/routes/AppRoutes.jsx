@@ -69,6 +69,7 @@ const SubscriptionCRUD = lazy(() => import("../components/SubscriptionCRUD"));
 const AccountingTax = lazy(() => import("../components/AccountingTax"));
 const Notifications = lazy(() => import("../pages/Notifications"));
 const CheckoutPage = lazy(() => import("../pages/CheckoutPage"));
+const SupportTickets = lazy(() => import("../components/SupportTickets"));
 const InventoryAnalyticsFull = lazy(
   () => import("../components/inventory/InventoryAnalyticsFull"),
 );
@@ -394,6 +395,14 @@ export default function AppRoutes({
             element={
               <PageErrorBoundary>
                 <Notifications showToast={showToast} />
+              </PageErrorBoundary>
+            }
+          />
+          <Route
+            path="/support"
+            element={
+              <PageErrorBoundary>
+                <SupportTickets user={user} showToast={showToast} />
               </PageErrorBoundary>
             }
           />
