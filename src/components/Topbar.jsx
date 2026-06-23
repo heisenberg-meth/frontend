@@ -23,7 +23,7 @@ import {
   CreditCard,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { getBackendOrigin } from "../api.js";
+import { getAvatarUrl } from "../utils/image.js";
 import { safeNumber } from "../utils/number.js";
 import {
   getNotifications,
@@ -575,11 +575,7 @@ export default function Topbar({
               </div>
               <div className="user-avatar-box">
                 <img
-                  src={
-                    user?.avatar
-                      ? `${getBackendOrigin()}${user.avatar}`
-                      : "https://lh3.googleusercontent.com/aida-public/AB6AXuDOWTd17Gl-b_EvhxP0GeXFk1px5aRS9edSLFf-k5bbLogrEN2yGjKCGGLxCoZNPABWuQ6WkF5_aS6aSYNBoksUikeQzv7CaPt4_LyjhOTV8QnYSkUf-POs5i2xBGCHsBSLSBLwrCi8svtoSHH9zg9k64OlZASXi20fnl6MRsJ5ouZdweM-j8uvCNWquJ5pfVVeiRmoVg5NOqU53_GMI0A9UImQllhc0yVHipNCPCfreNuoiiW59KhFveohAc3xrtL5rB3XFpdGS-NM"
-                  }
+                  src={getAvatarUrl(user?.avatar, user?.fullName || user?.username)}
                   className="avatar-img"
                   alt="Profile"
                 />

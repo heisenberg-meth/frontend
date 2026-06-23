@@ -214,9 +214,18 @@ export default function Dashboard({
         }}
       >
         <AlertTriangle size={40} style={{ color: "var(--danger)" }} />
-        <h3 style={{ fontSize: 18, fontWeight: 700 }}>Failed to load dashboard</h3>
-        <p style={{ color: "var(--text-muted)", textAlign: "center", maxWidth: 400 }}>
-          Could not fetch dashboard data. Please check your connection and try again.
+        <h3 style={{ fontSize: 18, fontWeight: 700 }}>
+          Failed to load dashboard
+        </h3>
+        <p
+          style={{
+            color: "var(--text-muted)",
+            textAlign: "center",
+            maxWidth: 400,
+          }}
+        >
+          Could not fetch dashboard data. Please check your connection and try
+          again.
         </p>
         <button
           onClick={() => window.location.reload()}

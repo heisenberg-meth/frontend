@@ -35,7 +35,7 @@ import {
   removeTeamMember,
   uploadTeamAvatar,
 } from "../services/profile.service";
-import { getBackendOrigin } from "../api";
+import { getAvatarUrl } from "../utils/image.js";
 
 const generateTempPassword = () => {
   const randomPart = Math.floor(1000 + (Date.now() % 9000));
@@ -350,11 +350,7 @@ export default function ManageTeam({ user, showToast }) {
                             style={{ position: "relative", overflow: "hidden" }}
                           >
                             <img
-                              src={
-                                m.avatar
-                                  ? `${getBackendOrigin()}${m.avatar}`
-                                  : `https://ui-avatars.com/api/?name=${m.fullName || m.username}&background=4FDBC8&color=0A0F1C`
-                              }
+                              src={getAvatarUrl(m.avatar, m.fullName || m.username)}
                               alt=""
                               style={{
                                 width: "100%",

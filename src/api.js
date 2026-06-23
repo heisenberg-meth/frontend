@@ -1,6 +1,39 @@
 import axios from "axios";
 import { clearAllAuth } from "./utils/authStorage";
 
+const PRIVATE_IP_PATTERNS = [
+  /^http:\/\/localhost/i,
+  /^http:\/\/127\.0\.0\.1/i,
+  /^http:\/\/192\.168\./i,
+  /^http:\/\/10\./i,
+  /^http:\/\/172\.(1[6-9]|2\d|3[01])\./i,
+];
+
+function sanitizeUrl(url) {
+  if (!url || typeof url !== "string") return url;
+  if (PRIVATE_IP_PATTERNS.some((p) => p.test(url))) {
+    const relative = url.replace(/^https?:\/\/[^/]+/, "");
+    return relative.startsWith("/") ? relative : url;
+  }
+  if (url.startsWith("http://")) return "https://" + url.slice(7);
+  return url;
+}
+
+function sanitizeImageUrls(obj) {
+  if (!obj || typeof obj !== "object") return obj;
+  if (Array.isArray(obj)) return obj.map(sanitizeImageUrls);
+  
+  const result = { ...obj };
+  for (const [key, value] of Object.entries(result)) {
+    if (typeof value === "string" && /url|image|logo|avatar|photo/i.test(key)) {
+      result[key] = sanitizeUrl(value);
+    } else if (typeof value === "object" && value !== null) {
+      result[key] = sanitizeImageUrls(value);
+    }
+  }
+  return result;
+}
+
 export const getBaseUrl = () => {
   return (
     import.meta.env.VITE_API_BASE_URL ||
@@ -146,7 +179,12 @@ api.interceptors.request.use(
 );
 
 api.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    if (response.data && typeof response.data === "object") {
+      response.data = sanitizeImageUrls(response.data);
+    }
+    return response;
+  },
   async (error) => {
     const originalRequest = error.config;
 

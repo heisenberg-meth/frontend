@@ -29,15 +29,7 @@ import {
   getActiveSessions,
   terminateSession,
 } from "../services/profile.service";
-import api from "../api";
-const getBackendOrigin = () => {
-  const baseURL =
-    api.defaults.baseURL ||
-    import.meta.env.VITE_API_BASE_URL ||
-    import.meta.env.VITE_API_URL ||
-    "https://medassist-backend-hryu.onrender.com/api";
-  return baseURL.replace(/\/api\/?$/, "");
-};
+import { getAvatarUrl } from "../utils/image.js";
 
 function Spinner({ size = 14 }) {
   return (
@@ -204,11 +196,7 @@ export default function Profile({
             <div className="avatar-container">
               <div className="profile-avatar-large">
                 <img
-                  src={
-                    profileData.avatar || user?.avatar
-                      ? `${getBackendOrigin()}${profileData.avatar || user?.avatar}`
-                      : `https://ui-avatars.com/api/?name=${formData.fullName || user?.username || "User"}&background=4FDBC8&color=0A0F1C`
-                  }
+                  src={getAvatarUrl(profileData.avatar || user?.avatar, formData.fullName || user?.username)}
                   alt="Profile"
                 />
                 <div
@@ -403,11 +391,7 @@ export default function Profile({
             <div className="photo-modal-content">
               <div className="photo-preview-large">
                 <img
-                  src={
-                    profileData.avatar || user?.avatar
-                      ? `${getBackendOrigin()}${profileData.avatar || user?.avatar}`
-                      : `https://ui-avatars.com/api/?name=${formData.fullName}&background=4FDBC8&color=0A0F1C`
-                  }
+                  src={getAvatarUrl(profileData.avatar || user?.avatar, formData.fullName)}
                   alt="Preview"
                 />
               </div>
