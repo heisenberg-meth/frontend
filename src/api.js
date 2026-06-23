@@ -22,7 +22,7 @@ function sanitizeUrl(url) {
 function sanitizeImageUrls(obj) {
   if (!obj || typeof obj !== "object") return obj;
   if (Array.isArray(obj)) return obj.map(sanitizeImageUrls);
-  
+
   const result = { ...obj };
   for (const [key, value] of Object.entries(result)) {
     if (typeof value === "string" && /url|image|logo|avatar|photo/i.test(key)) {
@@ -37,7 +37,7 @@ function sanitizeImageUrls(obj) {
 export const getBaseUrl = () => {
   return (
     import.meta.env.VITE_API_BASE_URL ||
-    "https://medassist-backend-hryu.onrender.com/api"
+    "https://api.medassist.viyaninfo.com/api"
   );
 };
 export const getBackendOrigin = () => {
