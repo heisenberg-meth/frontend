@@ -262,7 +262,13 @@ api.interceptors.response.use(
         }
 
         refreshAttempts = 0;
+        // Process queue with the new token so queued requests can use it
         processQueue(null, newToken);
+        
+        // Update the original request with the new token and retry
+        if (newToken) {
+          originalRequest.headers.Authorization = `Bearer ${newToken}`;
+        }
         return api(originalRequest);
       } catch (refreshError) {
         if (import.meta.env.DEV) {
