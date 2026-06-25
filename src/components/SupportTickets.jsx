@@ -1,5 +1,4 @@
-/* eslint-disable react-hooks/set-state-in-effect */
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   Plus,
   MessageSquare,
@@ -11,13 +10,27 @@ import { motion, AnimatePresence } from "framer-motion";
 import api from "../api";
 
 const CATEGORIES = [
-  "INVENTORY", "BILLING", "PURCHASE", "SUPPLIER",
-  "SALES", "REPORTS", "IMPORT", "ACCOUNT", "TECHNICAL", "OTHER",
+  "INVENTORY",
+  "BILLING",
+  "PURCHASE",
+  "SUPPLIER",
+  "SALES",
+  "REPORTS",
+  "IMPORT",
+  "ACCOUNT",
+  "TECHNICAL",
+  "OTHER",
 ];
 
 const PRIORITIES = ["LOW", "MEDIUM", "HIGH", "CRITICAL"];
 
-const STATUSES = ["OPEN", "IN_PROGRESS", "WAITING_FOR_STAFF", "RESOLVED", "CLOSED"];
+const STATUSES = [
+  "OPEN",
+  "IN_PROGRESS",
+  "WAITING_FOR_STAFF",
+  "RESOLVED",
+  "CLOSED",
+];
 
 const STATUS_COLORS = {
   OPEN: "#3b82f6",
@@ -41,13 +54,18 @@ export default function SupportTickets({ user, showToast }) {
   const [selectedTicket, setSelectedTicket] = useState(null);
   const [dashboard, setDashboard] = useState(null);
   const [filter, setFilter] = useState({ status: "", priority: "" });
-  const [form, setForm] = useState({ title: "", description: "", category: "OTHER", priority: "MEDIUM" });
+  const [form, setForm] = useState({
+    title: "",
+    description: "",
+    category: "OTHER",
+    priority: "MEDIUM",
+  });
   const [replyText, setReplyText] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
   const isAdmin = user?.role === "OWNER" || user?.role === "ADMIN";
 
-  const loadTickets = async () => {
+  const loadTickets = useCallback(async () => {
     try {
       setLoading(true);
       const url = isAdmin ? "/admin/support/tickets" : "/support/tickets/my";
@@ -61,23 +79,35 @@ export default function SupportTickets({ user, showToast }) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [isAdmin, filter.status, filter.priority, showToast]);
 
-  const loadDashboard = async () => {
+  const loadDashboard = useCallback(async () => {
     try {
       const url = isAdmin ? "/admin/support/dashboard" : "/support/dashboard";
       const res = await api.get(url);
       setDashboard(res.data?.data);
-    } catch {
-      // non-critical
+    } catch (err) {
+      console.log(err);
     }
-  };
+  }, [isAdmin]);
+
+  const refresh = useCallback(async () => {
+    await Promise.all([loadTickets(), loadDashboard()]);
+  }, [loadTickets, loadDashboard]);
 
   useEffect(() => {
-    loadTickets();
-    loadDashboard();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filter]);
+    let active = true;
+    const init = async () => {
+      await Promise.resolve();
+      if (active) {
+        refresh();
+      }
+    };
+    init();
+    return () => {
+      active = false;
+    };
+  }, [refresh]);
 
   const createTicket = async () => {
     if (!form.title.trim() || !form.description.trim()) {
@@ -89,11 +119,18 @@ export default function SupportTickets({ user, showToast }) {
       await api.post("/support", form);
       showToast("Ticket created", "success");
       setShowCreate(false);
-      setForm({ title: "", description: "", category: "OTHER", priority: "MEDIUM" });
-      loadTickets();
-      loadDashboard();
+      setForm({
+        title: "",
+        description: "",
+        category: "OTHER",
+        priority: "MEDIUM",
+      });
+      refresh();
     } catch (err) {
-      showToast(err.response?.data?.error || "Failed to create ticket", "error");
+      showToast(
+        err.response?.data?.error || "Failed to create ticket",
+        "error",
+      );
     } finally {
       setSubmitting(false);
     }
@@ -101,7 +138,9 @@ export default function SupportTickets({ user, showToast }) {
 
   const loadTicketDetails = async (ticketId) => {
     try {
-      const url = isAdmin ? `/admin/support/tickets/${ticketId}` : `/support/tickets/${ticketId}`;
+      const url = isAdmin
+        ? `/admin/support/tickets/${ticketId}`
+        : `/support/tickets/${ticketId}`;
       const res = await api.get(url);
       setSelectedTicket(res.data?.data);
     } catch {
@@ -125,11 +164,12 @@ export default function SupportTickets({ user, showToast }) {
 
   const resolveTicket = async (ticketId, resolution) => {
     try {
-      await api.put(`/admin/support/tickets/${ticketId}/resolve`, { resolution });
+      await api.put(`/admin/support/tickets/${ticketId}/resolve`, {
+        resolution,
+      });
       showToast("Ticket resolved", "success");
       setSelectedTicket(null);
-      loadTickets();
-      loadDashboard();
+      refresh();
     } catch (err) {
       showToast(err.response?.data?.error || "Failed to resolve", "error");
     }
@@ -140,8 +180,7 @@ export default function SupportTickets({ user, showToast }) {
       await api.put(`/support/tickets/${ticketId}/close`);
       showToast("Ticket closed", "success");
       setSelectedTicket(null);
-      loadTickets();
-      loadDashboard();
+      refresh();
     } catch (err) {
       showToast(err.response?.data?.error || "Failed to close", "error");
     }
@@ -152,8 +191,7 @@ export default function SupportTickets({ user, showToast }) {
       await api.put(`/support/tickets/${ticketId}/reopen`, { reason });
       showToast("Ticket reopened", "success");
       setSelectedTicket(null);
-      loadTickets();
-      loadDashboard();
+      refresh();
     } catch (err) {
       showToast(err.response?.data?.error || "Failed to reopen", "error");
     }
@@ -164,10 +202,12 @@ export default function SupportTickets({ user, showToast }) {
       await api.put(`/admin/support/tickets/${ticketId}/status`, { status });
       showToast("Status updated", "success");
       loadTicketDetails(ticketId);
-      loadTickets();
-      loadDashboard();
+      refresh();
     } catch (err) {
-      showToast(err.response?.data?.error || "Failed to update status", "error");
+      showToast(
+        err.response?.data?.error || "Failed to update status",
+        "error",
+      );
     }
   };
 
@@ -188,19 +228,59 @@ export default function SupportTickets({ user, showToast }) {
           <div style={{ display: "flex", gap: 24, flexWrap: "wrap" }}>
             {isAdmin ? (
               <>
-                <Stat label="Total" value={dashboard.totalTickets} color="var(--text)" />
-                <Stat label="Open" value={dashboard.open} color={STATUS_COLORS.OPEN} />
-                <Stat label="In Progress" value={dashboard.inProgress} color={STATUS_COLORS.IN_PROGRESS} />
-                <Stat label="Waiting" value={dashboard.waitingForStaff} color={STATUS_COLORS.WAITING_FOR_STAFF} />
-                <Stat label="Resolved" value={dashboard.resolved} color={STATUS_COLORS.RESOLVED} />
-                <Stat label="Closed" value={dashboard.closed} color={STATUS_COLORS.CLOSED} />
+                <Stat
+                  label="Total"
+                  value={dashboard.totalTickets}
+                  color="var(--text)"
+                />
+                <Stat
+                  label="Open"
+                  value={dashboard.open}
+                  color={STATUS_COLORS.OPEN}
+                />
+                <Stat
+                  label="In Progress"
+                  value={dashboard.inProgress}
+                  color={STATUS_COLORS.IN_PROGRESS}
+                />
+                <Stat
+                  label="Waiting"
+                  value={dashboard.waitingForStaff}
+                  color={STATUS_COLORS.WAITING_FOR_STAFF}
+                />
+                <Stat
+                  label="Resolved"
+                  value={dashboard.resolved}
+                  color={STATUS_COLORS.RESOLVED}
+                />
+                <Stat
+                  label="Closed"
+                  value={dashboard.closed}
+                  color={STATUS_COLORS.CLOSED}
+                />
               </>
             ) : (
               <>
-                <Stat label="Open" value={dashboard.open} color={STATUS_COLORS.OPEN} />
-                <Stat label="In Progress" value={dashboard.inProgress} color={STATUS_COLORS.IN_PROGRESS} />
-                <Stat label="Resolved" value={dashboard.resolved} color={STATUS_COLORS.RESOLVED} />
-                <Stat label="Closed" value={dashboard.closed} color={STATUS_COLORS.CLOSED} />
+                <Stat
+                  label="Open"
+                  value={dashboard.open}
+                  color={STATUS_COLORS.OPEN}
+                />
+                <Stat
+                  label="In Progress"
+                  value={dashboard.inProgress}
+                  color={STATUS_COLORS.IN_PROGRESS}
+                />
+                <Stat
+                  label="Resolved"
+                  value={dashboard.resolved}
+                  color={STATUS_COLORS.RESOLVED}
+                />
+                <Stat
+                  label="Closed"
+                  value={dashboard.closed}
+                  color={STATUS_COLORS.CLOSED}
+                />
               </>
             )}
           </div>
@@ -208,20 +288,40 @@ export default function SupportTickets({ user, showToast }) {
       )}
 
       <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
-        <select value={filter.status} onChange={(e) => setFilter({ ...filter, status: e.target.value })} className="pos-input" style={{ width: "auto" }}>
+        <select
+          value={filter.status}
+          onChange={(e) => setFilter({ ...filter, status: e.target.value })}
+          className="pos-input"
+          style={{ width: "auto" }}
+        >
           <option value="">All Status</option>
-          {STATUSES.map((s) => <option key={s} value={s}>{s.replace(/_/g, " ")}</option>)}
+          {STATUSES.map((s) => (
+            <option key={s} value={s}>
+              {s.replace(/_/g, " ")}
+            </option>
+          ))}
         </select>
-        <select value={filter.priority} onChange={(e) => setFilter({ ...filter, priority: e.target.value })} className="pos-input" style={{ width: "auto" }}>
+        <select
+          value={filter.priority}
+          onChange={(e) => setFilter({ ...filter, priority: e.target.value })}
+          className="pos-input"
+          style={{ width: "auto" }}
+        >
           <option value="">All Priority</option>
-          {PRIORITIES.map((p) => <option key={p} value={p}>{p}</option>)}
+          {PRIORITIES.map((p) => (
+            <option key={p} value={p}>
+              {p}
+            </option>
+          ))}
         </select>
       </div>
 
       {loading ? (
         <div style={{ textAlign: "center", padding: 40 }}>Loading...</div>
       ) : tickets.length === 0 ? (
-        <div style={{ textAlign: "center", padding: 40, color: "var(--text-dim)" }}>
+        <div
+          style={{ textAlign: "center", padding: 40, color: "var(--text-dim)" }}
+        >
           No tickets found
         </div>
       ) : (
@@ -235,26 +335,76 @@ export default function SupportTickets({ user, showToast }) {
               style={{ cursor: "pointer", padding: 16 }}
               onClick={() => loadTicketDetails(ticket.id)}
             >
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "flex-start",
+                }}
+              >
                 <div>
-                  <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
-                    <span style={{ fontFamily: "monospace", fontSize: 12, color: "var(--text-dim)" }}>
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 8,
+                      marginBottom: 4,
+                    }}
+                  >
+                    <span
+                      style={{
+                        fontFamily: "monospace",
+                        fontSize: 12,
+                        color: "var(--text-dim)",
+                      }}
+                    >
                       {ticket.ticketNumber}
                     </span>
-                    <span style={{ fontSize: 11, padding: "2px 8px", borderRadius: 4, background: STATUS_COLORS[ticket.status] + "20", color: STATUS_COLORS[ticket.status] }}>
+                    <span
+                      style={{
+                        fontSize: 11,
+                        padding: "2px 8px",
+                        borderRadius: 4,
+                        background: STATUS_COLORS[ticket.status] + "20",
+                        color: STATUS_COLORS[ticket.status],
+                      }}
+                    >
                       {ticket.status.replace(/_/g, " ")}
                     </span>
-                    <span style={{ fontSize: 11, padding: "2px 8px", borderRadius: 4, background: PRIORITY_COLORS[ticket.priority] + "20", color: PRIORITY_COLORS[ticket.priority] }}>
+                    <span
+                      style={{
+                        fontSize: 11,
+                        padding: "2px 8px",
+                        borderRadius: 4,
+                        background: PRIORITY_COLORS[ticket.priority] + "20",
+                        color: PRIORITY_COLORS[ticket.priority],
+                      }}
+                    >
                       {ticket.priority}
                     </span>
                   </div>
-                  <p style={{ fontWeight: 600, marginBottom: 4 }}>{ticket.title}</p>
-                  <div style={{ display: "flex", gap: 12, fontSize: 12, color: "var(--text-dim)" }}>
+                  <p style={{ fontWeight: 600, marginBottom: 4 }}>
+                    {ticket.title}
+                  </p>
+                  <div
+                    style={{
+                      display: "flex",
+                      gap: 12,
+                      fontSize: 12,
+                      color: "var(--text-dim)",
+                    }}
+                  >
                     <span>{ticket.category}</span>
-                    <span>{new Date(ticket.createdAt).toLocaleDateString()}</span>
-                    {ticket.createdBy && <span>by {ticket.createdBy.fullName}</span>}
+                    <span>
+                      {new Date(ticket.createdAt).toLocaleDateString()}
+                    </span>
+                    {ticket.createdBy && (
+                      <span>by {ticket.createdBy.fullName}</span>
+                    )}
                     {ticket._count?.messages > 0 && (
-                      <span><MessageSquare size={12} /> {ticket._count.messages}</span>
+                      <span>
+                        <MessageSquare size={12} /> {ticket._count.messages}
+                      </span>
                     )}
                   </div>
                 </div>
@@ -275,7 +425,12 @@ export default function SupportTickets({ user, showToast }) {
             >
               <div className="modal-header-v2">
                 <h3>Create Support Ticket</h3>
-                <button className="modal-close-btn" onClick={() => setShowCreate(false)}>×</button>
+                <button
+                  className="modal-close-btn"
+                  onClick={() => setShowCreate(false)}
+                >
+                  ×
+                </button>
               </div>
               <div className="modal-body-v2">
                 <div className="input-v2">
@@ -283,7 +438,9 @@ export default function SupportTickets({ user, showToast }) {
                   <input
                     type="text"
                     value={form.title}
-                    onChange={(e) => setForm({ ...form, title: e.target.value })}
+                    onChange={(e) =>
+                      setForm({ ...form, title: e.target.value })
+                    }
                     placeholder="Brief description of the issue"
                   />
                 </div>
@@ -291,23 +448,52 @@ export default function SupportTickets({ user, showToast }) {
                   <label>Description</label>
                   <textarea
                     value={form.description}
-                    onChange={(e) => setForm({ ...form, description: e.target.value })}
+                    onChange={(e) =>
+                      setForm({ ...form, description: e.target.value })
+                    }
                     placeholder="Detailed description..."
                     rows={4}
-                    style={{ width: "100%", padding: 8, borderRadius: 8, border: "1px solid var(--border)", background: "var(--bg-dark)", color: "var(--text)" }}
+                    style={{
+                      width: "100%",
+                      padding: 8,
+                      borderRadius: 8,
+                      border: "1px solid var(--border)",
+                      background: "var(--bg-dark)",
+                      color: "var(--text)",
+                    }}
                   />
                 </div>
                 <div style={{ display: "flex", gap: 12 }}>
                   <div className="input-v2" style={{ flex: 1 }}>
                     <label>Category</label>
-                    <select value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })} className="pos-input">
-                      {CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
+                    <select
+                      value={form.category}
+                      onChange={(e) =>
+                        setForm({ ...form, category: e.target.value })
+                      }
+                      className="pos-input"
+                    >
+                      {CATEGORIES.map((c) => (
+                        <option key={c} value={c}>
+                          {c}
+                        </option>
+                      ))}
                     </select>
                   </div>
                   <div className="input-v2" style={{ flex: 1 }}>
                     <label>Priority</label>
-                    <select value={form.priority} onChange={(e) => setForm({ ...form, priority: e.target.value })} className="pos-input">
-                      {PRIORITIES.map((p) => <option key={p} value={p}>{p}</option>)}
+                    <select
+                      value={form.priority}
+                      onChange={(e) =>
+                        setForm({ ...form, priority: e.target.value })
+                      }
+                      className="pos-input"
+                    >
+                      {PRIORITIES.map((p) => (
+                        <option key={p} value={p}>
+                          {p}
+                        </option>
+                      ))}
                     </select>
                   </div>
                 </div>
@@ -338,48 +524,112 @@ export default function SupportTickets({ user, showToast }) {
               <div className="modal-header-v2">
                 <div>
                   <h3>{selectedTicket.title}</h3>
-                  <span style={{ fontFamily: "monospace", fontSize: 12, color: "var(--text-dim)" }}>
+                  <span
+                    style={{
+                      fontFamily: "monospace",
+                      fontSize: 12,
+                      color: "var(--text-dim)",
+                    }}
+                  >
                     {selectedTicket.ticketNumber}
                   </span>
                 </div>
-                <button className="modal-close-btn" onClick={() => setSelectedTicket(null)}>×</button>
+                <button
+                  className="modal-close-btn"
+                  onClick={() => setSelectedTicket(null)}
+                >
+                  ×
+                </button>
               </div>
               <div className="modal-body-v2">
-                <div style={{ display: "flex", gap: 8, marginBottom: 16, flexWrap: "wrap" }}>
-                  <span style={{ fontSize: 12, padding: "4px 10px", borderRadius: 6, background: STATUS_COLORS[selectedTicket.status] + "20", color: STATUS_COLORS[selectedTicket.status] }}>
+                <div
+                  style={{
+                    display: "flex",
+                    gap: 8,
+                    marginBottom: 16,
+                    flexWrap: "wrap",
+                  }}
+                >
+                  <span
+                    style={{
+                      fontSize: 12,
+                      padding: "4px 10px",
+                      borderRadius: 6,
+                      background: STATUS_COLORS[selectedTicket.status] + "20",
+                      color: STATUS_COLORS[selectedTicket.status],
+                    }}
+                  >
                     {selectedTicket.status.replace(/_/g, " ")}
                   </span>
-                  <span style={{ fontSize: 12, padding: "4px 10px", borderRadius: 6, background: PRIORITY_COLORS[selectedTicket.priority] + "20", color: PRIORITY_COLORS[selectedTicket.priority] }}>
+                  <span
+                    style={{
+                      fontSize: 12,
+                      padding: "4px 10px",
+                      borderRadius: 6,
+                      background:
+                        PRIORITY_COLORS[selectedTicket.priority] + "20",
+                      color: PRIORITY_COLORS[selectedTicket.priority],
+                    }}
+                  >
                     {selectedTicket.priority}
                   </span>
-                  <span style={{ fontSize: 12, color: "var(--text-dim)" }}>{selectedTicket.category}</span>
+                  <span style={{ fontSize: 12, color: "var(--text-dim)" }}>
+                    {selectedTicket.category}
+                  </span>
                 </div>
 
-                <p style={{ color: "var(--text-dim)", marginBottom: 16 }}>{selectedTicket.description}</p>
+                <p style={{ color: "var(--text-dim)", marginBottom: 16 }}>
+                  {selectedTicket.description}
+                </p>
 
                 {selectedTicket.resolutionSummary && (
-                  <div style={{ padding: 12, background: "#10b98110", border: "1px solid #10b98130", borderRadius: 8, marginBottom: 16 }}>
-                    <strong>Resolution:</strong> {selectedTicket.resolutionSummary}
+                  <div
+                    style={{
+                      padding: 12,
+                      background: "#10b98110",
+                      border: "1px solid #10b98130",
+                      borderRadius: 8,
+                      marginBottom: 16,
+                    }}
+                  >
+                    <strong>Resolution:</strong>{" "}
+                    {selectedTicket.resolutionSummary}
                   </div>
                 )}
 
                 {isAdmin && selectedTicket.status !== "CLOSED" && (
-                  <div style={{ display: "flex", gap: 8, marginBottom: 16, flexWrap: "wrap" }}>
+                  <div
+                    style={{
+                      display: "flex",
+                      gap: 8,
+                      marginBottom: 16,
+                      flexWrap: "wrap",
+                    }}
+                  >
                     <select
                       value={selectedTicket.status}
-                      onChange={(e) => updateStatus(selectedTicket.id, e.target.value)}
+                      onChange={(e) =>
+                        updateStatus(selectedTicket.id, e.target.value)
+                      }
                       className="pos-input"
                       style={{ width: "auto" }}
                     >
-                      {STATUSES.map((s) => <option key={s} value={s}>{s.replace(/_/g, " ")}</option>)}
+                      {STATUSES.map((s) => (
+                        <option key={s} value={s}>
+                          {s.replace(/_/g, " ")}
+                        </option>
+                      ))}
                     </select>
                     {selectedTicket.status !== "RESOLVED" && (
                       <button
                         className="sub-upgrade-btn"
                         style={{ fontSize: 12 }}
                         onClick={() => {
-                          const resolution = prompt("Enter resolution summary:");
-                          if (resolution) resolveTicket(selectedTicket.id, resolution);
+                          const resolution = prompt(
+                            "Enter resolution summary:",
+                          );
+                          if (resolution)
+                            resolveTicket(selectedTicket.id, resolution);
                         }}
                       >
                         <CheckCircle2 size={14} /> Resolve
@@ -399,7 +649,11 @@ export default function SupportTickets({ user, showToast }) {
                     </button>
                     <button
                       className="sub-upgrade-btn"
-                      style={{ fontSize: 12, background: "#f59e0b20", color: "#f59e0b" }}
+                      style={{
+                        fontSize: 12,
+                        background: "#f59e0b20",
+                        color: "#f59e0b",
+                      }}
                       onClick={() => {
                         const reason = prompt("Reason for reopening:");
                         if (reason) reopenTicket(selectedTicket.id, reason);
@@ -423,22 +677,47 @@ export default function SupportTickets({ user, showToast }) {
                   </button>
                 )}
 
-                <div style={{ borderTop: "1px solid var(--border)", paddingTop: 16 }}>
+                <div
+                  style={{
+                    borderTop: "1px solid var(--border)",
+                    paddingTop: 16,
+                  }}
+                >
                   <h4 style={{ marginBottom: 12 }}>Conversation</h4>
-                  <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 16 }}>
+                  <div
+                    style={{
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: 8,
+                      marginBottom: 16,
+                    }}
+                  >
                     {selectedTicket.messages?.map((msg) => (
                       <div
                         key={msg.id}
                         style={{
                           padding: 10,
                           borderRadius: 8,
-                          background: msg.senderRole === "ADMIN" ? "var(--primary-container)" : "var(--surface)",
-                          alignSelf: msg.senderRole === "ADMIN" ? "flex-end" : "flex-start",
+                          background:
+                            msg.senderRole === "ADMIN"
+                              ? "var(--primary-container)"
+                              : "var(--surface)",
+                          alignSelf:
+                            msg.senderRole === "ADMIN"
+                              ? "flex-end"
+                              : "flex-start",
                           maxWidth: "80%",
                         }}
                       >
-                        <div style={{ fontSize: 11, color: "var(--text-dim)", marginBottom: 4 }}>
-                          {msg.sender?.fullName} · {new Date(msg.createdAt).toLocaleString()}
+                        <div
+                          style={{
+                            fontSize: 11,
+                            color: "var(--text-dim)",
+                            marginBottom: 4,
+                          }}
+                        >
+                          {msg.sender?.fullName} ·{" "}
+                          {new Date(msg.createdAt).toLocaleString()}
                         </div>
                         <p style={{ fontSize: 13 }}>{msg.message}</p>
                       </div>

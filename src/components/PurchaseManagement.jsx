@@ -348,7 +348,7 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
     setPurchaseItems((prev) => prev.filter((item) => item.id !== id));
   };
 
-  const resetForm = () => {
+  const resetForm = useCallback(() => {
     setSelectedSupplier(null);
     setMedicineSearch("");
     setPurchaseItems([]);
@@ -357,7 +357,16 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
     setPaymentTermsDays("");
     setSaving(false);
     setSelectedBranchId("");
-  };
+  }, [
+    setSelectedSupplier,
+    setMedicineSearch,
+    setPurchaseItems,
+    setExpectedDeliveryDate,
+    setPaymentMode,
+    setPaymentTermsDays,
+    setSaving,
+    setSelectedBranchId,
+  ]);
 
   const downloadPurchasePDF = (order) => {
     if (!order) return;
@@ -509,7 +518,10 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
     }
     for (const item of purchaseItems) {
       if (!Number.isFinite(item.qty) || item.qty <= 0) {
-        showToast("Please enter a valid quantity greater than 0 for all medicines", "error");
+        showToast(
+          "Please enter a valid quantity greater than 0 for all medicines",
+          "error",
+        );
         return;
       }
     }
@@ -520,7 +532,9 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
         branchId: finalBranchId,
         expectedDeliveryDate: expectedDeliveryDate || undefined,
         paymentMode: paymentMode || undefined,
-        paymentTermsDays: paymentTermsDays ? Number(paymentTermsDays) : undefined,
+        paymentTermsDays: paymentTermsDays
+          ? Number(paymentTermsDays)
+          : undefined,
         notes: undefined,
         items: purchaseItems.map((item) => ({
           medicineId: item.id,
@@ -539,7 +553,10 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
     } catch (err) {
       console.error("[PURCHASE] Save failed:", err);
       showToast(
-        err.response?.data?.error || err.response?.data?.message || err.message || "Failed to save purchase order",
+        err.response?.data?.error ||
+          err.response?.data?.message ||
+          err.message ||
+          "Failed to save purchase order",
         "error",
       );
     } finally {
@@ -551,47 +568,64 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
     if (e.key === "Escape") closeDrawer();
   };
 
-  const handleOpenDrawer = (type, row = null) => {
-    if (type === "new-purchase") {
-      loadMedicines();
-      resetForm();
-      setSelectedBranchId(
-        user?.branchId || (branches.length > 0 ? branches[0].id : ""),
-      );
+  const handleOpenDrawer = useCallback(
+    (type, row = null) => {
+      if (type === "new-purchase") {
+        loadMedicines();
+        resetForm();
+        setSelectedBranchId(
+          user?.branchId || (branches.length > 0 ? branches[0].id : ""),
+        );
+        setDrawer(type);
+        return;
+      }
+
+      if (!row) {
+        showToast("Unable to load invoice details", "error");
+        return;
+      }
+
+      setSelectedRow(row);
       setDrawer(type);
-      return;
-    }
 
-    if (!row) {
-      showToast("Unable to load invoice details", "error");
-      return;
-    }
-
-    setSelectedRow(row);
-    setDrawer(type);
-
-    if (type === "edit-purchase") {
-      loadMedicines();
-      setSelectedSupplier(row.supplier || null);
-      setExpectedDeliveryDate(
-        (row.expectedDeliveryDate || "").split("T")[0] || "",
-      );
-      setPaymentMode(row.paymentMode || "CREDIT");
-      setPaymentTermsDays(row.paymentTermsDays || "");
-      setSelectedBranchId(
-        row.branchId ||
-          user?.branchId ||
-          (branches.length > 0 ? branches[0].id : ""),
-      );
-      setPurchaseItems(
-        (row.items || []).map((item) => ({
-          id: item.medicineId || item.medicine?.id,
-          name: item.medicine?.name || item.medicineName || item.name || "",
-          qty: item.quantity || item.qty || 0,
-        })),
-      );
-    }
-  };
+      if (type === "edit-purchase") {
+        loadMedicines();
+        setSelectedSupplier(row.supplier || null);
+        setExpectedDeliveryDate(
+          (row.expectedDeliveryDate || "").split("T")[0] || "",
+        );
+        setPaymentMode(row.paymentMode || "CREDIT");
+        setPaymentTermsDays(row.paymentTermsDays || "");
+        setSelectedBranchId(
+          row.branchId ||
+            user?.branchId ||
+            (branches.length > 0 ? branches[0].id : ""),
+        );
+        setPurchaseItems(
+          (row.items || []).map((item) => ({
+            id: item.medicineId || item.medicine?.id,
+            name: item.medicine?.name || item.medicineName || item.name || "",
+            qty: item.quantity || item.qty || 0,
+          })),
+        );
+      }
+    },
+    [
+      loadMedicines,
+      resetForm,
+      user?.branchId,
+      branches,
+      showToast,
+      setSelectedBranchId,
+      setDrawer,
+      setSelectedRow,
+      setSelectedSupplier,
+      setExpectedDeliveryDate,
+      setPaymentMode,
+      setPaymentTermsDays,
+      setPurchaseItems,
+    ],
+  );
 
   const closeDrawer = () => {
     setDrawer(null);
@@ -705,8 +739,13 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
         navigate(location.pathname, { replace: true, state: {} });
       }, 0);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [location.state, suppliers, navigate, location.pathname]);
+  }, [
+    location.state,
+    suppliers,
+    navigate,
+    location.pathname,
+    handleOpenDrawer,
+  ]);
 
   /* ── Filtered Data Logic ── */
   const filteredInvoices = invoices.filter((inv) => {
@@ -1026,11 +1065,7 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
     !selectedSupplier ||
     (hasMultipleBranches ? !selectedBranchId : !finalBranchId) ||
     purchaseItems.length === 0 ||
-    purchaseItems.some(
-      (item) =>
-        !item.qty ||
-        safeNumber(item.qty) <= 0,
-    );
+    purchaseItems.some((item) => !item.qty || safeNumber(item.qty) <= 0);
 
   if (loading) {
     return (
@@ -1660,12 +1695,16 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
                         style={{ marginTop: "16px" }}
                       >
                         <div className="pos-input-group">
-                          <label className="p-label">EXPECTED DELIVERY DATE</label>
+                          <label className="p-label">
+                            EXPECTED DELIVERY DATE
+                          </label>
                           <input
                             className="pos-input"
                             type="date"
                             value={expectedDeliveryDate}
-                            onChange={(e) => setExpectedDeliveryDate(e.target.value)}
+                            onChange={(e) =>
+                              setExpectedDeliveryDate(e.target.value)
+                            }
                           />
                         </div>
                         <div className="pos-input-group">
@@ -1683,7 +1722,9 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
                           </select>
                         </div>
                         <div className="pos-input-group">
-                          <label className="p-label">PAYMENT TERMS (DAYS)</label>
+                          <label className="p-label">
+                            PAYMENT TERMS (DAYS)
+                          </label>
                           <input
                             className="pos-input"
                             type="number"
@@ -1691,7 +1732,9 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
                             max={365}
                             placeholder="e.g. 30"
                             value={paymentTermsDays}
-                            onChange={(e) => setPaymentTermsDays(e.target.value)}
+                            onChange={(e) =>
+                              setPaymentTermsDays(e.target.value)
+                            }
                           />
                         </div>
                       </div>
@@ -1848,9 +1891,14 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
                       </table>
 
                       {purchaseItems.length > 0 && (
-                        <div className="result-meta" style={{ padding: "12px 0", fontSize: "12px" }}>
-                          {purchaseItems.length} medicine{purchaseItems.length > 1 ? "s" : ""} added.
-                          Pricing, GST, batch, and expiry will be entered during Goods Receipt.
+                        <div
+                          className="result-meta"
+                          style={{ padding: "12px 0", fontSize: "12px" }}
+                        >
+                          {purchaseItems.length} medicine
+                          {purchaseItems.length > 1 ? "s" : ""} added. Pricing,
+                          GST, batch, and expiry will be entered during Goods
+                          Receipt.
                         </div>
                       )}
                     </div>
@@ -2574,27 +2622,27 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
                               />
                             </td>
                             <td>
-                               <input
-                                 required
-                                 className="p-cost-input"
-                                 style={{
-                                   width: "60px",
-                                   opacity: hasPrior && !isDiff ? 0.6 : 1,
-                                 }}
-                                 type="number"
-                                 min={0}
-                                 max={100}
-                                 step="0.01"
-                                 value={item.gstPercentage ?? 0}
-                                 disabled={hasPrior && !isDiff}
-                                 onChange={(e) => {
-                                   const newItems = [...receiveItems];
-                                   newItems[idx].gstPercentage = e.target.value;
-                                   setReceiveItems(newItems);
-                                 }}
-                               />
-                             </td>
-                             <td style={{ textAlign: "center" }}>
+                              <input
+                                required
+                                className="p-cost-input"
+                                style={{
+                                  width: "60px",
+                                  opacity: hasPrior && !isDiff ? 0.6 : 1,
+                                }}
+                                type="number"
+                                min={0}
+                                max={100}
+                                step="0.01"
+                                value={item.gstPercentage ?? 0}
+                                disabled={hasPrior && !isDiff}
+                                onChange={(e) => {
+                                  const newItems = [...receiveItems];
+                                  newItems[idx].gstPercentage = e.target.value;
+                                  setReceiveItems(newItems);
+                                }}
+                              />
+                            </td>
+                            <td style={{ textAlign: "center" }}>
                               {hasPrior ? (
                                 <input
                                   type="checkbox"

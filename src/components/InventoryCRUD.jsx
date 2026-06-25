@@ -1162,8 +1162,10 @@ function BatchModal({
       })
       .catch(() => {});
   }, []);
+  const [prevBatchId, setPrevBatchId] = useState(initialBatch?.id || null);
 
-  useEffect(() => {
+  if (selectedBatch?.id !== prevBatchId) {
+    setPrevBatchId(selectedBatch?.id || null);
     if (selectedBatch) {
       setForm({
         batchNumber: selectedBatch.batchNumber || "",
@@ -1185,8 +1187,10 @@ function BatchModal({
         rackLocation: selectedBatch.rackLocation || "",
         supplierId: selectedBatch.supplierId || "",
       });
+    } else {
+      setForm({ ...EMPTY_BATCH_FORM, supplierId: "" });
     }
-  }, [selectedBatch]);
+  }
 
   const handleSupplierChange = async (supplierId) => {
     if (!selectedBatch) return;
@@ -1197,6 +1201,7 @@ function BatchModal({
       setForm((f) => ({ ...f, supplierId: supplierId || "" }));
       showToast("Supplier updated", "success");
     } catch (err) {
+      console.error(err);
       showToast("Failed to update supplier", "error");
     } finally {
       setSavingSupplier(false);
@@ -1568,7 +1573,9 @@ function BatchModal({
                       ))}
                     </select>
                     {savingSupplier && (
-                      <span style={{ fontSize: "12px", color: "var(--text-muted)" }}>
+                      <span
+                        style={{ fontSize: "12px", color: "var(--text-muted)" }}
+                      >
                         Saving...
                       </span>
                     )}

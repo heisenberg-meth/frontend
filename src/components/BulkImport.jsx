@@ -17,7 +17,7 @@ import ExcelJS from "exceljs";
 import Papa from "papaparse";
 import api from "../api";
 import { getSuppliers, createSupplier } from "../services/suppliers.service.js";
-import { safeNumber } from '../utils/number.js';
+import { safeNumber } from "../utils/number.js";
 
 export default function BulkImport({ fetchData, showToast }) {
   const navigate = useNavigate();
@@ -64,7 +64,12 @@ export default function BulkImport({ fetchData, showToast }) {
   const [showAddSupplierModal, setShowAddSupplierModal] = useState(false);
   useEffect(() => {}, [showAddSupplierModal]);
   useEffect(() => {
-    return () => {};
+    return () => {
+      if (window._importPollTimer) {
+        clearTimeout(window._importPollTimer);
+        window._importPollTimer = null;
+      }
+    };
   }, []);
   const [showSaveMappingModal, setShowSaveMappingModal] = useState(false);
   const [showLoadMappingModal, setShowLoadMappingModal] = useState(false);
@@ -100,7 +105,16 @@ export default function BulkImport({ fetchData, showToast }) {
       const usedHeaders = new Set();
       const fieldKeywords = {
         nameColumn: ["name", "med", "medicine", "drug", "item"],
-        qtyColumn: ["qty", "quantity", "stock", "unit", "units", "count", "on hand", "available"],
+        qtyColumn: [
+          "qty",
+          "quantity",
+          "stock",
+          "unit",
+          "units",
+          "count",
+          "on hand",
+          "available",
+        ],
         expiryColumn: ["expiry", "exp", "date", "valid"],
         priceColumn: ["price", "rate", "cost", "inr"],
         batchColumn: ["batch", "lot", "no", "code"],
@@ -122,19 +136,148 @@ export default function BulkImport({ fetchData, showToast }) {
       };
 
       const fieldExcludes = {
-        nameColumn: ["generic", "price", "rate", "cost", "qty", "quantity", "stock", "expiry", "date", "batch", "barcode", "sku"],
-        qtyColumn: ["price", "rate", "cost", "inr", "date", "expiry", "name", "med", "batch", "barcode", "sku"],
-        expiryColumn: ["name", "med", "price", "qty", "batch", "barcode", "sku"],
-        priceColumn: ["qty", "quantity", "stock", "units", "count", "name", "med", "expiry", "date", "batch", "barcode", "sku"],
-        batchColumn: ["name", "med", "price", "qty", "expiry", "date", "barcode", "hsn"],
-        barcodeColumn: ["name", "med", "price", "qty", "expiry", "date", "batch"],
-        categoryColumn: ["name", "med", "price", "qty", "expiry", "date", "batch", "barcode", "generic"],
-        manufacturerColumn: ["name", "med", "price", "qty", "expiry", "date", "batch", "barcode", "generic", "category"],
-        genericNameColumn: ["name", "med", "price", "qty", "expiry", "date", "batch", "barcode"],
-        strengthColumn: ["name", "med", "price", "qty", "expiry", "date", "batch", "barcode"],
-        dosageFormColumn: ["name", "med", "price", "qty", "expiry", "date", "batch", "barcode"],
-        hsnCodeColumn: ["name", "med", "price", "qty", "expiry", "date", "batch", "barcode"],
-        gstPercentageColumn: ["name", "med", "price", "qty", "expiry", "date", "batch", "barcode"],
+        nameColumn: [
+          "generic",
+          "price",
+          "rate",
+          "cost",
+          "qty",
+          "quantity",
+          "stock",
+          "expiry",
+          "date",
+          "batch",
+          "barcode",
+          "sku",
+        ],
+        qtyColumn: [
+          "price",
+          "rate",
+          "cost",
+          "inr",
+          "date",
+          "expiry",
+          "name",
+          "med",
+          "batch",
+          "barcode",
+          "sku",
+        ],
+        expiryColumn: [
+          "name",
+          "med",
+          "price",
+          "qty",
+          "batch",
+          "barcode",
+          "sku",
+        ],
+        priceColumn: [
+          "qty",
+          "quantity",
+          "stock",
+          "units",
+          "count",
+          "name",
+          "med",
+          "expiry",
+          "date",
+          "batch",
+          "barcode",
+          "sku",
+        ],
+        batchColumn: [
+          "name",
+          "med",
+          "price",
+          "qty",
+          "expiry",
+          "date",
+          "barcode",
+          "hsn",
+        ],
+        barcodeColumn: [
+          "name",
+          "med",
+          "price",
+          "qty",
+          "expiry",
+          "date",
+          "batch",
+        ],
+        categoryColumn: [
+          "name",
+          "med",
+          "price",
+          "qty",
+          "expiry",
+          "date",
+          "batch",
+          "barcode",
+          "generic",
+        ],
+        manufacturerColumn: [
+          "name",
+          "med",
+          "price",
+          "qty",
+          "expiry",
+          "date",
+          "batch",
+          "barcode",
+          "generic",
+          "category",
+        ],
+        genericNameColumn: [
+          "name",
+          "med",
+          "price",
+          "qty",
+          "expiry",
+          "date",
+          "batch",
+          "barcode",
+        ],
+        strengthColumn: [
+          "name",
+          "med",
+          "price",
+          "qty",
+          "expiry",
+          "date",
+          "batch",
+          "barcode",
+        ],
+        dosageFormColumn: [
+          "name",
+          "med",
+          "price",
+          "qty",
+          "expiry",
+          "date",
+          "batch",
+          "barcode",
+        ],
+        hsnCodeColumn: [
+          "name",
+          "med",
+          "price",
+          "qty",
+          "expiry",
+          "date",
+          "batch",
+          "barcode",
+        ],
+        gstPercentageColumn: [
+          "name",
+          "med",
+          "price",
+          "qty",
+          "expiry",
+          "date",
+          "batch",
+          "barcode",
+        ],
       };
 
       if (fileHeaders.length <= 1) {
@@ -189,7 +332,9 @@ export default function BulkImport({ fetchData, showToast }) {
       name: String(row[mapping.nameColumn] || "").trim(),
       qty: mapping.qtyColumn ? String(row[mapping.qtyColumn] ?? "").trim() : "",
       expiry: String(row[mapping.expiryColumn] || "").trim(),
-      price: mapping.priceColumn ? String(row[mapping.priceColumn] ?? "").trim() : "",
+      price: mapping.priceColumn
+        ? String(row[mapping.priceColumn] ?? "").trim()
+        : "",
       batch: String(row[mapping.batchColumn] || "").trim(),
       barcode: String(row[mapping.barcodeColumn] || "").trim(),
       category: String(row[mapping.categoryColumn] || "").trim(),
@@ -622,32 +767,138 @@ export default function BulkImport({ fetchData, showToast }) {
         throw new Error(res.data?.message || "Failed to commit import");
       }
     } catch (error) {
+      console.error(error);
+      setImportStatus("idle");
+      showToast(error.message || "Failed to commit import", "error");
+    }
+  };
+
+  const handleFileUploadImport = async () => {
+    if (!file) {
+      showToast("Upload a file first", "error");
+      return;
+    }
+    if (!file.name.endsWith(".csv")) {
       showToast(
-              `Import complete: ${imported} imported, ${skipped} skipped`,
-              imported > 0 ? "success" : "warning",
-            );
-            resolve();
-          } else if (status === "failed" || status === "error") {
-            setImportStatus("idle");
-            showToast(summary?.error || "Import failed", "error");
-            reject(new Error(summary?.error || "Import failed"));
-          } else if (attempts >= maxAttempts) {
-            setImportStatus("idle");
-            reject(new Error("Import timed out"));
-          } else {
-            setTimeout(poll, 2000);
-          }
-        } catch (err) {
-          if (attempts >= maxAttempts) {
-            reject(new Error("Import polling failed"));
-            return;
-          }
-          setTimeout(poll, 3000);
-          console.error(err);
+        "Only CSV files are supported for raw ETL file uploads.",
+        "error",
+      );
+      return;
+    }
+
+    setImportStatus("processing");
+    setImportProgress(10);
+
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+      try {
+        const fileContent = e.target.result;
+        setImportProgress(20);
+
+        const res = await api.post("/import/upload", {
+          fileName: file.name,
+          fileContent,
+          duplicateStrategy,
+          barcodeOptions,
+          supplier: selectedSupplier,
+        });
+
+        if (res.data?.success && res.data?.data?.jobId) {
+          const jobId = res.data.data.jobId;
+          setImportJobId(jobId);
+          setImportProgress(30);
+
+          let attempts = 0;
+          const maxAttempts = 300; // 10 minutes (300 * 2 seconds)
+
+          const poll = async () => {
+            attempts++;
+            try {
+              const statusRes = await api.get(`/import/status/${jobId}`);
+              if (statusRes.data?.success && statusRes.data?.data) {
+                const { status, processed, total, summary } =
+                  statusRes.data.data;
+
+                if (total > 0) {
+                  const percent = Math.min(
+                    95,
+                    30 + Math.round((processed / total) * 65),
+                  );
+                  setImportProgress(percent);
+                }
+
+                if (
+                  status === "complete" ||
+                  status === "completed" ||
+                  status === "completed_with_errors"
+                ) {
+                  setImportProgress(100);
+                  setImportStatus("complete");
+                  const finalSummary = summary || {
+                    totalRows: total,
+                    importedCount: processed,
+                    newMedicinesCount: 0,
+                    newBatchesCount: 0,
+                    errors: [],
+                  };
+                  setCommitResult(finalSummary);
+                  setImportSummary(finalSummary);
+
+                  const imported = finalSummary.importedCount ?? 0;
+                  const skipped = (finalSummary.totalRows ?? 0) - imported;
+                  showToast(
+                    `Import complete: ${imported} imported, ${skipped} skipped`,
+                    imported > 0 ? "success" : "warning",
+                  );
+                  if (fetchData) fetchData();
+                } else if (
+                  status === "failed" ||
+                  status === "error" ||
+                  status === "cancelled"
+                ) {
+                  setImportStatus("idle");
+                  showToast(
+                    summary?.error || "Import failed on server side",
+                    "error",
+                  );
+                } else if (attempts >= maxAttempts) {
+                  setImportStatus("idle");
+                  showToast("Import timed out", "error");
+                } else {
+                  window._importPollTimer = setTimeout(poll, 2000);
+                }
+              } else {
+                throw new Error("Invalid response structure from status API");
+              }
+            } catch (err) {
+              console.error("[BulkImport] Polling error:", err);
+              if (attempts >= maxAttempts) {
+                setImportStatus("idle");
+                showToast("Import status check failed repeatedly", "error");
+              } else {
+                window._importPollTimer = setTimeout(poll, 3000);
+              }
+            }
+          };
+
+          window._importPollTimer = setTimeout(poll, 2000);
+        } else {
+          throw new Error(res.data?.message || "Failed to start ETL import");
         }
-      };
-      poll();
-    });
+      } catch (error) {
+        console.error(error);
+        setImportStatus("idle");
+        showToast(
+          error.message || "Failed to initiate file upload import",
+          "error",
+        );
+      }
+    };
+    reader.onerror = () => {
+      setImportStatus("idle");
+      showToast("Failed to read file", "error");
+    };
+    reader.readAsText(file);
   };
 
   const cancelImport = () => {

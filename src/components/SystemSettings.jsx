@@ -146,7 +146,7 @@ export default function SystemSettings({
       }
     };
     loadSettings();
-  }, [setExpiryDays, setLowStock, setTheme]);
+  }, [setExpiryDays, setLowStock, setTheme, showToast]);
 
   const refreshOpsData = async () => {
     try {
