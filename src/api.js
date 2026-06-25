@@ -64,9 +64,25 @@ const MAX_REFRESH_ATTEMPTS = 3;
 let csrfToken = null;
 let csrfPromise = null;
 
-export async function getCsrfToken() {
-  if (csrfToken) return csrfToken;
-  if (csrfPromise) return csrfPromise;
+/**
+ * Invalidate the cached CSRF token so the next getCsrfToken() call
+ * fetches a fresh value from the server. Call this after login, logout,
+ * and session expiry — any event where the backend issues a new CSRF cookie.
+ */
+export function invalidateCsrfToken() {
+  csrfToken = null;
+  csrfPromise = null;
+}
+
+export async function getCsrfToken(forceRefresh = false) {
+  if (csrfToken && !forceRefresh) return csrfToken;
+  if (csrfPromise && !forceRefresh) return csrfPromise;
+
+  // If forcing, discard any in-flight promise too
+  if (forceRefresh) {
+    csrfToken = null;
+    csrfPromise = null;
+  }
 
   csrfPromise = axios
     .get(`${getBaseUrl()}/csrf-token`, {
@@ -264,7 +280,7 @@ api.interceptors.response.use(
         refreshAttempts = 0;
         // Process queue with the new token so queued requests can use it
         processQueue(null, newToken);
-        
+
         // Update the original request with the new token and retry
         if (newToken) {
           originalRequest.headers.Authorization = `Bearer ${newToken}`;

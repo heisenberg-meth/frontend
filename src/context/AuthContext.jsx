@@ -1,5 +1,5 @@
 import { useMemo, useState, useEffect, useCallback, useRef } from "react";
-import api, { getBaseUrl, getCsrfToken } from "../api";
+import api, { getBaseUrl, invalidateCsrfToken } from "../api";
 import axios from "axios";
 import { API_ROUTES } from "../constants/api.routes.js";
 import { clearAllAuth, getStoredUser, setUser } from "../utils/authStorage";
@@ -78,43 +78,23 @@ export function AuthProvider({ children }) {
 
   const refreshToken = useCallback(async () => {
     try {
-      let activeCsrfToken = await getCsrfToken();
       const headers = {
         ...(import.meta.env.DEV && {
           "ngrok-skip-browser-warning": "69420",
         }),
       };
-      if (activeCsrfToken) headers["x-csrf-token"] = activeCsrfToken;
 
-      let res;
-      try {
-        res = await axios.post(
-          `${getBaseUrl()}/auth/refresh`,
-          {},
-          {
-            withCredentials: true,
-            timeout: 60000,
-            headers,
-          },
-        );
-      } catch (refreshErr) {
-        if (refreshErr.response?.data?.reason?.includes("csrf")) {
-          // Request a new CSRF token and retry once
-          activeCsrfToken = await getCsrfToken(true);
-          if (activeCsrfToken) headers["x-csrf-token"] = activeCsrfToken;
-          res = await axios.post(
-            `${getBaseUrl()}/auth/refresh`,
-            {},
-            {
-              withCredentials: true,
-              timeout: 60000,
-              headers,
-            },
-          );
-        } else {
-          throw refreshErr;
-        }
-      }
+      // /auth/refresh is CSRF-exempt — authenticated solely by the
+      // HttpOnly refresh_token cookie. No CSRF header needed.
+      const res = await axios.post(
+        `${getBaseUrl()}/auth/refresh`,
+        {},
+        {
+          withCredentials: true,
+          timeout: 60000,
+          headers,
+        },
+      );
 
       const payload = res.data?.data || res.data;
       const newToken = payload?.token || payload?.accessToken;
@@ -125,10 +105,15 @@ export function AuthProvider({ children }) {
 
       localStorage.setItem("viyan_token", newToken);
 
+      // Backend may have rotated the CSRF cookie during refresh —
+      // flush the cache so the next write request fetches a fresh one.
+      invalidateCsrfToken();
+
       return newToken;
     } catch (error) {
       console.error("[AUTH] Token refresh failed:", error.message || error);
       clearAuthState();
+      invalidateCsrfToken();
       return null;
     }
   }, [clearAuthState]);
@@ -207,6 +192,9 @@ export function AuthProvider({ children }) {
         localStorage.setItem("viyan_token", receivedToken);
       }
 
+      // Backend issued a new CSRF cookie on login — flush the stale cached token
+      invalidateCsrfToken();
+
       if (deviceToken) {
         localStorage.setItem("viyan_device_token", deviceToken);
       }
@@ -249,6 +237,7 @@ export function AuthProvider({ children }) {
         }
       } finally {
         clearAuthState();
+        invalidateCsrfToken();
       }
     },
     [clearAuthState],
