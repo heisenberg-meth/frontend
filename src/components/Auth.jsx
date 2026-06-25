@@ -10,7 +10,7 @@ export default function Auth({ onAuth }) {
     email: "",
     password: "",
     otp: "",
-    twoFactorToken: "",
+
     newPassword: "",
     confirmPassword: "",
     resetToken: "",
@@ -112,11 +112,6 @@ export default function Auth({ onAuth }) {
       return;
     }
 
-    if (view === "verify2FA" && !form.twoFactorToken) {
-      setError("Please enter the 2FA code.");
-      return;
-    }
-
     setLoading(true);
 
     try {
@@ -132,9 +127,6 @@ export default function Auth({ onAuth }) {
         if (result?.deviceVerificationRequired) {
           setView("verifyDeviceOtp");
           setSuccess(result.message);
-        } else if (result?.twoFactorVerificationRequired) {
-          setView("verify2FA");
-          setSuccess(result.message);
         }
       } else if (view === "verifyDeviceOtp") {
         await onAuth(
@@ -143,16 +135,6 @@ export default function Auth({ onAuth }) {
             password,
             fingerprint: getFingerprint(),
             otp: form.otp,
-          },
-          false,
-        );
-      } else if (view === "verify2FA") {
-        await onAuth(
-          {
-            email: email.toLowerCase(),
-            password,
-            fingerprint: getFingerprint(),
-            twoFactorToken: form.twoFactorToken,
           },
           false,
         );
@@ -320,7 +302,7 @@ export default function Auth({ onAuth }) {
               {view === "forgot" && "Forgot Password"}
               {view === "verifyOtp" && "Verify Code"}
               {view === "verifyDeviceOtp" && "Verify Device"}
-              {view === "verify2FA" && "Two-Factor Authentication"}
+
               {view === "newPassword" && "Create New Password"}
             </h2>
             <p className="canvas-subtitle">
@@ -335,8 +317,7 @@ export default function Auth({ onAuth }) {
                 "Enter the 6-digit code sent to your email."}
               {view === "verifyDeviceOtp" &&
                 "Enter the 6-digit authorization code sent to your email."}
-              {view === "verify2FA" &&
-                "Enter the 6-digit code from your authenticator app."}
+
               {view === "newPassword" &&
                 "Choose a strong password for your account."}
             </p>
@@ -450,9 +431,7 @@ export default function Auth({ onAuth }) {
                       value={form.email}
                       onChange={(e) => updateField("email", e.target.value)}
                       disabled={
-                        view === "verifyOtp" ||
-                        view === "verifyDeviceOtp" ||
-                        view === "verify2FA"
+                        view === "verifyOtp" || view === "verifyDeviceOtp"
                       }
                       autoComplete="off"
                     />
@@ -529,28 +508,6 @@ export default function Auth({ onAuth }) {
                       Resend Code
                     </button>
                   )}
-                </div>
-              )}
-
-              {view === "verify2FA" && (
-                <div className="control-group">
-                  <label className="control-label">AUTHENTICATOR CODE</label>
-                  <div className="control-input-wrap">
-                    <Shield size={18} className="input-icon-left" />
-                    <input
-                      required
-                      type="text"
-                      className="canvas-input"
-                      placeholder="Enter 6-digit 2FA code"
-                      value={form.twoFactorToken}
-                      onChange={(e) =>
-                        updateField("twoFactorToken", e.target.value)
-                      }
-                      maxLength={6}
-                      pattern="\d{6}"
-                      autoFocus
-                    />
-                  </div>
                 </div>
               )}
 
@@ -645,9 +602,7 @@ export default function Auth({ onAuth }) {
                 "Create Account"
               ) : view === "forgot" ? (
                 "Send Recovery Code"
-              ) : view === "verifyOtp" ||
-                view === "verifyDeviceOtp" ||
-                view === "verify2FA" ? (
+              ) : view === "verifyOtp" || view === "verifyDeviceOtp" ? (
                 "Verify Code"
               ) : (
                 "Reset Password"
@@ -714,7 +669,6 @@ export default function Auth({ onAuth }) {
             {(view === "forgot" ||
               view === "verifyOtp" ||
               view === "verifyDeviceOtp" ||
-              view === "verify2FA" ||
               view === "newPassword") && (
               <button type="button" onClick={() => navigateTo("login")}>
                 Back to Sign In

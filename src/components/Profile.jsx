@@ -54,7 +54,6 @@ export default function Profile({
   const [activeModals, setActiveModals] = useState({
     photo: false,
     password: false,
-    twoFactor: false,
     sessions: false,
   });
   const [syncing, setSyncing] = useState(false);
@@ -196,7 +195,10 @@ export default function Profile({
             <div className="avatar-container">
               <div className="profile-avatar-large">
                 <img
-                  src={getAvatarUrl(profileData.avatar || user?.avatar, formData.fullName || user?.username)}
+                  src={getAvatarUrl(
+                    profileData.avatar || user?.avatar,
+                    formData.fullName || user?.username,
+                  )}
                   alt="Profile"
                 />
                 <div
@@ -391,7 +393,10 @@ export default function Profile({
             <div className="photo-modal-content">
               <div className="photo-preview-large">
                 <img
-                  src={getAvatarUrl(profileData.avatar || user?.avatar, formData.fullName)}
+                  src={getAvatarUrl(
+                    profileData.avatar || user?.avatar,
+                    formData.fullName,
+                  )}
                   alt="Preview"
                 />
               </div>
@@ -514,43 +519,6 @@ export default function Profile({
                   "UPDATE SECURITY CREDENTIALS"
                 )}
               </button>
-            </div>
-          </Modal>
-        )}
-
-        {activeModals.twoFactor && (
-          <Modal
-            title="Multi-Factor Authentication"
-            onClose={() => toggleModal("twoFactor")}
-          >
-            <div className="tfa-modal-content">
-              <div className="tfa-options">
-                <div className="tfa-option active">
-                  <div className="tfa-icon">
-                    <Mail size={20} />
-                  </div>
-                  <div className="tfa-info">
-                    <h4>Email Authentication (OTP)</h4>
-                    <p>
-                      Receive unique codes via your registered clinical email.
-                    </p>
-                  </div>
-                  <div className="tfa-status">ACTIVE</div>
-                </div>
-                <div className="tfa-option">
-                  <div className="tfa-icon">
-                    <Smartphone size={20} />
-                  </div>
-                  <div className="tfa-info">
-                    <h4>SMS Verification</h4>
-                    <p>
-                      Security codes sent directly to your verified phone
-                      number.
-                    </p>
-                  </div>
-                  <button className="option-enable-btn">ENABLE</button>
-                </div>
-              </div>
             </div>
           </Modal>
         )}
