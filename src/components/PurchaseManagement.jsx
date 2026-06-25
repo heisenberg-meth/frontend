@@ -118,6 +118,8 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
   const handleOpenReceiveModal = async (po) => {
     setSelectedRow(po);
     setDifferentBatch({});
+    setGrnInvoiceNumber("");
+    setGrnInvoiceDate(new Date().toISOString().split("T")[0]);
 
     let priorGRN = null;
     try {
@@ -134,23 +136,20 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
           0,
           (item.quantity || 0) - (item.receivedQuantity || 0),
         );
-        const unitPrice =
-          item.purchasePrice || item.unitPrice || item.price || 0;
 
         const priorItem = priorGRN?.items?.find(
           (gi) => gi.purchaseOrderItemId === item.id,
         );
 
-        // Pre-fill batch/expiry from: 1) prior GRN data, 2) PO item data, 3) empty
-        const batchNumber = priorItem?.batchNumber || item.batchNumber || "";
+        // Pre-fill batch/expiry from: 1) prior GRN data, 2) empty
+        const batchNumber = priorItem?.batchNumber || "";
         const expiryDate = priorItem?.expiryDate
           ? priorItem.expiryDate.split("T")[0]
-          : item.expiryDate
-            ? item.expiryDate.split("T")[0]
-            : "";
+          : "";
 
         return {
           ...item,
+          medicineId: item.medicineId,
           orderedQuantity: item.quantity || 0,
           prevReceivedQuantity: item.receivedQuantity || 0,
           pendingQuantity: remaining,
@@ -159,12 +158,11 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
           expiryDate,
           purchasePrice: priorItem?.purchasePrice
             ? safeNumber(priorItem.purchasePrice)
-            : unitPrice,
-          mrp: priorItem?.sellingPrice
-            ? safeNumber(priorItem.sellingPrice)
-            : item.mrp ||
-              item.sellingPrice ||
-              (unitPrice ? (safeNumber(unitPrice) * 1.2).toFixed(2) : 0),
+            : 0,
+          mrp: priorItem?.mrp ? safeNumber(priorItem.mrp) : 0,
+          gstPercentage: priorItem?.gstPercentage
+            ? safeNumber(priorItem.gstPercentage)
+            : 0,
         };
       }),
     );
@@ -297,12 +295,16 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
   /* ── New Purchase Form State ── */
   const [selectedSupplier, setSelectedSupplier] = useState(null);
   const [medicineSearch, setMedicineSearch] = useState("");
-  const [invoiceDate, setInvoiceDate] = useState(
-    new Date().toISOString().split("T")[0],
-  );
-  const [supplierInvNo, setSupplierInvNo] = useState("");
+  const [expectedDeliveryDate, setExpectedDeliveryDate] = useState("");
+  const [paymentMode, setPaymentMode] = useState("CREDIT");
+  const [paymentTermsDays, setPaymentTermsDays] = useState("");
   const [saving, setSaving] = useState(false);
 
+  /* ── Receive Goods Modal State ── */
+  const [grnInvoiceNumber, setGrnInvoiceNumber] = useState("");
+  const [grnInvoiceDate, setGrnInvoiceDate] = useState(
+    new Date().toISOString().split("T")[0],
+  );
   /* ── Credit Application State ── */
   const [supplierCredit, setSupplierCredit] = useState({
     available: 0,
@@ -316,17 +318,6 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
     (m.name || "").toLowerCase().includes(medicineSearch.toLowerCase()),
   );
 
-  const subtotal = purchaseItems.reduce(
-    (acc, i) => acc + i.qty * (i.purchasePrice || 0),
-    0,
-  );
-  const gstTotal = purchaseItems.reduce(
-    (acc, i) =>
-      acc + (i.qty * (i.purchasePrice || 0) * (i.gstPercentage || 0)) / 100,
-    0,
-  );
-  const grandTotal = subtotal + gstTotal;
-
   const addMedicine = (medicine) => {
     const exists = purchaseItems.find((i) => i.id === medicine.id);
     if (exists) return;
@@ -335,13 +326,8 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
       {
         ...medicine,
         qty: 1,
-        purchasePrice: medicine.purchasePrice || 0,
-        gstPercentage: medicine.gstPercentage || 12,
-        batchNumber: "",
-        expiryDate: "",
       },
     ]);
-
     setMedicineSearch("");
   };
 
@@ -351,13 +337,7 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
         item.id === id
           ? {
               ...item,
-              [field]:
-                field === "qty" ||
-                field === "purchasePrice" ||
-                field === "sellingPrice" ||
-                field === "gstPercentage"
-                  ? safeNumber(value)
-                  : value,
+              [field]: field === "qty" ? safeNumber(value) : value,
             }
           : item,
       ),
@@ -372,8 +352,9 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
     setSelectedSupplier(null);
     setMedicineSearch("");
     setPurchaseItems([]);
-    setInvoiceDate(new Date().toISOString().split("T")[0]);
-    setSupplierInvNo("");
+    setExpectedDeliveryDate("");
+    setPaymentMode("CREDIT");
+    setPaymentTermsDays("");
     setSaving(false);
     setSelectedBranchId("");
   };
@@ -526,30 +507,9 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
       showToast("Add at least one medicine", "error");
       return;
     }
-    if (!supplierInvNo.trim()) {
-      showToast("Enter supplier invoice number", "error");
-      return;
-    }
-    if (
-      purchaseItems.some(
-        (item) => !item.batchNumber || !item.batchNumber.trim(),
-      )
-    ) {
-      showToast("Please enter batch number for all medicines", "error");
-      return;
-    }
-    if (purchaseItems.some((item) => !item.expiryDate)) {
-      showToast("Please enter expiry date for all medicines", "error");
-      return;
-    }
-
     for (const item of purchaseItems) {
-      if (!Number.isFinite(item.qty)) {
-        showToast("Invalid Quantity", "error");
-        return;
-      }
-      if (!Number.isFinite(item.purchasePrice)) {
-        showToast("Invalid Price", "error");
+      if (!Number.isFinite(item.qty) || item.qty <= 0) {
+        showToast("Please enter a valid quantity greater than 0 for all medicines", "error");
         return;
       }
     }
@@ -558,39 +518,28 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
       const payload = {
         supplierId: selectedSupplier.id,
         branchId: finalBranchId,
-        supplierInvoiceNumber: supplierInvNo.trim(),
-        invoiceDate: invoiceDate
-          ? new Date(invoiceDate).toISOString()
-          : new Date().toISOString(),
+        expectedDeliveryDate: expectedDeliveryDate || undefined,
+        paymentMode: paymentMode || undefined,
+        paymentTermsDays: paymentTermsDays ? Number(paymentTermsDays) : undefined,
+        notes: undefined,
         items: purchaseItems.map((item) => ({
           medicineId: item.id,
           quantity: safeNumber(item.qty),
-          purchasePrice: safeNumber(item.purchasePrice || 0),
-          sellingPrice: safeNumber(
-            item.sellingPrice || item.mrp || item.purchasePrice || 0,
-          ),
-          batchNumber: item.batchNumber.trim(),
-          expiryDate: new Date(item.expiryDate).toISOString(),
         })),
-        subtotal,
-        gstAmount: gstTotal,
-        totalAmount: grandTotal,
       };
       if (drawer === "edit-purchase" && selectedRow?.id) {
-        await api.patch(`/purchase-orders/${selectedRow.id}/status`, {
-          status: "DRAFT",
-        });
+        await api.put(`/purchase-orders/${selectedRow.id}`, payload);
         showToast("Purchase order updated", "success");
       } else {
         await createPurchaseOrder(payload);
-        showToast("Purchase Saved Successfully", "success");
+        showToast("Purchase Order Created Successfully", "success");
       }
       closeDrawer();
       await refreshData();
     } catch (err) {
       console.error("[PURCHASE] Save failed:", err);
       showToast(
-        err.response?.data?.error || err.message || "Failed to save purchase",
+        err.response?.data?.error || err.response?.data?.message || err.message || "Failed to save purchase order",
         "error",
       );
     } finally {
@@ -624,11 +573,11 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
     if (type === "edit-purchase") {
       loadMedicines();
       setSelectedSupplier(row.supplier || null);
-      setInvoiceDate(
-        (row.invoiceDate || row.date || "").split("T")[0] ||
-          new Date().toISOString().split("T")[0],
+      setExpectedDeliveryDate(
+        (row.expectedDeliveryDate || "").split("T")[0] || "",
       );
-      setSupplierInvNo(row.supplierInvoiceNumber || "");
+      setPaymentMode(row.paymentMode || "CREDIT");
+      setPaymentTermsDays(row.paymentTermsDays || "");
       setSelectedBranchId(
         row.branchId ||
           user?.branchId ||
@@ -639,12 +588,6 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
           id: item.medicineId || item.medicine?.id,
           name: item.medicine?.name || item.medicineName || item.name || "",
           qty: item.quantity || item.qty || 0,
-          purchasePrice: safeNumber(
-            item.purchasePrice || item.unitPrice || item.price || 0,
-          ),
-          gstPercentage: safeNumber(item.gstPercentage || 0),
-          batchNumber: item.batchNumber || "",
-          expiryDate: item.expiryDate ? item.expiryDate.split("T")[0] : "",
         })),
       );
     }
@@ -827,6 +770,17 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
     if (isReceiving) return;
     try {
       setIsReceiving(true);
+
+      // Validate supplier invoice fields
+      if (!grnInvoiceNumber.trim()) {
+        showToast("Please enter the Supplier Invoice Number", "warning");
+        return;
+      }
+      if (!grnInvoiceDate) {
+        showToast("Please enter the Invoice Date", "warning");
+        return;
+      }
+
       const itemsToReceive = receiveItems.filter(
         (item) => safeNumber(item.receivedQuantity) > 0,
       );
@@ -850,7 +804,7 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
         return;
       }
 
-      // Validation 1: Receive Qty <= Pending Qty
+      // Validation: Receive Qty <= Pending Qty
       const exceedsPending = itemsToReceive.find(
         (item) =>
           safeNumber(item.receivedQuantity) > safeNumber(item.pendingQuantity),
@@ -863,7 +817,7 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
         return;
       }
 
-      // Validation 2: Expiry Date < Today
+      // Validation: Expiry Date >= Today
       const today = new Date();
       today.setHours(0, 0, 0, 0);
       const expiredItem = itemsToReceive.find(
@@ -871,13 +825,13 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
       );
       if (expiredItem) {
         showToast(
-          `Expiry date for ${expiredItem.medicine?.name || expiredItem.medicineName || expiredItem.name || "item"} must be in the future (today or later)`,
+          `Expiry date for ${expiredItem.medicine?.name || expiredItem.medicineName || expiredItem.name || "item"} must be in the future`,
           "warning",
         );
         return;
       }
 
-      // Validation 3: Purchase Price <= 0
+      // Validation: Purchase Price > 0
       const invalidPrice = itemsToReceive.find(
         (item) => safeNumber(item.purchasePrice) <= 0,
       );
@@ -889,7 +843,7 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
         return;
       }
 
-      // Validation 4: MRP <= 0
+      // Validation: MRP > 0
       const invalidMRP = itemsToReceive.find(
         (item) => safeNumber(item.mrp) <= 0,
       );
@@ -903,20 +857,24 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
 
       showToast("Receiving order...", "info");
       const payload = {
+        supplierInvoiceNumber: grnInvoiceNumber.trim(),
+        invoiceDate: grnInvoiceDate,
         receivedItems: itemsToReceive.map((item) => ({
           medicineId: item.medicineId || item.id,
           receivedQuantity: safeNumber(item.receivedQuantity),
           batchNumber: item.batchNumber.trim(),
           expiryDate: item.expiryDate,
           purchasePrice: safeNumber(item.purchasePrice),
-          sellingPrice: safeNumber(item.mrp),
           mrp: safeNumber(item.mrp),
+          gstPercentage: safeNumber(item.gstPercentage || 0),
         })),
       };
       await receivePurchaseOrder(selectedRow.id, payload);
       showToast("Order Received & Inventory Updated", "success");
       setShowReceiveModal(false);
       setDifferentBatch({});
+      setGrnInvoiceNumber("");
+      setGrnInvoiceDate(new Date().toISOString().split("T")[0]);
       await refreshData();
     } catch (err) {
       console.error(err);
@@ -1063,20 +1021,15 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
     user?.branchId ||
     (branches.length > 0 ? branches[0].id : "");
   const hasMultipleBranches = branches.length > 1;
+  // PO form is only invalid if supplier, medicines, or quantities are missing
   const isFormInvalid =
     !selectedSupplier ||
     (hasMultipleBranches ? !selectedBranchId : !finalBranchId) ||
-    !supplierInvNo.trim() ||
     purchaseItems.length === 0 ||
     purchaseItems.some(
       (item) =>
         !item.qty ||
-        safeNumber(item.qty) <= 0 ||
-        !item.purchasePrice ||
-        safeNumber(item.purchasePrice) <= 0 ||
-        !item.batchNumber ||
-        !item.batchNumber.trim() ||
-        !item.expiryDate,
+        safeNumber(item.qty) <= 0,
     );
 
   if (loading) {
@@ -1707,23 +1660,38 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
                         style={{ marginTop: "16px" }}
                       >
                         <div className="pos-input-group">
-                          <label className="p-label">INVOICE DATE</label>
+                          <label className="p-label">EXPECTED DELIVERY DATE</label>
                           <input
-                            required
                             className="pos-input"
                             type="date"
-                            value={invoiceDate}
-                            onChange={(e) => setInvoiceDate(e.target.value)}
+                            value={expectedDeliveryDate}
+                            onChange={(e) => setExpectedDeliveryDate(e.target.value)}
                           />
                         </div>
                         <div className="pos-input-group">
-                          <label className="p-label">SUPPLIER INV #</label>
-                          <input
-                            required
+                          <label className="p-label">PAYMENT MODE</label>
+                          <select
                             className="pos-input"
-                            placeholder="e.g. CIP-9921"
-                            value={supplierInvNo}
-                            onChange={(e) => setSupplierInvNo(e.target.value)}
+                            value={paymentMode}
+                            onChange={(e) => setPaymentMode(e.target.value)}
+                          >
+                            <option value="CASH">Cash</option>
+                            <option value="CREDIT">Credit</option>
+                            <option value="UPI">UPI</option>
+                            <option value="BANK_TRANSFER">Bank Transfer</option>
+                            <option value="CHEQUE">Cheque</option>
+                          </select>
+                        </div>
+                        <div className="pos-input-group">
+                          <label className="p-label">PAYMENT TERMS (DAYS)</label>
+                          <input
+                            className="pos-input"
+                            type="number"
+                            min={0}
+                            max={365}
+                            placeholder="e.g. 30"
+                            value={paymentTermsDays}
+                            onChange={(e) => setPaymentTermsDays(e.target.value)}
                           />
                         </div>
                       </div>
@@ -1823,11 +1791,7 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
                         <thead>
                           <tr>
                             <th>Medicine</th>
-                            <th>Batch #</th>
-                            <th>Expiry</th>
-                            <th>Qty</th>
-                            <th>Cost</th>
-                            <th style={{ textAlign: "right" }}>Total</th>
+                            <th>Required Qty</th>
                             <th></th>
                           </tr>
                         </thead>
@@ -1835,7 +1799,7 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
                           <tbody>
                             <tr>
                               <td
-                                colSpan={7}
+                                colSpan={3}
                                 style={{
                                   textAlign: "center",
                                   padding: "24px",
@@ -1854,75 +1818,19 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
                               <tr key={item.id}>
                                 <td style={{ fontSize: "12px" }}>
                                   <b>{item.name}</b>
-                                  <div className="result-meta">
-                                    GST: {item.gstPercentage}%
-                                  </div>
                                 </td>
                                 <td>
                                   <input
                                     required
                                     className="p-cost-input"
-                                    style={{ width: "80px" }}
-                                    placeholder="Batch..."
-                                    value={item.batchNumber || ""}
-                                    onChange={(e) =>
-                                      updateItem(
-                                        item.id,
-                                        "batchNumber",
-                                        e.target.value,
-                                      )
-                                    }
-                                  />
-                                </td>
-                                <td>
-                                  <input
-                                    required
-                                    className="p-cost-input"
-                                    type="date"
-                                    style={{ width: "125px" }}
-                                    value={item.expiryDate || ""}
-                                    onChange={(e) =>
-                                      updateItem(
-                                        item.id,
-                                        "expiryDate",
-                                        e.target.value,
-                                      )
-                                    }
-                                  />
-                                </td>
-                                <td>
-                                  <input
-                                    required
-                                    className="p-cost-input"
-                                    style={{ width: "50px" }}
+                                    style={{ width: "60px" }}
+                                    type="number"
+                                    min={1}
                                     value={item.qty}
                                     onChange={(e) =>
                                       updateItem(item.id, "qty", e.target.value)
                                     }
                                   />
-                                </td>
-                                <td>
-                                  <input
-                                    required
-                                    className="p-cost-input"
-                                    style={{ width: "65px" }}
-                                    value={item.purchasePrice}
-                                    onChange={(e) =>
-                                      updateItem(
-                                        item.id,
-                                        "purchasePrice",
-                                        e.target.value,
-                                      )
-                                    }
-                                  />
-                                </td>
-                                <td
-                                  style={{
-                                    textAlign: "right",
-                                    fontWeight: 700,
-                                  }}
-                                >
-                                  ₹{(item.qty * item.purchasePrice).toFixed(2)}
                                 </td>
                                 <td>
                                   <button
@@ -1939,48 +1847,12 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
                         )}
                       </table>
 
-                      <div className="purchase-summary">
-                        <div className="summary-row">
-                          <span>Subtotal</span>
-                          <span>₹{subtotal.toFixed(2)}</span>
+                      {purchaseItems.length > 0 && (
+                        <div className="result-meta" style={{ padding: "12px 0", fontSize: "12px" }}>
+                          {purchaseItems.length} medicine{purchaseItems.length > 1 ? "s" : ""} added.
+                          Pricing, GST, batch, and expiry will be entered during Goods Receipt.
                         </div>
-                        {purchaseItems.map((item) => {
-                          const itemGst =
-                            (item.qty *
-                              item.purchasePrice *
-                              item.gstPercentage) /
-                            100;
-                          return (
-                            <div
-                              key={item.id}
-                              className="summary-row result-meta"
-                              style={{ fontSize: "11px" }}
-                            >
-                              <span>
-                                {item.name} (GST {item.gstPercentage}%)
-                              </span>
-                              <span>₹{itemGst.toFixed(2)}</span>
-                            </div>
-                          );
-                        })}
-                        <div
-                          style={{
-                            display: "flex",
-                            justifyContent: "space-between",
-                            fontFamily: "Outfit",
-                            fontSize: "22px",
-                            fontWeight: 700,
-                            color: "var(--primary)",
-                            borderTop: "1px solid rgba(255,255,255,0.06)",
-                            paddingTop: "12px",
-                            marginTop: "8px",
-                            width: "100%",
-                          }}
-                        >
-                          <span>Total</span>
-                          <span>₹{grandTotal.toFixed(2)}</span>
-                        </div>
-                      </div>
+                      )}
                     </div>
                   </>
                 ) : (
@@ -2521,9 +2393,44 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
               </div>
               <div className="stock-modal-body">
                 <p className="result-meta" style={{ marginBottom: "16px" }}>
-                  Please confirm the quantities received for{" "}
-                  {selectedRow?.poNumber || selectedRow?.id}.
+                  Enter supplier invoice details and confirm quantities received
+                  for {selectedRow?.orderNumber || selectedRow?.id}.
                 </p>
+
+                {/* Supplier Invoice Details */}
+                <div
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: "1fr 1fr",
+                    gap: "12px",
+                    marginBottom: "20px",
+                    padding: "16px",
+                    background: "var(--overlay-01)",
+                    borderRadius: "8px",
+                    border: "1px solid var(--outline-variant)",
+                  }}
+                >
+                  <div className="pos-input-group">
+                    <label className="p-label">SUPPLIER INVOICE NUMBER *</label>
+                    <input
+                      required
+                      className="pos-input"
+                      placeholder="e.g. INV-24589"
+                      value={grnInvoiceNumber}
+                      onChange={(e) => setGrnInvoiceNumber(e.target.value)}
+                    />
+                  </div>
+                  <div className="pos-input-group">
+                    <label className="p-label">INVOICE DATE *</label>
+                    <input
+                      required
+                      className="pos-input"
+                      type="date"
+                      value={grnInvoiceDate}
+                      onChange={(e) => setGrnInvoiceDate(e.target.value)}
+                    />
+                  </div>
+                </div>
 
                 <div style={{ overflowX: "auto" }}>
                   <table className="p-line-table">
@@ -2538,6 +2445,7 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
                         <th>Expiry</th>
                         <th>Purchase Price</th>
                         <th>MRP</th>
+                        <th>GST %</th>
                         <th style={{ width: 70 }}>
                           <div
                             style={{
@@ -2665,7 +2573,28 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
                                 }}
                               />
                             </td>
-                            <td style={{ textAlign: "center" }}>
+                            <td>
+                               <input
+                                 required
+                                 className="p-cost-input"
+                                 style={{
+                                   width: "60px",
+                                   opacity: hasPrior && !isDiff ? 0.6 : 1,
+                                 }}
+                                 type="number"
+                                 min={0}
+                                 max={100}
+                                 step="0.01"
+                                 value={item.gstPercentage ?? 0}
+                                 disabled={hasPrior && !isDiff}
+                                 onChange={(e) => {
+                                   const newItems = [...receiveItems];
+                                   newItems[idx].gstPercentage = e.target.value;
+                                   setReceiveItems(newItems);
+                                 }}
+                               />
+                             </td>
+                             <td style={{ textAlign: "center" }}>
                               {hasPrior ? (
                                 <input
                                   type="checkbox"
@@ -2695,7 +2624,7 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
                       })}
                       {receiveItems.length === 0 && (
                         <tr>
-                          <td colSpan="10">No items to receive.</td>
+                          <td colSpan="11">No items to receive.</td>
                         </tr>
                       )}
                     </tbody>

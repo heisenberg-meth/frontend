@@ -664,7 +664,7 @@ export default function Auth({ onAuth }) {
                 <div className="divider-line"></div>
               </div>
 
-              <div className="sso-grid">
+              {/* <div className="sso-grid">
                 <button type="button" className="sso-btn" disabled>
                   <svg width="18" height="18" viewBox="0 0 24 24">
                     <path
@@ -690,7 +690,7 @@ export default function Auth({ onAuth }) {
                   <Shield size={18} />
                   <span>SSO</span>
                 </button>
-              </div>
+              </div> */}
             </>
           )}
 
