@@ -73,8 +73,6 @@ export default function BulkImport({ fetchData, showToast }) {
   }, []);
   const [showSaveMappingModal, setShowSaveMappingModal] = useState(false);
   const [showLoadMappingModal, setShowLoadMappingModal] = useState(false);
-  const [, setImportJobId] = useState(null);
-  const [, setImportSummary] = useState(null);
   const [savedTemplates, setSavedTemplates] = useState(() => {
     try {
       const stored = localStorage.getItem("bulkImportTemplates");
@@ -104,7 +102,16 @@ export default function BulkImport({ fetchData, showToast }) {
       const newMapping = {};
       const usedHeaders = new Set();
       const fieldKeywords = {
-        nameColumn: ["name", "med", "medicine", "drug", "item"],
+        nameColumn: [
+          "name",
+          "med",
+          "medicine",
+          "drug",
+          "item",
+          "product",
+          "description",
+          "med_name",
+        ],
         qtyColumn: [
           "qty",
           "quantity",
@@ -114,9 +121,20 @@ export default function BulkImport({ fetchData, showToast }) {
           "count",
           "on hand",
           "available",
+          "balance",
         ],
         expiryColumn: ["expiry", "exp", "date", "valid"],
-        priceColumn: ["price", "rate", "cost", "inr"],
+        priceColumn: [
+          "price",
+          "rate",
+          "cost",
+          "inr",
+          "purchase rate",
+          "buy price",
+          "mrp",
+          "retail",
+          "selling",
+        ],
         batchColumn: ["batch", "lot", "no", "code"],
         barcodeColumn: ["barcode", "upc", "ean", "sku"],
         categoryColumn: ["category", "cat", "type", "group", "classification"],
@@ -322,33 +340,60 @@ export default function BulkImport({ fetchData, showToast }) {
         }
       });
 
-      setMapping(newMapping);
+      setMapping((prev) => ({ ...prev, ...newMapping }));
     },
     [showToast],
   );
 
+  const normalizeDate = (dateStr) => {
+    if (!dateStr) return null;
+    const trimmed = String(dateStr).trim();
+    const numVal = Number(trimmed);
+    if (!isNaN(numVal) && numVal > 10000 && numVal < 100000) {
+      const excelEpoch = new Date(1899, 11, 30);
+      const date = new Date(excelEpoch.getTime() + numVal * 86400000);
+      if (!isNaN(date.getTime())) return date.toISOString().split("T")[0];
+    }
+    const d = new Date(trimmed);
+    if (!isNaN(d.getTime())) return d.toISOString().split("T")[0];
+    return trimmed;
+  };
+
   const getMappedMedicines = useCallback(() => {
-    const result = parsedRows.map((row) => ({
-      name: String(row[mapping.nameColumn] || "").trim(),
-      qty: mapping.qtyColumn ? String(row[mapping.qtyColumn] ?? "").trim() : "",
-      expiry: String(row[mapping.expiryColumn] || "").trim(),
-      price: mapping.priceColumn
+    const result = parsedRows.map((row) => {
+      const name = String(row[mapping.nameColumn] || "").trim();
+      const qtyStr = mapping.qtyColumn
+        ? String(row[mapping.qtyColumn] ?? "").trim()
+        : "";
+      const priceStr = mapping.priceColumn
         ? String(row[mapping.priceColumn] ?? "").trim()
-        : "",
-      batch: String(row[mapping.batchColumn] || "").trim(),
-      barcode: String(row[mapping.barcodeColumn] || "").trim(),
-      category: String(row[mapping.categoryColumn] || "").trim(),
-      manufacturer: String(row[mapping.manufacturerColumn] || "").trim(),
-      genericName: String(row[mapping.genericNameColumn] || "").trim(),
-      strength: String(row[mapping.strengthColumn] || "").trim(),
-      dosageForm: String(row[mapping.dosageFormColumn] || "").trim(),
-      hsnCode: String(row[mapping.hsnCodeColumn] || "").trim(),
-      gstPercentage: String(row[mapping.gstPercentageColumn] || "").trim(),
-    }));
+        : "";
+      const expiryStr = mapping.expiryColumn
+        ? String(row[mapping.expiryColumn] ?? "").trim()
+        : "";
+
+      return {
+        name,
+        qty: qtyStr ? Number(qtyStr.replace(/[^0-9.-]/g, "")) || 0 : 0,
+        expiry: normalizeDate(expiryStr),
+        price: priceStr ? Number(priceStr.replace(/[^0-9.-]/g, "")) || 0 : 0,
+        batch: String(row[mapping.batchColumn] || "").trim(),
+        barcode: String(row[mapping.barcodeColumn] || "").trim(),
+        category: String(row[mapping.categoryColumn] || "").trim(),
+        manufacturer: String(row[mapping.manufacturerColumn] || "").trim(),
+        genericName: String(row[mapping.genericNameColumn] || "").trim(),
+        strength: String(row[mapping.strengthColumn] || "").trim(),
+        dosageForm: String(row[mapping.dosageFormColumn] || "").trim(),
+        hsnCode: String(row[mapping.hsnCodeColumn] || "").trim(),
+        gstPercentage: String(row[mapping.gstPercentageColumn] || "").trim(),
+      };
+    });
 
     if (result.length > 0) {
       const vals = Object.values(result[0]);
-      const uniqueVals = new Set(vals.filter((v) => v !== ""));
+      const uniqueVals = new Set(
+        vals.filter((v) => v !== "" && v !== 0 && v !== null),
+      );
       if (uniqueVals.size === 1 && result[0].name !== "") {
         console.error(
           "[BulkImport] CRITICAL: All fields have identical value. Mapping is broken.",
@@ -446,43 +491,6 @@ export default function BulkImport({ fetchData, showToast }) {
     barcodeOptions,
     mapping,
     showToast,
-  ]);
-
-  useEffect(() => {
-    let active = true;
-    if (file && parsedRows.length > 0 && mapping.nameColumn) {
-      const initScan = async () => {
-        setIsAnalyzing(true);
-        const medicines = getMappedMedicines();
-        try {
-          const res = await api.post("/import/bulk/analyze", {
-            medicines,
-            supplier: selectedSupplier,
-            duplicateStrategy,
-            barcodeOptions,
-          });
-          if (active && res.data?.success) {
-            setDuplicateResults(res.data.summary);
-          }
-        } catch (err) {
-          console.error(err);
-        } finally {
-          if (active) setIsAnalyzing(false);
-        }
-      };
-      initScan();
-    }
-    return () => {
-      active = false;
-    };
-  }, [
-    barcodeOptions,
-    duplicateStrategy,
-    file,
-    getMappedMedicines,
-    mapping.nameColumn,
-    parsedRows.length,
-    selectedSupplier,
   ]);
 
   const onDrop = useCallback(
@@ -752,11 +760,15 @@ export default function BulkImport({ fetchData, showToast }) {
       if (res.data?.success) {
         setImportProgress(100);
         setImportStatus("complete");
-        setCommitResult(res.data.summary || null);
-        const imported = res.data.summary?.importedCount ?? 0;
-        const skipped = res.data.summary?.skippedCount ?? 0;
+        setCommitResult({
+          ...(res.data.summary || {}),
+          errors: res.data.errors || [],
+        });
+        const imported = res.data.summary?.imported ?? 0;
+        const duplicates = res.data.summary?.duplicates ?? 0;
+        const failed = res.data.summary?.failed ?? 0;
         showToast(
-          `Import complete: ${imported} imported, ${skipped} skipped`,
+          `Import complete: ${imported} imported, ${duplicates} duplicates, ${failed} failed`,
           imported > 0 ? "success" : "warning",
         );
         if (fetchData) fetchData();
@@ -768,134 +780,6 @@ export default function BulkImport({ fetchData, showToast }) {
       setImportStatus("idle");
       showToast(error.message || "Failed to commit import", "error");
     }
-  };
-
-  const handleFileUploadImport = async () => {
-    if (!file) {
-      showToast("Upload a file first", "error");
-      return;
-    }
-    if (!file.name.endsWith(".csv")) {
-      showToast(
-        "Only CSV files are supported for raw ETL file uploads.",
-        "error",
-      );
-      return;
-    }
-
-    setImportStatus("processing");
-    setImportProgress(10);
-
-    const reader = new FileReader();
-    reader.onload = async (e) => {
-      try {
-        const fileContent = e.target.result;
-        setImportProgress(20);
-
-        const res = await api.post("/import/upload", {
-          fileName: file.name,
-          fileContent,
-          duplicateStrategy,
-          barcodeOptions,
-          supplier: selectedSupplier,
-        });
-
-        if (res.data?.success && res.data?.data?.jobId) {
-          const jobId = res.data.data.jobId;
-          setImportJobId(jobId);
-          setImportProgress(30);
-
-          let attempts = 0;
-          const maxAttempts = 300; // 10 minutes (300 * 2 seconds)
-
-          const poll = async () => {
-            attempts++;
-            try {
-              const statusRes = await api.get(`/import/status/${jobId}`);
-              if (statusRes.data?.success && statusRes.data?.data) {
-                const { status, processed, total, summary } =
-                  statusRes.data.data;
-
-                if (total > 0) {
-                  const percent = Math.min(
-                    95,
-                    30 + Math.round((processed / total) * 65),
-                  );
-                  setImportProgress(percent);
-                }
-
-                if (
-                  status === "complete" ||
-                  status === "completed" ||
-                  status === "completed_with_errors"
-                ) {
-                  setImportProgress(100);
-                  setImportStatus("complete");
-                  const finalSummary = summary || {
-                    totalRows: total,
-                    importedCount: processed,
-                    newMedicinesCount: 0,
-                    newBatchesCount: 0,
-                    errors: [],
-                  };
-                  setCommitResult(finalSummary);
-                  setImportSummary(finalSummary);
-
-                  const imported = finalSummary.importedCount ?? 0;
-                  const skipped = (finalSummary.totalRows ?? 0) - imported;
-                  showToast(
-                    `Import complete: ${imported} imported, ${skipped} skipped`,
-                    imported > 0 ? "success" : "warning",
-                  );
-                  if (fetchData) fetchData();
-                } else if (
-                  status === "failed" ||
-                  status === "error" ||
-                  status === "cancelled"
-                ) {
-                  setImportStatus("idle");
-                  showToast(
-                    summary?.error || "Import failed on server side",
-                    "error",
-                  );
-                } else if (attempts >= maxAttempts) {
-                  setImportStatus("idle");
-                  showToast("Import timed out", "error");
-                } else {
-                  window._importPollTimer = setTimeout(poll, 2000);
-                }
-              } else {
-                throw new Error("Invalid response structure from status API");
-              }
-            } catch (err) {
-              console.error("[BulkImport] Polling error:", err);
-              if (attempts >= maxAttempts) {
-                setImportStatus("idle");
-                showToast("Import status check failed repeatedly", "error");
-              } else {
-                window._importPollTimer = setTimeout(poll, 3000);
-              }
-            }
-          };
-
-          window._importPollTimer = setTimeout(poll, 2000);
-        } else {
-          throw new Error(res.data?.message || "Failed to start ETL import");
-        }
-      } catch (error) {
-        console.error(error);
-        setImportStatus("idle");
-        showToast(
-          error.message || "Failed to initiate file upload import",
-          "error",
-        );
-      }
-    };
-    reader.onerror = () => {
-      setImportStatus("idle");
-      showToast("Failed to read file", "error");
-    };
-    reader.readAsText(file);
   };
 
   const cancelImport = () => {
@@ -967,11 +851,10 @@ export default function BulkImport({ fetchData, showToast }) {
             <div>
               <h2>Import Complete!</h2>
               <p>
-                {commitResult?.importedCount ?? 0} records imported
-                {commitResult?.skippedCount > 0 &&
-                  ` · ${commitResult.skippedCount} skipped`}
-                {commitResult?.newBatchesCount > 0 &&
-                  ` · ${commitResult.newBatchesCount} new batches`}
+                {commitResult?.imported ?? 0} records imported
+                {commitResult?.failed > 0 && ` · ${commitResult.failed} failed`}
+                {commitResult?.duplicates > 0 &&
+                  ` · ${commitResult.duplicates} duplicates processed`}
               </p>
             </div>
           </div>
@@ -979,38 +862,48 @@ export default function BulkImport({ fetchData, showToast }) {
           {commitResult?.errors?.length > 0 && (
             <div className="error-details-section">
               <h3>{commitResult.errors.length} Records Failed</h3>
-              <table className="results-table">
-                <thead>
-                  <tr>
-                    <th>Row #</th>
-                    <th>Medicine Name</th>
-                    <th>Error Reason</th>
-                    <th>Action</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {commitResult.errors.map((err, i) => (
-                    <tr key={i}>
-                      <td>Row {err.row}</td>
-                      <td>{err.name}</td>
-                      <td>{err.reason}</td>
-                      <td>
-                        <button
-                          className="micro-link"
-                          onClick={() =>
-                            showToast(
-                              `Error on row ${err.row}: ${err.reason}`,
-                              "info",
-                            )
-                          }
-                        >
-                          Details
-                        </button>
-                      </td>
+              <div className="error-summary-badges">
+                {[...new Set(commitResult.errors.map(e => e.field))].map(field => {
+                  const count = commitResult.errors.filter(e => e.field === field).length;
+                  return (
+                    <span key={field} className="match-badge danger" style={{ margin: "0 4px" }}>
+                      {field}: {count}
+                    </span>
+                  );
+                })}
+              </div>
+              <div className="table-overflow" style={{ maxHeight: "400px", marginTop: "12px" }}>
+                <table className="results-table">
+                  <thead>
+                    <tr>
+                      <th>Row #</th>
+                      <th>Medicine Name</th>
+                      <th>Field</th>
+                      <th>Received</th>
+                      <th>Error</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {commitResult.errors.map((err, i) => (
+                      <tr key={i}>
+                        <td>Row {err.row}</td>
+                        <td>{err.name || "Unknown"}</td>
+                        <td>
+                          <span className="match-badge danger" style={{ fontSize: "11px" }}>
+                            {err.field || "—"}
+                          </span>
+                        </td>
+                        <td style={{ fontFamily: "monospace", fontSize: "12px" }}>
+                          {err.value !== undefined && err.value !== null && err.value !== ""
+                            ? `"${err.value}"`
+                            : "(empty)"}
+                        </td>
+                        <td style={{ color: "var(--danger)" }}>{err.message || err.reason}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
           )}
 
@@ -1634,20 +1527,10 @@ export default function BulkImport({ fetchData, showToast }) {
                   <button
                     className="pos-btn teal large"
                     onClick={handleStartImport}
-                    title="Send parsed JSON (legacy — for small imports)"
+                    title="Send mapped medicines for import"
                   >
                     <UploadCloud size={18} />
-                    <span>Import (Legacy) — {parsedRows.length} Records</span>
-                  </button>
-                  <button
-                    className="pos-btn outline large"
-                    onClick={handleFileUploadImport}
-                    title="Upload raw CSV for server-side ETL processing"
-                  >
-                    <UploadCloud size={18} />
-                    <span>
-                      Upload as File (ETL) — {parsedRows.length} Records
-                    </span>
+                    <span>Start Import — {parsedRows.length} Records</span>
                   </button>
                 </div>
               </div>

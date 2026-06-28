@@ -384,7 +384,7 @@ export default function SupportTickets({ user, showToast }) {
                     </span>
                   </div>
                   <p style={{ fontWeight: 600, marginBottom: 4 }}>
-                    {ticket.title}
+                    {ticket.subject || ticket.title}
                   </p>
                   <div
                     style={{
@@ -401,9 +401,9 @@ export default function SupportTickets({ user, showToast }) {
                     {ticket.createdBy && (
                       <span>by {ticket.createdBy.fullName}</span>
                     )}
-                    {ticket._count?.messages > 0 && (
+                    {ticket._count?.replies > 0 && (
                       <span>
-                        <MessageSquare size={12} /> {ticket._count.messages}
+                        <MessageSquare size={12} /> {ticket._count.replies}
                       </span>
                     )}
                   </div>
@@ -523,7 +523,7 @@ export default function SupportTickets({ user, showToast }) {
             >
               <div className="modal-header-v2">
                 <div>
-                  <h3>{selectedTicket.title}</h3>
+                  <h3>{selectedTicket.subject || selectedTicket.title}</h3>
                   <span
                     style={{
                       fontFamily: "monospace",
@@ -579,7 +579,7 @@ export default function SupportTickets({ user, showToast }) {
                 </div>
 
                 <p style={{ color: "var(--text-dim)", marginBottom: 16 }}>
-                  {selectedTicket.description}
+                  {selectedTicket.message || selectedTicket.description}
                 </p>
 
                 {selectedTicket.resolutionSummary && (
@@ -692,18 +692,18 @@ export default function SupportTickets({ user, showToast }) {
                       marginBottom: 16,
                     }}
                   >
-                    {selectedTicket.messages?.map((msg) => (
+                    {(selectedTicket.replies || selectedTicket.messages || []).map((msg) => (
                       <div
                         key={msg.id}
                         style={{
                           padding: 10,
                           borderRadius: 8,
                           background:
-                            msg.senderRole === "ADMIN"
+                            msg.authorRole === "ADMIN" || msg.senderRole === "ADMIN"
                               ? "var(--primary-container)"
                               : "var(--surface)",
                           alignSelf:
-                            msg.senderRole === "ADMIN"
+                            msg.authorRole === "ADMIN" || msg.senderRole === "ADMIN"
                               ? "flex-end"
                               : "flex-start",
                           maxWidth: "80%",
@@ -716,7 +716,7 @@ export default function SupportTickets({ user, showToast }) {
                             marginBottom: 4,
                           }}
                         >
-                          {msg.sender?.fullName} ·{" "}
+                          {(msg.author?.fullName || msg.sender?.fullName) + " · "}
                           {new Date(msg.createdAt).toLocaleString()}
                         </div>
                         <p style={{ fontSize: 13 }}>{msg.message}</p>
