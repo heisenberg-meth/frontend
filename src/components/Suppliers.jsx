@@ -527,6 +527,8 @@ export default function Suppliers({ showToast }) {
         phone: cleanPhone.length >= 10 ? form.phone : undefined,
         email: form.email || undefined,
         gstNumber: form.gst || undefined,
+        address: form.address || undefined,
+        notes: form.notes || undefined,
         drugCategories: form.categories || [],
         paymentTermsDays: PAYMENT_TERMS_MAP[form.paymentTerms] ?? 30,
         leadTimeDays: LEAD_TIME_MAP[form.leadTime] ?? 7,
@@ -867,101 +869,162 @@ export default function Suppliers({ showToast }) {
         {viewTarget && (
           <div className="modal-overlay" onClick={() => setViewTarget(null)}>
             <motion.div
-              className="modal-content sup-view-modal p-8"
+              className="modal-content sup-view-modal"
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
               onClick={(e) => e.stopPropagation()}
+              style={{
+                maxHeight: "90vh",
+                display: "flex",
+                flexDirection: "column",
+                overflow: "hidden",
+              }}
             >
-              <div className="flex items-start gap-5 mb-8">
-                <div className="sup-avatar large !w-20 !h-20 !text-[24px]">
-                  {getInitials(viewTarget.name)}
+              <div className="modal-header">
+                <div className="flex items-start gap-5">
+                  <div className="sup-avatar large !w-20 !h-20 !text-[24px]">
+                    {getInitials(viewTarget.name)}
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="text-[28px] font-black text-on-surface mb-2 leading-tight">
+                      {viewTarget.name}
+                    </h3>
+                    <div className="flex items-center gap-2">
+                      <span className={`sup-status-badge ${viewTarget.status}`}>
+                        <div className="status-dot" />
+                        {(viewTarget.status || "active").toUpperCase()}
+                      </span>
+                    </div>
+                  </div>
+                  <button
+                    className="modal-close-btn"
+                    onClick={() => setViewTarget(null)}
+                  >
+                    <X size={20} />
+                  </button>
                 </div>
-                <div className="flex-1">
-                  <h3 className="text-[28px] font-black text-on-surface mb-2 leading-tight">
-                    {viewTarget.name}
-                  </h3>
-                  <div className="flex items-center gap-2">
-                    <span className={`sup-status-badge ${viewTarget.status}`}>
-                      <div className="status-dot" />
-                      {(viewTarget.status || "active").toUpperCase()}
+              </div>
+
+              <div
+                className="modal-scroll-area p-8"
+                style={{ overflowY: "auto", flex: 1 }}
+              >
+                <div className="grid grid-cols-2 gap-8 mb-10">
+                  <div className="detail-item">
+                    <label>Primary Contact</label>
+                    <span>
+                      {viewTarget.contactPerson || viewTarget.contact || "—"}
+                    </span>
+                  </div>
+                  <div className="detail-item">
+                    <label>Phone Number</label>
+                    <span>{viewTarget.phone || "—"}</span>
+                  </div>
+                  <div className="detail-item">
+                    <label>Email Address</label>
+                    <span>{viewTarget.email || "N/A"}</span>
+                  </div>
+                  <div className="detail-item">
+                    <label>GSTIN Number</label>
+                    <span className="font-mono text-primary">
+                      {viewTarget.gstNumber || viewTarget.gst || "N/A"}
+                    </span>
+                  </div>
+                  <div className="detail-item">
+                    <label>Payment Terms</label>
+                    <span>
+                      {viewTarget.paymentTerms ??
+                        (viewTarget.paymentTermsDays === 0
+                          ? "Advance"
+                          : viewTarget.paymentTermsDays
+                            ? `Net ${viewTarget.paymentTermsDays}`
+                            : "Net 30 (Default)")}
+                    </span>
+                  </div>
+                  <div className="detail-item">
+                    <label>Lead Time</label>
+                    <span>
+                      {viewTarget.leadTime ??
+                        (viewTarget.leadTimeDays
+                          ? `${viewTarget.leadTimeDays} Day${viewTarget.leadTimeDays > 1 ? "s" : ""}`
+                          : "Not Configured")}
+                    </span>
+                  </div>
+                  <div className="detail-item">
+                    <label>Drug Specialties</label>
+                    <span>
+                      {(
+                        viewTarget.drugCategories ||
+                        viewTarget.categories ||
+                        []
+                      ).length > 0
+                        ? (
+                            viewTarget.drugCategories ||
+                            viewTarget.categories ||
+                            []
+                          ).join(", ")
+                        : "—"}
+                    </span>
+                  </div>
+                  <div className="detail-item">
+                    <label>Available Credit</label>
+                    <span className="font-bold text-green-500">
+                      {creditBalance === null
+                        ? "Loading..."
+                        : `₹${creditBalance.toFixed(2)}`}
+                    </span>
+                  </div>
+                  <div className="detail-item col-span-2">
+                    <label>Address</label>
+                    <span style={{ whiteSpace: "pre-wrap" }}>
+                      {viewTarget.address || "Not Provided"}
+                    </span>
+                  </div>
+                  <div className="detail-item col-span-2">
+                    <label>Operational Notes</label>
+                    <span style={{ whiteSpace: "pre-wrap" }}>
+                      {viewTarget.notes || "No operational notes available."}
+                    </span>
+                  </div>
+                  <div className="detail-item">
+                    <label>Created On</label>
+                    <span>
+                      {viewTarget.createdAt
+                        ? new Date(viewTarget.createdAt).toLocaleDateString()
+                        : "—"}
+                    </span>
+                  </div>
+                  <div className="detail-item">
+                    <label>Last Updated</label>
+                    <span>
+                      {viewTarget.updatedAt
+                        ? new Date(viewTarget.updatedAt).toLocaleDateString()
+                        : "—"}
                     </span>
                   </div>
                 </div>
-                <button
-                  className="modal-close-btn"
-                  onClick={() => setViewTarget(null)}
-                >
-                  <X size={20} />
-                </button>
               </div>
-              <div className="grid grid-cols-2 gap-8 mb-10">
-                <div className="detail-item">
-                  <label>Primary Contact</label>
-                  <span>
-                    {viewTarget.contactPerson || viewTarget.contact || "—"}
-                  </span>
-                </div>
-                <div className="detail-item">
-                  <label>Phone Number</label>
-                  <span>{viewTarget.phone || "—"}</span>
-                </div>
-                <div className="detail-item">
-                  <label>Email Address</label>
-                  <span>{viewTarget.email || "N/A"}</span>
-                </div>
-                <div className="detail-item">
-                  <label>Payment Terms</label>
-                  <span>{viewTarget.paymentTerms || "—"}</span>
-                </div>
-                <div className="detail-item">
-                  <label>GSTIN Number</label>
-                  <span className="font-mono text-primary">
-                    {viewTarget.gstNumber || viewTarget.gst || "N/A"}
-                  </span>
-                </div>
-                <div className="detail-item">
-                  <label>Lead Time</label>
-                  <span>{viewTarget.leadTime || "—"}</span>
-                </div>
-                <div className="detail-item">
-                  <label>Drug Specialties</label>
-                  <span>
-                    {(viewTarget.drugCategories || viewTarget.categories || [])
-                      .length > 0
-                      ? (
-                          viewTarget.drugCategories ||
-                          viewTarget.categories ||
-                          []
-                        ).join(", ")
-                      : "—"}
-                  </span>
-                </div>
-                <div className="detail-item">
-                  <label>Available Credit</label>
-                  <span className="font-bold text-green-500">
-                    {creditBalance === null
-                      ? "Loading..."
-                      : `₹${creditBalance.toFixed(2)}`}
-                  </span>
-                </div>
-              </div>
-              <div className="flex gap-4">
+
+              <div
+                className="modal-footer"
+                style={{ borderTop: "1px solid var(--overlay-04)" }}
+              >
                 <button
-                  className="modal-btn cancel flex-1"
+                  className="modal-btn cancel"
                   onClick={() => setViewTarget(null)}
                 >
                   Close
                 </button>
                 <button
-                  className="modal-btn confirm flex-1"
+                  className="modal-btn confirm"
                   onClick={() => {
                     setEditTarget(viewTarget);
                     setViewTarget(null);
                     setModalOpen(true);
                   }}
                 >
-                  Edit Profile
+                  <Pencil size={16} /> Edit Profile
                 </button>
               </div>
             </motion.div>

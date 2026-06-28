@@ -420,12 +420,11 @@ export default function BulkImport({ fetchData, showToast }) {
     setIsAnalyzing(true);
     const medicines = getMappedMedicines();
     try {
-      const res = await api.post("/import/bulk", {
+      const res = await api.post("/import/bulk/analyze", {
         medicines,
         supplier: selectedSupplier,
         duplicateStrategy,
         barcodeOptions,
-        dryRun: true,
       });
       if (res.data?.success) {
         setDuplicateResults(res.data.summary);
@@ -456,12 +455,11 @@ export default function BulkImport({ fetchData, showToast }) {
         setIsAnalyzing(true);
         const medicines = getMappedMedicines();
         try {
-          const res = await api.post("/import/bulk", {
+          const res = await api.post("/import/bulk/analyze", {
             medicines,
             supplier: selectedSupplier,
             duplicateStrategy,
             barcodeOptions,
-            dryRun: true,
           });
           if (active && res.data?.success) {
             setDuplicateResults(res.data.summary);
@@ -744,12 +742,11 @@ export default function BulkImport({ fetchData, showToast }) {
     try {
       setImportProgress(45);
 
-      const res = await api.post("/import/bulk", {
+      const res = await api.post("/import/bulk/commit", {
         medicines,
         supplier: selectedSupplier,
         duplicateStrategy,
         barcodeOptions,
-        dryRun: false,
       });
 
       if (res.data?.success) {

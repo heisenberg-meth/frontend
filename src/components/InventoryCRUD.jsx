@@ -26,6 +26,29 @@ import {
 import { motion, AnimatePresence } from "framer-motion";
 import { getMedicineStatus, STATUS_OPTIONS } from "../utils/inventoryStatus";
 import { getSuppliers } from "../services/suppliers.service";
+import {
+  CreateMedicineSchema,
+  UpdateMedicineSchema,
+} from "../constants/medicine.schema.js";
+import {
+  getMedicines,
+  createMedicine,
+  updateMedicine,
+  deleteMedicine,
+  getCategories,
+  addBatch,
+  updateBatch,
+  getInventorySummary,
+} from "../services/inventory.service";
+import {
+  createReorder,
+  getPurchaseOrderPdfUrl,
+} from "../services/purchases.service";
+import { useAuth } from "../hooks/useAuth";
+import ConfirmModal from "./ConfirmModal";
+import InventoryAnalyticsModal from "./inventory/InventoryAnalyticsModal";
+import { normalizeMedicine } from "../utils/normalizers";
+import { safeNumber } from "../utils/number.js";
 import { assignBatchSupplier } from "../services/inventory.service";
 
 function CustomDropdown({ value, onChange, options, placeholder = "Select" }) {
@@ -96,30 +119,6 @@ function CustomDropdown({ value, onChange, options, placeholder = "Select" }) {
     </div>
   );
 }
-
-import {
-  CreateMedicineSchema,
-  UpdateMedicineSchema,
-} from "../constants/medicine.schema.js";
-import {
-  getMedicines,
-  createMedicine,
-  updateMedicine,
-  deleteMedicine,
-  getCategories,
-  addBatch,
-  updateBatch,
-  getInventorySummary,
-} from "../services/inventory.service";
-import {
-  createReorder,
-  getPurchaseOrderPdfUrl,
-} from "../services/purchases.service";
-import { useAuth } from "../hooks/useAuth";
-import ConfirmModal from "./ConfirmModal";
-import InventoryAnalyticsModal from "./inventory/InventoryAnalyticsModal";
-import { normalizeMedicine } from "../utils/normalizers";
-import { safeNumber } from "../utils/number.js";
 
 function Spinner({ size = 14 }) {
   return (

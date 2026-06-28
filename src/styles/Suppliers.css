@@ -180,6 +180,7 @@
 
 /* Table Card */
 .sup-table-card {
+  width: 100%;
   background: linear-gradient(
     145deg,
     var(--overlay-03) 0%,
@@ -230,8 +231,24 @@
   color: var(--text-muted);
 }
 
+.sup-table-wrapper {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.sup-table {
+  width: 100%;
+  table-layout: fixed;
+  border-collapse: collapse;
+}
+
+.sup-table th,
+.sup-table td {
+  padding: 16px 18px;
+  vertical-align: middle;
+}
+
 .sup-table th {
-  padding: 16px 24px;
   text-align: left;
   font-family: "Outfit", sans-serif;
   font-size: 11px;
@@ -243,10 +260,20 @@
 }
 
 .sup-table td {
-  padding: 16px 24px;
   border-bottom: 1px solid var(--overlay-03);
-  vertical-align: middle;
 }
+
+.sup-table th:nth-child(1) {
+  width: 22%;
+}
+.sup-table th:nth-child(2) { width: 14%; }
+.sup-table th:nth-child(3) {
+  width: 13%;
+}
+.sup-table th:nth-child(4) { width: 18%; }
+.sup-table th:nth-child(5) { width: 13%; }
+.sup-table th:nth-child(6) { width: 10%; }
+.sup-table th:nth-child(7) { width: 10%; }
 
 .sup-identity {
   display: flex;
