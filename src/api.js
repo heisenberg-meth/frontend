@@ -281,7 +281,11 @@ api.interceptors.response.use(
         }
 
         refreshAttempts = 0;
-        // Process queue with the new token so queued requests can use it
+
+        // Reset the refresh flag BEFORE processing the queue so that if a queued
+        // request's retry triggers another 401, it can queue again rather than
+        // immediately kicking off a second refresh cycle.
+        isRefreshing = false;
         processQueue(null, newToken);
 
         // Update the original request with the new token and retry
@@ -296,14 +300,13 @@ api.interceptors.response.use(
             data: refreshError.response?.data,
           });
         }
+        isRefreshing = false;
         processQueue(refreshError, null);
         csrfToken = null;
         csrfPromise = null;
         clearAllAuth();
         dispatchSessionExpired("Session expired. Please log in again.");
         return Promise.reject(refreshError);
-      } finally {
-        isRefreshing = false;
       }
     }
 
