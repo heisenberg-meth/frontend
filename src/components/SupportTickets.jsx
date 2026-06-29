@@ -68,7 +68,7 @@ export default function SupportTickets({ user, showToast }) {
   const loadTickets = useCallback(async () => {
     try {
       setLoading(true);
-      const url = isAdmin ? "/admin/support/tickets" : "/support/tickets/my";
+      const url = isAdmin ? "/admin/support/tickets" : "/support/my";
       const params = new URLSearchParams();
       if (filter.status) params.set("status", filter.status);
       if (filter.priority) params.set("priority", filter.priority);
@@ -140,7 +140,7 @@ export default function SupportTickets({ user, showToast }) {
     try {
       const url = isAdmin
         ? `/admin/support/tickets/${ticketId}`
-        : `/support/tickets/${ticketId}`;
+        : `/support/${ticketId}`;
       const res = await api.get(url);
       setSelectedTicket(res.data?.data);
     } catch {
@@ -153,7 +153,7 @@ export default function SupportTickets({ user, showToast }) {
     try {
       const url = isAdmin
         ? `/admin/support/tickets/${selectedTicket.id}/replies`
-        : `/support/tickets/${selectedTicket.id}/replies`;
+        : `/support/${selectedTicket.id}/replies`;
       await api.post(url, { message: replyText });
       setReplyText("");
       loadTicketDetails(selectedTicket.id);
@@ -177,7 +177,7 @@ export default function SupportTickets({ user, showToast }) {
 
   const closeTicket = async (ticketId) => {
     try {
-      await api.put(`/support/tickets/${ticketId}/close`);
+      await api.put(`/support/${ticketId}/close`);
       showToast("Ticket closed", "success");
       setSelectedTicket(null);
       refresh();
@@ -188,7 +188,7 @@ export default function SupportTickets({ user, showToast }) {
 
   const reopenTicket = async (ticketId, reason) => {
     try {
-      await api.put(`/support/tickets/${ticketId}/reopen`, { reason });
+      await api.put(`/support/${ticketId}/reopen`, { reason });
       showToast("Ticket reopened", "success");
       setSelectedTicket(null);
       refresh();
@@ -692,18 +692,24 @@ export default function SupportTickets({ user, showToast }) {
                       marginBottom: 16,
                     }}
                   >
-                    {(selectedTicket.replies || selectedTicket.messages || []).map((msg) => (
+                    {(
+                      selectedTicket.replies ||
+                      selectedTicket.messages ||
+                      []
+                    ).map((msg) => (
                       <div
                         key={msg.id}
                         style={{
                           padding: 10,
                           borderRadius: 8,
                           background:
-                            msg.authorRole === "ADMIN" || msg.senderRole === "ADMIN"
+                            msg.authorRole === "ADMIN" ||
+                            msg.senderRole === "ADMIN"
                               ? "var(--primary-container)"
                               : "var(--surface)",
                           alignSelf:
-                            msg.authorRole === "ADMIN" || msg.senderRole === "ADMIN"
+                            msg.authorRole === "ADMIN" ||
+                            msg.senderRole === "ADMIN"
                               ? "flex-end"
                               : "flex-start",
                           maxWidth: "80%",
@@ -716,7 +722,8 @@ export default function SupportTickets({ user, showToast }) {
                             marginBottom: 4,
                           }}
                         >
-                          {(msg.author?.fullName || msg.sender?.fullName) + " · "}
+                          {(msg.author?.fullName || msg.sender?.fullName) +
+                            " · "}
                           {new Date(msg.createdAt).toLocaleString()}
                         </div>
                         <p style={{ fontSize: 13 }}>{msg.message}</p>
