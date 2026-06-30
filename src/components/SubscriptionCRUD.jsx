@@ -124,14 +124,29 @@ export default function SubscriptionCRUD({ showToast, user }) {
 
       const { key, order } = response.data;
 
-      if (!order || !order.id) {
-        throw new Error("Invalid order received from backend");
+      const rzpKey = key || import.meta.env.VITE_RAZORPAY_KEY_ID;
+      if (!rzpKey) {
+        throw new Error("Missing Razorpay Configuration");
       }
 
+      if (!order.id) {
+        throw new Error("Invalid order received from backend (missing ID)");
+      }
+
+      if (!order.amount || !order.currency) {
+        throw new Error("Invalid order amount or currency");
+      }
+
+      const prefill = {};
+      const name = user?.fullName || user?.username;
+      if (name) prefill.name = name;
+      if (user?.email) prefill.email = user.email;
+      if (user?.phone) prefill.contact = user.phone;
+
       const options = {
-        key: key || import.meta.env.VITE_RAZORPAY_KEY_ID,
+        key: rzpKey,
         amount: order.amount,
-        currency: order.currency || "INR",
+        currency: order.currency,
         name: "Viyan MedAssist",
         description: `Professional Subscription: ${selectedPlan.name}`,
         order_id: order.id,
@@ -141,44 +156,43 @@ export default function SubscriptionCRUD({ showToast, user }) {
             showToast("Payment verified. Subscription activated!", "success");
             await refreshUser();
             await refreshSubscriptionData();
-          } catch {
+          } catch (err) {
+            console.error("Payment Verification Error", err);
             showToast(
-              "Payment verification failed. Please contact support.",
+              "Payment received but verification failed. Our team has been notified. Please do not make another payment.",
               "error",
             );
           }
-        },
-        prefill: {
-          name: user?.fullName || user?.username || "",
-          email: user?.email || "",
-          contact: user?.phone || "",
         },
         theme: {
           color: "#4fdbc8",
         },
       };
 
-      const cleanOptions = Object.fromEntries(
-        Object.entries(options).filter(([v]) => v !== undefined),
-      );
+      if (Object.keys(prefill).length > 0) {
+        options.prefill = prefill;
+      }
 
       const loaded = await loadRazorpay();
       if (!loaded) {
-        showToast("Failed to load payment gateway. Please try again.", "error");
+        showToast("Unable to connect to Razorpay. Please check your internet connection and try again.", "error");
         setUpgrading(false);
         return;
       }
 
-      const rzp = new window.Razorpay(cleanOptions);
-      rzp.on("payment.failed", function (response) {
-        showToast(`Payment failed: ${response.error.description}`, "error");
+      const rzp = new window.Razorpay(options);
+      rzp.on("payment.failed", function (failResponse) {
+        console.error("Razorpay Payment Failed:", failResponse);
+        showToast(`Payment failed: ${failResponse.error?.description || 'Unknown error'}`, "error");
       });
       rzp.open();
 
       setShowConfirmModal(false);
       setSelectedPlan(null);
-    } catch {
-      showToast("Payment failed", "error");
+    } catch (err) {
+      console.error("Payment Initialization Error:", err);
+      const msg = err.response?.data?.error || err.message || "Unable to initialize payment. Please contact support if the problem persists.";
+      showToast(msg, "error");
     } finally {
       setUpgrading(false);
     }

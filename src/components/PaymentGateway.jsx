@@ -2,8 +2,7 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import api from "../api";
 import { API_ROUTES } from "../constants/api.routes.js";
 import { loadRazorpay } from "../utils/razorpay";
-import { safeNumber } from '../utils/number.js';
-
+import { safeNumber } from "../utils/number.js";
 
 export default function PaymentGateway({ user, onPaymentComplete, amount }) {
   const [status, setStatus] = useState("checkout");
@@ -71,6 +70,12 @@ export default function PaymentGateway({ user, onPaymentComplete, amount }) {
         return;
       }
 
+      const prefill = {};
+      const name = user?.fullName || user?.username;
+      if (name) prefill.name = name;
+      if (user?.email) prefill.email = user.email;
+      if (user?.phone) prefill.contact = user.phone;
+
       const options = {
         key: finalKey,
         amount: order.amount,
@@ -82,28 +87,24 @@ export default function PaymentGateway({ user, onPaymentComplete, amount }) {
           try {
             await api.post(API_ROUTES.PAYMENTS_VERIFY, response);
             setStatus("success");
-          } catch {
-            setPaymentError("Verification failed");
+          } catch (err) {
+            console.error("Payment Verification Error:", err);
+            setPaymentError(
+              "Payment received but verification failed. Our team has been notified. Please do not make another payment.",
+            );
             setStatus("checkout");
           } finally {
             isProcessingRef.current = false;
           }
         },
-        prefill: Object.fromEntries(
-          Object.entries({
-            name: user?.fullName || user?.username,
-            email: user?.email,
-            contact: user?.phone,
-          }).filter(([v]) => v !== undefined),
-        ),
         theme: {
           color: "#4fdbc8",
         },
       };
 
-      const cleanOptions = Object.fromEntries(
-        Object.entries(options).filter(([val]) => val !== undefined),
-      );
+      if (Object.keys(prefill).length > 0) {
+        options.prefill = prefill;
+      }
 
       const loaded = await loadRazorpay();
       if (!loaded) {
@@ -113,14 +114,22 @@ export default function PaymentGateway({ user, onPaymentComplete, amount }) {
         return;
       }
 
-      const rzp = new window.Razorpay(cleanOptions);
+      const rzp = new window.Razorpay(options);
+      rzp.on("payment.failed", function (failResponse) {
+        console.error("Razorpay Payment Failed:", failResponse);
+        setPaymentError(
+          `Payment failed: ${failResponse.error?.description || "Unknown error"}`,
+        );
+        setStatus("checkout");
+        isProcessingRef.current = false;
+      });
       razorpayRef.current = rzp;
       rzp.open();
     } catch (error) {
       setRetryCount((prev) => prev + 1);
       setStatus("checkout");
       const errorMessage =
-        typeof error.response?.data?.error === 'string'
+        typeof error.response?.data?.error === "string"
           ? error.response.data.error
           : error.response?.data?.error?.message ||
             error.message ||
