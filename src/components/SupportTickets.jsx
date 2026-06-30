@@ -68,7 +68,7 @@ export default function SupportTickets({ user, showToast }) {
   const loadTickets = useCallback(async () => {
     try {
       setLoading(true);
-      const url = isAdmin ? "/admin/support/tickets" : "/support/my";
+      const url = "/support/my";
       const params = new URLSearchParams();
       if (filter.status) params.set("status", filter.status);
       if (filter.priority) params.set("priority", filter.priority);
@@ -79,17 +79,17 @@ export default function SupportTickets({ user, showToast }) {
     } finally {
       setLoading(false);
     }
-  }, [isAdmin, filter.status, filter.priority, showToast]);
+  }, [filter.status, filter.priority, showToast]);
 
   const loadDashboard = useCallback(async () => {
     try {
-      const url = isAdmin ? "/admin/support/dashboard" : "/support/dashboard";
+      const url = "/support/dashboard";
       const res = await api.get(url);
       setDashboard(res.data?.data);
     } catch (err) {
       console.log(err);
     }
-  }, [isAdmin]);
+  }, []);
 
   const refresh = useCallback(async () => {
     await Promise.all([loadTickets(), loadDashboard()]);
@@ -138,9 +138,7 @@ export default function SupportTickets({ user, showToast }) {
 
   const loadTicketDetails = async (ticketId) => {
     try {
-      const url = isAdmin
-        ? `/admin/support/tickets/${ticketId}`
-        : `/support/${ticketId}`;
+      const url = `/support/${ticketId}`;
       const res = await api.get(url);
       setSelectedTicket(res.data?.data);
     } catch {
@@ -151,27 +149,12 @@ export default function SupportTickets({ user, showToast }) {
   const sendReply = async () => {
     if (!replyText.trim()) return;
     try {
-      const url = isAdmin
-        ? `/admin/support/tickets/${selectedTicket.id}/replies`
-        : `/support/${selectedTicket.id}/replies`;
+      const url = `/support/${selectedTicket.id}/replies`;
       await api.post(url, { message: replyText });
       setReplyText("");
       loadTicketDetails(selectedTicket.id);
     } catch (err) {
       showToast(err.response?.data?.error || "Failed to send reply", "error");
-    }
-  };
-
-  const resolveTicket = async (ticketId, resolution) => {
-    try {
-      await api.put(`/admin/support/tickets/${ticketId}/resolve`, {
-        resolution,
-      });
-      showToast("Ticket resolved", "success");
-      setSelectedTicket(null);
-      refresh();
-    } catch (err) {
-      showToast(err.response?.data?.error || "Failed to resolve", "error");
     }
   };
 
@@ -194,20 +177,6 @@ export default function SupportTickets({ user, showToast }) {
       refresh();
     } catch (err) {
       showToast(err.response?.data?.error || "Failed to reopen", "error");
-    }
-  };
-
-  const updateStatus = async (ticketId, status) => {
-    try {
-      await api.put(`/admin/support/tickets/${ticketId}/status`, { status });
-      showToast("Status updated", "success");
-      loadTicketDetails(ticketId);
-      refresh();
-    } catch (err) {
-      showToast(
-        err.response?.data?.error || "Failed to update status",
-        "error",
-      );
     }
   };
 
@@ -597,48 +566,7 @@ export default function SupportTickets({ user, showToast }) {
                   </div>
                 )}
 
-                {isAdmin && selectedTicket.status !== "CLOSED" && (
-                  <div
-                    style={{
-                      display: "flex",
-                      gap: 8,
-                      marginBottom: 16,
-                      flexWrap: "wrap",
-                    }}
-                  >
-                    <select
-                      value={selectedTicket.status}
-                      onChange={(e) =>
-                        updateStatus(selectedTicket.id, e.target.value)
-                      }
-                      className="pos-input"
-                      style={{ width: "auto" }}
-                    >
-                      {STATUSES.map((s) => (
-                        <option key={s} value={s}>
-                          {s.replace(/_/g, " ")}
-                        </option>
-                      ))}
-                    </select>
-                    {selectedTicket.status !== "RESOLVED" && (
-                      <button
-                        className="sub-upgrade-btn"
-                        style={{ fontSize: 12 }}
-                        onClick={() => {
-                          const resolution = prompt(
-                            "Enter resolution summary:",
-                          );
-                          if (resolution)
-                            resolveTicket(selectedTicket.id, resolution);
-                        }}
-                      >
-                        <CheckCircle2 size={14} /> Resolve
-                      </button>
-                    )}
-                  </div>
-                )}
-
-                {selectedTicket.status === "RESOLVED" && !isAdmin && (
+                {selectedTicket.status === "RESOLVED" && (
                   <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
                     <button
                       className="sub-upgrade-btn"
@@ -664,7 +592,7 @@ export default function SupportTickets({ user, showToast }) {
                   </div>
                 )}
 
-                {selectedTicket.status === "CLOSED" && !isAdmin && (
+                {selectedTicket.status === "CLOSED" && (
                   <button
                     className="sub-upgrade-btn"
                     style={{ fontSize: 12, marginBottom: 16 }}
