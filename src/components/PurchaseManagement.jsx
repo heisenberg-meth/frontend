@@ -1938,8 +1938,6 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
                           <tr>
                             <th>Medicine</th>
                             <th>Qty</th>
-                            <th>Cost</th>
-                            <th style={{ textAlign: "right" }}>Amount</th>
                           </tr>
                         </thead>
                         <tbody>
@@ -1952,28 +1950,6 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
                                   "-"}
                               </td>
                               <td>{item.quantity}</td>
-                              <td>
-                                ₹
-                                {safeNumber(
-                                  item.purchasePrice ||
-                                    item.unitPrice ||
-                                    item.price ||
-                                    0,
-                                ).toFixed(2)}
-                              </td>
-                              <td style={{ textAlign: "right" }}>
-                                ₹
-                                {safeNumber(
-                                  item.total ||
-                                    item.totalAmount ||
-                                    item.quantity *
-                                      (item.purchasePrice ||
-                                        item.unitPrice ||
-                                        item.price ||
-                                        0) ||
-                                    0,
-                                ).toFixed(2)}
-                              </td>
                             </tr>
                           ))}
                           {(!selectedRow?.items ||
@@ -1984,101 +1960,6 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
                           )}
                         </tbody>
                       </table>
-                    </div>
-
-                    <div className="detail-summary-card">
-                      <div
-                        style={{
-                          display: "flex",
-                          justifyContent: "space-between",
-                          marginBottom: "8px",
-                        }}
-                      >
-                        <span>Subtotal</span>{" "}
-                        <span>
-                          ₹
-                          {safeNumber(
-                            selectedRow?.subtotal ||
-                              (selectedRow?.totalAmount &&
-                              selectedRow?.gstAmount !== undefined
-                                ? selectedRow.totalAmount -
-                                  selectedRow.gstAmount
-                                : selectedRow?.totalAmount ||
-                                  selectedRow?.total ||
-                                  0),
-                          ).toFixed(2)}
-                        </span>
-                      </div>
-                      <div
-                        style={{
-                          display: "flex",
-                          justifyContent: "space-between",
-                          marginBottom: "8px",
-                        }}
-                      >
-                        <span>GST</span>{" "}
-                        <span>
-                          ₹{safeNumber(selectedRow?.gstAmount || 0).toFixed(2)}
-                        </span>
-                      </div>
-                      <div
-                        style={{
-                          display: "flex",
-                          justifyContent: "space-between",
-                          fontWeight: 800,
-                          fontSize: "18px",
-                          borderTop: "1px solid var(--outline-variant)",
-                          paddingTop: "12px",
-                          color: "var(--primary)",
-                        }}
-                      >
-                        <span>TOTAL</span>{" "}
-                        <span>
-                          ₹
-                          {safeNumber(
-                            selectedRow?.totalAmount || selectedRow?.total || 0,
-                          ).toFixed(2)}
-                        </span>
-                      </div>
-
-                      {selectedRow?.paidAmount !== undefined && (
-                        <>
-                          <div
-                            style={{
-                              display: "flex",
-                              justifyContent: "space-between",
-                              marginBottom: "8px",
-                              marginTop: "8px",
-                              color: "var(--success)",
-                            }}
-                          >
-                            <span>Paid</span>{" "}
-                            <span>
-                              ₹
-                              {safeNumber(selectedRow?.paidAmount || 0).toFixed(
-                                2,
-                              )}
-                            </span>
-                          </div>
-                          <div
-                            style={{
-                              display: "flex",
-                              justifyContent: "space-between",
-                              fontWeight: 800,
-                              fontSize: "16px",
-                              color: "var(--danger)",
-                            }}
-                          >
-                            <span>Balance Due</span>{" "}
-                            <span>
-                              ₹
-                              {safeNumber(
-                                selectedRow?.balanceAmount || 0,
-                              ).toFixed(2)}
-                            </span>
-                          </div>
-                        </>
-                      )}
                     </div>
 
                     {supplierCredit.notes.length > 0 &&

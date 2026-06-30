@@ -15,11 +15,11 @@ function isValidCallback(url) {
 
 function extractParams(searchParams) {
   return {
-    orderId: searchParams.get("orderId"),
-    key: searchParams.get("key"),
-    amount: searchParams.get("amount"),
-    currency: searchParams.get("currency"),
-    callback: searchParams.get("callback"),
+    orderId: searchParams.get("orderId")?.trim(),
+    key: searchParams.get("key")?.trim(),
+    amount: searchParams.get("amount")?.trim(),
+    currency: searchParams.get("currency")?.trim(),
+    callback: searchParams.get("callback")?.trim(),
   };
 }
 
@@ -62,36 +62,59 @@ export default function CheckoutPage() {
 
       setLoadState("launching");
 
+      let isSuccess = false;
+
       const options = {
         key,
-        amount: Number(amount),
-        currency,
         order_id: orderId,
         name: "Viyan MedAssist",
         description: "Subscription Upgrade",
         theme: { color: "#4fdbc8" },
-        handler(response) {
+        handler: function (response) {
+          isSuccess = true;
+          console.log("[Razorpay] Payment success", response);
+          const baseUrl = callback.replace(/\/+$/, "");
           const redirectUrl =
-            `${callback}/callback` +
-            `?razorpay_payment_id=${encodeURIComponent(response.razorpay_payment_id)}` +
-            `&razorpay_order_id=${encodeURIComponent(response.razorpay_order_id)}` +
-            `&razorpay_signature=${encodeURIComponent(response.razorpay_signature)}`;
-          window.location.href = redirectUrl;
+            baseUrl +
+            "/callback" +
+            "?razorpay_payment_id=" +
+            encodeURIComponent(response.razorpay_payment_id || "") +
+            "&razorpay_order_id=" +
+            encodeURIComponent(response.razorpay_order_id || "") +
+            "&razorpay_signature=" +
+            encodeURIComponent(response.razorpay_signature || "");
+
+          console.log("[Razorpay] Redirecting to URL:", redirectUrl);
+          // Use replace to avoid back-button loops in the desktop webview
+          window.location.replace(redirectUrl);
         },
         modal: {
           ondismiss() {
-            window.location.href = `${callback}/cancel`;
+            console.log("[Razorpay] Modal dismissed. isSuccess =", isSuccess);
+            if (!isSuccess) {
+              const baseUrl = callback.replace(/\/+$/, "");
+              const cancelUrl = baseUrl + "/cancel";
+              console.log("[Razorpay] Redirecting to cancel URL:", cancelUrl);
+              window.location.replace(cancelUrl);
+            }
           },
         },
       };
 
       try {
         const rzp = new window.Razorpay(options);
-        rzp.on("payment.failed", () => {
-          window.location.href = `${callback}/cancel`;
+        rzp.on("payment.failed", (failResponse) => {
+          console.log("[Razorpay] Payment failure", failResponse);
+          const baseUrl = callback.replace(/\/+$/, "");
+          const cancelUrl = baseUrl + "/cancel";
+          console.log("[Razorpay] Redirecting to cancel URL:", cancelUrl);
+          window.location.replace(cancelUrl);
         });
+
+        console.log("[Razorpay] Checkout opened for order:", orderId);
         rzp.open();
-      } catch {
+      } catch (err) {
+        console.error("[Razorpay] Initialization error:", err);
         setLoadState("error");
         setLoadError("Unable to launch payment gateway.");
       }
