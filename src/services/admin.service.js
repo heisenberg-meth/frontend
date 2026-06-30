@@ -460,6 +460,27 @@ export const adminApi = {
     return data;
   },
 
+  async extendTrial(id, payload) {
+    const { data } = await adminHttp.post(
+      `/admin/subscriptions/${id}/trial/extend`,
+      payload,
+    );
+    return data;
+  },
+
+  async reduceTrial(id, payload) {
+    const { data } = await adminHttp.post(
+      `/admin/subscriptions/${id}/trial/reduce`,
+      payload,
+    );
+    return data;
+  },
+
+  async getSubscriptionHistory(id) {
+    const { data } = await adminHttp.get(`/admin/subscriptions/${id}/history`);
+    return data;
+  },
+
   async getExpiringSubscriptions(days = 7) {
     const { data } = await adminHttp.get(
       API_ROUTES.ADMIN_SUBSCRIPTIONS_EXPIRING,

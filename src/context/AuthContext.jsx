@@ -253,7 +253,7 @@ export function AuthProvider({ children }) {
 
   const refreshSubscription = useCallback(async () => {
     try {
-      const res = await api.get("subscriptions/status");
+      const res = await api.get("subscriptions/current");
       const subData = res?.data?.data || res?.data || null;
       setSubscription(subData);
       return subData;

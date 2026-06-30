@@ -191,8 +191,8 @@ export default function SubscriptionCRUD({ showToast, user }) {
   };
 
   const isPending = !subscription || subscription?.status === "PENDING";
-  const isTrial = subscription?.isTrial === true;
-  const isExpired = subscription?.isExpired === true;
+  const isTrial = subscription?.isTrial === true || subscription?.status === "TRIAL";
+  const isExpired = subscription?.isExpired === true || subscription?.status === "EXPIRED";
 
   if (loading) {
     return (
@@ -265,6 +265,27 @@ export default function SubscriptionCRUD({ showToast, user }) {
                   TRIAL
                 </span>
               </>
+            ) : isExpired ? (
+              <>
+                <div
+                  className="ent-label"
+                  style={{ fontSize: "1.2rem", fontWeight: "bold", color: "#ef4444" }}
+                >
+                  Subscription Expired
+                </div>
+                <div
+                  className="ent-price"
+                  style={{ color: "var(--text-muted)", marginTop: "4px" }}
+                >
+                  Upgrade to continue using MedAssist
+                </div>
+                <span
+                  className="sub-status-badge expired"
+                  style={{ marginTop: "8px", display: "inline-block", background: "#ef4444", color: "#fff" }}
+                >
+                  EXPIRED
+                </span>
+              </>
             ) : (
               <>
                 <div
@@ -282,7 +303,7 @@ export default function SubscriptionCRUD({ showToast, user }) {
               </>
             )}
           </div>
-          {(isTrial || isPending) && !isExpired && (
+          {(isTrial || isPending || isExpired) && (
             <button
               className="sub-upgrade-btn"
               onClick={() =>

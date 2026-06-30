@@ -449,6 +449,19 @@ export default function Topbar({
             </button>
 
             <AnimatePresence>
+              {subscription && subscription.status === "EXPIRED" && (
+                <motion.div
+                  className="trial-badge expired"
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: 20 }}
+                  title="Subscription Expired"
+                  style={{ background: "#ef4444", color: "#fff" }}
+                >
+                  <Clock size={14} />
+                  <span>Subscription Expired | Upgrade Required</span>
+                </motion.div>
+              )}
               {subscription &&
                 (subscription.status === "ACTIVE" ||
                   subscription.status === "TRIAL") && (

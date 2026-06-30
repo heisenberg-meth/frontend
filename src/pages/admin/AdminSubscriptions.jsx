@@ -5,10 +5,11 @@ import {
   Clock,
   RefreshCw,
   Search,
-  ArrowUpDown,
   XCircle,
   Plus,
+  Minus,
   Download,
+  History,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import { safeNumber } from '../../utils/number.js';
@@ -24,6 +25,8 @@ export default function AdminSubscriptions() {
   const [actionSub, setActionSub] = useState(null);
   const [actionType, setActionType] = useState(null);
   const [actionValue, setActionValue] = useState("");
+  const [historySub, setHistorySub] = useState(null);
+  const [historyData, setHistoryData] = useState([]);
 
   const searchRef = useRef(search);
   useEffect(() => {
@@ -89,6 +92,14 @@ export default function AdminSubscriptions() {
       doAction(adminApi.renewSubscription, actionSub.id, {
         days: safeNumber(actionValue) || 365,
       });
+    else if (actionType === "extendTrial")
+      doAction(adminApi.extendTrial, actionSub.id, {
+        days: safeNumber(actionValue) || 7,
+      });
+    else if (actionType === "reduceTrial")
+      doAction(adminApi.reduceTrial, actionSub.id, {
+        days: safeNumber(actionValue) || 7,
+      });
     else if (actionType === "cancel")
       doAction(adminApi.cancelSubscription, actionSub.id);
     else if (actionType === "upgrade")
@@ -97,6 +108,18 @@ export default function AdminSubscriptions() {
       });
     setActionSub(null);
     setActionType(null);
+  };
+
+  const openHistory = async (sub) => {
+    setHistorySub(sub);
+    try {
+      const res = await adminApi.getSubscriptionHistory(sub.id);
+      if (res.success) {
+        setHistoryData(res.data || []);
+      }
+    } catch {
+      toast.error("Failed to load history");
+    }
   };
 
   const totalPages = Math.ceil(total / 15);
@@ -256,29 +279,43 @@ export default function AdminSubscriptions() {
                       </td>
                       <td>
                         <div style={{ display: "flex", gap: 4 }}>
+                          {s.status === "TRIAL" && (
+                            <>
+                              <button
+                                className="admin-icon-btn"
+                                style={{ color: "#22c55e" }}
+                                title="Extend Trial"
+                                onClick={() => openAction(s, "extendTrial")}
+                              >
+                                <Plus size={14} />
+                              </button>
+                              <button
+                                className="admin-icon-btn"
+                                style={{ color: "#f59e0b" }}
+                                title="Reduce Trial"
+                                onClick={() => openAction(s, "reduceTrial")}
+                              >
+                                <Minus size={14} />
+                              </button>
+                            </>
+                          )}
+                          {s.status !== "TRIAL" && (
+                            <button
+                              className="admin-icon-btn"
+                              style={{ color: "#22c55e" }}
+                              title="Renew"
+                              onClick={() => openAction(s, "renew")}
+                            >
+                              <RefreshCw size={14} />
+                            </button>
+                          )}
                           <button
                             className="admin-icon-btn"
-                            style={{ color: "#22c55e" }}
-                            title="Renew"
-                            onClick={() => openAction(s, "renew")}
+                            style={{ color: "#8b5cf6" }}
+                            title="History"
+                            onClick={() => openHistory(s)}
                           >
-                            <RefreshCw size={14} />
-                          </button>
-                          <button
-                            className="admin-icon-btn"
-                            style={{ color: "#3b82f6" }}
-                            title="Extend"
-                            onClick={() => openAction(s, "extend")}
-                          >
-                            <Plus size={14} />
-                          </button>
-                          <button
-                            className="admin-icon-btn"
-                            style={{ color: "#f59e0b" }}
-                            title="Upgrade"
-                            onClick={() => openAction(s, "upgrade")}
-                          >
-                            <ArrowUpDown size={14} />
+                            <History size={14} />
                           </button>
                           {s.status !== "EXPIRED" &&
                             s.status !== "CANCELLED" && (
@@ -336,6 +373,64 @@ export default function AdminSubscriptions() {
         </>
       )}
 
+      {historySub && (
+        <div
+          className="admin-overlay"
+          onClick={() => {
+            setHistorySub(null);
+            setHistoryData([]);
+          }}
+        >
+          <div
+            className="admin-modal"
+            onClick={(e) => e.stopPropagation()}
+            style={{ maxWidth: 600, maxHeight: "80vh", overflow: "auto" }}
+          >
+            <h3>Subscription History — {historySub.tenant?.name}</h3>
+            {historyData.length === 0 ? (
+              <p style={{ color: "#888", fontSize: 13 }}>No history found</p>
+            ) : (
+              <table className="admin-table" style={{ fontSize: 12 }}>
+                <thead>
+                  <tr>
+                    <th>Action</th>
+                    <th>Old Status</th>
+                    <th>New Status</th>
+                    <th>Old Expiry</th>
+                    <th>New Expiry</th>
+                    <th>Date</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {historyData.map((h) => (
+                    <tr key={h.id}>
+                      <td>{h.action}</td>
+                      <td>{h.oldStatus || "—"}</td>
+                      <td>{h.newStatus || "—"}</td>
+                      <td>{h.oldExpiry ? new Date(h.oldExpiry).toLocaleDateString() : "—"}</td>
+                      <td>{h.newExpiry ? new Date(h.newExpiry).toLocaleDateString() : "—"}</td>
+                      <td>{new Date(h.createdAt).toLocaleString()}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+            <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 12 }}>
+              <button
+                className="admin-btn"
+                style={{ background: "#333", color: "#fff" }}
+                onClick={() => {
+                  setHistorySub(null);
+                  setHistoryData([]);
+                }}
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {actionSub && actionType && (
         <div
           className="admin-overlay"
@@ -354,14 +449,23 @@ export default function AdminSubscriptions() {
                 ? "Renew"
                 : actionType === "extend"
                   ? "Extend"
-                  : "Change Plan"}{" "}
+                  : actionType === "extendTrial"
+                    ? "Extend Trial"
+                    : actionType === "reduceTrial"
+                      ? "Reduce Trial"
+                      : "Change Plan"}{" "}
               — {actionSub.tenant?.name}
             </h3>
             <p style={{ color: "#888", fontSize: 13, marginBottom: 12 }}>
               Current plan: {actionSub.plan?.name} | Expires:{" "}
-              {actionSub.endDate
-                ? new Date(actionSub.endDate).toLocaleDateString()
-                : "N/A"}
+              {actionSub.trialExpiresAt
+                ? new Date(actionSub.trialExpiresAt).toLocaleDateString()
+                : actionSub.endDate
+                  ? new Date(actionSub.endDate).toLocaleDateString()
+                  : "N/A"}
+              {actionSub.status === "TRIAL" && actionSub.trialDays && (
+                <> | Trial days: {actionSub.trialDays}</>
+              )}
             </p>
             {actionType === "upgrade" ? (
               <div className="admin-form-group">
@@ -374,13 +478,29 @@ export default function AdminSubscriptions() {
               </div>
             ) : (
               <div className="admin-form-group">
-                <label>Days to {actionType}</label>
+                <label>
+                  Days to {actionType === "extendTrial" ? "add" : actionType === "reduceTrial" ? "remove" : actionType}
+                </label>
                 <input
                   type="number"
                   value={actionValue}
                   onChange={(e) => setActionValue(e.target.value)}
                   min={1}
                 />
+                {actionType === "extendTrial" && (
+                  <div style={{ display: "flex", gap: 4, marginTop: 8 }}>
+                    {[7, 15, 30].map((d) => (
+                      <button
+                        key={d}
+                        className="admin-btn"
+                        style={{ background: "#333", color: "#fff", fontSize: 12, padding: "4px 8px" }}
+                        onClick={() => setActionValue(String(d))}
+                      >
+                        +{d}
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
             )}
             <div
