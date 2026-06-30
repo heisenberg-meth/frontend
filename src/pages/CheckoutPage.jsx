@@ -70,31 +70,79 @@ export default function CheckoutPage() {
         name: "Viyan MedAssist",
         description: "Subscription Upgrade",
         theme: { color: "#4fdbc8" },
-        handler: function (response) {
+        handler: async function (response) {
           isSuccess = true;
-          console.log("[Razorpay] Payment success", response);
-          const baseUrl = callback.replace(/\/+$/, "");
-          const redirectUrl =
-            baseUrl +
-            "/callback" +
-            "?razorpay_payment_id=" +
-            encodeURIComponent(response.razorpay_payment_id || "") +
-            "&razorpay_order_id=" +
-            encodeURIComponent(response.razorpay_order_id || "") +
-            "&razorpay_signature=" +
-            encodeURIComponent(response.razorpay_signature || "");
+          console.log(
+            "[Razorpay] Handler (success callback) invoked. Response:",
+            response,
+          );
 
-          console.log("[Razorpay] Redirecting to URL:", redirectUrl);
-          // Use replace to avoid back-button loops in the desktop webview
-          window.location.replace(redirectUrl);
+          setLoadState("verifying");
+
+          try {
+            console.log("[Razorpay] Verifying payment with backend...");
+            const verifyRes = await fetch("/api/payments/verify", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({
+                razorpay_order_id: response.razorpay_order_id,
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_signature: response.razorpay_signature,
+              }),
+            });
+
+            if (!verifyRes.ok) {
+              const errBody = await verifyRes.json().catch(() => ({}));
+              throw new Error(
+                errBody.reason ||
+                  errBody.error ||
+                  "Payment verification failed on the server.",
+              );
+            }
+
+            const data = await verifyRes.json();
+            console.log("[Razorpay] Verification success:", data);
+
+            const baseUrl = callback.replace(/\/+$/, "");
+            const redirectUrl =
+              baseUrl +
+              "/callback" +
+              "?razorpay_payment_id=" +
+              encodeURIComponent(response.razorpay_payment_id || "") +
+              "&razorpay_order_id=" +
+              encodeURIComponent(response.razorpay_order_id || "") +
+              "&razorpay_signature=" +
+              encodeURIComponent(response.razorpay_signature || "");
+
+            console.log(
+              "[Razorpay] Redirecting to success callback URL:",
+              redirectUrl,
+            );
+            // Use replace to avoid back-button loops in the desktop webview
+            window.location.replace(redirectUrl);
+          } catch (err) {
+            console.error("[Razorpay] Verification error:", err);
+            setLoadState("error");
+            setLoadError(
+              err.message || "Failed to verify payment with server.",
+            );
+          }
         },
         modal: {
           ondismiss() {
-            console.log("[Razorpay] Modal dismissed. isSuccess =", isSuccess);
+            console.log(
+              "[Razorpay] modal.ondismiss event fired. isSuccess =",
+              isSuccess,
+            );
             if (!isSuccess) {
               const baseUrl = callback.replace(/\/+$/, "");
               const cancelUrl = baseUrl + "/cancel";
-              console.log("[Razorpay] Redirecting to cancel URL:", cancelUrl);
+              console.trace(
+                "[Razorpay] Redirecting to cancel URL from modal.ondismiss:",
+                cancelUrl,
+              );
               window.location.replace(cancelUrl);
             }
           },
@@ -104,14 +152,21 @@ export default function CheckoutPage() {
       try {
         const rzp = new window.Razorpay(options);
         rzp.on("payment.failed", (failResponse) => {
-          console.log("[Razorpay] Payment failure", failResponse);
+          console.error(
+            "[Razorpay] payment.failed event fired. Response:",
+            failResponse,
+          );
           const baseUrl = callback.replace(/\/+$/, "");
           const cancelUrl = baseUrl + "/cancel";
-          console.log("[Razorpay] Redirecting to cancel URL:", cancelUrl);
+          console.trace(
+            "[Razorpay] Redirecting to cancel URL from payment.failed:",
+            cancelUrl,
+          );
           window.location.replace(cancelUrl);
         });
 
         console.log("[Razorpay] Checkout opened for order:", orderId);
+        console.log("[CheckoutPage] No frontend timeout logic configured.");
         rzp.open();
       } catch (err) {
         console.error("[Razorpay] Initialization error:", err);
@@ -137,9 +192,11 @@ export default function CheckoutPage() {
           <>
             <div className="w-12 h-12 border-4 border-[#4fdbc8]/20 border-t-[#4fdbc8] rounded-full animate-spin mx-auto mb-6" />
             <p className="text-gray-300 text-sm">
-              {loadState === "launching"
-                ? "Opening secure payment gateway..."
-                : "Preparing payment..."}
+              {loadState === "verifying"
+                ? "Verifying secure payment..."
+                : loadState === "launching"
+                  ? "Opening secure payment gateway..."
+                  : "Preparing payment..."}
             </p>
           </>
         )}
