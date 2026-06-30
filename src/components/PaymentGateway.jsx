@@ -3,8 +3,10 @@ import api from "../api";
 import { API_ROUTES } from "../constants/api.routes.js";
 import { loadRazorpay } from "../utils/razorpay";
 import { safeNumber } from "../utils/number.js";
+import { useAuth } from "../hooks/useAuth";
 
 export default function PaymentGateway({ user, onPaymentComplete, amount }) {
+  const { refreshUser } = useAuth();
   const [status, setStatus] = useState("checkout");
   const [method, setMethod] = useState("card");
   const [paymentError, setPaymentError] = useState(null);
@@ -57,11 +59,15 @@ export default function PaymentGateway({ user, onPaymentComplete, amount }) {
 
       const orderRes = await api.post(API_ROUTES.PAYMENTS_CREATE_ORDER, {
         amount: safeNumber(amount) || 1,
-        planName: "Subscription",
+        planName: "MedAssist Basic",
+        planId: "pro",
+        billingCycle: "monthly",
         _ts: Date.now(),
       });
 
-      const { key, order } = orderRes.data;
+      const resData = orderRes.data?.data || orderRes.data;
+      const key = resData.key || orderRes.data?.key;
+      const order = resData.order || resData;
       if (!order || !order.id) throw new Error("Invalid order received");
 
       const finalKey = key || import.meta.env.VITE_RAZORPAY_KEY_ID || "";
@@ -108,6 +114,11 @@ export default function PaymentGateway({ user, onPaymentComplete, amount }) {
                   clearInterval(pollRef.current);
                   setStatus("success");
                   isProcessingRef.current = false;
+                  try {
+                    await refreshUser();
+                  } catch (e) {
+                    console.error("Failed to refresh user auth state", e);
+                  }
                 } else if (
                   res.data?.paymentStatus === "FAILED" ||
                   attempts > 15
@@ -191,7 +202,7 @@ export default function PaymentGateway({ user, onPaymentComplete, amount }) {
       setPaymentError(errorMessage);
       isProcessingRef.current = false;
     }
-  }, [user, amount, retryCount, status]);
+  }, [user, amount, retryCount, status, refreshUser]);
 
   if (status === "success") {
     return (

@@ -268,9 +268,14 @@ function AppContent() {
     navigate("/login");
   };
 
-  const handlePaymentComplete = useCallback(() => {
-    navigate("/dashboard", { replace: true });
-  }, [navigate]);
+  const handlePaymentComplete = useCallback(async () => {
+    try {
+      await refreshUser();
+    } catch (e) {
+      console.error("Failed to refresh user after payment", e);
+    }
+    navigate("/settings", { replace: true });
+  }, [navigate, refreshUser]);
 
   const handleSelectPro = useCallback(() => {
     navigate("/payment");
