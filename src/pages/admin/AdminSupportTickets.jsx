@@ -85,7 +85,9 @@ export default function AdminSupportTickets() {
         fetchTickets();
       }
     } catch (err) {
-      toast.error(err.response?.data?.message || "Failed to update ticket status");
+      toast.error(
+        err.response?.data?.message || "Failed to update ticket status",
+      );
     }
   };
 
