@@ -54,7 +54,7 @@ adminHttp.interceptors.response.use(
         const { data } = await axios.post(
           `${getBaseUrl()}/admin/refresh`,
           { refreshToken },
-          { timeout: 60000 }
+          { timeout: 60000 },
         );
         if (data.success && data.data.accessToken) {
           return adminHttp(original);
@@ -76,6 +76,9 @@ export const adminApi = {
     });
     if (data.success && data.data.accessToken) {
       localStorage.setItem(ADMIN_KEY, JSON.stringify(data.data.admin));
+      if (data.data.refreshToken) {
+        localStorage.setItem(REFRESH_KEY, data.data.refreshToken);
+      }
     }
     return data;
   },
@@ -84,6 +87,9 @@ export const adminApi = {
     const { data } = await adminHttp.post(API_ROUTES.ADMIN_REFRESH);
     if (data.success && data.data.accessToken) {
       localStorage.setItem(ADMIN_KEY, JSON.stringify(data.data.admin));
+      if (data.data.refreshToken) {
+        localStorage.setItem(REFRESH_KEY, data.data.refreshToken);
+      }
     }
     return data;
   },
@@ -95,6 +101,7 @@ export const adminApi = {
       // logout errors are non-critical
     } finally {
       localStorage.removeItem(ADMIN_KEY);
+      localStorage.removeItem(REFRESH_KEY);
     }
   },
 
@@ -108,7 +115,7 @@ export const adminApi = {
   },
 
   getStoredToken() {
-    return null;
+    return localStorage.getItem(REFRESH_KEY);
   },
 
   async getDashboardStats() {
