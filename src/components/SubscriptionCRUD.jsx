@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import api from "../api.js";
 import { API_ROUTES } from "../constants/api.routes.js";
 import { useAuth } from "../hooks/useAuth";
@@ -55,8 +55,10 @@ export default function SubscriptionCRUD({ showToast, user }) {
   const [upgrading, setUpgrading] = useState(false);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState(null);
+  const pollRef = useRef(null);
+  const authorizedRef = useRef(false);
 
-  const refreshSubscriptionData = async () => {
+  const refreshSubscriptionData = useCallback(async () => {
     try {
       const [subRes, payRes] = await Promise.all([
         api.get(API_ROUTES.SUBSCRIPTIONS_STATUS),
@@ -69,7 +71,7 @@ export default function SubscriptionCRUD({ showToast, user }) {
     } catch {
       showToast("Could not verify subscription status", "error");
     }
-  };
+  }, [showToast]);
 
   useEffect(() => {
     let mounted = true;
@@ -103,12 +105,16 @@ export default function SubscriptionCRUD({ showToast, user }) {
 
     return () => {
       mounted = false;
+      if (pollRef.current) {
+        clearInterval(pollRef.current);
+      }
     };
   }, [showToast]);
 
   const handleUpgrade = async () => {
     if (!selectedPlan) return;
     setUpgrading(true);
+    authorizedRef.current = false;
     try {
       const amount =
         billingCycle === "annual"
@@ -152,18 +158,20 @@ export default function SubscriptionCRUD({ showToast, user }) {
         order_id: order.id,
         handler: async function (rzpResponse) {
           try {
+            authorizedRef.current = true;
             await api.post(API_ROUTES.PAYMENTS_VERIFY, rzpResponse);
             showToast("Payment processing... please wait", "info");
 
             let attempts = 0;
-            const poll = setInterval(async () => {
+            if (pollRef.current) clearInterval(pollRef.current);
+            pollRef.current = setInterval(async () => {
               attempts++;
               try {
                 const res = await api.get(
                   `${API_ROUTES.PAYMENTS_STATUS}?orderId=${order.id}`,
                 );
                 if (res.data?.paymentStatus === "SUCCESS") {
-                  clearInterval(poll);
+                  clearInterval(pollRef.current);
                   showToast(
                     "Payment verified. Subscription activated!",
                     "success",
@@ -175,7 +183,7 @@ export default function SubscriptionCRUD({ showToast, user }) {
                   res.data?.paymentStatus === "FAILED" ||
                   attempts > 15
                 ) {
-                  clearInterval(poll);
+                  clearInterval(pollRef.current);
                   showToast(
                     "Payment verification timed out. If money was deducted, it will be refunded or manually activated.",
                     "error",
@@ -184,7 +192,7 @@ export default function SubscriptionCRUD({ showToast, user }) {
                 }
               } catch (e) {
                 if (attempts > 15) {
-                  clearInterval(poll);
+                  clearInterval(pollRef.current);
                   showToast("Payment verification timed out.", "error");
                   setUpgrading(false);
                 }
@@ -205,7 +213,12 @@ export default function SubscriptionCRUD({ showToast, user }) {
         },
         modal: {
           ondismiss: function () {
-            setUpgrading(false);
+            if (!authorizedRef.current) {
+              setUpgrading(false);
+              if (pollRef.current) {
+                clearInterval(pollRef.current);
+              }
+            }
           },
         },
       };
@@ -243,7 +256,6 @@ export default function SubscriptionCRUD({ showToast, user }) {
         err.message ||
         "Unable to initialize payment. Please contact support if the problem persists.";
       showToast(msg, "error");
-    } finally {
       setUpgrading(false);
     }
   };

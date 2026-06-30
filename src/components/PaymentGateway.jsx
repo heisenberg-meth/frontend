@@ -10,6 +10,8 @@ export default function PaymentGateway({ user, onPaymentComplete, amount }) {
   const [paymentError, setPaymentError] = useState(null);
   const [retryCount, setRetryCount] = useState(0);
   const razorpayRef = useRef(null);
+  const pollRef = useRef(null);
+  const authorizedRef = useRef(false);
   const MAX_RETRIES = 3;
   const isProcessingRef = useRef(false);
 
@@ -22,6 +24,10 @@ export default function PaymentGateway({ user, onPaymentComplete, amount }) {
           void e;
         }
         razorpayRef.current = null;
+      }
+      if (pollRef.current) {
+        clearInterval(pollRef.current);
+        pollRef.current = null;
       }
     };
   }, []);
@@ -38,6 +44,7 @@ export default function PaymentGateway({ user, onPaymentComplete, amount }) {
     try {
       setPaymentError(null);
       setStatus("processing");
+      authorizedRef.current = false;
 
       if (razorpayRef.current) {
         try {
@@ -86,24 +93,26 @@ export default function PaymentGateway({ user, onPaymentComplete, amount }) {
         handler: async (response) => {
           try {
             setStatus("processing");
+            authorizedRef.current = true;
             await api.post(API_ROUTES.PAYMENTS_VERIFY, response);
 
             let attempts = 0;
-            const poll = setInterval(async () => {
+            if (pollRef.current) clearInterval(pollRef.current);
+            pollRef.current = setInterval(async () => {
               attempts++;
               try {
                 const res = await api.get(
                   `${API_ROUTES.PAYMENTS_STATUS}?orderId=${order.id}`,
                 );
                 if (res.data?.paymentStatus === "SUCCESS") {
-                  clearInterval(poll);
+                  clearInterval(pollRef.current);
                   setStatus("success");
                   isProcessingRef.current = false;
                 } else if (
                   res.data?.paymentStatus === "FAILED" ||
                   attempts > 15
                 ) {
-                  clearInterval(poll);
+                  clearInterval(pollRef.current);
                   setPaymentError(
                     "Payment verification timed out. If money was deducted, it will be refunded or manually activated.",
                   );
@@ -112,7 +121,7 @@ export default function PaymentGateway({ user, onPaymentComplete, amount }) {
                 }
               } catch (e) {
                 if (attempts > 15) {
-                  clearInterval(poll);
+                  clearInterval(pollRef.current);
                   setPaymentError(
                     "Payment verification timed out. If money was deducted, it will be refunded or manually activated.",
                   );
@@ -136,8 +145,13 @@ export default function PaymentGateway({ user, onPaymentComplete, amount }) {
         },
         modal: {
           ondismiss: function () {
-            setStatus("checkout");
-            isProcessingRef.current = false;
+            if (!authorizedRef.current) {
+              setStatus("checkout");
+              isProcessingRef.current = false;
+              if (pollRef.current) {
+                clearInterval(pollRef.current);
+              }
+            }
           },
         },
       };

@@ -268,6 +268,25 @@ function AppContent() {
     navigate("/login");
   };
 
+  const handlePaymentComplete = useCallback(() => {
+    navigate("/dashboard", { replace: true });
+  }, [navigate]);
+
+  const handleSelectPro = useCallback(() => {
+    navigate("/payment");
+  }, [navigate]);
+
+  const handleSelectTrial = useCallback(async () => {
+    try {
+      await api.post(API_ROUTES.SUBSCRIPTIONS_TRIAL);
+      await refreshUser();
+      showToast("Trial activated successfully", "success");
+      navigate("/dashboard", { replace: true });
+    } catch (err) {
+      showToast("Failed to activate trial", err);
+    }
+  }, [navigate, refreshUser, showToast]);
+
   const handleClearAll = async () => {
     try {
       await api.delete("inventory/medicines-clear-all");
@@ -451,6 +470,9 @@ function AppContent() {
           setShowAuthModal={setShowAuthModal}
           setPendingUpdates={setPendingUpdates}
           setShowLogoutModal={setShowLogoutModal}
+          handlePaymentComplete={handlePaymentComplete}
+          handleSelectPro={handleSelectPro}
+          handleSelectTrial={handleSelectTrial}
           PaywallComponent={() => (
             <Paywall onActivate={() => navigate("/plans")} />
           )}
