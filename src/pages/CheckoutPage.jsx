@@ -1,6 +1,8 @@
 import { useState, useEffect, useMemo } from "react";
 import { useSearchParams } from "react-router-dom";
 import { loadRazorpay } from "../utils/razorpay";
+import api from "../api";
+import { API_ROUTES } from "../constants/api.routes";
 
 const ALLOWED_CALLBACK_HOSTS = ["127.0.0.1", "localhost"];
 
@@ -81,28 +83,13 @@ export default function CheckoutPage() {
 
           try {
             console.log("[Razorpay] Verifying payment with backend...");
-            const verifyRes = await fetch("/api/payments/verify", {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-              },
-              body: JSON.stringify({
-                razorpay_order_id: response.razorpay_order_id,
-                razorpay_payment_id: response.razorpay_payment_id,
-                razorpay_signature: response.razorpay_signature,
-              }),
+            const verifyRes = await api.post(API_ROUTES.PAYMENTS_VERIFY, {
+              razorpay_order_id: response.razorpay_order_id,
+              razorpay_payment_id: response.razorpay_payment_id,
+              razorpay_signature: response.razorpay_signature,
             });
 
-            if (!verifyRes.ok) {
-              const errBody = await verifyRes.json().catch(() => ({}));
-              throw new Error(
-                errBody.reason ||
-                  errBody.error ||
-                  "Payment verification failed on the server.",
-              );
-            }
-
-            const data = await verifyRes.json();
+            const data = verifyRes.data;
             console.log("[Razorpay] Verification success:", data);
 
             const baseUrl = callback.replace(/\/+$/, "");
