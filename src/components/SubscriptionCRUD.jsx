@@ -5,8 +5,7 @@ import { useAuth } from "../hooks/useAuth";
 import { ShieldCheck, Loader2, Sparkles } from "lucide-react";
 import ConfirmModal from "./ConfirmModal";
 import { loadRazorpay } from "../utils/razorpay";
-import { safeNumber } from '../utils/number.js';
-
+import { safeNumber } from "../utils/number.js";
 
 function Spinner({ size = 14 }) {
   return (
@@ -26,7 +25,7 @@ const PLANS = [
   {
     id: "basic-monthly",
     name: "MedAssist Basic",
-    price: { monthly: 599, annual: 5990 },
+    price: { monthly: 1, annual: 1 },
     features: ["Unlimited Medicines", "Basic Analytics", "Up to 3 users"],
     missing: ["Advanced Reports", "AI Features"],
     color: "var(--info)",
