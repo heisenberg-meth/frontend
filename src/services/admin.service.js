@@ -54,9 +54,15 @@ adminHttp.interceptors.response.use(
         const { data } = await axios.post(
           `${getBaseUrl()}/admin/refresh`,
           { refreshToken },
-          { timeout: 60000 },
+          { timeout: 60000, withCredentials: true },
         );
         if (data.success && data.data.accessToken) {
+          if (data.data.admin) {
+            localStorage.setItem(ADMIN_KEY, JSON.stringify(data.data.admin));
+          }
+          if (data.data.refreshToken) {
+            localStorage.setItem(REFRESH_KEY, data.data.refreshToken);
+          }
           return adminHttp(original);
         }
       } catch {
