@@ -128,7 +128,8 @@
 /* ── Admin Shell ── */
 .admin-shell {
   display: flex;
-  min-height: 100vh;
+  height: 100vh;
+  overflow: hidden;
   background: #0a0e1a;
   color: #e0e0e0;
 }
