@@ -153,19 +153,60 @@ export default function SubscriptionCRUD({ showToast, user }) {
         handler: async function (rzpResponse) {
           try {
             await api.post(API_ROUTES.PAYMENTS_VERIFY, rzpResponse);
-            showToast("Payment verified. Subscription activated!", "success");
-            await refreshUser();
-            await refreshSubscriptionData();
+            showToast("Payment processing... please wait", "info");
+
+            let attempts = 0;
+            const poll = setInterval(async () => {
+              attempts++;
+              try {
+                const res = await api.get(
+                  `${API_ROUTES.PAYMENTS_STATUS}?orderId=${order.id}`,
+                );
+                if (res.data?.paymentStatus === "SUCCESS") {
+                  clearInterval(poll);
+                  showToast(
+                    "Payment verified. Subscription activated!",
+                    "success",
+                  );
+                  await refreshUser();
+                  await refreshSubscriptionData();
+                  setUpgrading(false);
+                } else if (
+                  res.data?.paymentStatus === "FAILED" ||
+                  attempts > 15
+                ) {
+                  clearInterval(poll);
+                  showToast(
+                    "Payment verification timed out. If money was deducted, it will be refunded or manually activated.",
+                    "error",
+                  );
+                  setUpgrading(false);
+                }
+              } catch (e) {
+                if (attempts > 15) {
+                  clearInterval(poll);
+                  showToast("Payment verification timed out.", "error");
+                  setUpgrading(false);
+                }
+                console.log(e);
+              }
+            }, 2000);
           } catch (err) {
             console.error("Payment Verification Error", err);
             showToast(
               "Payment received but verification failed. Our team has been notified. Please do not make another payment.",
               "error",
             );
+            setUpgrading(false);
           }
         },
         theme: {
           color: "#4fdbc8",
+        },
+        modal: {
+          ondismiss: function () {
+            setUpgrading(false);
+          },
         },
       };
 
@@ -175,7 +216,10 @@ export default function SubscriptionCRUD({ showToast, user }) {
 
       const loaded = await loadRazorpay();
       if (!loaded) {
-        showToast("Unable to connect to Razorpay. Please check your internet connection and try again.", "error");
+        showToast(
+          "Unable to connect to Razorpay. Please check your internet connection and try again.",
+          "error",
+        );
         setUpgrading(false);
         return;
       }
@@ -183,7 +227,10 @@ export default function SubscriptionCRUD({ showToast, user }) {
       const rzp = new window.Razorpay(options);
       rzp.on("payment.failed", function (failResponse) {
         console.error("Razorpay Payment Failed:", failResponse);
-        showToast(`Payment failed: ${failResponse.error?.description || 'Unknown error'}`, "error");
+        showToast(
+          `Payment failed: ${failResponse.error?.description || "Unknown error"}`,
+          "error",
+        );
       });
       rzp.open();
 
@@ -191,7 +238,10 @@ export default function SubscriptionCRUD({ showToast, user }) {
       setSelectedPlan(null);
     } catch (err) {
       console.error("Payment Initialization Error:", err);
-      const msg = err.response?.data?.error || err.message || "Unable to initialize payment. Please contact support if the problem persists.";
+      const msg =
+        err.response?.data?.error ||
+        err.message ||
+        "Unable to initialize payment. Please contact support if the problem persists.";
       showToast(msg, "error");
     } finally {
       setUpgrading(false);
@@ -205,8 +255,10 @@ export default function SubscriptionCRUD({ showToast, user }) {
   };
 
   const isPending = !subscription || subscription?.status === "PENDING";
-  const isTrial = subscription?.isTrial === true || subscription?.status === "TRIAL";
-  const isExpired = subscription?.isExpired === true || subscription?.status === "EXPIRED";
+  const isTrial =
+    subscription?.isTrial === true || subscription?.status === "TRIAL";
+  const isExpired =
+    subscription?.isExpired === true || subscription?.status === "EXPIRED";
 
   if (loading) {
     return (
@@ -283,7 +335,11 @@ export default function SubscriptionCRUD({ showToast, user }) {
               <>
                 <div
                   className="ent-label"
-                  style={{ fontSize: "1.2rem", fontWeight: "bold", color: "#ef4444" }}
+                  style={{
+                    fontSize: "1.2rem",
+                    fontWeight: "bold",
+                    color: "#ef4444",
+                  }}
                 >
                   Subscription Expired
                 </div>
@@ -295,7 +351,12 @@ export default function SubscriptionCRUD({ showToast, user }) {
                 </div>
                 <span
                   className="sub-status-badge expired"
-                  style={{ marginTop: "8px", display: "inline-block", background: "#ef4444", color: "#fff" }}
+                  style={{
+                    marginTop: "8px",
+                    display: "inline-block",
+                    background: "#ef4444",
+                    color: "#fff",
+                  }}
                 >
                   EXPIRED
                 </span>

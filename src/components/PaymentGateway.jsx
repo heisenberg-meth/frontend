@@ -85,20 +85,60 @@ export default function PaymentGateway({ user, onPaymentComplete, amount }) {
         order_id: order.id,
         handler: async (response) => {
           try {
+            setStatus("processing");
             await api.post(API_ROUTES.PAYMENTS_VERIFY, response);
-            setStatus("success");
+
+            let attempts = 0;
+            const poll = setInterval(async () => {
+              attempts++;
+              try {
+                const res = await api.get(
+                  `${API_ROUTES.PAYMENTS_STATUS}?orderId=${order.id}`,
+                );
+                if (res.data?.paymentStatus === "SUCCESS") {
+                  clearInterval(poll);
+                  setStatus("success");
+                  isProcessingRef.current = false;
+                } else if (
+                  res.data?.paymentStatus === "FAILED" ||
+                  attempts > 15
+                ) {
+                  clearInterval(poll);
+                  setPaymentError(
+                    "Payment verification timed out. If money was deducted, it will be refunded or manually activated.",
+                  );
+                  setStatus("checkout");
+                  isProcessingRef.current = false;
+                }
+              } catch (e) {
+                if (attempts > 15) {
+                  clearInterval(poll);
+                  setPaymentError(
+                    "Payment verification timed out. If money was deducted, it will be refunded or manually activated.",
+                  );
+                  setStatus("checkout");
+                  isProcessingRef.current = false;
+                }
+                console.log(e);
+              }
+            }, 2000);
           } catch (err) {
             console.error("Payment Verification Error:", err);
             setPaymentError(
               "Payment received but verification failed. Our team has been notified. Please do not make another payment.",
             );
             setStatus("checkout");
-          } finally {
             isProcessingRef.current = false;
           }
         },
         theme: {
           color: "#4fdbc8",
+        },
+        modal: {
+          ondismiss: function () {
+            setStatus("checkout");
+            isProcessingRef.current = false;
+          },
         },
       };
 
