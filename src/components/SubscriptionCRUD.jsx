@@ -193,8 +193,6 @@ export default function SubscriptionCRUD({ showToast, user }) {
   const isPending = !subscription || subscription?.status === "PENDING";
   const isTrial = subscription?.isTrial === true;
   const isExpired = subscription?.isExpired === true;
-  const expiryDate = subscription?.expiresAt;
-  const daysLeft = subscription ? subscription.daysRemaining : null;
 
   if (loading) {
     return (
@@ -225,12 +223,64 @@ export default function SubscriptionCRUD({ showToast, user }) {
             <ShieldCheck size={24} />
           </div>
           <div className="sub-current-info">
-            <h3>{subscription?.planName || "No Plan"}</h3>
-            <span
-              className={`sub-status-badge ${(subscription?.status || "pending").toLowerCase()}`}
-            >
-              {subscription?.status || "PENDING"}
-            </span>
+            {subscription?.status === "ACTIVE" ? (
+              <>
+                <div
+                  className="ent-label"
+                  style={{ fontSize: "1.2rem", fontWeight: "bold" }}
+                >
+                  {subscription.planName}
+                </div>
+                <div
+                  className="ent-price"
+                  style={{ color: "var(--text-muted)", marginTop: "4px" }}
+                >
+                  ₹{subscription.price}/mo
+                </div>
+                <span
+                  className="sub-status-badge active"
+                  style={{ marginTop: "8px", display: "inline-block" }}
+                >
+                  ACTIVE
+                </span>
+              </>
+            ) : isTrial ? (
+              <>
+                <div
+                  className="ent-label"
+                  style={{ fontSize: "1.2rem", fontWeight: "bold" }}
+                >
+                  Free Trial
+                </div>
+                <div
+                  className="ent-price"
+                  style={{ color: "var(--text-muted)", marginTop: "4px" }}
+                >
+                  {subscription.daysRemaining} days remaining
+                </div>
+                <span
+                  className="sub-status-badge trial"
+                  style={{ marginTop: "8px", display: "inline-block" }}
+                >
+                  TRIAL
+                </span>
+              </>
+            ) : (
+              <>
+                <div
+                  className="ent-label"
+                  style={{ fontSize: "1.2rem", fontWeight: "bold" }}
+                >
+                  No Plan
+                </div>
+                <span
+                  className="sub-status-badge pending"
+                  style={{ marginTop: "8px", display: "inline-block" }}
+                >
+                  {subscription?.status || "PENDING"}
+                </span>
+              </>
+            )}
           </div>
           {(isTrial || isPending) && !isExpired && (
             <button
@@ -244,28 +294,6 @@ export default function SubscriptionCRUD({ showToast, user }) {
               <Sparkles size={16} /> Upgrade
             </button>
           )}
-        </div>
-        <div className="sub-current-details">
-          <div className="sub-detail-item">
-            <label>Amount</label>
-            <span>{isTrial ? "Free" : `₹${subscription?.price || 0}/mo`}</span>
-          </div>
-          <div className="sub-detail-item">
-            <label>Expires</label>
-            <span>
-              {expiryDate ? new Date(expiryDate).toLocaleDateString() : "—"}
-            </span>
-          </div>
-          <div className="sub-detail-item">
-            <label>Remaining</label>
-            <span
-              style={{
-                color: daysLeft <= 7 ? "var(--danger)" : "var(--success)",
-              }}
-            >
-              {daysLeft !== null ? `${daysLeft} days` : "—"}
-            </span>
-          </div>
         </div>
       </div>
 

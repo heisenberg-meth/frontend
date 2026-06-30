@@ -4,9 +4,9 @@ import Topbar from "../components/Topbar";
 
 export default function DashboardLayout({
   user,
+  subscription,
   toggleTheme,
   theme,
-  trialDaysLeft,
   setShowLogoutModal,
 }) {
   return (
@@ -18,9 +18,7 @@ export default function DashboardLayout({
           user={user}
           toggleTheme={toggleTheme}
           theme={theme}
-          trialDays={
-            user?.subscriptionStatus === "TRIAL" ? trialDaysLeft : null
-          }
+          subscription={subscription}
           onSignOut={() => setShowLogoutModal(true)}
         />
 

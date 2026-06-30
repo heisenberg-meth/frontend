@@ -110,7 +110,6 @@ export default function AppRoutes({
   const isPrivileged = user?.role === "OWNER" || user?.role === "ADMIN";
   const needsPlanSelection =
     !subStatus || subStatus === SubscriptionStatus.PENDING;
-  const trialDaysLeft = subscription ? subscription.daysRemaining : null;
 
   return (
     <Suspense fallback={<LoadingScreen message="Loading clinical module..." />}>
@@ -146,7 +145,7 @@ export default function AppRoutes({
                   user={user}
                   toggleTheme={toggleTheme}
                   theme={theme}
-                  trialDaysLeft={trialDaysLeft}
+                  subscription={subscription}
                   setShowLogoutModal={setShowLogoutModal}
                   medicines={medicines}
                 />

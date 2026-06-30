@@ -88,7 +88,6 @@ export default function SystemSettings({
             if (s.inventory.reorderQuantityMultiplier)
               setReorderQty(s.inventory.reorderQuantityMultiplier * 10);
           }
-
           if (s.notifications) {
             if (s.notifications.emailEnabled !== undefined)
               setNotifEmail(s.notifications.emailEnabled);
@@ -101,7 +100,6 @@ export default function SystemSettings({
             if (s.notifications.alertEmail)
               setAlertEmail(s.notifications.alertEmail);
           }
-
           if (s.invoiceTemplate) {
             if (s.invoiceTemplate.invoicePrefix)
               setInvPrefix(s.invoiceTemplate.invoicePrefix);
@@ -126,7 +124,6 @@ export default function SystemSettings({
             if (s.invoiceTemplate.logoUrl)
               setLogoUrl(s.invoiceTemplate.logoUrl);
           }
-
           if (s.storeProfile) {
             if (s.storeProfile.gstin) setGstin(s.storeProfile.gstin);
             if (s.storeProfile.businessName)

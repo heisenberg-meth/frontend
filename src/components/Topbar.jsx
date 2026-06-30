@@ -158,7 +158,7 @@ export default function Topbar({
   toggleTheme,
   alertCount,
   onSignOut,
-  trialDays,
+  subscription,
 }) {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
@@ -449,20 +449,30 @@ export default function Topbar({
             </button>
 
             <AnimatePresence>
-              {trialDays !== null && (
-                <motion.div
-                  className="trial-badge"
-                  initial={{ opacity: 0, x: 20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: 20 }}
-                  title="Trial Period"
-                >
-                  <Clock size={14} />
-                  <span>
-                    {trialDays} {trialDays === 1 ? "Day" : "Days"} Left
-                  </span>
-                </motion.div>
-              )}
+              {subscription &&
+                (subscription.status === "ACTIVE" ||
+                  subscription.status === "TRIAL") && (
+                  <motion.div
+                    className="trial-badge"
+                    initial={{ opacity: 0, x: 20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: 20 }}
+                    title={
+                      subscription.status === "ACTIVE"
+                        ? "Active Subscription"
+                        : "Trial Period"
+                    }
+                  >
+                    <Clock size={14} />
+                    <span>
+                      {subscription.status === "ACTIVE"
+                        ? `${subscription.planName} | `
+                        : "Free Trial | "}
+                      {subscription.daysRemaining}{" "}
+                      {subscription.daysRemaining === 1 ? "Day" : "Days"} Left
+                    </span>
+                  </motion.div>
+                )}
             </AnimatePresence>
 
             <div className="notification-wrap" style={{ position: "relative" }}>
@@ -574,7 +584,10 @@ export default function Topbar({
               </div>
               <div className="user-avatar-box">
                 <img
-                  src={getAvatarUrl(user?.avatar, user?.fullName || user?.username)}
+                  src={getAvatarUrl(
+                    user?.avatar,
+                    user?.fullName || user?.username,
+                  )}
                   className="avatar-img"
                   alt="Profile"
                 />
