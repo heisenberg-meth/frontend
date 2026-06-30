@@ -176,6 +176,7 @@ api.interceptors.request.use(
       "auth/register",
       "auth/refresh",
       "auth/refresh-token",
+      "payments/create-order",
     ];
 
     if (
