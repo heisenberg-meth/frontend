@@ -148,6 +148,7 @@ function ReorderModal({ medicine, onClose, showToast }) {
 
   const supplierName =
     medicine.inventoryBatches?.[0]?.supplier?.name ??
+    medicine.supplier?.name ??
     medicine.supplier ??
     "Not assigned";
 
@@ -475,7 +476,7 @@ function MedicineModal({
     reorderLevel: "10",
     gst: "12",
     manufacturer: "",
-    supplier: "",
+    supplierId: "",
     barcode: "",
     hsnCode: "",
     schedule: "OTC",
@@ -484,9 +485,32 @@ function MedicineModal({
   };
 
   const [form, setForm] = useState(
-    editData ? { ...EMPTY, ...editData } : EMPTY,
+    editData
+      ? {
+          ...EMPTY,
+          ...editData,
+          supplierId: editData.supplierId || editData.supplier?.id || "",
+        }
+      : EMPTY,
   );
   const [errors, setErrors] = useState({});
+  const [suppliers, setSuppliers] = useState([]);
+  const [loadingSuppliers, setLoadingSuppliers] = useState(false);
+
+  useEffect(() => {
+    const loadSuppliers = async () => {
+      setLoadingSuppliers(true);
+      try {
+        const res = await getSuppliers({ limit: 500 });
+        setSuppliers(res.data?.data || res.data || []);
+      } catch (err) {
+        showToast("Failed to load suppliers", err);
+      } finally {
+        setLoadingSuppliers(false);
+      }
+    };
+    loadSuppliers();
+  }, [showToast]);
   const set = (key, val) => {
     setForm((f) => ({ ...f, [key]: val }));
     if (errors[key]) setErrors((e) => ({ ...e, [key]: null }));
@@ -814,12 +838,66 @@ function MedicineModal({
             {/* Supplier */}
             <div className="form-group full">
               <label>Supplier</label>
-              <input
-                required
-                placeholder="e.g. Cipla Distributors"
-                value={form.supplier || ""}
-                onChange={(e) => set("supplier", e.target.value)}
-              />
+              {loadingSuppliers ? (
+                <div
+                  style={{
+                    padding: "10px",
+                    fontSize: "14px",
+                    color: "var(--text-muted)",
+                  }}
+                >
+                  Loading suppliers...
+                </div>
+              ) : suppliers.length > 0 ? (
+                <select
+                  value={form.supplierId || ""}
+                  onChange={(e) => set("supplierId", e.target.value)}
+                  className={errors.supplierId ? "input-error" : ""}
+                >
+                  <option value="">Select Supplier</option>
+                  {suppliers.map((s) => (
+                    <option key={s.id} value={s.id}>
+                      {s.name}
+                    </option>
+                  ))}
+                </select>
+              ) : (
+                <div
+                  style={{
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: "8px",
+                  }}
+                >
+                  <div
+                    style={{
+                      padding: "10px",
+                      fontSize: "14px",
+                      color: "var(--text-muted)",
+                      background: "var(--surface-2)",
+                      borderRadius: "8px",
+                      border: "1px dashed var(--overlay-06)",
+                    }}
+                  >
+                    No suppliers available
+                  </div>
+                  <a
+                    href="/suppliers"
+                    style={{
+                      color: "var(--primary)",
+                      fontSize: "14px",
+                      fontWeight: "600",
+                      textDecoration: "none",
+                      alignSelf: "flex-start",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "4px",
+                    }}
+                  >
+                    <Plus size={14} /> Create Supplier
+                  </a>
+                </div>
+              )}
             </div>
 
             {/* Notes */}
@@ -941,7 +1019,7 @@ function MedicineViewModal({ medicine, onClose, onEditBatch, onAddBatch }) {
             </div>
             <div className="inv-detail-item">
               <label>Supplier</label>
-              <span>{medicine.supplier || "—"}</span>
+              <span>{medicine.supplier?.name || medicine.supplier || "—"}</span>
             </div>
             <div className="inv-detail-item">
               <label>Reorder Level</label>
