@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import {
   RefreshCw,
   Save,
@@ -8,12 +8,15 @@ import {
   Zap,
   Clock,
   AlertTriangle,
+  FileText,
 } from "lucide-react";
 import api from "../api";
 import { useAuth } from "../hooks/useAuth";
 import { API_ROUTES } from "../constants/api.routes.js";
 import SubscriptionCRUD from "./SubscriptionCRUD";
-import { safeNumber } from "../utils/number.js";
+import LegalPages from "./LegalPages";
+import GSTConfigCard from "./GSTConfigCard";
+import ShopDetailsCard from "./ShopDetailsCard";
 import { formatInvoiceTime } from "../utils/dateTime.js";
 export default function SystemSettings({
   user,
@@ -30,27 +33,7 @@ export default function SystemSettings({
   const { subscription } = useAuth();
   const [currentView, setCurrentView] = useState("settings");
   const [saving, setSaving] = useState(false);
-  const [gstin, setGstin] = useState("");
-  const [bizName, setBizName] = useState("");
-  const [shopName, setShopName] = useState("");
-  const [phone, setPhone] = useState("");
-  const [email, setEmail] = useState("");
-  const [address, setAddress] = useState("");
-  const [gstState, setGstState] = useState("");
-  const [filingFreq, setFilingFreq] = useState("Monthly");
-  const [invPrefix, setInvPrefix] = useState("INV-");
-  const [showLogo, setShowLogo] = useState(true);
-  const [showDoctor, setShowDoctor] = useState(true);
-  const [footerMsg, setFooterMsg] = useState(
-    "Thank you for choosing Viyan Pharmacy. Get well soon!",
-  );
-  const [templateName, setTemplateName] = useState("DEFAULT_GST_TEMPLATE");
-  const [paperSize, setPaperSize] = useState("A4");
-  const [showQRCode, setShowQRCode] = useState(false);
-  const [showHSNCode, setShowHSNCode] = useState(true);
-  const [showExpiryDate, setShowExpiryDate] = useState(true);
-  const [showGSTBreakdown, setShowGSTBreakdown] = useState(true);
-  const [logoUrl, setLogoUrl] = useState("");
+  const [settingsData, setSettingsData] = useState(null);
   const [reorderQty, setReorderQty] = useState(50);
   const [autoEscalation, setAutoEscalation] = useState(true);
   const [immutableAudit, setImmutableAudit] = useState(false);
@@ -65,85 +48,55 @@ export default function SystemSettings({
   const [queueMetrics, setQueueMetrics] = useState(null);
   const [isOpsLoading, setIsOpsLoading] = useState(false);
 
-  useEffect(() => {
-    const loadSettings = async () => {
-      try {
-        const settingsRes = await api.get(API_ROUTES.SETTINGS);
+  const loadSettings = useCallback(async () => {
+    try {
+      const settingsRes = await api.get(API_ROUTES.SETTINGS);
+      if (settingsRes?.data?.data) {
+        const s = settingsRes.data.data;
+        setSettingsData(s);
+        if (s.lowStock) setLowStock(s.lowStock);
+        if (s.expiryDays) setExpiryDays(s.expiryDays);
+        if (s.theme) setTheme(s.theme);
 
-        if (settingsRes?.data?.data) {
-          const s = settingsRes.data.data;
-          if (s.lowStock) setLowStock(s.lowStock);
-          if (s.expiryDays) setExpiryDays(s.expiryDays);
-          if (s.theme) setTheme(s.theme);
-
-          if (s.inventory) {
-            if (s.inventory.autoReorderEnabled !== undefined)
-              setAutoEscalation(s.inventory.autoReorderEnabled);
-            if (s.inventory.immutableAudit !== undefined)
-              setImmutableAudit(s.inventory.immutableAudit);
-            if (s.inventory.outOfStockNotification !== undefined)
-              setOosNotif(s.inventory.outOfStockNotification);
-            if (s.inventory.fifoEnabled !== undefined)
-              setFifoEnf(s.inventory.fifoEnabled);
-            if (s.inventory.reorderQuantityMultiplier)
-              setReorderQty(s.inventory.reorderQuantityMultiplier * 10);
-          }
-          if (s.notifications) {
-            if (s.notifications.emailEnabled !== undefined)
-              setNotifEmail(s.notifications.emailEnabled);
-            if (s.notifications.inAppEnabled !== undefined)
-              setNotifInApp(s.notifications.inAppEnabled);
-            if (s.notifications.smsEnabled !== undefined)
-              setNotifSms(s.notifications.smsEnabled);
-            if (s.notifications.whatsappEnabled !== undefined)
-              setNotifWa(s.notifications.whatsappEnabled);
-            if (s.notifications.alertEmail)
-              setAlertEmail(s.notifications.alertEmail);
-          }
-          if (s.invoiceTemplate) {
-            if (s.invoiceTemplate.invoicePrefix)
-              setInvPrefix(s.invoiceTemplate.invoicePrefix);
-            if (s.invoiceTemplate.showLogo !== undefined)
-              setShowLogo(s.invoiceTemplate.showLogo);
-            if (s.invoiceTemplate.showDoctorName !== undefined)
-              setShowDoctor(s.invoiceTemplate.showDoctorName);
-            if (s.invoiceTemplate.footerText)
-              setFooterMsg(s.invoiceTemplate.footerText);
-            if (s.invoiceTemplate.templateName)
-              setTemplateName(s.invoiceTemplate.templateName);
-            if (s.invoiceTemplate.paperSize)
-              setPaperSize(s.invoiceTemplate.paperSize);
-            if (s.invoiceTemplate.showQRCode !== undefined)
-              setShowQRCode(s.invoiceTemplate.showQRCode);
-            if (s.invoiceTemplate.showHSNCode !== undefined)
-              setShowHSNCode(s.invoiceTemplate.showHSNCode);
-            if (s.invoiceTemplate.showExpiryDate !== undefined)
-              setShowExpiryDate(s.invoiceTemplate.showExpiryDate);
-            if (s.invoiceTemplate.showGSTBreakdown !== undefined)
-              setShowGSTBreakdown(s.invoiceTemplate.showGSTBreakdown);
-            if (s.invoiceTemplate.logoUrl)
-              setLogoUrl(s.invoiceTemplate.logoUrl);
-          }
-          if (s.storeProfile) {
-            if (s.storeProfile.gstin) setGstin(s.storeProfile.gstin);
-            if (s.storeProfile.businessName)
-              setBizName(s.storeProfile.businessName);
-            if (s.storeProfile.shopName) setShopName(s.storeProfile.shopName);
-            if (s.storeProfile.phone) setPhone(s.storeProfile.phone);
-            if (s.storeProfile.email) setEmail(s.storeProfile.email);
-            if (s.storeProfile.address) setAddress(s.storeProfile.address);
-            if (s.storeProfile.state) setGstState(s.storeProfile.state);
-            if (s.storeProfile.filingFrequency)
-              setFilingFreq(s.storeProfile.filingFrequency);
-          }
+        if (s.inventory) {
+          if (s.inventory.autoReorderEnabled !== undefined)
+            setAutoEscalation(s.inventory.autoReorderEnabled);
+          if (s.inventory.immutableAudit !== undefined)
+            setImmutableAudit(s.inventory.immutableAudit);
+          if (s.inventory.outOfStockNotification !== undefined)
+            setOosNotif(s.inventory.outOfStockNotification);
+          if (s.inventory.fifoEnabled !== undefined)
+            setFifoEnf(s.inventory.fifoEnabled);
+          if (s.inventory.reorderQuantityMultiplier)
+            setReorderQty(s.inventory.reorderQuantityMultiplier * 10);
         }
-      } catch (err) {
-        console.error("Failed to load settings:", err);
-        showToast?.("Failed to load settings", "error");
+        if (s.notifications) {
+          if (s.notifications.emailEnabled !== undefined)
+            setNotifEmail(s.notifications.emailEnabled);
+          if (s.notifications.inAppEnabled !== undefined)
+            setNotifInApp(s.notifications.inAppEnabled);
+          if (s.notifications.smsEnabled !== undefined)
+            setNotifSms(s.notifications.smsEnabled);
+          if (s.notifications.whatsappEnabled !== undefined)
+            setNotifWa(s.notifications.whatsappEnabled);
+          if (s.notifications.alertEmail)
+            setAlertEmail(s.notifications.alertEmail);
+        }
       }
-    };
-    loadSettings();
+    } catch (err) {
+      console.error("Failed to load settings:", err);
+      showToast?.("Failed to load settings", "error");
+    }
   }, [setExpiryDays, setLowStock, setTheme, showToast]);
+
+  const loadSettingsRef = useRef();
+  useEffect(() => {
+    loadSettingsRef.current = loadSettings;
+  });
+
+  useEffect(() => {
+    loadSettingsRef.current?.();
+  }, []);
 
   const refreshOpsData = async () => {
     try {
@@ -227,31 +180,6 @@ export default function SystemSettings({
           smsEnabled: notifSms,
           whatsappEnabled: notifWa,
           alertEmail: alertEmail,
-        }),
-        api.put(API_ROUTES.SETTINGS_INVOICE_TEMPLATE, {
-          templateName,
-          paperSize,
-          invoicePrefix: invPrefix,
-          showLogo,
-          showDoctorName: showDoctor,
-          showQRCode,
-          showHSNCode,
-          showExpiryDate,
-          showGSTBreakdown,
-          logoUrl: logoUrl || null,
-          footerText: footerMsg,
-        }),
-        api.put(API_ROUTES.SETTINGS, {
-          storeProfile: {
-            gstin: gstin || null,
-            businessName: bizName,
-            shopName,
-            phone,
-            email,
-            address,
-            state: gstState,
-            filingFrequency: filingFreq,
-          },
         }),
       ]);
       showToast("Global facility configuration synchronized", "success");
@@ -379,6 +307,12 @@ export default function SystemSettings({
         <div className="header-right">
           <button
             className="sys-btn-outline"
+            onClick={() => setCurrentView("legal")}
+          >
+            <FileText size={16} /> Legal & Compliance
+          </button>
+          <button
+            className="sys-btn-outline"
             onClick={() => setCurrentView("ops")}
           >
             <Activity size={16} /> Ops Console
@@ -469,130 +403,20 @@ export default function SystemSettings({
             </button>
           </div>
 
-          <div className="sys-card">
-            <div className="sys-card-header">
-              <h3 className="sys-card-title">⊙ Visual Workspace</h3>
-            </div>
-            <div className="theme-selector">
-              <button
-                className={`theme-btn ${theme === "light" ? "active" : ""}`}
-                onClick={() => setTheme("light")}
-              >
-                ☀ LIGHT
-              </button>
-              <button
-                className={`theme-btn ${theme === "dark" ? "active" : ""}`}
-                onClick={() => setTheme("dark")}
-              >
-                🌙 DARK
-              </button>
-            </div>
-          </div>
+          <GSTConfigCard
+            settingsData={settingsData}
+            onRefresh={loadSettings}
+            showToast={showToast}
+          />
 
-          <div className="sys-card">
-            <div className="sys-card-header">
-              <h3 className="sys-card-title">$ GST Configuration</h3>
-            </div>
-            <div className="sys-form-group">
-              <label className="sys-label">GSTIN NUMBER</label>
-              <input
-                required
-                className="sys-input"
-                value={gstin}
-                onChange={(e) => setGstin(e.target.value)}
-              />
-            </div>
-            <div className="sys-form-group">
-              <label className="sys-label">LEGAL BUSINESS NAME</label>
-              <input
-                required
-                className="sys-input"
-                value={bizName}
-                onChange={(e) => setBizName(e.target.value)}
-              />
-            </div>
-          </div>
-
-          <div className="sys-card">
-            <div className="sys-card-header">
-              <h3 className="sys-card-title">🏪 Shop & Invoice Details</h3>
-            </div>
-            <div className="sys-form-group">
-              <label className="sys-label">DISPLAY SHOP NAME</label>
-              <input
-                required
-                className="sys-input"
-                value={shopName}
-                onChange={(e) => setShopName(e.target.value)}
-              />
-            </div>
-            <div className="sys-form-group">
-              <label className="sys-label">PHONE NUMBER</label>
-              <input
-                required
-                className="sys-input"
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-              />
-            </div>
-            <div className="sys-form-group">
-              <label className="sys-label">EMAIL ADDRESS</label>
-              <input
-                required
-                className="sys-input"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-              />
-            </div>
-            <div className="sys-form-group">
-              <label className="sys-label">SHOP ADDRESS</label>
-              <textarea
-                className="sys-input"
-                rows="3"
-                value={address}
-                onChange={(e) => setAddress(e.target.value)}
-              />
-            </div>
-          </div>
+          <ShopDetailsCard
+            settingsData={settingsData}
+            onRefresh={loadSettings}
+            showToast={showToast}
+          />
         </div>
 
         <div className="settings-col">
-          <div className="sys-card">
-            <div className="sys-card-header">
-              <h3 className="sys-card-title">⚡ Clinical Thresholds</h3>
-            </div>
-            <div className="sys-slider-group">
-              <div className="sys-slider-header">
-                <label className="sys-label">LOW STOCK LIMIT</label>
-                <div className="sys-badge">{lowStock} UNITS</div>
-              </div>
-              <input
-                required
-                type="range"
-                className="sys-slider"
-                min="1"
-                max="100"
-                value={lowStock}
-                onChange={(e) => setLowStock(safeNumber(e.target.value))}
-              />
-            </div>
-            <div className="sys-slider-group">
-              <div className="sys-slider-header">
-                <label className="sys-label">EXPIRY WINDOW</label>
-                <div className="sys-badge">{expiryDays} DAYS</div>
-              </div>
-              <input
-                required
-                type="range"
-                className="sys-slider"
-                min="7"
-                max="180"
-                value={expiryDays}
-                onChange={(e) => setExpiryDays(safeNumber(e.target.value))}
-              />
-            </div>
-          </div>
-
           <div className="sys-card">
             <h3 className="sys-card-title" style={{ marginBottom: 16 }}>
               Notification Channels
@@ -613,22 +437,6 @@ export default function SystemSettings({
                 onClick={() => setNotifWa(!notifWa)}
               >
                 <div className="sys-toggle-thumb" />
-              </div>
-            </div>
-          </div>
-
-          <div className="sys-card">
-            <div className="sys-card-header">
-              <h3 className="sys-card-title">ⓘ Facility Status</h3>
-            </div>
-            <div className="ent-info-row">
-              <div className="ent-info-item">
-                <label>DATABASE</label>
-                <span style={{ color: "var(--sys-teal)" }}>SYNCED</span>
-              </div>
-              <div className="ent-info-item">
-                <label>REGION</label>
-                <span>IN-WEST-1</span>
               </div>
             </div>
           </div>
@@ -660,6 +468,23 @@ export default function SystemSettings({
             showToast={showToast}
             onActivate={onActivate}
           />
+        </div>
+      )}
+      {currentView === "legal" && (
+        <div className="settings-page-wrapper">
+          <button
+            className="sys-btn-outline"
+            onClick={() => setCurrentView("settings")}
+            style={{
+              border: "none",
+              padding: 0,
+              marginBottom: 24,
+              background: "transparent",
+            }}
+          >
+            <ArrowLeft size={16} /> Back to Facility Control
+          </button>
+          <LegalPages showBackButton={false} />
         </div>
       )}
     </>

@@ -9,6 +9,7 @@ const Auth = lazy(() => import("../components/Auth"));
 const PageErrorBoundary = lazy(() => import("../components/PageErrorBoundary"));
 const LoadingScreen = lazy(() => import("../components/LoadingScreen"));
 const NotFound = lazy(() => import("../components/NotFound"));
+const LegalPages = lazy(() => import("../components/LegalPages"));
 
 // Admin pages
 const AdminLogin = lazy(() => import("../pages/admin/AdminLogin"));
@@ -128,6 +129,9 @@ export default function AppRoutes({
 
         {/* Public Checkout Route (Desktop Payment Flow) */}
         <Route path="/checkout" element={<CheckoutPage />} />
+
+        {/* Public Legal Routes */}
+        <Route path="/legal" element={<LegalPages showBackButton={false} />} />
 
         {/* Guarded Routes */}
         <Route

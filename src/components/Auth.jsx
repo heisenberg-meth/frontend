@@ -18,6 +18,7 @@ export default function Auth({ onAuth }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [agreedToTerms, setAgreedToTerms] = useState(false);
 
   const validateEmail = (email) => {
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
@@ -85,6 +86,11 @@ export default function Auth({ onAuth }) {
 
     if (view === "register" && form.password !== form.confirmPassword) {
       setError("Passwords do not match.");
+      return;
+    }
+
+    if (view === "register" && !agreedToTerms) {
+      setError("You must agree to the Terms of Service and Privacy Policy.");
       return;
     }
 
@@ -584,6 +590,48 @@ export default function Auth({ onAuth }) {
                   </div>
                 </div>
               )}
+
+              {view === "register" && (
+                <div className="auth-consent-group">
+                  <input
+                    type="checkbox"
+                    id="legal-consent"
+                    className="auth-consent-checkbox"
+                    checked={agreedToTerms}
+                    onChange={(e) => setAgreedToTerms(e.target.checked)}
+                  />
+                  <label htmlFor="legal-consent" className="auth-consent-text">
+                    I have read and agree to the{" "}
+                    <a
+                      href="/legal"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="auth-consent-link"
+                    >
+                      Terms of Service
+                    </a>
+                    ,{" "}
+                    <a
+                      href="/legal"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="auth-consent-link"
+                    >
+                      Privacy Policy
+                    </a>
+                    , and{" "}
+                    <a
+                      href="/legal"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="auth-consent-link"
+                    >
+                      EULA
+                    </a>
+                    .
+                  </label>
+                </div>
+              )}
             </div>
 
             <button
@@ -686,8 +734,12 @@ export default function Auth({ onAuth }) {
               </span>
             </div>
             <div className="compliance-links">
-              <a href="#!">Privacy</a>
-              <a href="#!">Terms</a>
+              <a href="/legal" target="_blank" rel="noopener noreferrer">
+                Privacy
+              </a>
+              <a href="/legal" target="_blank" rel="noopener noreferrer">
+                Terms
+              </a>
             </div>
           </div>
         </div>

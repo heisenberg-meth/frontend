@@ -2188,7 +2188,15 @@ export default function InventoryCRUD({
 
       {/* Stats */}
       <div className="inv-stats-row">
-        <div className="inv-stat-card" onMouseMove={handleMouseMove}>
+        <div
+          className="inv-stat-card"
+          onMouseMove={handleMouseMove}
+          onClick={() => {
+            setStatusFilter("All Status");
+            setCurrentPage(1);
+          }}
+          title="Show all medicines"
+        >
           <div className="inv-stat-header">
             <span className="inv-stat-label">TOTAL SKU</span>
             <div className="inv-stat-icon bg-primary">
@@ -2199,7 +2207,17 @@ export default function InventoryCRUD({
             {loading ? "..." : stats.total}
           </div>
         </div>
-        <div className="inv-stat-card" onMouseMove={handleMouseMove}>
+        <div
+          className={`inv-stat-card${statusFilter === "In Stock" ? " active-filter" : ""}`}
+          onMouseMove={handleMouseMove}
+          onClick={() => {
+            setStatusFilter(
+              statusFilter === "In Stock" ? "All Status" : "In Stock",
+            );
+            setCurrentPage(1);
+          }}
+          title="Filter: In Stock"
+        >
           <div className="inv-stat-header">
             <span className="inv-stat-label">IN STOCK</span>
             <div className="inv-stat-icon bg-success">
@@ -2208,7 +2226,17 @@ export default function InventoryCRUD({
           </div>
           <div className="inv-stat-value text-success">{stats.inStock}</div>
         </div>
-        <div className="inv-stat-card" onMouseMove={handleMouseMove}>
+        <div
+          className={`inv-stat-card${statusFilter === "Low Stock" ? " active-filter" : ""}`}
+          onMouseMove={handleMouseMove}
+          onClick={() => {
+            setStatusFilter(
+              statusFilter === "Low Stock" ? "All Status" : "Low Stock",
+            );
+            setCurrentPage(1);
+          }}
+          title="Filter: Low Stock"
+        >
           <div className="inv-stat-header">
             <span className="inv-stat-label">LOW STOCK</span>
             <div className="inv-stat-icon bg-warning">
@@ -2217,16 +2245,36 @@ export default function InventoryCRUD({
           </div>
           <div className="inv-stat-value text-warning">{stats.lowStock}</div>
         </div>
-        <div className="inv-stat-card" onMouseMove={handleMouseMove}>
+        <div
+          className={`inv-stat-card${statusFilter === "Out of Stock" ? " active-filter" : ""}`}
+          onMouseMove={handleMouseMove}
+          onClick={() => {
+            setStatusFilter(
+              statusFilter === "Out of Stock" ? "All Status" : "Out of Stock",
+            );
+            setCurrentPage(1);
+          }}
+          title="Filter: Out of Stock"
+        >
           <div className="inv-stat-header">
             <span className="inv-stat-label">OUT OF STOCK</span>
             <div className="inv-stat-icon bg-danger">
-              <X size={14} />
+              <PackageOpen size={14} />
             </div>
           </div>
           <div className="inv-stat-value text-danger">{stats.outOfStock}</div>
         </div>
-        <div className="inv-stat-card" onMouseMove={handleMouseMove}>
+        <div
+          className={`inv-stat-card${statusFilter === "Expired" ? " active-filter" : ""}`}
+          onMouseMove={handleMouseMove}
+          onClick={() => {
+            setStatusFilter(
+              statusFilter === "Expired" ? "All Status" : "Expired",
+            );
+            setCurrentPage(1);
+          }}
+          title="Filter: Expired"
+        >
           <div className="inv-stat-header">
             <span className="inv-stat-label">EXPIRED BATCHES</span>
             <div className="inv-stat-icon bg-danger">

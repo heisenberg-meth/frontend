@@ -25,24 +25,10 @@ const PLANS = [
   {
     id: "basic-monthly",
     name: "MedAssist Basic",
-    price: { monthly: 1, annual: 1 },
+    price: { monthly: 599 },
     features: ["Unlimited Medicines", "Basic Analytics", "Up to 3 users"],
     missing: ["Advanced Reports", "AI Features"],
     color: "var(--info)",
-  },
-  {
-    id: "pro-monthly",
-    name: "MedAssist Pro",
-    price: { monthly: 999, annual: 9990 },
-    features: [
-      "Unlimited Medicines",
-      "Advanced Analytics",
-      "Priority Support",
-      "Up to 10 users",
-    ],
-    missing: [],
-    color: "var(--primary)",
-    popular: true,
   },
 ];
 
@@ -413,12 +399,6 @@ export default function SubscriptionCRUD({ showToast, user }) {
             onClick={() => setBillingCycle("monthly")}
           >
             Monthly
-          </button>
-          <button
-            className={billingCycle === "annual" ? "active" : ""}
-            onClick={() => setBillingCycle("annual")}
-          >
-            Annual
           </button>
         </div>
         <div className="sub-plans-grid">

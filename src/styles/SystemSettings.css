@@ -1386,3 +1386,89 @@
   position: sticky;
   top: 24px;
 }
+
+/* ═══════════════════════════════════════════════════════════════
+   SUMMARY CARDS (Read-only info display)
+   ═══════════════════════════════════════════════════════════════ */
+
+.summary-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.summary-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.summary-field-label {
+  font-family: "Outfit", sans-serif;
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--sys-text-label);
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+}
+
+.summary-field-value {
+  font-family: "Manrope", sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--sys-text);
+  word-break: break-word;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   EDIT MODALS (GST & Shop)
+   ═══════════════════════════════════════════════════════════════ */
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 28px;
+  padding-top: 20px;
+  border-top: 1px solid var(--sys-border);
+}
+
+.modal-actions .sys-btn-outline,
+.modal-actions .sys-btn-fill {
+  min-width: 120px;
+  justify-content: center;
+}
+
+.modal-actions .sys-btn-fill:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  filter: grayscale(0.3);
+}
+
+.modal-section-label {
+  font-family: "Outfit", sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--sys-teal);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 16px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--sys-border);
+}
+
+.modal-toggles {
+  margin-top: 8px;
+}
+
+.modal-toggles .sys-toggle-row {
+  padding: 10px 0;
+}
+
+/* Wider modal for Shop & Invoice */
+.sys-modal-wide {
+  max-width: 560px;
+  width: 90%;
+  max-height: 85vh;
+  overflow-y: auto;
+}

@@ -127,6 +127,27 @@
   box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
 }
 
+.inv-stat-card.active-filter {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 2px var(--primary-glow), 0 20px 40px rgba(0, 0, 0, 0.3);
+  transform: translateY(-2px);
+}
+
+.inv-stat-card.active-filter::before {
+  content: "✓ FILTERED";
+  position: absolute;
+  top: 8px;
+  right: 12px;
+  font-family: "Outfit", sans-serif;
+  font-size: 8px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  color: var(--primary);
+  background: var(--primary-glow);
+  padding: 2px 8px;
+  border-radius: 6px;
+}
+
 .inv-stat-header {
   display: flex;
   justify-content: space-between;
@@ -470,6 +491,11 @@
   background: rgba(239, 68, 68, 0.1);
   color: var(--danger);
   border: 1px solid rgba(239, 68, 68, 0.2);
+}
+.inv-status-badge.expiring-soon {
+  background: rgba(245, 158, 11, 0.1);
+  color: var(--warning);
+  border: 1px solid rgba(245, 158, 11, 0.2);
 }
 .inv-status-badge.expired {
   background: rgba(239, 68, 68, 0.15);
