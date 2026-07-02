@@ -11,7 +11,9 @@ const LoadingScreen = lazy(() => import("../components/LoadingScreen"));
 const NotFound = lazy(() => import("../components/NotFound"));
 const LegalPages = lazy(() => import("../components/LegalPages"));
 const LandingPage = lazy(() => import("../pages/LandingPage"));
-
+const PrivacyPolicyPage = lazy(() => import("../pages/PrivacyPolicyPage"));
+const TermsOfServicePage = lazy(() => import("../pages/TermsOfServicePage"));
+const CookiePolicyPage = lazy(() => import("../pages/CookiePolicyPage"));
 
 // Admin pages
 const AdminLogin = lazy(() => import("../pages/admin/AdminLogin"));
@@ -124,6 +126,9 @@ export default function AppRoutes({
             user ? <Navigate to="/dashboard" replace /> : <LandingPage />
           }
         />
+        <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
+        <Route path="/terms-of-service" element={<TermsOfServicePage />} />
+        <Route path="/cookie-policy" element={<CookiePolicyPage />} />
 
         {/* Public Routes */}
         <Route
