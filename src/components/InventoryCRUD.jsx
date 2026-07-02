@@ -1997,6 +1997,7 @@ export default function InventoryCRUD({
         ...(form.manufacturer?.trim() && {
           manufacturer: form.manufacturer.trim(),
         }),
+        supplierId: form.supplierId ? form.supplierId.trim() : null,
         ...(typeof form.category === "string" &&
           form.category.trim() && { category: form.category.trim() }),
       };

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import api from "../api.js";
 import { useAuth } from "../hooks/useAuth.js";
@@ -86,7 +86,6 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
   const [loading, setLoading] = useState(false);
   const [receiveItems, setReceiveItems] = useState([]);
   const [isReceiving, setIsReceiving] = useState(false);
-
   const [differentBatch, setDifferentBatch] = useState({});
 
   const handleOpenReceiveModal = async (po) => {
@@ -2285,7 +2284,7 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
           <div className="stock-modal-overlay">
             <motion.div
               className="stock-modal-content"
-              style={{ width: "900px", maxWidth: "95vw" }}
+              style={{ width: "1100px", maxWidth: "95vw" }}
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.9 }}

@@ -44,6 +44,7 @@ export const CreateMedicineSchema = z.object({
   barcode: z.string().optional(),
   hsnCode: z.string().optional(),
   description: z.string().optional(),
+  supplierId: z.string().uuid().nullable().optional(),
   initialBatch: z
     .object({
       batchNumber: z.string(),
@@ -101,6 +102,7 @@ export const UpdateMedicineSchema = z.object({
   barcode: z.string().optional(),
   hsnCode: z.string().optional(),
   description: z.string().optional(),
+  supplierId: z.string().uuid().nullable().optional(),
   isActive: z.boolean().optional(),
 });
 
