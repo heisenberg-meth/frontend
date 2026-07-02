@@ -209,6 +209,7 @@ function CountUp({ target }) {
   const [val, setVal] = useState(isNumber ? "0" : target);
   const ref = useRef(null);
   const visible = useVisible(ref);
+
   useEffect(() => {
     if (!visible || !isNumber) return;
     const num = parseFloat(target.replace(/[^0-9.]/g, ""));
@@ -219,14 +220,17 @@ function CountUp({ target }) {
       if (cur >= num) {
         setVal(target);
         clearInterval(t);
-      } else
+      } else {
         setVal(
           Math.floor(cur).toLocaleString("en-IN") +
             target.replace(/[0-9.,]/g, ""),
         );
+      }
     }, 18);
+
     return () => clearInterval(t);
   }, [visible, target, isNumber]);
+
   return <span ref={ref}>{val}</span>;
 }
 
@@ -282,7 +286,7 @@ export default function LandingPage() {
             onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
           >
             <img
-              src="/viyan_logo_new.png"
+              src="/viyan_logo_new.webp"
               className="lp-logo-img"
               alt="MedAssist Logo"
             />
@@ -308,13 +312,19 @@ export default function LandingPage() {
             </button>
 
             {/* Download Dropdown */}
-            <div className="lp-download-dropdown-wrapper" ref={downloadRef}>
+            <div
+              className="lp-download-dropdown-wrapper"
+              ref={downloadRef}
+              onMouseEnter={() => setDownloadOpen(true)}
+              onMouseLeave={() => setDownloadOpen(false)}
+            >
               <button
+                type="button"
                 className={`lp-nav-link lp-download-btn ${downloadOpen ? "active" : ""}`}
-                onClick={() => setDownloadOpen(!downloadOpen)}
               >
                 Download <span className="lp-dropdown-arrow">▼</span>
               </button>
+
               {downloadOpen && (
                 <div className="lp-download-dropdown-menu">
                   <a

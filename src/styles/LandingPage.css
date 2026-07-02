@@ -1594,8 +1594,8 @@ body:has(.lp-root) {
 
 .lp-download-dropdown-menu {
   position: absolute;
-  top: 100%;
-  left: 50%;
+  top: calc(100% + 8px);
+  left: 0%;
   transform: translateX(-50%) translateY(12px);
   background: #ffffff;
   border: 1px solid rgba(16, 185, 129, 0.15);
@@ -1608,7 +1608,7 @@ body:has(.lp-root) {
   display: flex;
   flex-direction: column;
   gap: 4px;
-  z-index: 200;
+  z-index: 1000;
   animation: lp-dropdown-fade 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 

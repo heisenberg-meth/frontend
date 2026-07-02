@@ -1,14 +1,12 @@
 import { Suspense, lazy } from "react";
 import { Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { SubscriptionStatus } from "../constants/enums";
-
-// Lazy load components for better performance
-const ProtectedRoute = lazy(() => import("../guards/ProtectedRoute"));
-const DashboardLayout = lazy(() => import("../layouts/DashboardLayout"));
+import ProtectedRoute from "../guards/ProtectedRoute";
+import DashboardLayout from "../layouts/DashboardLayout";
+import PageErrorBoundary from "../components/PageErrorBoundary";
+import LoadingScreen from "../components/LoadingScreen";
+import NotFound from "../components/NotFound";
 const Auth = lazy(() => import("../components/Auth"));
-const PageErrorBoundary = lazy(() => import("../components/PageErrorBoundary"));
-const LoadingScreen = lazy(() => import("../components/LoadingScreen"));
-const NotFound = lazy(() => import("../components/NotFound"));
 const LegalPages = lazy(() => import("../components/LegalPages"));
 const LandingPage = lazy(() => import("../pages/LandingPage"));
 const PrivacyPolicyPage = lazy(() => import("../pages/PrivacyPolicyPage"));
@@ -102,10 +100,9 @@ export default function AppRoutes({
   handleSelectPro,
   handlePaymentComplete,
   handleAvatarUpload,
-  profileData,
+  profile,
+  refreshProfile,
   storeProfile,
-  setShowAuthModal,
-  setPendingUpdates,
   setShowLogoutModal,
   PaywallComponent,
 }) {
@@ -384,12 +381,9 @@ export default function AppRoutes({
               <PageErrorBoundary>
                 <Profile
                   user={user}
-                  profileData={profileData}
+                  profile={profile}
+                  refreshProfile={refreshProfile}
                   handleAvatarUpload={handleAvatarUpload}
-                  setShowAuthModal={(updates) => {
-                    setPendingUpdates(updates);
-                    setShowAuthModal(true);
-                  }}
                   showToast={showToast}
                 />
               </PageErrorBoundary>

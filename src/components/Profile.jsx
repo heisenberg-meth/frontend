@@ -6,7 +6,6 @@ import {
   ShieldCheck,
   Camera,
   Save,
-  Key,
   Phone,
   BadgeCheck,
   Smartphone,
@@ -22,10 +21,9 @@ import {
   Loader2,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import api from "../api";
 import {
-  updateProfile,
   changePassword,
-  uploadAvatar,
   getActiveSessions,
   terminateSession,
 } from "../services/profile.service";
@@ -39,17 +37,20 @@ function Spinner({ size = 14 }) {
 
 export default function Profile({
   user,
-  profileData,
-  setShowAuthModal,
+  profile,
+  refreshProfile,
+  handleAvatarUpload,
   showToast,
 }) {
-  const [formData, setFormData] = useState({
-    fullName: profileData.fullName || user?.fullName || "",
-    shopName: user?.shopName || "",
-    email: profileData.email || user?.email || "",
-    phone: user?.phone || profileData.phone || "",
-    employeeId: user?.employeeId || "VM-2024-089",
-  });
+  const [formData, setFormData] = useState(() => profile || {});
+  const [prevProfile, setPrevProfile] = useState(profile);
+
+  if (profile !== prevProfile) {
+    setPrevProfile(profile);
+    if (profile) {
+      setFormData(profile);
+    }
+  }
 
   const [activeModals, setActiveModals] = useState({
     photo: false,
@@ -75,13 +76,13 @@ export default function Profile({
   const handleSync = async () => {
     setSyncing(true);
     try {
-      await updateProfile(user.id, {
+      await api.put("/auth/me", {
         fullName: formData.fullName,
         shopName: formData.shopName,
         phone: formData.phone,
       });
       setLastSyncTime("Just now");
-      if (setShowAuthModal) setShowAuthModal(formData);
+      refreshProfile();
       showToast("Profile synchronized successfully", "success");
     } catch (err) {
       showToast(err.response?.data?.error || "Failed to sync profile", "error");
@@ -123,25 +124,6 @@ export default function Profile({
       );
     } finally {
       setPasswordSaving(false);
-    }
-  };
-
-  const handleAvatarChange = async (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    try {
-      await uploadAvatar(file);
-
-      showToast("Avatar updated", "success");
-      toggleModal("photo");
-
-      window.location.reload();
-    } catch (err) {
-      showToast(
-        err.response?.data?.error || "Failed to upload avatar",
-        "error",
-      );
     }
   };
 
@@ -196,9 +178,15 @@ export default function Profile({
               <div className="profile-avatar-large">
                 <img
                   src={getAvatarUrl(
-                    profileData.avatar || user?.avatar,
+                    profile?.avatar || user?.avatar,
                     formData.fullName || user?.username,
                   )}
+                  onError={(e) => {
+                    const fallback = `https://ui-avatars.com/api/?name=${encodeURIComponent(formData.fullName || user?.username || "NA")}&background=4FDBC8&color=0A0F1C`;
+                    if (e.target.src !== fallback) {
+                      e.target.src = fallback;
+                    }
+                  }}
                   alt="Profile"
                 />
                 <div
@@ -254,7 +242,7 @@ export default function Profile({
                 <input
                   required
                   type="text"
-                  value={formData.fullName}
+                  value={formData.fullName || ""}
                   onChange={(e) =>
                     setFormData({ ...formData, fullName: e.target.value })
                   }
@@ -268,7 +256,7 @@ export default function Profile({
                 <input
                   required
                   type="text"
-                  value={formData.shopName}
+                  value={formData.shopName || ""}
                   onChange={(e) =>
                     setFormData({ ...formData, shopName: e.target.value })
                   }
@@ -280,7 +268,12 @@ export default function Profile({
                   <Mail size={12} /> Registered Email
                 </label>
                 <div className="input-with-action">
-                  <input required type="text" value={formData.email} disabled />
+                  <input
+                    required
+                    type="text"
+                    value={formData.email || ""}
+                    disabled
+                  />
                   <div className="input-actions">
                     <CheckCircle2 size={14} className="text-success" />
                     <button
@@ -299,7 +292,7 @@ export default function Profile({
                 <input
                   required
                   type="text"
-                  value={formData.phone}
+                  value={formData.phone || ""}
                   onChange={(e) =>
                     setFormData({ ...formData, phone: e.target.value })
                   }
@@ -336,14 +329,6 @@ export default function Profile({
           </div>
 
           <div className="settings-card-glass">
-            <div className="card-header">
-              <h3>
-                <Key size={18} /> Security & Operational Access
-              </h3>
-              <p>
-                Manage your authentication layers and active session security.
-              </p>
-            </div>
             <div className="security-grid">
               <div className="security-main">
                 <div className="security-action-row">
@@ -394,7 +379,7 @@ export default function Profile({
               <div className="photo-preview-large">
                 <img
                   src={getAvatarUrl(
-                    profileData.avatar || user?.avatar,
+                    profile?.avatar || user?.avatar,
                     formData.fullName,
                   )}
                   alt="Preview"
@@ -408,7 +393,17 @@ export default function Profile({
                     type="file"
                     hidden
                     accept="image/*"
-                    onChange={handleAvatarChange}
+                    onChange={async (e) => {
+                      const file = e.target.files[0];
+                      if (!file) return;
+                      try {
+                        await handleAvatarUpload(file);
+                        showToast("Avatar updated successfully", "success");
+                        toggleModal("photo");
+                      } catch (err) {
+                        showToast("Failed to upload avatar", err);
+                      }
+                    }}
                   />
                 </label>
                 <button className="modal-action-btn danger">

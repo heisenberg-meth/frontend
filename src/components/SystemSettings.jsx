@@ -179,7 +179,7 @@ export default function SystemSettings({
           inAppEnabled: notifInApp,
           smsEnabled: notifSms,
           whatsappEnabled: notifWa,
-          alertEmail: alertEmail,
+          alertEmail: alertEmail ? alertEmail.trim() : null,
         }),
       ]);
       showToast("Global facility configuration synchronized", "success");

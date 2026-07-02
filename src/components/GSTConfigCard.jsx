@@ -1,17 +1,44 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import api from "../api";
 import { API_ROUTES } from "../constants/api.routes.js";
 
 const GST_STATES = [
-  "Andhra Pradesh","Arunachal Pradesh","Assam","Bihar","Chhattisgarh",
-  "Goa","Gujarat","Haryana","Himachal Pradesh","Jharkhand",
-  "Karnataka","Kerala","Madhya Pradesh","Maharashtra","Manipur",
-  "Meghalaya","Mizoram","Nagaland","Odisha","Punjab",
-  "Rajasthan","Sikkim","Tamil Nadu","Telangana","Tripura",
-  "Uttar Pradesh","Uttarakhand","West Bengal",
-  "Andaman and Nicobar Islands","Chandigarh",
-  "Dadra and Nagar Haveli and Daman and Diu","Delhi",
-  "Jammu and Kashmir","Ladakh","Lakshadweep","Puducherry",
+  "Andhra Pradesh",
+  "Arunachal Pradesh",
+  "Assam",
+  "Bihar",
+  "Chhattisgarh",
+  "Goa",
+  "Gujarat",
+  "Haryana",
+  "Himachal Pradesh",
+  "Jharkhand",
+  "Karnataka",
+  "Kerala",
+  "Madhya Pradesh",
+  "Maharashtra",
+  "Manipur",
+  "Meghalaya",
+  "Mizoram",
+  "Nagaland",
+  "Odisha",
+  "Punjab",
+  "Rajasthan",
+  "Sikkim",
+  "Tamil Nadu",
+  "Telangana",
+  "Tripura",
+  "Uttar Pradesh",
+  "Uttarakhand",
+  "West Bengal",
+  "Andaman and Nicobar Islands",
+  "Chandigarh",
+  "Dadra and Nagar Haveli and Daman and Diu",
+  "Delhi",
+  "Jammu and Kashmir",
+  "Ladakh",
+  "Lakshadweep",
+  "Puducherry",
 ];
 
 const FILING_FREQUENCIES = ["Monthly", "Quarterly", "Annual"];
@@ -62,47 +89,29 @@ export default function GSTConfigCard({ settingsData, onRefresh, showToast }) {
           onClose={() => setModalOpen(false)}
           onRefresh={onRefresh}
           showToast={showToast}
+          storeProfile={sp}
         />
       )}
     </>
   );
 }
 
-function GSTModal({ onClose, onRefresh, showToast }) {
-  const [loading, setLoading] = useState(true);
+function GSTModal({ onClose, onRefresh, showToast, storeProfile }) {
   const [saving, setSaving] = useState(false);
-  const [original, setOriginal] = useState(null);
-  const [form, setForm] = useState({
-    gstin: "",
-    businessName: "",
-    state: "",
-    filingFrequency: "Monthly",
-  });
-  const overlayRef = useRef(null);
 
-  useEffect(() => {
-    const load = async () => {
-      try {
-        const res = await api.get(API_ROUTES.SETTINGS);
-        const s = res.data?.data;
-        if (s?.storeProfile) {
-          const snapshot = {
-            gstin: s.storeProfile.gstin || "",
-            businessName: s.storeProfile.businessName || "",
-            state: s.storeProfile.state || "",
-            filingFrequency: s.storeProfile.filingFrequency || "Monthly",
-          };
-          setOriginal(snapshot);
-          setForm(snapshot);
-        }
-      } catch {
-        showToast?.("Failed to load GST settings", "error");
-      } finally {
-        setLoading(false);
-      }
-    };
-    load();
-  }, [showToast]);
+  const snapshot = useMemo(
+    () => ({
+      gstin: storeProfile?.gstin || "",
+      businessName: storeProfile?.businessName || "",
+      state: storeProfile?.state || "",
+      filingFrequency: storeProfile?.filingFrequency || "Monthly",
+    }),
+    [storeProfile],
+  );
+
+  const [original] = useState(snapshot);
+  const [form, setForm] = useState(snapshot);
+  const overlayRef = useRef(null);
 
   useEffect(() => {
     const onKey = (e) => {
@@ -112,9 +121,18 @@ function GSTModal({ onClose, onRefresh, showToast }) {
     return () => window.removeEventListener("keydown", onKey);
   }, [onClose]);
 
-  const hasChanges =
-    original !== null &&
-    Object.keys(form).some((k) => form[k] !== original[k]);
+  const hasChanges = useMemo(() => {
+    if (!original) return false;
+
+    return (
+      form.gstin !== original.gstin ||
+      form.businessName !== original.businessName ||
+      form.state !== original.state ||
+      form.filingFrequency !== original.filingFrequency
+    );
+  }, [form, original]);
+
+  console.log("GSTModal Render:", { form, original, hasChanges });
 
   const handleChange = (field, value) => {
     setForm((prev) => ({ ...prev, [field]: value }));
@@ -123,13 +141,11 @@ function GSTModal({ onClose, onRefresh, showToast }) {
   const handleSave = async () => {
     setSaving(true);
     try {
-      await api.put(API_ROUTES.SETTINGS, {
-        storeProfile: {
-          gstin: form.gstin || null,
-          businessName: form.businessName,
-          state: form.state,
-          filingFrequency: form.filingFrequency,
-        },
+      await api.put(API_ROUTES.SETTINGS_STORE_PROFILE, {
+        gstin: form.gstin || null,
+        businessName: form.businessName,
+        state: form.state,
+        filingFrequency: form.filingFrequency,
       });
       showToast?.("GST Configuration Updated Successfully", "success");
       onRefresh?.();
@@ -154,80 +170,68 @@ function GSTModal({ onClose, onRefresh, showToast }) {
         style={{ textAlign: "left", maxWidth: 520 }}
         onClick={(e) => e.stopPropagation()}
       >
-        {loading ? (
-          <div style={{ padding: 40, textAlign: "center" }}>
-            <div className="pay-spinner" />
+        <>
+          <h2 style={{ marginBottom: 24 }}>Edit GST Configuration</h2>
+
+          <div className="sys-form-group">
+            <label className="sys-label">GSTIN</label>
+            <input
+              className="sys-input"
+              value={form.gstin}
+              onChange={(e) => handleChange("gstin", e.target.value)}
+            />
           </div>
-        ) : (
-          <>
-            <h2 style={{ marginBottom: 24 }}>Edit GST Configuration</h2>
+          <div className="sys-form-group">
+            <label className="sys-label">Business Name</label>
+            <input
+              className="sys-input"
+              value={form.businessName}
+              onChange={(e) => handleChange("businessName", e.target.value)}
+            />
+          </div>
+          <div className="sys-form-group">
+            <label className="sys-label">GST State</label>
+            <select
+              className="sys-select"
+              value={form.state}
+              onChange={(e) => handleChange("state", e.target.value)}
+            >
+              <option value="">Select State</option>
+              {GST_STATES.map((s) => (
+                <option key={s} value={s}>
+                  {s}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="sys-form-group">
+            <label className="sys-label">Filing Frequency</label>
+            <select
+              className="sys-select"
+              value={form.filingFrequency}
+              onChange={(e) => handleChange("filingFrequency", e.target.value)}
+            >
+              {FILING_FREQUENCIES.map((f) => (
+                <option key={f} value={f}>
+                  {f}
+                </option>
+              ))}
+            </select>
+          </div>
 
-            <div className="sys-form-group">
-              <label className="sys-label">GSTIN</label>
-              <input
-                className="sys-input"
-                value={form.gstin}
-                onChange={(e) => handleChange("gstin", e.target.value)}
-              />
-            </div>
-            <div className="sys-form-group">
-              <label className="sys-label">Business Name</label>
-              <input
-                className="sys-input"
-                value={form.businessName}
-                onChange={(e) => handleChange("businessName", e.target.value)}
-              />
-            </div>
-            <div className="sys-form-group">
-              <label className="sys-label">GST State</label>
-              <select
-                className="sys-select"
-                value={form.state}
-                onChange={(e) => handleChange("state", e.target.value)}
-              >
-                <option value="">Select State</option>
-                {GST_STATES.map((s) => (
-                  <option key={s} value={s}>
-                    {s}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div className="sys-form-group">
-              <label className="sys-label">Filing Frequency</label>
-              <select
-                className="sys-select"
-                value={form.filingFrequency}
-                onChange={(e) =>
-                  handleChange("filingFrequency", e.target.value)
-                }
-              >
-                {FILING_FREQUENCIES.map((f) => (
-                  <option key={f} value={f}>
-                    {f}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div className="modal-actions">
-              <button className="sys-btn-outline" onClick={onClose}>
-                Cancel
-              </button>
-              <button
-                className="sys-btn-fill"
-                onClick={handleSave}
-                disabled={!hasChanges || saving}
-              >
-                {hasChanges
-                  ? saving
-                    ? "Saving..."
-                    : "Apply Changes"
-                  : "Edit"}
-              </button>
-            </div>
-          </>
-        )}
+          <div className="modal-actions">
+            <button className="sys-btn-outline" onClick={onClose}>
+              Cancel
+            </button>
+            <button
+              className="sys-btn-fill"
+              onClick={handleSave}
+              disabled={saving}
+            >
+              {saving ? "Saving..." : "Save Changes"}
+            </button>
+          </div>
+        </>
       </div>
     </div>
   );
