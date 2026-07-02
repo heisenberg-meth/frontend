@@ -260,9 +260,8 @@ export default function LandingPage() {
             className="lp-logo"
             onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
           >
-            <div className="lp-logo-icon">⚕</div>
-            <span className="lp-logo-text">Viyan</span>
-            <span className="lp-logo-badge">MED</span>
+            <img src="/viyan_logo_new.png" className="lp-logo-img" alt="MedAssist Logo" />
+            <span className="lp-logo-text">MedAssist</span>
           </div>
           <div
             className={`lp-nav-links ${menuOpen ? "lp-nav-links--open" : ""}`}
@@ -365,7 +364,7 @@ export default function LandingPage() {
               <span className="lp-dot lp-dot--red" />
               <span className="lp-dot lp-dot--yellow" />
               <span className="lp-dot lp-dot--green" />
-              <span className="lp-mockup-url">viyan.med / dashboard</span>
+              <span className="lp-mockup-url">medassist.com / dashboard</span>
             </div>
             <div className="lp-mockup-body">
               <div className="lp-mock-sidebar">
@@ -490,7 +489,7 @@ export default function LandingPage() {
               <span className="lp-gradient-text">Pharmacy Business</span>
             </h2>
             <p className="lp-section-sub">
-              Whether you run a single store or a nationwide chain, Viyan adapts
+              Whether you run a single store or a nationwide chain, MedAssist adapts
               to how your business works.
             </p>
           </AnimSection>
@@ -643,9 +642,8 @@ export default function LandingPage() {
                 className="lp-logo"
                 onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
               >
-                <div className="lp-logo-icon">⚕</div>
-                <span className="lp-logo-text">Viyan</span>
-                <span className="lp-logo-badge">MED</span>
+                <img src="/viyan_logo_new.png" className="lp-logo-img" alt="MedAssist Logo" />
+                <span className="lp-logo-text">MedAssist</span>
               </div>
               <p className="lp-footer-tagline">
                 Helping pharmacies simplify inventory, billing, purchases, GST,
@@ -689,7 +687,7 @@ export default function LandingPage() {
           </div>
           <div className="lp-footer-bottom">
             <span>
-              © 2026 VIYAN Infotech Pvt. Ltd. All rights reserved.
+              © 2026 MedAssist. All rights reserved.
             </span>
           </div>
         </div>
