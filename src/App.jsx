@@ -87,6 +87,7 @@ function AppContent() {
     logout,
     updateUser,
     refreshUser,
+    tenant,
   } = useAuth();
 
   const [medicines, setMedicines] = useState([]);
@@ -96,7 +97,6 @@ function AppContent() {
   const [lowStock, setLowStock] = useState(10);
   const [expiryDays, setExpiryDays] = useState(30);
   const [storeProfile, setStoreProfile] = useState(null);
-  const [profile, setProfile] = useState(null);
   const [currency] = useState({
     code: "INR",
     symbol: "₹",
@@ -106,21 +106,7 @@ function AppContent() {
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const [lastSync, setLastSync] = useState(new Date());
 
-  const fetchProfile = useCallback(async () => {
-    try {
-      const res = await api.get(API_ROUTES.AUTH_ME || "/auth/me");
-      if (res.data?.data?.user) {
-        const payload = res.data.data;
-        setProfile({
-          ...payload.user,
-          shopName: payload.tenant?.name || "",
-        });
-        updateUser(payload.user);
-      }
-    } catch (err) {
-      console.error("Failed to fetch profile", err);
-    }
-  }, [updateUser]);
+  // fetchProfile removed to avoid duplicate API calls; profile data is synced via AuthContext
 
   const status = subscription?.status;
 
@@ -184,14 +170,14 @@ function AppContent() {
 
     const boot = async () => {
       try {
-        await Promise.all([fetchData(), fetchSettings(), fetchProfile()]);
+        await Promise.all([fetchData(), fetchSettings()]);
       } catch (err) {
         console.error("[APP INIT ERROR]", err);
       }
     };
 
     boot();
-  }, [restored, user, status, fetchData, fetchSettings, fetchProfile]);
+  }, [restored, user, status, fetchData, fetchSettings]);
 
   useEffect(() => {
     if (!restored || !user) return;
@@ -205,14 +191,14 @@ function AppContent() {
 
     const syncInterval = setInterval(async () => {
       try {
-        await Promise.all([fetchSettings(), fetchData(), fetchProfile()]);
+        await Promise.all([fetchSettings(), fetchData()]);
       } catch (err) {
         console.error("[SYNC ERROR]", err);
       }
     }, 300000);
 
     return () => clearInterval(syncInterval);
-  }, [restored, user, status, fetchSettings, fetchData, fetchProfile]);
+  }, [restored, user, status, fetchSettings, fetchData]);
 
   useEffect(() => {
     const saved = localStorage.getItem("viyan-theme");
@@ -322,7 +308,7 @@ function AppContent() {
     const avatarUrl = res.data?.data?.avatarUrl || res.data?.avatarUrl;
 
     updateUser({ avatar: avatarUrl });
-    fetchProfile();
+    refreshUser();
     return avatarUrl;
   };
 
@@ -445,8 +431,8 @@ function AppContent() {
           handleActivateSubscription={handleActivateSubscription}
           handleAuthSuccess={handleAuthSuccess}
           handleAvatarUpload={handleAvatarUpload}
-          profile={profile}
-          refreshProfile={fetchProfile}
+          profile={{ ...user, shopName: tenant?.name || "" }}
+          refreshProfile={refreshUser}
           setShowLogoutModal={setShowLogoutModal}
           handlePaymentComplete={handlePaymentComplete}
           handleSelectPro={handleSelectPro}

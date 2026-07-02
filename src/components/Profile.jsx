@@ -100,8 +100,13 @@ export default function Profile({
       showToast("Passwords do not match", "error");
       return;
     }
-    if (passwordData.newPassword.length < 6) {
-      showToast("Password must be at least 6 characters", "error");
+    const passwordPattern =
+      /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z\d]).{8,}$/;
+    if (!passwordPattern.test(passwordData.newPassword)) {
+      showToast(
+        "Password must be at least 8 characters and contain 1 uppercase, 1 lowercase, 1 number, and 1 special character",
+        "error",
+      );
       return;
     }
     setPasswordSaving(true);

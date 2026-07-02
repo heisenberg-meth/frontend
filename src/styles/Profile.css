@@ -408,7 +408,7 @@
 /* Security Grid */
 .security-grid {
   display: grid;
-  grid-template-columns: 1fr 280px;
+  grid-template-columns: 1fr;
   gap: 24px;
 }
 

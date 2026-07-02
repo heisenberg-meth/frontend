@@ -307,6 +307,7 @@ api.interceptors.response.use(
         csrfPromise = null;
         clearAllAuth();
         dispatchSessionExpired("Session expired. Please log in again.");
+        window.location.href = "/login";
         return Promise.reject(refreshError);
       }
     }
