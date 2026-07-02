@@ -1486,7 +1486,7 @@ function BatchModal({
                                 {selectedBatch?.id === b.id ? (
                                   <>✓ Editing</>
                                 ) : (
-                                  <>✏️ Edit Batch</>
+                                  <> Edit Batch</>
                                 )}
                               </button>
                             </td>
@@ -1964,19 +1964,12 @@ export default function InventoryCRUD({
         (m.genericName || "").toLowerCase().includes(term) ||
         (m.batchNumber || "").toLowerCase().includes(term);
 
-      const categoryMatch =
-        categoryFilter === "All" ||
-        (m.category?.name || m.category) === categoryFilter;
-
-      // Use centralized status calculation
-      const medicineStatus = getMedicineStatus(m);
-
-      const statusMatch =
-        statusFilter === "All Status" || medicineStatus === statusFilter;
-
-      return searchMatch && categoryMatch && statusMatch;
+      // Note: We rely on the backend for category and status filtering
+      // since it handles pagination and has the definitive database state.
+      // Filtering them here can cause discrepancies (e.g. Expired vs Out of Stock).
+      return searchMatch;
     });
-  }, [medicines, search, categoryFilter, statusFilter]);
+  }, [medicines, search]);
 
   const stats = useMemo(
     () => ({

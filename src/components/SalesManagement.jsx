@@ -1389,7 +1389,10 @@ export default function SalesManagement({ showToast, storeProfile }) {
                       {ret.returnNumber || ret.id}
                     </td>
                     <td className="result-meta">
-                      {ret.sale?.invoiceNumber || ret.origInv || "—"}
+                      {ret.sale?.invoiceNumber ||
+                        ret.invoice?.invoiceNumber ||
+                        ret.origInv ||
+                        "—"}
                     </td>
                     <td>
                       {ret.patient?.fullName || ret.patientName || "Walk-in"}
@@ -1412,7 +1415,7 @@ export default function SalesManagement({ showToast, storeProfile }) {
                           color: "var(--info)",
                         }}
                       >
-                        {ret.reason}
+                        {ret.returnReason || ret.reason || "—"}
                       </span>
                     </td>
                     <td>
@@ -1663,6 +1666,25 @@ export default function SalesManagement({ showToast, storeProfile }) {
                           ).toFixed(2)}
                         </span>
                       </div>
+                      {safeNumber(selectedSale.returnedAmount) > 0 && (
+                        <div
+                          style={{
+                            display: "flex",
+                            justifyContent: "space-between",
+                            width: "200px",
+                            fontWeight: 700,
+                            fontSize: "14px",
+                            marginTop: "8px",
+                            color: "var(--danger)",
+                          }}
+                        >
+                          <span>Returned Amount</span>
+                          <span>
+                            -₹
+                            {safeNumber(selectedSale.returnedAmount).toFixed(2)}
+                          </span>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
