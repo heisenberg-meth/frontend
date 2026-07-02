@@ -35,10 +35,6 @@ export default defineConfig(({ mode }) => {
         },
       },
       host: true,
-      hmr: {
-        host: "localhost",
-        protocol: "ws",
-      },
     },
     build: {
       rollupOptions: {
