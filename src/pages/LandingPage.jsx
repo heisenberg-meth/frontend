@@ -239,6 +239,8 @@ export default function LandingPage() {
   const navigate = useNavigate();
   const [menuOpen, setMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const [downloadOpen, setDownloadOpen] = useState(false);
+  const downloadRef = useRef(null);
 
   useEffect(() => {
     const fn = () => setScrolled(window.scrollY > 50);
@@ -246,8 +248,19 @@ export default function LandingPage() {
     return () => window.removeEventListener("scroll", fn);
   }, []);
 
+  useEffect(() => {
+    const handleOutsideClick = (e) => {
+      if (downloadRef.current && !downloadRef.current.contains(e.target)) {
+        setDownloadOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleOutsideClick);
+    return () => document.removeEventListener("mousedown", handleOutsideClick);
+  }, []);
+
   const scrollTo = (id) => {
     setMenuOpen(false);
+    setDownloadOpen(false);
     document.getElementById(id)?.scrollIntoView({ behavior: "smooth" });
   };
 
@@ -266,15 +279,45 @@ export default function LandingPage() {
           <div
             className={`lp-nav-links ${menuOpen ? "lp-nav-links--open" : ""}`}
           >
-            {NAV_LINKS.map((l) => (
+            <button className="lp-nav-link" onClick={() => scrollTo("features")}>
+              Features
+            </button>
+            <button className="lp-nav-link" onClick={() => scrollTo("how-it-works")}>
+              How It Works
+            </button>
+            <button className="lp-nav-link" onClick={() => scrollTo("pricing")}>
+              Pricing
+            </button>
+            
+            {/* Download Dropdown */}
+            <div className="lp-download-dropdown-wrapper" ref={downloadRef}>
               <button
-                key={l}
-                className="lp-nav-link"
-                onClick={() => scrollTo(l.toLowerCase().replace(/ /g, "-"))}
+                className={`lp-nav-link lp-download-btn ${downloadOpen ? "active" : ""}`}
+                onClick={() => setDownloadOpen(!downloadOpen)}
               >
-                {l}
+                Download <span className="lp-dropdown-arrow">▼</span>
               </button>
-            ))}
+              {downloadOpen && (
+                <div className="lp-download-dropdown-menu">
+                  <a href="#" className="lp-dropdown-item" onClick={() => setDownloadOpen(false)}>
+                    <span>⬇</span> Desktop for Windows (.exe)
+                  </a>
+                  <a href="#" className="lp-dropdown-item" onClick={() => setDownloadOpen(false)}>
+                    <span>⬇</span> Desktop for macOS (.dmg)
+                  </a>
+                  <a href="#" className="lp-dropdown-item" onClick={() => setDownloadOpen(false)}>
+                    <span>⬇</span> Desktop for Linux (.AppImage)
+                  </a>
+                  <a href="#" className="lp-dropdown-item" onClick={() => setDownloadOpen(false)}>
+                    <span>🤖</span> Android
+                  </a>
+                </div>
+              )}
+            </div>
+
+            <button className="lp-nav-link" onClick={() => scrollTo("contact")}>
+              Contact
+            </button>
           </div>
           <div className="lp-nav-actions">
             <button
@@ -289,7 +332,7 @@ export default function LandingPage() {
               id="nav-get-started-btn"
               onClick={() => navigate("/login")}
             >
-              Get Started <span className="lp-btn-arrow">→</span>
+              Start Free Trial <span className="lp-btn-arrow">→</span>
             </button>
           </div>
           <button
@@ -303,6 +346,7 @@ export default function LandingPage() {
           </button>
         </div>
       </nav>
+
 
       {/* ── HERO ── */}
       <section className="lp-hero" id="hero">

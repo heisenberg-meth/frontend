@@ -1572,3 +1572,94 @@ body:has(.lp-root) {
     height: 200px;
   }
 }
+
+/* ===== DOWNLOAD DROPDOWN ===== */
+.lp-download-dropdown-wrapper {
+  position: relative;
+  display: inline-block;
+}
+
+.lp-download-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.lp-dropdown-arrow {
+  font-size: 8px;
+  transition: transform 0.2s ease;
+}
+
+.lp-download-btn.active .lp-dropdown-arrow {
+  transform: rotate(180deg);
+}
+
+.lp-download-dropdown-menu {
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%) translateY(12px);
+  background: #ffffff;
+  border: 1px solid rgba(16, 185, 129, 0.15);
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08), 0 4px 12px rgba(16, 185, 129, 0.05);
+  min-width: 250px;
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  z-index: 200;
+  animation: lp-dropdown-fade 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes lp-dropdown-fade {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(12px);
+  }
+}
+
+.lp-dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 16px;
+  color: #374151;
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 500;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.lp-dropdown-item:hover {
+  background: rgba(16, 185, 129, 0.08);
+  color: #059669;
+}
+
+.lp-dropdown-item span {
+  font-size: 16px;
+}
+
+@media (max-width: 768px) {
+  .lp-download-dropdown-wrapper {
+    width: 100%;
+  }
+  .lp-download-dropdown-menu {
+    position: relative;
+    left: 0;
+    transform: none;
+    width: 100%;
+    margin-top: 8px;
+    box-shadow: none;
+    border: 1px solid rgba(16, 185, 129, 0.08);
+    background: rgba(16, 185, 129, 0.02);
+    animation: none;
+  }
+}
+
