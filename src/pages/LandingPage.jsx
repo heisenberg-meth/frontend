@@ -17,8 +17,6 @@ import {
 } from "lucide-react";
 import "../styles/LandingPage.css";
 
-const NAV_LINKS = ["Features", "How it Works", "Pricing", "Contact"];
-
 const FEATURES = [
   {
     Icon: Package,
@@ -207,16 +205,15 @@ function AnimSection({ children, className = "" }) {
 }
 
 function CountUp({ target }) {
-  const [val, setVal] = useState("0");
+  const num = parseFloat(target.replace(/[^0-9.]/g, ""));
+  const isInvalid = isNaN(num);
+  const [val, setVal] = useState(isInvalid ? target : "0");
   const ref = useRef(null);
   const visible = useVisible(ref);
+
   useEffect(() => {
-    if (!visible) return;
-    const num = parseFloat(target.replace(/[^0-9.]/g, ""));
-    if (isNaN(num)) {
-      setVal(target);
-      return;
-    }
+    if (!visible || isInvalid) return;
+
     let cur = 0;
     const step = num / 60;
     const t = setInterval(() => {
@@ -224,14 +221,17 @@ function CountUp({ target }) {
       if (cur >= num) {
         setVal(target);
         clearInterval(t);
-      } else
+      } else {
         setVal(
           Math.floor(cur).toLocaleString("en-IN") +
             target.replace(/[0-9.,]/g, ""),
         );
+      }
     }, 18);
+
     return () => clearInterval(t);
-  }, [visible, target]);
+  }, [visible, target, num, isInvalid]);
+
   return <span ref={ref}>{val}</span>;
 }
 
@@ -273,42 +273,61 @@ export default function LandingPage() {
             className="lp-logo"
             onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
           >
-            <img src="/viyan_logo_new.png" className="lp-logo-img" alt="MedAssist Logo" />
+            <img
+              src="/viyan_logo_new.webp"
+              className="lp-logo-img"
+              alt="MedAssist Logo"
+            />
             <span className="lp-logo-text">MedAssist</span>
           </div>
           <div
             className={`lp-nav-links ${menuOpen ? "lp-nav-links--open" : ""}`}
           >
-            <button className="lp-nav-link" onClick={() => scrollTo("features")}>
+            <button
+              className="lp-nav-link"
+              onClick={() => scrollTo("features")}
+            >
               Features
             </button>
-            <button className="lp-nav-link" onClick={() => scrollTo("how-it-works")}>
+            <button
+              className="lp-nav-link"
+              onClick={() => scrollTo("how-it-works")}
+            >
               How It Works
             </button>
             <button className="lp-nav-link" onClick={() => scrollTo("pricing")}>
               Pricing
             </button>
-            
+
             {/* Download Dropdown */}
-            <div className="lp-download-dropdown-wrapper" ref={downloadRef}>
+            <div
+              className="lp-download-dropdown-wrapper"
+              ref={downloadRef}
+              onMouseEnter={() => setDownloadOpen(true)}
+              onMouseLeave={() => setDownloadOpen(false)}
+            >
               <button
+                type="button"
                 className={`lp-nav-link lp-download-btn ${downloadOpen ? "active" : ""}`}
-                onClick={() => setDownloadOpen(!downloadOpen)}
               >
                 Download <span className="lp-dropdown-arrow">▼</span>
               </button>
+
               {downloadOpen && (
                 <div className="lp-download-dropdown-menu">
-                  <a href="#" className="lp-dropdown-item" onClick={() => setDownloadOpen(false)}>
+                  <a href="#" className="lp-dropdown-item">
                     <span>⬇</span> Desktop for Windows (.exe)
                   </a>
-                  <a href="#" className="lp-dropdown-item" onClick={() => setDownloadOpen(false)}>
+
+                  <a href="#" className="lp-dropdown-item">
                     <span>⬇</span> Desktop for macOS (.dmg)
                   </a>
-                  <a href="#" className="lp-dropdown-item" onClick={() => setDownloadOpen(false)}>
+
+                  <a href="#" className="lp-dropdown-item">
                     <span>⬇</span> Desktop for Linux (.AppImage)
                   </a>
-                  <a href="#" className="lp-dropdown-item" onClick={() => setDownloadOpen(false)}>
+
+                  <a href="#" className="lp-dropdown-item">
                     <span>🤖</span> Android
                   </a>
                 </div>
@@ -346,7 +365,6 @@ export default function LandingPage() {
           </button>
         </div>
       </nav>
-
 
       {/* ── HERO ── */}
       <section className="lp-hero" id="hero">
@@ -533,8 +551,8 @@ export default function LandingPage() {
               <span className="lp-gradient-text">Pharmacy Business</span>
             </h2>
             <p className="lp-section-sub">
-              Whether you run a single store or a nationwide chain, MedAssist adapts
-              to how your business works.
+              Whether you run a single store or a nationwide chain, MedAssist
+              adapts to how your business works.
             </p>
           </AnimSection>
           <div className="lp-pharma-types-grid">
@@ -619,7 +637,13 @@ export default function LandingPage() {
                   <div className="lp-plan-sub-desc">{plan.sub}</div>
                   <div className="lp-plan-price">
                     {plan.price}
-                    <span className={plan.duration.startsWith("/") ? "lp-plan-dur" : "lp-plan-dur-badge"}>
+                    <span
+                      className={
+                        plan.duration.startsWith("/")
+                          ? "lp-plan-dur"
+                          : "lp-plan-dur-badge"
+                      }
+                    >
                       {plan.duration}
                     </span>
                   </div>
@@ -686,7 +710,11 @@ export default function LandingPage() {
                 className="lp-logo"
                 onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
               >
-                <img src="/viyan_logo_new.png" className="lp-logo-img" alt="MedAssist Logo" />
+                <img
+                  src="/viyan_logo_new.png"
+                  className="lp-logo-img"
+                  alt="MedAssist Logo"
+                />
                 <span className="lp-logo-text">MedAssist</span>
               </div>
               <p className="lp-footer-tagline">
@@ -709,30 +737,60 @@ export default function LandingPage() {
             <div className="lp-footer-links">
               <div className="lp-footer-col">
                 <div className="lp-footer-col-title">Product</div>
-                <a href="#features" className="lp-footer-link">Features</a>
-                <a href="#pricing" className="lp-footer-link">Pricing</a>
-                <a href="#desktop-app" className="lp-footer-link">Desktop App</a>
-                <a href="#mobile-app" className="lp-footer-link">Mobile App</a>
-                <a href="#documentation" className="lp-footer-link">Documentation</a>
+                <a href="#features" className="lp-footer-link">
+                  Features
+                </a>
+                <a href="#pricing" className="lp-footer-link">
+                  Pricing
+                </a>
+                <a href="#desktop-app" className="lp-footer-link">
+                  Desktop App
+                </a>
+                <a href="#mobile-app" className="lp-footer-link">
+                  Mobile App
+                </a>
+                <a href="#documentation" className="lp-footer-link">
+                  Documentation
+                </a>
               </div>
               <div className="lp-footer-col">
                 <div className="lp-footer-col-title">Company</div>
-                <a href="https://www.viyaninfo.com/about" target="_blank" rel="noopener noreferrer" className="lp-footer-link">About Us</a>
-                <a href="https://www.viyaninfo.com/contact" target="_blank" rel="noopener noreferrer" className="lp-footer-link">Contact</a>
+                <a
+                  href="https://www.viyaninfo.com/about"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="lp-footer-link"
+                >
+                  About Us
+                </a>
+                <a
+                  href="https://www.viyaninfo.com/contact"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="lp-footer-link"
+                >
+                  Contact
+                </a>
               </div>
               <div className="lp-footer-col">
                 <div className="lp-footer-col-title">Legal</div>
-                <a href="#privacy-policy" className="lp-footer-link">Privacy Policy</a>
-                <a href="#terms-of-service" className="lp-footer-link">Terms of Service</a>
-                <a href="#cookie-policy" className="lp-footer-link">Cookie Policy</a>
-                <a href="#refund-policy" className="lp-footer-link">Refund Policy</a>
+                <a href="#privacy-policy" className="lp-footer-link">
+                  Privacy Policy
+                </a>
+                <a href="#terms-of-service" className="lp-footer-link">
+                  Terms of Service
+                </a>
+                <a href="#cookie-policy" className="lp-footer-link">
+                  Cookie Policy
+                </a>
+                <a href="#refund-policy" className="lp-footer-link">
+                  Refund Policy
+                </a>
               </div>
             </div>
           </div>
           <div className="lp-footer-bottom">
-            <span>
-              © 2026 MedAssist. All rights reserved.
-            </span>
+            <span>© 2026 MedAssist. All rights reserved.</span>
           </div>
         </div>
       </footer>

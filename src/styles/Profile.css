@@ -306,6 +306,13 @@
   color: var(--text-dim);
 }
 
+/* Settings Stack */
+.settings-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
 /* Settings Card Upgrade */
 .settings-card-glass {
   padding: 24px;

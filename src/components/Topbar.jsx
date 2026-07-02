@@ -601,6 +601,12 @@ export default function Topbar({
                     user?.avatar,
                     user?.fullName || user?.username,
                   )}
+                  onError={(e) => {
+                    const fallback = `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.fullName || user?.username || "NA")}&background=4FDBC8&color=0A0F1C`;
+                    if (e.target.src !== fallback) {
+                      e.target.src = fallback;
+                    }
+                  }}
                   className="avatar-img"
                   alt="Profile"
                 />

@@ -12,7 +12,6 @@ const NotFound = lazy(() => import("../components/NotFound"));
 const LegalPages = lazy(() => import("../components/LegalPages"));
 const LandingPage = lazy(() => import("../pages/LandingPage"));
 
-
 // Admin pages
 const AdminLogin = lazy(() => import("../pages/admin/AdminLogin"));
 const AdminLayout = lazy(() => import("../pages/admin/AdminLayout"));
@@ -100,10 +99,9 @@ export default function AppRoutes({
   handleSelectPro,
   handlePaymentComplete,
   handleAvatarUpload,
-  profileData,
+  profile,
+  refreshProfile,
   storeProfile,
-  setShowAuthModal,
-  setPendingUpdates,
   setShowLogoutModal,
   PaywallComponent,
 }) {
@@ -379,12 +377,9 @@ export default function AppRoutes({
               <PageErrorBoundary>
                 <Profile
                   user={user}
-                  profileData={profileData}
+                  profile={profile}
+                  refreshProfile={refreshProfile}
                   handleAvatarUpload={handleAvatarUpload}
-                  setShowAuthModal={(updates) => {
-                    setPendingUpdates(updates);
-                    setShowAuthModal(true);
-                  }}
                   showToast={showToast}
                 />
               </PageErrorBoundary>

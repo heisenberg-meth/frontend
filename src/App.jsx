@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { AuthProvider } from "./context/AuthContext";
 import { useAuth } from "./hooks/useAuth";
@@ -6,13 +6,7 @@ import api from "./api";
 import { normalizeArrayResponse } from "./utils/apiNormalizer";
 import { API_ROUTES } from "./constants/api.routes.js";
 import { SubscriptionStatus } from "./constants/enums";
-import {
-  ShieldCheck,
-  Sparkles,
-  Lock,
-  ShieldAlert,
-  CheckCircle2,
-} from "lucide-react";
+import { Sparkles, ShieldAlert, CheckCircle2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import LogoutModal from "./components/LogoutModal";
 import AppRoutes from "./routes/AppRoutes";
@@ -102,26 +96,31 @@ function AppContent() {
   const [lowStock, setLowStock] = useState(10);
   const [expiryDays, setExpiryDays] = useState(30);
   const [storeProfile, setStoreProfile] = useState(null);
+  const [profile, setProfile] = useState(null);
   const [currency] = useState({
     code: "INR",
     symbol: "₹",
     rate: 83.5,
   });
 
-  const profileData = useMemo(
-    () => ({
-      username: user?.username || "",
-      email: user?.email || `${user?.username?.toLowerCase() || ""}@viyan.med`,
-      fullName: user?.fullName || user?.username || "",
-    }),
-    [user],
-  );
-
-  const [verifyPassword, setVerifyPassword] = useState("");
-  const [pendingUpdates, setPendingUpdates] = useState(null);
-  const [showAuthModal, setShowAuthModal] = useState(false);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const [lastSync, setLastSync] = useState(new Date());
+
+  const fetchProfile = useCallback(async () => {
+    try {
+      const res = await api.get(API_ROUTES.AUTH_ME || "/auth/me");
+      if (res.data?.data?.user) {
+        const payload = res.data.data;
+        setProfile({
+          ...payload.user,
+          shopName: payload.tenant?.name || "",
+        });
+        updateUser(payload.user);
+      }
+    } catch (err) {
+      console.error("Failed to fetch profile", err);
+    }
+  }, [updateUser]);
 
   const status = subscription?.status;
 
@@ -185,14 +184,14 @@ function AppContent() {
 
     const boot = async () => {
       try {
-        await Promise.all([fetchData(), fetchSettings()]);
+        await Promise.all([fetchData(), fetchSettings(), fetchProfile()]);
       } catch (err) {
         console.error("[APP INIT ERROR]", err);
       }
     };
 
     boot();
-  }, [restored, user, status, fetchData, fetchSettings]);
+  }, [restored, user, status, fetchData, fetchSettings, fetchProfile]);
 
   useEffect(() => {
     if (!restored || !user) return;
@@ -206,14 +205,14 @@ function AppContent() {
 
     const syncInterval = setInterval(async () => {
       try {
-        await Promise.all([fetchSettings(), fetchData()]);
+        await Promise.all([fetchSettings(), fetchData(), fetchProfile()]);
       } catch (err) {
         console.error("[SYNC ERROR]", err);
       }
     }, 300000);
 
     return () => clearInterval(syncInterval);
-  }, [restored, user, status, fetchSettings, fetchData]);
+  }, [restored, user, status, fetchSettings, fetchData, fetchProfile]);
 
   useEffect(() => {
     const saved = localStorage.getItem("viyan-theme");
@@ -312,44 +311,19 @@ function AppContent() {
     }
   };
 
-  const handleUpdateProfile = async (updates) => {
-    try {
-      const payload = {
-        ...updates,
-        currentPassword: verifyPassword,
-      };
-
-      await api.put(`team/${user.id}`, payload);
-      updateUser(payload);
-      showToast("Clinical profile synchronized", "success");
-      setVerifyPassword("");
-      setShowAuthModal(false);
-    } catch (err) {
-      showToast(
-        err.response?.data?.message || "Failed to update profile",
-        "error",
-      );
-    }
-  };
-
-  const handleAvatarUpload = async (e) => {
-    const file = e.target.files[0];
+  const handleAvatarUpload = async (file) => {
     if (!file) return;
     const formData = new FormData();
     formData.append("avatar", file);
-    try {
-      const res = await api.post("uploads/avatar", formData, {
-        headers: { "Content-Type": "multipart/form-data" },
-      });
-      const avatarUrl = res.data?.avatarUrl;
 
-      await api.put(`team/${user.id}`, { avatar: avatarUrl });
+    const res = await api.post("uploads/avatar", formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+    const avatarUrl = res.data?.data?.avatarUrl || res.data?.avatarUrl;
 
-      updateUser({ avatar: avatarUrl });
-      showToast("Clinical avatar updated", "success");
-    } catch {
-      showToast("Upload failed", "error");
-    }
+    updateUser({ avatar: avatarUrl });
+    fetchProfile();
+    return avatarUrl;
   };
 
   useEffect(() => {
@@ -471,9 +445,8 @@ function AppContent() {
           handleActivateSubscription={handleActivateSubscription}
           handleAuthSuccess={handleAuthSuccess}
           handleAvatarUpload={handleAvatarUpload}
-          profileData={profileData}
-          setShowAuthModal={setShowAuthModal}
-          setPendingUpdates={setPendingUpdates}
+          profile={profile}
+          refreshProfile={fetchProfile}
           setShowLogoutModal={setShowLogoutModal}
           handlePaymentComplete={handlePaymentComplete}
           handleSelectPro={handleSelectPro}
@@ -485,94 +458,6 @@ function AppContent() {
 
         <AnimatePresence>
           {toast && <Toast message={toast.message} type={toast.type} />}
-        </AnimatePresence>
-
-        <AnimatePresence>
-          {showAuthModal && (
-            <div className="modal-overlay">
-              <motion.div
-                className="modal-content"
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.9 }}
-                style={{ maxWidth: 420 }}
-              >
-                <div className="modal-header">
-                  <div
-                    style={{ display: "flex", alignItems: "center", gap: 12 }}
-                  >
-                    <ShieldCheck size={24} style={{ color: "#4fdbc8" }} />
-                    <h3>Verify Authorization</h3>
-                  </div>
-                </div>
-                <div className="modal-body">
-                  <p
-                    style={{
-                      color: "var(--text-muted)",
-                      fontSize: 14,
-                      lineHeight: 1.6,
-                    }}
-                  >
-                    Enter your current password to synchronize changes to your
-                    clinical credentials.
-                  </p>
-                  <div className="input-v2" style={{ marginTop: 24 }}>
-                    <label>
-                      <Lock size={12} /> CURRENT PASSWORD
-                    </label>
-                    <input
-                      required
-                      type="password"
-                      placeholder="Enter current password"
-                      value={verifyPassword}
-                      onChange={(e) => setVerifyPassword(e.target.value)}
-                      autoFocus
-                    />
-                  </div>
-                </div>
-                <div
-                  className="modal-actions"
-                  style={{ marginTop: 32, display: "flex", gap: 12 }}
-                >
-                  <button
-                    className="modal-btn-outline"
-                    style={{
-                      flex: 1,
-                      background: "none",
-                      border: "1px solid rgba(255,255,255,0.1)",
-                      color: "var(--text-muted)",
-                      borderRadius: 12,
-                      cursor: "pointer",
-                      padding: "12px",
-                    }}
-                    onClick={() => {
-                      setShowAuthModal(false);
-                      setVerifyPassword("");
-                    }}
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    className="modal-btn-primary"
-                    style={{
-                      flex: 1,
-                      background: "#4fdbc8",
-                      color: "#031424",
-                      border: "none",
-                      borderRadius: 12,
-                      fontWeight: 800,
-                      cursor: "pointer",
-                      padding: "12px",
-                    }}
-                    onClick={() => handleUpdateProfile(pendingUpdates)}
-                    disabled={!verifyPassword}
-                  >
-                    Verify Access
-                  </button>
-                </div>
-              </motion.div>
-            </div>
-          )}
         </AnimatePresence>
 
         <LogoutModal
