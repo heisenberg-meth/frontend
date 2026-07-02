@@ -10,6 +10,8 @@ const PageErrorBoundary = lazy(() => import("../components/PageErrorBoundary"));
 const LoadingScreen = lazy(() => import("../components/LoadingScreen"));
 const NotFound = lazy(() => import("../components/NotFound"));
 const LegalPages = lazy(() => import("../components/LegalPages"));
+const LandingPage = lazy(() => import("../pages/LandingPage"));
+
 
 // Admin pages
 const AdminLogin = lazy(() => import("../pages/admin/AdminLogin"));
