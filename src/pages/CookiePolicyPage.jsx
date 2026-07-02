@@ -133,7 +133,7 @@ export default function CookiePolicyPage() {
             }}
           >
             <img
-              src="/viyan_logo_new.png"
+              src="/viyan_logo_new.webp"
               className="lp-logo-img"
               alt="MedAssist Logo"
             />
