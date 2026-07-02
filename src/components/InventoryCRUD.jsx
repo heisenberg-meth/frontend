@@ -1406,11 +1406,36 @@ function BatchModal({
                         {batches.map((b) => (
                           <tr
                             key={b.id}
+                            className={`batch-row ${selectedBatch?.id === b.id ? "selected" : ""}`}
                             style={{
                               background:
                                 selectedBatch?.id === b.id
                                   ? "var(--hover-bg)"
                                   : "transparent",
+                              cursor: "pointer",
+                            }}
+                            onClick={() => {
+                              setSelectedBatch(b);
+                              setForm({
+                                batchNumber: b.batchNumber || "",
+                                expiryDate: b.expiryDate
+                                  ? b.expiryDate.split("T")[0]
+                                  : "",
+                                mrp: b.mrp ? String(b.mrp) : "",
+                                sellingPrice: b.sellingPrice
+                                  ? String(b.sellingPrice)
+                                  : "",
+                                purchasePrice: b.purchasePrice
+                                  ? String(b.purchasePrice)
+                                  : "",
+                                quantity:
+                                  b.quantity !== null &&
+                                  b.quantity !== undefined
+                                    ? String(b.quantity)
+                                    : "",
+                                rackLocation: b.rackLocation || "",
+                              });
+                              setErrors({});
                             }}
                           >
                             <td>{b.batchNumber}</td>
@@ -1428,25 +1453,13 @@ function BatchModal({
                               }}
                             >
                               <button
-                                className="action-btn"
-                                style={{
-                                  padding: "4px 12px",
-                                  fontSize: "0.8rem",
-                                  borderRadius: "4px",
-                                  background:
-                                    selectedBatch?.id === b.id
-                                      ? "var(--primary)"
-                                      : "transparent",
-                                  color:
-                                    selectedBatch?.id === b.id
-                                      ? "white"
-                                      : "inherit",
-                                  border:
-                                    selectedBatch?.id === b.id
-                                      ? "1px solid var(--primary)"
-                                      : "1px solid var(--border-color)",
-                                }}
-                                onClick={() => {
+                                className={`action-btn ${
+                                  selectedBatch?.id === b.id
+                                    ? "editing"
+                                    : "edit"
+                                }`}
+                                onClick={(e) => {
+                                  e.stopPropagation();
                                   setSelectedBatch(b);
                                   setForm({
                                     batchNumber: b.batchNumber || "",
@@ -1470,9 +1483,11 @@ function BatchModal({
                                   setErrors({});
                                 }}
                               >
-                                {selectedBatch?.id === b.id
-                                  ? "Editing"
-                                  : "Edit"}
+                                {selectedBatch?.id === b.id ? (
+                                  <>✓ Editing</>
+                                ) : (
+                                  <>✏️ Edit Batch</>
+                                )}
                               </button>
                             </td>
                           </tr>
