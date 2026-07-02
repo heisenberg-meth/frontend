@@ -1239,36 +1239,6 @@ function BatchModal({
       })
       .catch(() => {});
   }, []);
-  const [prevBatchId, setPrevBatchId] = useState(initialBatch?.id || null);
-
-  if (selectedBatch?.id !== prevBatchId) {
-    setPrevBatchId(selectedBatch?.id || null);
-    if (selectedBatch) {
-      setForm({
-        batchNumber: selectedBatch.batchNumber || "",
-        expiryDate: selectedBatch.expiryDate
-          ? selectedBatch.expiryDate.split("T")[0]
-          : "",
-        mrp: selectedBatch.mrp ? String(selectedBatch.mrp) : "",
-        sellingPrice: selectedBatch.sellingPrice
-          ? String(selectedBatch.sellingPrice)
-          : "",
-        purchasePrice: selectedBatch.purchasePrice
-          ? String(selectedBatch.purchasePrice)
-          : "",
-        quantity:
-          selectedBatch.quantity !== null &&
-          selectedBatch.quantity !== undefined
-            ? String(selectedBatch.quantity)
-            : "",
-        rackLocation: selectedBatch.rackLocation || "",
-        supplierId: selectedBatch.supplierId || "",
-      });
-    } else {
-      setForm({ ...EMPTY_BATCH_FORM, supplierId: "" });
-    }
-  }
-
   const handleSupplierChange = async (supplierId) => {
     if (!selectedBatch) return;
     setSavingSupplier(true);
