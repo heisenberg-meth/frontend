@@ -115,6 +115,14 @@ export default function AppRoutes({
   return (
     <Suspense fallback={<LoadingScreen message="Loading clinical module..." />}>
       <Routes>
+        {/* Landing Page — root public route */}
+        <Route
+          path="/"
+          element={
+            user ? <Navigate to="/dashboard" replace /> : <LandingPage />
+          }
+        />
+
         {/* Public Routes */}
         <Route
           path="/login"
@@ -157,7 +165,6 @@ export default function AppRoutes({
             </ProtectedRoute>
           }
         >
-          <Route path="/" element={<Navigate to="/dashboard" replace />} />
           <Route
             path="/dashboard"
             element={
