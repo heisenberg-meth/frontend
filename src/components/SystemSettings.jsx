@@ -4,7 +4,6 @@ import {
   Save,
   ArrowLeft,
   MessageCircle,
-  Activity,
   Zap,
   Clock,
   AlertTriangle,
@@ -30,7 +29,7 @@ export default function SystemSettings({
   showToast,
   onActivate,
 }) {
-  const { subscription } = useAuth();
+  const { subscription, tenant } = useAuth();
   const [currentView, setCurrentView] = useState("settings");
   const [saving, setSaving] = useState(false);
   const [settingsData, setSettingsData] = useState(null);
@@ -51,8 +50,8 @@ export default function SystemSettings({
   const loadSettings = useCallback(async () => {
     try {
       const settingsRes = await api.get(API_ROUTES.SETTINGS);
-      if (settingsRes?.data?.data) {
-        const s = settingsRes.data.data;
+      if (settingsRes?.data) {
+        const s = settingsRes.data.data || settingsRes.data;
         setSettingsData(s);
         if (s.lowStock) setLowStock(s.lowStock);
         if (s.expiryDays) setExpiryDays(s.expiryDays);
@@ -312,12 +311,6 @@ export default function SystemSettings({
             <FileText size={16} /> Legal & Compliance
           </button>
           <button
-            className="sys-btn-outline"
-            onClick={() => setCurrentView("ops")}
-          >
-            <Activity size={16} /> Ops Console
-          </button>
-          <button
             className="sys-btn-fill"
             onClick={handleSaveSettings}
             disabled={saving}
@@ -407,12 +400,7 @@ export default function SystemSettings({
             settingsData={settingsData}
             onRefresh={loadSettings}
             showToast={showToast}
-          />
-
-          <ShopDetailsCard
-            settingsData={settingsData}
-            onRefresh={loadSettings}
-            showToast={showToast}
+            tenant={tenant}
           />
         </div>
 
@@ -440,6 +428,13 @@ export default function SystemSettings({
               </div>
             </div>
           </div>
+
+          <ShopDetailsCard
+            settingsData={settingsData}
+            onRefresh={loadSettings}
+            showToast={showToast}
+            tenant={tenant}
+          />
         </div>
       </div>
     </div>

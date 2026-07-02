@@ -6,10 +6,12 @@ export default function ShopDetailsCard({
   settingsData,
   onRefresh,
   showToast,
+  tenant,
 }) {
   const [modalOpen, setModalOpen] = useState(false);
   const sp = settingsData?.storeProfile || {};
   const inv = settingsData?.invoiceTemplate || {};
+  const safeTenant = tenant || {};
 
   return (
     <>
@@ -21,16 +23,20 @@ export default function ShopDetailsCard({
           <div className="summary-field">
             <span className="summary-field-label">Shop Name</span>
             <span className="summary-field-value">
-              {sp.shopName || "\u2014"}
+              {sp.shopName || safeTenant.name || "\u2014"}
             </span>
           </div>
           <div className="summary-field">
             <span className="summary-field-label">Phone</span>
-            <span className="summary-field-value">{sp.phone || "\u2014"}</span>
+            <span className="summary-field-value">
+              {sp.phone || safeTenant.phone || "\u2014"}
+            </span>
           </div>
           <div className="summary-field">
             <span className="summary-field-label">Email</span>
-            <span className="summary-field-value">{sp.email || "\u2014"}</span>
+            <span className="summary-field-value">
+              {sp.email || safeTenant.email || "\u2014"}
+            </span>
           </div>
           <div className="summary-field">
             <span className="summary-field-label">Invoice Prefix</span>

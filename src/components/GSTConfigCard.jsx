@@ -43,9 +43,15 @@ const GST_STATES = [
 
 const FILING_FREQUENCIES = ["Monthly", "Quarterly", "Annual"];
 
-export default function GSTConfigCard({ settingsData, onRefresh, showToast }) {
+export default function GSTConfigCard({
+  settingsData,
+  onRefresh,
+  showToast,
+  tenant,
+}) {
   const [modalOpen, setModalOpen] = useState(false);
   const sp = settingsData?.storeProfile || {};
+  const safeTenant = tenant || {};
 
   return (
     <>
@@ -56,12 +62,14 @@ export default function GSTConfigCard({ settingsData, onRefresh, showToast }) {
         <div className="summary-fields">
           <div className="summary-field">
             <span className="summary-field-label">GSTIN</span>
-            <span className="summary-field-value">{sp.gstin || "\u2014"}</span>
+            <span className="summary-field-value">
+              {sp.gstin || safeTenant.gstNumber || "\u2014"}
+            </span>
           </div>
           <div className="summary-field">
             <span className="summary-field-label">Business Name</span>
             <span className="summary-field-value">
-              {sp.businessName || "\u2014"}
+              {sp.businessName || safeTenant.name || "\u2014"}
             </span>
           </div>
           <div className="summary-field">
@@ -109,7 +117,6 @@ function GSTModal({ onClose, onRefresh, showToast, storeProfile }) {
     [storeProfile],
   );
 
-  const [original] = useState(snapshot);
   const [form, setForm] = useState(snapshot);
   const overlayRef = useRef(null);
 
@@ -120,19 +127,6 @@ function GSTModal({ onClose, onRefresh, showToast, storeProfile }) {
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [onClose]);
-
-  const hasChanges = useMemo(() => {
-    if (!original) return false;
-
-    return (
-      form.gstin !== original.gstin ||
-      form.businessName !== original.businessName ||
-      form.state !== original.state ||
-      form.filingFrequency !== original.filingFrequency
-    );
-  }, [form, original]);
-
-  console.log("GSTModal Render:", { form, original, hasChanges });
 
   const handleChange = (field, value) => {
     setForm((prev) => ({ ...prev, [field]: value }));
