@@ -167,7 +167,7 @@ export default function Notifications({ showToast }) {
         <Bell size={48} className="text-primary opacity-50" />
       </div>
       <h3>You're all caught up!</h3>
-      <p>No new alerts or system updates.</p>
+      <p>No notifications available.</p>
     </motion.div>
   );
 
