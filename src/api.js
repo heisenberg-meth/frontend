@@ -274,18 +274,7 @@ api.interceptors.response.use(
           localStorage.setItem("viyan_token", newToken);
         }
 
-        if (import.meta.env.DEV) {
-          console.log("[AUTH] Refresh successful:", {
-            status: refreshRes.status,
-            data: refreshRes.data,
-          });
-        }
-
         refreshAttempts = 0;
-
-        // Reset the refresh flag BEFORE processing the queue so that if a queued
-        // request's retry triggers another 401, it can queue again rather than
-        // immediately kicking off a second refresh cycle.
         isRefreshing = false;
         processQueue(null, newToken);
 

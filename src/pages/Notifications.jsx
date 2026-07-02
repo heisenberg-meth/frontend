@@ -59,13 +59,13 @@ export default function Notifications({ showToast }) {
   const [searchQuery, setSearchQuery] = useState("");
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [deletingIds, setDeletingIds] = useState(new Set());
 
   useEffect(() => {
     const loadData = async () => {
       setLoading(true);
       try {
         const res = await getNotifications();
-        console.log("Notifications API:", res.data);
         const data = Array.isArray(res.data?.data)
           ? res.data.data
           : Array.isArray(res.data)
@@ -96,6 +96,7 @@ export default function Notifications({ showToast }) {
       setNotifications((prev) =>
         prev.map((n) => (n.id === id ? { ...n, isRead: true } : n)),
       );
+      window.dispatchEvent(new Event("notificationsUpdated"));
     } catch (err) {
       console.error("Failed to mark read:", err);
     }
@@ -105,6 +106,7 @@ export default function Notifications({ showToast }) {
     try {
       await markAllNotificationsRead();
       setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })));
+      window.dispatchEvent(new Event("notificationsUpdated"));
       showToast?.("All notifications marked as read", "success");
     } catch {
       showToast?.("Failed to mark all as read", "error");
@@ -112,12 +114,28 @@ export default function Notifications({ showToast }) {
   };
 
   const handleDelete = async (id) => {
+    if (deletingIds.has(id)) return;
+
+    setDeletingIds((prev) => new Set(prev).add(id));
+
     try {
       await deleteNotification(id);
       setNotifications((prev) => prev.filter((n) => n.id !== id));
-      showToast?.("Notification deleted", "success");
-    } catch {
-      showToast?.("Failed to delete notification", "error");
+      window.dispatchEvent(new Event("notificationsUpdated"));
+      showToast?.("Notification deleted successfully.", "success");
+    } catch (err) {
+      console.error("Failed to delete notification:", err);
+      const errorMessage =
+        err.response?.data?.message ||
+        err.message ||
+        "Failed to delete notification";
+      showToast?.(errorMessage, "error");
+    } finally {
+      setDeletingIds((prev) => {
+        const next = new Set(prev);
+        next.delete(id);
+        return next;
+      });
     }
   };
 
@@ -125,10 +143,8 @@ export default function Notifications({ showToast }) {
     if (!window.confirm("Are you sure you want to clear all notifications?"))
       return;
     try {
-      // Assuming deleteNotification works with 'all' or we do it iteratively
-      // For this UI, we'll just mock it if bulk delete isn't available
-      // await deleteNotification('all');
       setNotifications([]);
+      window.dispatchEvent(new Event("notificationsUpdated"));
       showToast?.("All notifications cleared", "success");
     } catch {
       showToast?.("Failed to clear notifications", "error");
@@ -271,12 +287,26 @@ export default function Notifications({ showToast }) {
 
                   <button
                     className="notif-delete-btn"
+                    disabled={deletingIds.has(notif.id)}
+                    style={{
+                      opacity: deletingIds.has(notif.id) ? 0.5 : 1,
+                      cursor: deletingIds.has(notif.id)
+                        ? "not-allowed"
+                        : "pointer",
+                    }}
                     onClick={(e) => {
                       e.stopPropagation();
                       handleDelete(notif.id);
                     }}
+                    title={deletingIds.has(notif.id) ? "Deleting..." : "Delete"}
                   >
-                    <Trash2 size={16} />
+                    {deletingIds.has(notif.id) ? (
+                      <span style={{ fontSize: "12px", fontWeight: "bold" }}>
+                        ...
+                      </span>
+                    ) : (
+                      <Trash2 size={16} />
+                    )}
                   </button>
                 </motion.div>
               ))}

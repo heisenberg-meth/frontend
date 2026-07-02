@@ -202,6 +202,11 @@ export default function Topbar({
       }
     };
     loadNotifications();
+
+    const handleUpdate = () => loadNotifications();
+    window.addEventListener("notificationsUpdated", handleUpdate);
+    return () =>
+      window.removeEventListener("notificationsUpdated", handleUpdate);
   }, [setNotificationsLoading]);
 
   const handleSearchChange = (value) => {
