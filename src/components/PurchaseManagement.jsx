@@ -89,32 +89,6 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
 
   const [differentBatch, setDifferentBatch] = useState({});
 
-  const selectAllBatches = useMemo(() => {
-    if (receiveItems.length === 0) return false;
-
-    const itemsWithPrior = receiveItems.filter(
-      (item) => !!(item.batchNumber || item.expiryDate),
-    );
-
-    if (itemsWithPrior.length === 0) return false;
-
-    return itemsWithPrior.every((item) => {
-      const idx = receiveItems.indexOf(item);
-      return differentBatch[idx] || false;
-    });
-  }, [differentBatch, receiveItems]);
-
-  const handleSelectAllBatches = (checked) => {
-    const updated = {};
-    receiveItems.forEach((item, idx) => {
-      const hasPrior = !!(item.batchNumber || item.expiryDate);
-      if (hasPrior) {
-        updated[idx] = checked;
-      }
-    });
-    setDifferentBatch(updated);
-  };
-
   const handleOpenReceiveModal = async (po) => {
     setSelectedRow(po);
     setDifferentBatch({});
@@ -843,17 +817,27 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
         return;
       }
 
-      // Validation: Receive Qty <= Pending Qty
-      const exceedsPending = itemsToReceive.find(
-        (item) =>
-          safeNumber(item.receivedQuantity) > safeNumber(item.pendingQuantity),
-      );
-      if (exceedsPending) {
-        showToast(
-          `Received quantity for ${exceedsPending.medicine?.name || exceedsPending.medicineName || exceedsPending.name || "item"} cannot exceed the pending quantity (${exceedsPending.pendingQuantity})`,
-          "warning",
-        );
-        return;
+      // Validation: Total Receive Qty <= Pending Qty
+      const qtySums = {};
+      const pendingMap = {};
+      const nameMap = {};
+      for (const item of itemsToReceive) {
+        const key = item.id || item.medicineId;
+        if (!qtySums[key]) qtySums[key] = 0;
+        qtySums[key] += safeNumber(item.receivedQuantity);
+        pendingMap[key] = safeNumber(item.pendingQuantity);
+        nameMap[key] =
+          item.medicine?.name || item.medicineName || item.name || "item";
+      }
+
+      for (const key in qtySums) {
+        if (qtySums[key] > pendingMap[key]) {
+          showToast(
+            `Total received quantity for ${nameMap[key]} cannot exceed the pending quantity (${pendingMap[key]})`,
+            "warning",
+          );
+          return;
+        }
       }
 
       // Validation: Expiry Date >= Today
@@ -2375,33 +2359,13 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
                         <th>Purchase Price</th>
                         <th>MRP</th>
                         <th>GST %</th>
-                        <th style={{ width: 70 }}>
-                          <div
-                            style={{
-                              display: "flex",
-                              alignItems: "center",
-                              gap: "8px",
-                              justifyContent: "center",
-                            }}
-                          >
-                            <input
-                              type="checkbox"
-                              checked={selectAllBatches}
-                              onChange={(e) =>
-                                handleSelectAllBatches(e.target.checked)
-                              }
-                            />
-                            <span>Diff Batch</span>
-                          </div>
+                        <th style={{ width: 80, textAlign: "center" }}>
+                          Action
                         </th>
                       </tr>
                     </thead>
                     <tbody>
                       {receiveItems.map((item, idx) => {
-                        const isDiff = differentBatch[idx] || false;
-                        const hasPrior = !!(
-                          item.batchNumber || item.expiryDate
-                        );
                         return (
                           <tr key={idx}>
                             <td>
@@ -2434,12 +2398,8 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
                               <input
                                 required
                                 className="p-cost-input"
-                                style={{
-                                  opacity: hasPrior && !isDiff ? 0.6 : 1,
-                                }}
                                 placeholder="Batch..."
                                 value={item.batchNumber || ""}
-                                disabled={hasPrior && !isDiff}
                                 onChange={(e) => {
                                   const newItems = [...receiveItems];
                                   newItems[idx].batchNumber = e.target.value;
@@ -2451,12 +2411,8 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
                               <input
                                 required
                                 className="p-cost-input"
-                                style={{
-                                  opacity: hasPrior && !isDiff ? 0.6 : 1,
-                                }}
                                 type="date"
                                 value={item.expiryDate || ""}
-                                disabled={hasPrior && !isDiff}
                                 onChange={(e) => {
                                   const newItems = [...receiveItems];
                                   newItems[idx].expiryDate = e.target.value;
@@ -2470,12 +2426,10 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
                                 className="p-cost-input"
                                 style={{
                                   width: "80px",
-                                  opacity: hasPrior && !isDiff ? 0.6 : 1,
                                 }}
                                 type="number"
                                 step="0.01"
                                 value={item.purchasePrice}
-                                disabled={hasPrior && !isDiff}
                                 onChange={(e) => {
                                   const newItems = [...receiveItems];
                                   newItems[idx].purchasePrice = e.target.value;
@@ -2489,12 +2443,10 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
                                 className="p-cost-input"
                                 style={{
                                   width: "80px",
-                                  opacity: hasPrior && !isDiff ? 0.6 : 1,
                                 }}
                                 type="number"
                                 step="0.01"
                                 value={item.mrp}
-                                disabled={hasPrior && !isDiff}
                                 onChange={(e) => {
                                   const newItems = [...receiveItems];
                                   newItems[idx].mrp = e.target.value;
@@ -2508,14 +2460,12 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
                                 className="p-cost-input"
                                 style={{
                                   width: "60px",
-                                  opacity: hasPrior && !isDiff ? 0.6 : 1,
                                 }}
                                 type="number"
                                 min={0}
                                 max={100}
                                 step="0.01"
                                 value={item.gstPercentage ?? 0}
-                                disabled={hasPrior && !isDiff}
                                 onChange={(e) => {
                                   const newItems = [...receiveItems];
                                   newItems[idx].gstPercentage = e.target.value;
@@ -2524,28 +2474,46 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
                               />
                             </td>
                             <td style={{ textAlign: "center" }}>
-                              {hasPrior ? (
-                                <input
-                                  type="checkbox"
-                                  checked={isDiff}
-                                  onChange={(e) => {
-                                    const checked = e.target.checked;
-                                    setDifferentBatch((prev) => ({
-                                      ...prev,
-                                      [idx]: checked,
-                                    }));
-                                  }}
-                                  title="Different batch received"
-                                />
-                              ) : (
-                                <span
+                              {item.isExtra ? (
+                                <button
+                                  type="button"
+                                  className="p-btn p-btn-danger"
                                   style={{
-                                    color: "var(--text-muted)",
-                                    fontSize: 11,
+                                    padding: "4px 8px",
+                                    fontSize: "12px",
                                   }}
+                                  onClick={() => {
+                                    const newItems = [...receiveItems];
+                                    newItems.splice(idx, 1);
+                                    setReceiveItems(newItems);
+                                  }}
+                                  title="Remove Batch"
                                 >
-                                  —
-                                </span>
+                                  🗑️
+                                </button>
+                              ) : (
+                                <button
+                                  type="button"
+                                  className="p-btn p-btn-secondary"
+                                  style={{
+                                    padding: "4px 8px",
+                                    fontSize: "12px",
+                                  }}
+                                  onClick={() => {
+                                    const newItems = [...receiveItems];
+                                    newItems.splice(idx + 1, 0, {
+                                      ...item,
+                                      receivedQuantity: 0,
+                                      batchNumber: "",
+                                      expiryDate: "",
+                                      isExtra: true,
+                                    });
+                                    setReceiveItems(newItems);
+                                  }}
+                                  title="Add Different Batch"
+                                >
+                                  ➕ Batch
+                                </button>
                               )}
                             </td>
                           </tr>
