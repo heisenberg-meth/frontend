@@ -794,8 +794,9 @@ select.pos-input option {
 }
 
 .all-bills-modal {
-  width: 680px !important;
-  max-height: 85vh;
+  width: 90vw !important;
+  max-width: 1200px !important;
+  max-height: 90vh;
   display: flex;
   flex-direction: column;
 }

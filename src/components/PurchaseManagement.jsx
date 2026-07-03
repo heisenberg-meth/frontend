@@ -1144,7 +1144,11 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
               "₹" +
               returns
                 .reduce(
-                  (sum, r) => sum + safeNumber(r.refundAmount || r.value || 0),
+                  (sum, r) =>
+                    sum +
+                    safeNumber(
+                      r.returnAmount || r.refundAmount || r.value || 0,
+                    ),
                   0,
                 )
                 .toLocaleString(),
@@ -1484,11 +1488,20 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
                     {ret.supplier?.name || ret.supplierName || ret.supplier}
                   </td>
                   <td className="result-meta">
-                    {ret.originalInvoiceId || ret.origInv}
+                    {ret.purchaseInvoice?.invoiceNumber ||
+                      ret.originalInvoiceId ||
+                      ret.origInv ||
+                      ret.purchaseInvoiceId ||
+                      "-"}
                   </td>
-                  <td>{ret.items?.length || ret.items || 0}</td>
+                  <td>
+                    {ret.items?.length || ret.supplierReturnItems?.length || 0}
+                  </td>
                   <td style={{ fontWeight: 700, color: "var(--danger)" }}>
-                    ₹{(ret.refundAmount || ret.value || 0).toLocaleString()}
+                    ₹
+                    {safeNumber(
+                      ret.returnAmount || ret.refundAmount || ret.value || 0,
+                    ).toLocaleString()}
                   </td>
                   <td>
                     <span
@@ -1549,17 +1562,44 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
             Total this period:{" "}
             <b style={{ color: "var(--text)" }}>
               ₹
-              {filteredInvoices
-                .reduce((s, i) => s + safeNumber(i.totalAmount || 0), 0)
-                .toLocaleString()}
+              {(activeTab === "invoices"
+                ? filteredInvoices.reduce(
+                    (s, i) => s + safeNumber(i.totalAmount || i.total || 0),
+                    0,
+                  )
+                : activeTab === "orders"
+                  ? filteredOrders.reduce(
+                      (s, i) => s + safeNumber(i.totalAmount || i.total || 0),
+                      0,
+                    )
+                  : filteredReturns.reduce(
+                      (s, i) =>
+                        s +
+                        safeNumber(
+                          i.returnAmount || i.refundAmount || i.value || 0,
+                        ),
+                      0,
+                    )
+              ).toLocaleString()}
             </b>{" "}
-            | GST input credit:{" "}
-            <b style={{ color: "var(--primary)" }}>
-              ₹
-              {filteredInvoices
-                .reduce((s, i) => s + safeNumber(i.gstAmount || 0), 0)
-                .toLocaleString()}
-            </b>
+            {activeTab !== "returns" && (
+              <>
+                | GST input credit:{" "}
+                <b style={{ color: "var(--primary)" }}>
+                  ₹
+                  {(activeTab === "invoices"
+                    ? filteredInvoices.reduce(
+                        (s, i) => s + safeNumber(i.gstAmount || i.gst || 0),
+                        0,
+                      )
+                    : filteredOrders.reduce(
+                        (s, i) => s + safeNumber(i.gstAmount || i.gst || 0),
+                        0,
+                      )
+                  ).toLocaleString()}
+                </b>
+              </>
+            )}
           </div>
         </div>
       </div>
@@ -1909,6 +1949,9 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
                         <span className="detail-value">
                           {selectedRow?.referenceNumber ||
                             selectedRow?.ref ||
+                            selectedRow?.invoiceNumber ||
+                            selectedRow?.returnNumber ||
+                            selectedRow?.orderNumber ||
                             "-"}
                         </span>
                       </div>
@@ -1924,7 +1967,12 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
                           </tr>
                         </thead>
                         <tbody>
-                          {(selectedRow?.items || []).map((item, idx) => (
+                          {(
+                            selectedRow?.items ||
+                            selectedRow?.inventoryBatches ||
+                            selectedRow?.supplierReturnItems ||
+                            []
+                          ).map((item, idx) => (
                             <tr key={idx}>
                               <td>
                                 {item.medicine?.name ||
@@ -1932,11 +1980,21 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
                                   item.name ||
                                   "-"}
                               </td>
-                              <td>{item.quantity}</td>
+                              <td>
+                                {item.quantity || item.receivedQuantity || 0}
+                              </td>
                             </tr>
                           ))}
-                          {(!selectedRow?.items ||
-                            selectedRow?.items?.length === 0) && (
+                          {(!(
+                            selectedRow?.items ||
+                            selectedRow?.inventoryBatches ||
+                            selectedRow?.supplierReturnItems
+                          ) ||
+                            (
+                              selectedRow?.items ||
+                              selectedRow?.inventoryBatches ||
+                              selectedRow?.supplierReturnItems
+                            )?.length === 0) && (
                             <tr>
                               <td colSpan="4">No item details available.</td>
                             </tr>

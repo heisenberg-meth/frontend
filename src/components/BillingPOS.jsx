@@ -203,7 +203,7 @@ export default function BillingPOS({
 }) {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const userKey = user?.id || 'default';
+  const userKey = user?.id || "default";
   const showToast = useMemo(
     () => parentShowToast || (() => {}),
     [parentShowToast],
@@ -267,11 +267,17 @@ export default function BillingPOS({
   const [returnReason, setReturnReason] = useState("Customer Request");
   const [returnNotes, setReturnNotes] = useState("");
   useEffect(() => {
-    localStorage.setItem(`currentBillingItems_${userKey}`, JSON.stringify(lineItems));
+    localStorage.setItem(
+      `currentBillingItems_${userKey}`,
+      JSON.stringify(lineItems),
+    );
   }, [lineItems, userKey]);
 
   useEffect(() => {
-    localStorage.setItem(`currentBillingPatient_${userKey}`, JSON.stringify(patient));
+    localStorage.setItem(
+      `currentBillingPatient_${userKey}`,
+      JSON.stringify(patient),
+    );
   }, [patient, userKey]);
 
   useEffect(() => {
@@ -1453,7 +1459,7 @@ ${printDiscount > 0 ? `<div style="display:flex;justify-content:space-between"><
                       required
                       className="pos-input"
                       style={{
-                        width: "60px",
+                        width: "80px",
                         height: "30px",
                         textAlign: "right",
                       }}
@@ -2073,7 +2079,7 @@ ${printDiscount > 0 ? `<div style="display:flex;justify-content:space-between"><
                 <div className="filter-pills">
                   {[
                     { label: "All", value: "All" },
-                    { label: "Paid", value: "FINALIZED" },
+                    { label: "Paid", value: "PAID" },
                     { label: "Draft", value: "DRAFT" },
                     { label: "Returned", value: "RETURNED" },
                   ].map((f) => (
@@ -2102,11 +2108,22 @@ ${printDiscount > 0 ? `<div style="display:flex;justify-content:space-between"><
                     </thead>
                     <tbody>
                       {(bills || [])
-                        .filter(
-                          (b) =>
-                            allBillsFilter === "All" ||
-                            b.status === allBillsFilter,
-                        )
+                        .filter((b) => {
+                          if (allBillsFilter === "All") return true;
+                          if (allBillsFilter === "PAID")
+                            return (
+                              b.status === "PAID" || b.status === "FINALIZED"
+                            );
+                          if (allBillsFilter === "DRAFT")
+                            return b.status === "DRAFT";
+                          if (allBillsFilter === "RETURNED")
+                            return (
+                              b.status === "RETURNED" ||
+                              b.status === "REFUNDED" ||
+                              b.status === "PARTIALLY_REFUNDED"
+                            );
+                          return b.status === allBillsFilter;
+                        })
                         .map((bill) => (
                           <tr key={bill.id}>
                             <td style={{ fontWeight: 600 }}>

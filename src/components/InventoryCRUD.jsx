@@ -20,7 +20,6 @@ import {
   Calendar,
   ChevronDown,
   Check,
-  ShoppingCart,
   FileText,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -200,16 +199,6 @@ function ReorderModal({ medicine, onClose, showToast }) {
         exit={{ opacity: 0, scale: 0.95, y: 20 }}
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="inv-modal-header">
-          <div className="header-title-group">
-            <ShoppingCart size={20} style={{ color: "var(--primary)" }} />
-            <h3>Reorder Medicine</h3>
-          </div>
-          <button className="inv-modal-close-btn" onClick={onClose}>
-            <X size={18} />
-          </button>
-        </div>
-
         <div className="inv-modal-scroll" style={{ padding: "24px" }}>
           {/* Medicine Info */}
           <div
@@ -2457,14 +2446,6 @@ export default function InventoryCRUD({
                             }}
                           >
                             <Pencil size={14} />
-                          </button>
-                          <button
-                            className="inv-row-btn reorder"
-                            title="Reorder — Create Purchase Order"
-                            onClick={() => setReorderTarget(m)}
-                            style={{ color: "var(--primary)" }}
-                          >
-                            <ShoppingCart size={14} />
                           </button>
                           <button
                             className="inv-row-btn danger"

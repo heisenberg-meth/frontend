@@ -54,8 +54,14 @@ const DISPATCH_STATUS = {
   PENDING: { label: "Pending", class: "badge-neutral" },
   READY_TO_SEND: { label: "Ready To Send", class: "badge-info" },
   SENT_TO_SUPPLIER: { label: "Sent To Supplier", class: "badge-primary" },
-  RECEIVED_BY_SUPPLIER: { label: "Received By Supplier", class: "badge-warning" },
-  CREDIT_NOTE_RECEIVED: { label: "Credit Note Received", class: "badge-success" },
+  RECEIVED_BY_SUPPLIER: {
+    label: "Received By Supplier",
+    class: "badge-warning",
+  },
+  CREDIT_NOTE_RECEIVED: {
+    label: "Credit Note Received",
+    class: "badge-success",
+  },
 };
 
 const REASONS = [
@@ -391,12 +397,32 @@ export default function SupplierReturns({ showToast }) {
           }}
         >
           {[
-            { label: "Pending", value: metrics.pending, color: "var(--warning)" },
-            { label: "Ready to Send", value: metrics.readyToSend, color: "var(--info)" },
+            {
+              label: "Pending",
+              value: metrics.pending,
+              color: "var(--warning)",
+            },
+            {
+              label: "Ready to Send",
+              value: metrics.readyToSend,
+              color: "var(--info)",
+            },
             { label: "Sent", value: metrics.sent, color: "var(--primary)" },
-            { label: "Received", value: metrics.received, color: "var(--success)" },
-            { label: "Credit Received", value: metrics.creditReceived, color: "var(--success)" },
-            { label: "Total Returns", value: metrics.totalReturns, color: "var(--text-main)" },
+            {
+              label: "Received",
+              value: metrics.received,
+              color: "var(--success)",
+            },
+            {
+              label: "Credit Received",
+              value: metrics.creditReceived,
+              color: "var(--success)",
+            },
+            {
+              label: "Total Returns",
+              value: metrics.totalReturns,
+              color: "var(--text-main)",
+            },
           ].map((card) => (
             <div
               key={card.label}
@@ -407,10 +433,18 @@ export default function SupplierReturns({ showToast }) {
                 border: "1px solid var(--border-color)",
               }}
             >
-              <div style={{ fontSize: "12px", color: "var(--text-muted)", marginBottom: "4px" }}>
+              <div
+                style={{
+                  fontSize: "12px",
+                  color: "var(--text-muted)",
+                  marginBottom: "4px",
+                }}
+              >
                 {card.label}
               </div>
-              <div style={{ fontSize: "22px", fontWeight: 700, color: card.color }}>
+              <div
+                style={{ fontSize: "22px", fontWeight: 700, color: card.color }}
+              >
                 {card.value}
               </div>
             </div>
@@ -459,7 +493,7 @@ export default function SupplierReturns({ showToast }) {
                 <table className="data-table">
                   <thead>
                     <tr>
-                      <th>Return #</th>
+                      <th>Return</th>
                       <th>Supplier</th>
                       <th>Items</th>
                       <th>Amount</th>
@@ -486,7 +520,7 @@ export default function SupplierReturns({ showToast }) {
                         </td>
                         <td>
                           {r.returnAmount
-                            ? `$${safeNumber(r.returnAmount).toFixed(2)}`
+                            ? `₹${safeNumber(r.returnAmount).toFixed(2)}`
                             : "—"}
                         </td>
                         <td>
@@ -498,12 +532,16 @@ export default function SupplierReturns({ showToast }) {
                             value={r.dispatchStatus || "PENDING"}
                             onChange={async (e) => {
                               try {
-                                await updateDispatchStatus(r.id, e.target.value);
+                                await updateDispatchStatus(
+                                  r.id,
+                                  e.target.value,
+                                );
                                 notify("Dispatch status updated", "success");
                                 fetchReturns();
                               } catch (err) {
                                 notify(
-                                  getErrorMessage(err) || "Failed to update dispatch status",
+                                  getErrorMessage(err) ||
+                                    "Failed to update dispatch status",
                                   "error",
                                 );
                               }
@@ -589,7 +627,7 @@ export default function SupplierReturns({ showToast }) {
                         </td>
                         <td>{cn.supplier?.name || "—"}</td>
                         <td>{cn.return?.returnNumber || "—"}</td>
-                        <td>${safeNumber(cn.amount).toFixed(2)}</td>
+                        <td>₹{safeNumber(cn.amount).toFixed(2)}</td>
                         <td>
                           <Badge status={cn.status} map={CREDIT_NOTE_STATUS} />
                         </td>
@@ -606,7 +644,8 @@ export default function SupplierReturns({ showToast }) {
                                 notify("PDF generated", "success");
                               } catch (err) {
                                 notify(
-                                  getErrorMessage(err) || "Failed to generate PDF",
+                                  getErrorMessage(err) ||
+                                    "Failed to generate PDF",
                                   "error",
                                 );
                               }
@@ -656,7 +695,7 @@ export default function SupplierReturns({ showToast }) {
                 <div className="stat-card">
                   <CreditCard size={24} />
                   <div className="stat-value">
-                    ${safeNumber(expiredSummary.inventoryValue).toFixed(2)}
+                    ₹{safeNumber(expiredSummary.inventoryValue).toFixed(2)}
                   </div>
                   <div className="stat-label">Inventory Value</div>
                 </div>
@@ -804,7 +843,7 @@ export default function SupplierReturns({ showToast }) {
                 <div className="detail-item">
                   <label>Amount</label>
                   <span>
-                    ${safeNumber(selectedReturn.returnAmount || 0).toFixed(2)}
+                    ₹{safeNumber(selectedReturn.returnAmount || 0).toFixed(2)}
                   </span>
                 </div>
                 {selectedReturn.approvedAt && (
@@ -846,8 +885,8 @@ export default function SupplierReturns({ showToast }) {
                     <tr key={item.id}>
                       <td>{item.medicine?.name || "—"}</td>
                       <td>{item.quantity}</td>
-                      <td>${safeNumber(item.purchasePrice || 0).toFixed(2)}</td>
-                      <td>${safeNumber(item.lossAmount || 0).toFixed(2)}</td>
+                      <td>₹{safeNumber(item.purchasePrice || 0).toFixed(2)}</td>
+                      <td>₹{safeNumber(item.lossAmount || 0).toFixed(2)}</td>
                       <td>{item.reason || "—"}</td>
                     </tr>
                   ))}
