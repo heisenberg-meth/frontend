@@ -18,17 +18,36 @@ const PLANS = [
     id: "free-trial",
     name: "Free Trial",
     price: { monthly: 0, annual: 0 },
-    features: ["28-day free trial", "Full feature access", "Up to 5 users"],
-    missing: ["AI Analytics", "Multi-branch support"],
-    color: "var(--info)",
+    duration: "28 Days Free",
+    sub: "Perfect for testing MedAssist in your pharmacy",
+    highlight: false,
+    features: [
+      "28 Days Free Access",
+      "Full Platform Access",
+      "Inventory & Batch Tracking",
+      "Billing & POS System",
+      "Reports & Analytics",
+      "Barcode & QR Scanning",
+      "Email Support",
+    ],
   },
   {
     id: "basic-monthly",
-    name: "MedAssist Basic",
-    price: { monthly: 599 },
-    features: ["Unlimited Medicines", "Basic Analytics", "Up to 3 users"],
-    missing: ["Advanced Reports", "AI Features"],
-    color: "var(--info)",
+    name: "Premium",
+    price: { monthly: 599, annual: 499 },
+    duration: "/month",
+    sub: "Everything you need to run your pharmacy efficiently",
+    highlight: true,
+    popularText: "Most Popular ⭐",
+    features: [
+      "Everything in Free Trial",
+      "Unlimited Medicines & Batches",
+      "Unlimited GST Billing & POS",
+      "Cloud Backup & Real-Time Sync",
+      "Supplier & Expiry Intelligence",
+      "Priority WhatsApp & Phone Support",
+      "Regular System Updates",
+    ],
   },
 ];
 
@@ -271,7 +290,9 @@ export default function SubscriptionCRUD({ showToast, user }) {
       <div className="sub-header">
         <div className="sub-title-group">
           <h2>Subscription Management</h2>
-          <p>Manage your MedAssist plan and payment history.</p>
+          <p>
+            Manage your MedAssist tier, billing frequency, and payment records.
+          </p>
         </div>
       </div>
 
@@ -280,53 +301,56 @@ export default function SubscriptionCRUD({ showToast, user }) {
           <div
             className="sub-current-icon"
             style={{
-              background: "var(--primary-container)",
-              color: "var(--primary)",
+              background: "var(--primary-container, rgba(16, 185, 129, 0.15))",
+              color: "var(--primary, #10b981)",
             }}
           >
-            <ShieldCheck size={24} />
+            <ShieldCheck size={26} />
           </div>
           <div className="sub-current-info">
             {subscription?.status === "ACTIVE" ? (
               <>
                 <div
                   className="ent-label"
-                  style={{ fontSize: "1.2rem", fontWeight: "bold" }}
+                  style={{ fontSize: "1.3rem", fontWeight: "800" }}
                 >
-                  {subscription.planName}
+                  {subscription.planName || "MedAssist Active Plan"}
                 </div>
                 <div
                   className="ent-price"
-                  style={{ color: "var(--text-muted)", marginTop: "4px" }}
+                  style={{
+                    color: "var(--text-muted)",
+                    marginTop: "4px",
+                    fontSize: "14px",
+                  }}
                 >
-                  ₹{subscription.price}/mo
+                  ₹{subscription.price}/mo &bull; Next billing cycle active
                 </div>
-                <span
-                  className="sub-status-badge active"
-                  style={{ marginTop: "8px", display: "inline-block" }}
-                >
-                  ACTIVE
+                <span className="sub-status-badge active">
+                  <span className="status-dot" /> ACTIVE SUBSCRIPTION
                 </span>
               </>
             ) : isTrial ? (
               <>
                 <div
                   className="ent-label"
-                  style={{ fontSize: "1.2rem", fontWeight: "bold" }}
+                  style={{ fontSize: "1.3rem", fontWeight: "800" }}
                 >
-                  Free Trial
+                  Free Trial Active
                 </div>
                 <div
                   className="ent-price"
-                  style={{ color: "var(--text-muted)", marginTop: "4px" }}
+                  style={{
+                    color: "var(--text-muted)",
+                    marginTop: "4px",
+                    fontSize: "14px",
+                  }}
                 >
-                  {subscription.daysRemaining} days remaining
+                  {subscription.daysRemaining ?? 15} days remaining in your
+                  trial access
                 </div>
-                <span
-                  className="sub-status-badge trial"
-                  style={{ marginTop: "8px", display: "inline-block" }}
-                >
-                  TRIAL
+                <span className="sub-status-badge trial">
+                  <span className="status-dot" /> TRIAL TIER
                 </span>
               </>
             ) : isExpired ? (
@@ -334,8 +358,8 @@ export default function SubscriptionCRUD({ showToast, user }) {
                 <div
                   className="ent-label"
                   style={{
-                    fontSize: "1.2rem",
-                    fontWeight: "bold",
+                    fontSize: "1.3rem",
+                    fontWeight: "800",
                     color: "#ef4444",
                   }}
                 >
@@ -343,34 +367,39 @@ export default function SubscriptionCRUD({ showToast, user }) {
                 </div>
                 <div
                   className="ent-price"
-                  style={{ color: "var(--text-muted)", marginTop: "4px" }}
-                >
-                  Upgrade to continue using MedAssist
-                </div>
-                <span
-                  className="sub-status-badge expired"
                   style={{
-                    marginTop: "8px",
-                    display: "inline-block",
-                    background: "#ef4444",
-                    color: "#fff",
+                    color: "var(--text-muted)",
+                    marginTop: "4px",
+                    fontSize: "14px",
                   }}
                 >
-                  EXPIRED
+                  Please select a plan below to continue running your pharmacy
+                  without interruptions
+                </div>
+                <span className="sub-status-badge expired">
+                  <span className="status-dot" /> EXPIRED
                 </span>
               </>
             ) : (
               <>
                 <div
                   className="ent-label"
-                  style={{ fontSize: "1.2rem", fontWeight: "bold" }}
+                  style={{ fontSize: "1.3rem", fontWeight: "800" }}
                 >
-                  No Plan
+                  No Active Plan
                 </div>
-                <span
-                  className="sub-status-badge pending"
-                  style={{ marginTop: "8px", display: "inline-block" }}
+                <div
+                  className="ent-price"
+                  style={{
+                    color: "var(--text-muted)",
+                    marginTop: "4px",
+                    fontSize: "14px",
+                  }}
                 >
+                  Select a subscription plan below to get started
+                </div>
+                <span className="sub-status-badge pending">
+                  <span className="status-dot" />{" "}
                   {subscription?.status || "PENDING"}
                 </span>
               </>
@@ -385,46 +414,85 @@ export default function SubscriptionCRUD({ showToast, user }) {
                 )
               }
             >
-              <Sparkles size={16} /> Upgrade
+              <Sparkles size={16} /> Upgrade to Premium
             </button>
           )}
         </div>
       </div>
 
       <div className="sub-plans-section">
-        <h3>Available Plans</h3>
-        <div className="sub-billing-toggle">
-          <button
-            className={billingCycle === "monthly" ? "active" : ""}
-            onClick={() => setBillingCycle("monthly")}
-          >
-            Monthly
-          </button>
+        <div className="sub-plans-header-row">
+          <div>
+            <h3>Available Plans</h3>
+            <p className="sub-plans-subtitle">
+              Choose the perfect tier for your pharmacy needs
+            </p>
+          </div>
         </div>
+
         <div className="sub-plans-grid">
-          {PLANS.filter((p) => p.id !== "free-trial").map((plan) => (
-            <div
-              key={plan.id}
-              className={`sub-plan-card ${plan.id === subscription?.planId ? "current" : ""}`}
-              style={{ "--plan-color": plan.color }}
-            >
-              <div className="sub-plan-name">{plan.name}</div>
-              <div className="sub-plan-price">
-                ₹
-                {billingCycle === "monthly"
-                  ? plan.price.monthly
-                  : plan.price.annual}
-                /mo
-              </div>
-              <button
-                className="sub-plan-btn"
-                onClick={() => initiateUpgrade(plan)}
-                disabled={plan.id === subscription?.planId}
+          {PLANS.map((plan) => {
+            const isCurrentPlan =
+              (plan.id === "free-trial" && isTrial) ||
+              plan.id === subscription?.planId ||
+              (subscription?.planName &&
+                plan.name.toLowerCase() ===
+                  subscription.planName.toLowerCase());
+
+            return (
+              <div
+                key={plan.id}
+                className={`sub-plan-card ${plan.highlight ? "sub-plan-card--highlight" : ""} ${isCurrentPlan ? "sub-plan-card--current" : ""}`}
               >
-                {plan.id === subscription?.planId ? "Current Plan" : "Upgrade"}
-              </button>
-            </div>
-          ))}
+                {plan.popularText && (
+                  <div className="sub-plan-popular">{plan.popularText}</div>
+                )}
+                {plan.badgeText && (
+                  <div className="sub-plan-badge-top">{plan.badgeText}</div>
+                )}
+                <div className="sub-plan-name">{plan.name}</div>
+                <div className="sub-plan-sub-desc">{plan.sub}</div>
+                <div className="sub-plan-price">
+                  ₹
+                  {billingCycle === "monthly"
+                    ? plan.price.monthly
+                    : plan.price.annual}
+                  <span
+                    className={
+                      plan.duration.startsWith("/")
+                        ? "sub-plan-dur"
+                        : "sub-plan-dur-badge"
+                    }
+                  >
+                    {plan.duration}
+                  </span>
+                </div>
+                <ul className="sub-plan-features">
+                  {plan.features.map((f, idx) => (
+                    <li key={idx}>
+                      <span className="sub-check">✓</span>
+                      <span>{f}</span>
+                    </li>
+                  ))}
+                </ul>
+                <button
+                  className={`sub-plan-btn ${plan.highlight ? "btn-highlight" : "btn-outline"} ${isCurrentPlan || plan.id === "free-trial" ? "disabled" : ""}`}
+                  onClick={() =>
+                    !isCurrentPlan &&
+                    plan.id !== "free-trial" &&
+                    initiateUpgrade(plan)
+                  }
+                  disabled={isCurrentPlan || plan.id === "free-trial"}
+                >
+                  {isCurrentPlan
+                    ? "Current Active Plan ✓"
+                    : plan.id === "free-trial"
+                      ? "Trial Access"
+                      : `Upgrade to ${plan.name}`}
+                </button>
+              </div>
+            );
+          })}
         </div>
       </div>
 

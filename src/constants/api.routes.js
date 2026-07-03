@@ -63,6 +63,7 @@ export const API_ROUTES = {
   SETTINGS_STORE_PROFILE: "/settings/store-profile",
   SUBSCRIPTIONS_STATUS: "/subscriptions/status",
   SUBSCRIPTIONS_ACTIVATE: "/subscriptions/activate",
+  SUBSCRIPTIONS_TRIAL: "/subscriptions/verify-trial",
   PRESCRIPTIONS: "/prescriptions",
   PATIENTS: "/patients",
   PATIENTS_SEARCH: "/patients/search",

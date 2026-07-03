@@ -102,35 +102,36 @@ const PLANS = [
   {
     name: "Free Trial",
     price: "₹0",
-    duration: "15 Days Free",
-    sub: "Perfect for trying MedAssist",
+    duration: "28 Days Free",
+    sub: "Full access to all features. No payment required.",
     highlight: false,
     cta: "Start Free Trial",
     features: [
-      "15 Days Free Access",
+      "28 Days Free Access",
       "Full Platform Access",
       "Inventory Management",
       "Billing & POS",
       "Reports & Analytics",
       "Barcode & QR",
       "Email Support",
+      "Up to 5 Users",
     ],
   },
   {
-    name: "Premium",
-    price: "₹599",
+    name: "Professional",
+    price: "₹2,999",
     duration: "/month",
-    sub: "Everything you need to run your pharmacy",
+    sub: "For growing pharmacies that need more power.",
     highlight: true,
-    cta: "Upgrade to Premium",
+    cta: "Choose Professional",
     features: [
       "Everything in Free Trial",
-      "Unlimited Medicines",
-      "Unlimited Billing",
-      "Multi-User Access",
-      "Cloud Backup & Sync",
+      "Up to 10 Users",
+      "5 Branches",
+      "50,000 Batch Records",
+      "Excel & PDF Reports",
+      "Premium Analytics",
       "Priority Support",
-      "Regular Updates",
     ],
   },
 ];
@@ -367,14 +368,14 @@ export default function LandingPage() {
             <button
               className="lp-btn-ghost"
               id="nav-login-btn"
-              onClick={() => navigate("/login")}
+              onClick={() => navigate("/pricing")}
             >
               Log In
             </button>
             <button
               className="lp-btn-primary"
               id="nav-get-started-btn"
-              onClick={() => navigate("/login")}
+              onClick={() => navigate("/pricing")}
             >
               Start Free Trial <span className="lp-btn-arrow">→</span>
             </button>
@@ -420,7 +421,7 @@ export default function LandingPage() {
             <button
               className="lp-btn-primary lp-btn-lg"
               id="hero-start-btn"
-              onClick={() => navigate("/login")}
+              onClick={() => navigate("/pricing")}
             >
               Start Free Trial <span className="lp-btn-arrow">→</span>
             </button>
@@ -687,7 +688,7 @@ export default function LandingPage() {
                         : "lp-btn-outline lp-btn-full"
                     }
                     id={`plan-${plan.name.toLowerCase()}-btn`}
-                    onClick={() => navigate("/login")}
+                    onClick={() => navigate("/pricing")}
                   >
                     {plan.cta}
                   </button>
@@ -717,9 +718,9 @@ export default function LandingPage() {
               <button
                 className="lp-btn-primary lp-btn-lg"
                 id="cta-start-btn"
-                onClick={() => navigate("/login")}
+                onClick={() => navigate("/pricing")}
               >
-                Start 15-Day Free Trial <span className="lp-btn-arrow">→</span>
+                View Plans & Start Free <span className="lp-btn-arrow">→</span>
               </button>
             </div>
           </div>

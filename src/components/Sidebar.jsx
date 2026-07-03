@@ -12,7 +12,6 @@ import {
   BarChart3,
   CalendarClock,
   QrCode,
-  ShieldCheck,
   Trash2,
   PackageX,
   History,
@@ -146,7 +145,7 @@ export default function Sidebar({ user, onSignOut }) {
                 <Users size={18} />
                 <span>Team Management</span>
               </NavLink> */}
-              <NavLink
+              {/* <NavLink
                 to="/settings"
                 className={({ isActive }) =>
                   `nav-link ${isActive ? "active" : ""}`
@@ -154,7 +153,7 @@ export default function Sidebar({ user, onSignOut }) {
               >
                 <ShieldCheck size={18} />
                 <span>System Settings</span>
-              </NavLink>
+              </NavLink> */}
             </>
           )}
         </div>

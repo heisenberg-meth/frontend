@@ -10,7 +10,6 @@ import {
   Phone,
   ClipboardList,
   ChevronRight,
-  Zap,
   Package,
   Loader2,
 } from "lucide-react";
@@ -199,7 +198,7 @@ function SupplierCard({ supplier, onCreatePO }) {
             {supplier.items.length} item{supplier.items.length > 1 ? "s" : ""}
           </span>
           <button
-            className="lsa-create-po-btn"
+            className="lsa-create-po-btn flex items-center gap-2"
             onClick={() => onCreatePO(supplier)}
           >
             <ClipboardList size={13} /> Create PO
@@ -302,7 +301,9 @@ function NotifySettings({ showToast, settings }) {
     settings?.notificationChannels?.email ?? true,
   );
   const [phone, setPhone] = useState(settings?.alertPhone || "+91 98765 43210");
-  const [smsPhone, setSmsPhone] = useState(settings?.smsPhone || settings?.alertPhone || "+91 98765 43210");
+  const [smsPhone, setSmsPhone] = useState(
+    settings?.smsPhone || settings?.alertPhone || "+91 98765 43210",
+  );
   const [mail, setMail] = useState(
     settings?.alertEmail || "admin@viyanmedassist.in",
   );
@@ -466,7 +467,6 @@ export default function LowStockAlerts({ showToast }) {
   const navigate = useNavigate();
   const [activeTab, setTab] = useState("all");
   const [poSupplier, setPO] = useState(null);
-  const [reordering, setReord] = useState(false);
   const [poSaving, setPoSaving] = useState(false);
   const [lowStockItems, setLowStockItems] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -569,61 +569,6 @@ export default function LowStockAlerts({ showToast }) {
     .flatMap((s) => s.items)
     .filter((i) => i.urgency === "low").length;
 
-  const handleAutoReorder = async () => {
-    setReord(true);
-    try {
-      const criticalItems = lowStockItems
-        .flatMap((s) => s.items)
-        .filter((i) => i.urgency === "critical");
-
-      if (criticalItems.length > 0) {
-        // Group items by supplierId
-        const itemsBySupplier = {};
-        criticalItems.forEach((item) => {
-          const sId = item.supplierId || "unknown";
-          if (!itemsBySupplier[sId]) {
-            itemsBySupplier[sId] = [];
-          }
-          itemsBySupplier[sId].push(item);
-        });
-
-        // Create a PO for each supplier
-        const promises = Object.entries(itemsBySupplier).map(
-          async ([supplierId, items]) => {
-            if (supplierId === "unknown" || !supplierId) return;
-
-            const mappedItems = items.map((i) => ({
-              medicineId: i.id,
-              quantity: i.reorderLevel || 50,
-              purchasePrice: i.purchaseCost || 0,
-            }));
-
-            const subtotal = mappedItems.reduce(
-              (acc, i) => acc + i.quantity * i.purchasePrice,
-              0,
-            );
-
-            await createPurchaseOrder({
-              supplierId,
-              items: mappedItems,
-              subtotal,
-              totalAmount: subtotal,
-              notes: "Auto-reorder for critical low stock items",
-            });
-          },
-        );
-
-        await Promise.all(promises);
-        showToast("Auto-reorder initiated for critical items ✓", "success");
-      }
-    } catch (err) {
-      console.error(err);
-      showToast("Failed to auto-reorder", "error");
-    } finally {
-      setReord(false);
-    }
-  };
-
   const handleExport = () => {
     const rows = [
       ["Supplier", "Drug Name", "Current Stock", "Min Threshold", "Urgency"],
@@ -713,14 +658,6 @@ export default function LowStockAlerts({ showToast }) {
         <div className="lsa-header-actions">
           <button className="lsa-btn-outline" onClick={handleExport}>
             <Download size={15} /> Export CSV
-          </button>
-          <button
-            className="lsa-btn-primary"
-            onClick={handleAutoReorder}
-            disabled={reordering}
-          >
-            <Zap size={15} />
-            {reordering ? "Processing…" : "Auto-Reorder All"}
           </button>
         </div>
       </div>

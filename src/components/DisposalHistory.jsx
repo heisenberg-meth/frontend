@@ -39,7 +39,13 @@ export default function DisposalHistory({ showToast }) {
 
       const res = await api.get("/inventory/disposal-history", { params });
       const data = res.data?.data || res.data || {};
-      setItems(Array.isArray(data.items) ? data.items : Array.isArray(data) ? data : []);
+      setItems(
+        Array.isArray(data.items)
+          ? data.items
+          : Array.isArray(data)
+            ? data
+            : [],
+      );
       setTotal(data.total || 0);
     } catch (err) {
       console.error("Failed to load disposal history:", err);
@@ -159,7 +165,9 @@ export default function DisposalHistory({ showToast }) {
         qty * purchasePrice,
         item.reason || "N/A",
         item.user?.fullName ||
-          (item.user?.firstName ? `${item.user.firstName} ${item.user.lastName || ""}` : "") ||
+          (item.user?.firstName
+            ? `${item.user.firstName} ${item.user.lastName || ""}`
+            : "") ||
           item.disposedByName ||
           "N/A",
       ];
@@ -188,7 +196,11 @@ export default function DisposalHistory({ showToast }) {
   );
 
   const totalUnits = useMemo(
-    () => filtered.reduce((s, item) => s + (item.disposedQuantity || item.quantity || 0), 0),
+    () =>
+      filtered.reduce(
+        (s, item) => s + (item.disposedQuantity || item.quantity || 0),
+        0,
+      ),
     [filtered],
   );
 
@@ -227,9 +239,7 @@ export default function DisposalHistory({ showToast }) {
         <div className="hub-status-group">
           <div className="status-item">
             <History size={12} className="text-on-surface-variant" />
-            <span className="text-on-surface-variant">
-              {total} records
-            </span>
+            <span className="text-on-surface-variant">{total} records</span>
           </div>
         </div>
       </div>
@@ -424,9 +434,7 @@ export default function DisposalHistory({ showToast }) {
                 Medicine
               </th>
               <th style={{ padding: "12px 16px", textAlign: "left" }}>Batch</th>
-              <th style={{ padding: "12px 16px", textAlign: "right" }}>
-                Qty
-              </th>
+              <th style={{ padding: "12px 16px", textAlign: "right" }}>Qty</th>
               <th style={{ padding: "12px 16px", textAlign: "right" }}>
                 Loss Value
               </th>
@@ -460,8 +468,7 @@ export default function DisposalHistory({ showToast }) {
             ) : (
               filtered.map((item) => {
                 const qty = item.disposedQuantity || item.quantity || 0;
-                const lossValue =
-                  qty * safeNumber(item.purchasePrice || 0);
+                const lossValue = qty * safeNumber(item.purchasePrice || 0);
                 return (
                   <tr
                     key={item.id}
@@ -486,7 +493,10 @@ export default function DisposalHistory({ showToast }) {
                           gap: 6,
                         }}
                       >
-                        <Calendar size={12} style={{ color: "var(--text-dim)" }} />
+                        <Calendar
+                          size={12}
+                          style={{ color: "var(--text-dim)" }}
+                        />
                         {item.disposedAt
                           ? format(new Date(item.disposedAt), "dd-MMM-yyyy")
                           : "N/A"}
@@ -571,10 +581,7 @@ export default function DisposalHistory({ showToast }) {
                           gap: 6,
                         }}
                       >
-                        <User
-                          size={12}
-                          style={{ color: "var(--text-dim)" }}
-                        />
+                        <User size={12} style={{ color: "var(--text-dim)" }} />
                         {item.user?.fullName ||
                           (item.user?.firstName
                             ? `${item.user.firstName} ${item.user.lastName || ""}`
@@ -625,8 +632,8 @@ export default function DisposalHistory({ showToast }) {
           }}
         >
           <span style={{ fontSize: 13, color: "var(--text-muted)" }}>
-            Showing {(page - 1) * limit + 1}-
-            {Math.min(page * limit, total)} of {total}
+            Showing {(page - 1) * limit + 1}-{Math.min(page * limit, total)} of{" "}
+            {total}
           </span>
           <div style={{ display: "flex", gap: 6 }}>
             <button
@@ -654,11 +661,8 @@ export default function DisposalHistory({ showToast }) {
                 borderRadius: 6,
                 border: "1px solid var(--outline-variant)",
                 background:
-                  page === totalPages
-                    ? "var(--overlay-05)"
-                    : "var(--surface)",
-                color:
-                  page === totalPages ? "var(--text-dim)" : "var(--text)",
+                  page === totalPages ? "var(--overlay-05)" : "var(--surface)",
+                color: page === totalPages ? "var(--text-dim)" : "var(--text)",
                 fontSize: 13,
                 cursor: page === totalPages ? "not-allowed" : "pointer",
                 display: "flex",
@@ -679,11 +683,11 @@ export default function DisposalHistory({ showToast }) {
       <AnimatePresence>
         {selectedItem && (
           <div
-            className="modal-overlay"
+            className="stock-modal-overlay"
             onClick={() => setSelectedItem(null)}
           >
             <motion.div
-              className="stock-modal"
+              className="stock-modal-content"
               style={{ maxWidth: 520 }}
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}

@@ -215,19 +215,33 @@ export function AuthProvider({ children }) {
     [refreshUser],
   );
 
-  const register = useCallback(async (userData) => {
-    const res = await api.post(API_ROUTES.AUTH_REGISTER, userData);
-    const payload = res.data?.data || res.data;
-    if (!payload || !payload.userId) {
-      throw new Error("Registration failed: Invalid response from server.");
-    }
+  const register = useCallback(
+    async (userData) => {
+      const res = await api.post(API_ROUTES.AUTH_REGISTER, userData);
+      const payload = res.data?.data || res.data;
+      if (!payload || !payload.userId) {
+        throw new Error("Registration failed: Invalid response from server.");
+      }
 
-    if (payload.deviceToken) {
-      localStorage.setItem("viyan_device_token", payload.deviceToken);
-    }
+      if (payload.deviceToken) {
+        localStorage.setItem("viyan_device_token", payload.deviceToken);
+      }
 
-    return { isNew: true, userId: payload.userId };
-  }, []);
+      if (payload.token) {
+        localStorage.setItem("viyan_token", payload.token);
+      }
+
+      await refreshUser();
+
+      return {
+        isNew: true,
+        userId: payload.userId,
+        subscriptionStatus: payload.subscriptionStatus,
+        selectedPlanId: payload.selectedPlanId,
+      };
+    },
+    [refreshUser],
+  );
 
   const logout = useCallback(
     async (options = {}) => {

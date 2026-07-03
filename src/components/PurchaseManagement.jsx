@@ -1760,8 +1760,8 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
                             <option value="CASH">Cash</option>
                             <option value="CREDIT">Credit</option>
                             <option value="UPI">UPI</option>
-                            <option value="BANK_TRANSFER">Bank Transfer</option>
-                            <option value="CHEQUE">Cheque</option>
+                            <option value="NET_BANKING">Net Banking</option>
+                            <option value="CARD">Card</option>
                           </select>
                         </div>
                         <div className="pos-input-group">

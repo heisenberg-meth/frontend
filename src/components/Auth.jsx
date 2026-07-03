@@ -1,8 +1,10 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Lock, Mail, Shield, Eye, EyeOff, Check, Loader2 } from "lucide-react";
 import api from "../api";
 import { API_ROUTES } from "../constants/api.routes.js";
 export default function Auth({ onAuth }) {
+  const navigate = useNavigate();
   const [view, setView] = useState("login");
   const [loginType, setLoginType] = useState("admin");
   const [showPassword, setShowPassword] = useState(false);
@@ -701,8 +703,8 @@ export default function Auth({ onAuth }) {
             {view === "login" && (
               <>
                 New to Viyan MedAssist?
-                <button type="button" onClick={() => navigateTo("register")}>
-                  Create an account
+                <button type="button" onClick={() => navigate("/pricing")}>
+                  View Plans & Sign Up
                 </button>
               </>
             )}

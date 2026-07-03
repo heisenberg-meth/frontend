@@ -513,15 +513,43 @@ export default function SupplierReturns({ showToast }) {
                         </td>
                         <td>{r.supplier?.name || "—"}</td>
                         <td>
-                          {r._count?.items ||
-                            r.items?.length ||
-                            r.quantity ||
-                            0}
+                          {r.items && r.items.length > 0 ? (
+                            <div className="flex flex-col">
+                              <span style={{ fontWeight: 500 }}>
+                                {r.items[0].medicine?.name ||
+                                  "Unknown Medicine"}
+                                {r.items.length > 1 &&
+                                  ` + ${r.items.length - 1} more`}
+                              </span>
+                              <span
+                                style={{
+                                  fontSize: "0.85rem",
+                                  color: "var(--text-secondary)",
+                                }}
+                              >
+                                Qty:{" "}
+                                {r.items.reduce(
+                                  (sum, item) => sum + (item.quantity || 0),
+                                  0,
+                                )}
+                              </span>
+                            </div>
+                          ) : (
+                            <span>
+                              {r.quantity ? `${r.quantity} qty` : "0 items"}
+                            </span>
+                          )}
                         </td>
                         <td>
-                          {r.returnAmount
-                            ? `₹${safeNumber(r.returnAmount).toFixed(2)}`
-                            : "—"}
+                          <span style={{ fontWeight: 700 }}>
+                            ₹
+                            {safeNumber(
+                              r.returnAmount !== undefined &&
+                                r.returnAmount !== null
+                                ? r.returnAmount
+                                : 0,
+                            ).toFixed(2)}
+                          </span>
                         </td>
                         <td>
                           <Badge status={r.status} />

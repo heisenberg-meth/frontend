@@ -920,7 +920,7 @@ export default function ExpiryBatchIntelligence({ showToast }) {
 
   return (
     <div className="expiry-container">
-      <div className="purchases-header">
+      <div className="expiry-header">
         <div>
           <h1
             style={{ fontFamily: "Outfit", fontSize: "28px", fontWeight: 700 }}
@@ -931,11 +931,11 @@ export default function ExpiryBatchIntelligence({ showToast }) {
             FIFO-enforced tracking, auto-alerts, and near-expiry action
             suggestions.
           </p>
-          <div className="purchases-tabs">
+          <div className="expiry-tabs">
             {["Timeline", "Inventory"].map((t) => (
               <button
                 key={t}
-                className={`p-tab ${activeTab === t.toLowerCase() ? "active" : ""}`}
+                className={`expiry-tab ${activeTab === t.toLowerCase() ? "active" : ""}`}
                 onClick={() => setActiveTab(t.toLowerCase())}
               >
                 {t}
@@ -943,7 +943,7 @@ export default function ExpiryBatchIntelligence({ showToast }) {
             ))}
           </div>
         </div>
-        <div className="header-actions">
+        <div className="expiry-header-actions">
           <button
             className="pos-btn outline"
             onClick={() => setShowConfigModal(true)}
@@ -1232,8 +1232,8 @@ export default function ExpiryBatchIntelligence({ showToast }) {
               </div>
             </div>
 
-            <div className="purchase-table-card">
-              <table className="purchase-table">
+            <div className="expiry-table-card">
+              <table className="expiry-table">
                 <thead>
                   <tr>
                     <th style={{ width: 36 }}>
@@ -1531,8 +1531,8 @@ export default function ExpiryBatchIntelligence({ showToast }) {
               </button>
             </div>
           </div>
-          <div className="purchase-table-card">
-            <table className="purchase-table">
+          <div className="expiry-table-card">
+            <table className="expiry-table">
               <thead>
                 <tr>
                   <th>Medicine / Molecule</th>
@@ -1774,7 +1774,7 @@ export default function ExpiryBatchIntelligence({ showToast }) {
                           className="fifo-card-body"
                         >
                           <table
-                            className="purchase-table"
+                            className="expiry-table"
                             style={{ background: "none" }}
                           >
                             <thead>
@@ -2848,7 +2848,7 @@ export default function ExpiryBatchIntelligence({ showToast }) {
             style={{ zIndex: 1100 }}
           >
             <motion.div
-              className="stock-modal"
+              className="stock-modal-content"
               style={{ maxWidth: 480, width: "95vw" }}
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -3025,7 +3025,7 @@ export default function ExpiryBatchIntelligence({ showToast }) {
             style={{ zIndex: 1100 }}
           >
             <motion.div
-              className="stock-modal"
+              className="stock-modal-content"
               style={{ maxWidth: 480, width: "95vw" }}
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -3038,7 +3038,7 @@ export default function ExpiryBatchIntelligence({ showToast }) {
                   Assign Supplier to {selectedBatchIds.size} Batches
                 </h3>
                 <button
-                  className="stock-modal-close"
+                  className="micro-btn"
                   onClick={() => setShowBulkSupplierModal(false)}
                   disabled={bulkAssigning}
                 >
@@ -3147,7 +3147,7 @@ export default function ExpiryBatchIntelligence({ showToast }) {
             style={{ zIndex: 1100 }}
           >
             <motion.div
-              className="stock-modal"
+              className="stock-modal-content"
               style={{ maxWidth: 520, width: "95vw" }}
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -3157,7 +3157,7 @@ export default function ExpiryBatchIntelligence({ showToast }) {
               <div className="stock-modal-header">
                 <h3 style={{ margin: 0 }}>Import Supplier Assignments (CSV)</h3>
                 <button
-                  className="stock-modal-close"
+                  className="micro-btn"
                   onClick={() => {
                     setShowImportModal(false);
                     setImportResult(null);

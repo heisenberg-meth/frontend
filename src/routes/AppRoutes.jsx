@@ -9,6 +9,8 @@ import NotFound from "../components/NotFound";
 const Auth = lazy(() => import("../components/Auth"));
 const LegalPages = lazy(() => import("../components/LegalPages"));
 const LandingPage = lazy(() => import("../pages/LandingPage"));
+const PricingPage = lazy(() => import("../pages/PricingPage"));
+const SignupPage = lazy(() => import("../pages/SignupPage"));
 const PrivacyPolicyPage = lazy(() => import("../pages/PrivacyPolicyPage"));
 const TermsOfServicePage = lazy(() => import("../pages/TermsOfServicePage"));
 const CookiePolicyPage = lazy(() => import("../pages/CookiePolicyPage"));
@@ -128,6 +130,26 @@ export default function AppRoutes({
         <Route path="/cookie-policy" element={<CookiePolicyPage />} />
 
         {/* Public Routes */}
+        <Route
+          path="/pricing"
+          element={
+            user ? (
+              <Navigate to="/dashboard" replace />
+            ) : (
+              <PricingPage />
+            )
+          }
+        />
+        <Route
+          path="/signup"
+          element={
+            user ? (
+              <Navigate to="/dashboard" replace />
+            ) : (
+              <SignupPage />
+            )
+          }
+        />
         <Route
           path="/login"
           element={

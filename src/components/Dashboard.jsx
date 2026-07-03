@@ -3,7 +3,6 @@ import { useNavigate } from "react-router-dom";
 import {
   AlertTriangle,
   Clock,
-  TrendingUp,
   Package,
   IndianRupee,
   Receipt,
@@ -11,8 +10,6 @@ import {
   Calendar,
   BadgeX,
   CheckCircle,
-  Star,
-  Users,
   Trash2,
 } from "lucide-react";
 import { differenceInDays, format } from "date-fns";
@@ -284,52 +281,6 @@ export default function Dashboard({
               LAST SYNC: {format(lastSync || new Date(), "hh:mm:ss a")}
             </span>
           </div>
-          <div className="status-item pulsing">
-            <div className="pulsing-dot-yellow" />
-            <span className="text-yellow-500">CHECKING NODES...</span>
-          </div>
-        </div>
-      </div>
-
-      {/* 3. TOP MINI METRIC ROW */}
-      <div className="hub-bottom-metric-row">
-        <div
-          className="mini-metric-card"
-          onClick={() => navigate("/analytics")}
-          onMouseMove={handleMouseMove}
-        >
-          <TrendingUp size={20} className="text-primary" />
-          <span>Analytics Dashboard</span>
-        </div>
-        <div
-          className="mini-metric-card cursor-pointer hover:shadow-lg transition-transform hover:-translate-y-1"
-          onClick={() => setShowAnalyticsModal(true)}
-          onMouseMove={handleMouseMove}
-          title="Click to view detailed inventory analytics"
-        >
-          <IndianRupee size={20} className="text-blue-400" />
-          <span>
-            Inventory Value:{" "}
-            {stats.inventoryValue >= 100000
-              ? `₹${(stats.inventoryValue / 100000).toFixed(2)}L`
-              : fmt(stats.inventoryValue)}
-          </span>
-        </div>
-        <div
-          className="mini-metric-card"
-          onClick={() => navigate("/suppliers")}
-          onMouseMove={handleMouseMove}
-        >
-          <Star size={20} className="text-yellow-500" />
-          <span>Suppliers: {dashboardData?.suppliers?.total ?? 0}</span>
-        </div>
-        <div
-          className="mini-metric-card"
-          onClick={() => navigate("/patients")}
-          onMouseMove={handleMouseMove}
-        >
-          <Users size={20} className="text-purple-400" />
-          <span>Patients: {dashboardData?.patients?.total ?? 0}</span>
         </div>
       </div>
 

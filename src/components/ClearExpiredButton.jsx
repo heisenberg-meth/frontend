@@ -53,8 +53,21 @@ export default function ClearExpiredButton({
   }, [branchId]);
 
   useEffect(() => {
-    fetchCount();
-  }, [fetchCount]);
+    let ignore = false;
+    (async () => {
+      try {
+        const params = branchId ? `?branchId=${branchId}` : "";
+        const res = await api.get(`/inventory/expired/clearable${params}`);
+        if (!ignore) {
+          const data = res?.data?.data ?? res?.data ?? {};
+          setCount(data.count ?? 0);
+        }
+      } catch {
+        if (!ignore) setCount(0);
+      }
+    })();
+    return () => { ignore = true; };
+  }, [branchId]);
 
   /* ── Handler: user clicks the trigger button ────────────────── */
   const handleOpenConfirm = () => {
@@ -162,10 +175,7 @@ export default function ClearExpiredButton({
                       <AlertTriangle size={22} />
                     </div>
                     <div>
-                      <h2
-                        id="clear-expired-dialog-title"
-                        className="cem-title"
-                      >
+                      <h2 id="clear-expired-dialog-title" className="cem-title">
                         Clear Expired Inventory
                       </h2>
                       <p className="cem-subtitle">
@@ -194,7 +204,8 @@ export default function ClearExpiredButton({
                     <ul className="cem-assurance-list">
                       <li>
                         <CheckCircle2 size={14} className="cem-check" />
-                        Disposal history, audit logs &amp; reports remain intact.
+                        Disposal history, audit logs &amp; reports remain
+                        intact.
                       </li>
                       <li>
                         <CheckCircle2 size={14} className="cem-check" />
@@ -202,7 +213,8 @@ export default function ClearExpiredButton({
                       </li>
                       <li>
                         <CheckCircle2 size={14} className="cem-check" />
-                        Active, low-stock &amp; expiring batches are not touched.
+                        Active, low-stock &amp; expiring batches are not
+                        touched.
                       </li>
                     </ul>
 
@@ -245,9 +257,7 @@ export default function ClearExpiredButton({
                   <div className="cem-progress-bar-track">
                     <div className="cem-progress-bar-fill animate" />
                   </div>
-                  <p className="cem-progress-note">
-                    Do not close this window.
-                  </p>
+                  <p className="cem-progress-note">Do not close this window.</p>
                 </div>
               )}
 
@@ -262,9 +272,7 @@ export default function ClearExpiredButton({
                       <h2 className="cem-title success">
                         Cleared Successfully
                       </h2>
-                      <p className="cem-subtitle">
-                        Inventory refreshed.
-                      </p>
+                      <p className="cem-subtitle">Inventory refreshed.</p>
                     </div>
                     <button
                       className="cem-close-btn"
@@ -281,7 +289,9 @@ export default function ClearExpiredButton({
                         <span className="cem-result-val">
                           {result.cleared ?? 0}
                         </span>
-                        <span className="cem-result-label">Batches Removed</span>
+                        <span className="cem-result-label">
+                          Batches Removed
+                        </span>
                       </div>
                       {(result.skipped ?? 0) > 0 && (
                         <div className="cem-result-item warn">

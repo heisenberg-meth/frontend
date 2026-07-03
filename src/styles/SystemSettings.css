@@ -186,7 +186,16 @@
 }
 
 [data-theme="light"] .enterprise-grad-card {
-  background: linear-gradient(135deg, #0d3656, #0a1520);
+  background: linear-gradient(135deg, #e0f7f3, #f0fdf9);
+  border: 1px solid #b2ece0;
+}
+
+[data-theme="light"] .ent-price {
+  color: var(--sys-text);
+}
+
+[data-theme="light"] .ent-label {
+  color: #0d7c66;
 }
 
 .ent-label {
@@ -280,20 +289,28 @@
 .sys-textarea {
   width: 100%;
   height: 46px;
+  background: var(--sys-input);
+  border: 1px solid var(--sys-border);
+  border-radius: 14px;
+  padding: 0 16px;
+  color: var(--sys-text);
+  font-family: "Outfit", sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  transition: all 0.25s ease;
+  box-sizing: border-box;
+}
+
+[data-theme="dark"] .sys-input,
+[data-theme="dark"] .sys-select,
+[data-theme="dark"] .sys-textarea {
   background: linear-gradient(
     145deg,
     rgba(13, 20, 40, 0.95),
     rgba(7, 12, 28, 0.98)
   );
   border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 14px;
-  padding: 0 16px;
   color: #ffffff;
-  font-family: "Outfit", sans-serif;
-  font-size: 14px;
-  font-weight: 600;
-  transition: all 0.25s ease;
-  box-sizing: border-box;
   backdrop-filter: blur(12px);
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.04),
@@ -341,8 +358,8 @@
 }
 
 .sys-select option {
-  background: #081120;
-  color: #ffffff;
+  background: var(--sys-card);
+  color: var(--sys-text);
   padding: 12px;
 }
 

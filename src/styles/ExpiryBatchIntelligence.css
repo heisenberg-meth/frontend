@@ -1,7 +1,6 @@
 /* ── EXPIRY & BATCH INTELLIGENCE (MedAssist Pro) ── */
 
 .expiry-container {
-  padding: 24px;
   padding-bottom: 60px;
   display: flex;
   flex-direction: column;
@@ -324,19 +323,19 @@
 }
 
 /* Sticky Table Header */
-.purchase-table thead {
+.expiry-table thead {
   position: sticky;
   top: 0;
   z-index: 2;
 }
 
-.purchase-table tbody tr:hover {
+.expiry-table tbody tr:hover {
   background: var(--overlay-05);
   transition: 0.2s;
 }
 
 /* Table responsiveness */
-.purchase-table-card {
+.expiry-table-card {
   padding: 18px;
   border-radius: 20px;
   overflow-x: auto;
@@ -344,25 +343,25 @@
   border: 1px solid var(--outline-variant);
 }
 
-.purchase-table {
+.expiry-table {
   width: 100%;
   min-width: 1100px;
   border-collapse: separate !important;
   border-spacing: 0 12px;
 }
 
-.purchase-table th {
+.expiry-table th {
   padding: 14px 18px;
   text-align: left;
   white-space: nowrap;
 }
 
-.purchase-table td {
+.expiry-table td {
   padding: 18px;
   vertical-align: middle;
 }
 
-.purchase-table tbody tr {
+.expiry-table tbody tr {
   height: 72px;
 }
 
@@ -457,7 +456,7 @@
 }
 
 /* Header Layout & Spacing */
-.purchases-header {
+.expiry-header {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
@@ -465,26 +464,48 @@
   flex-wrap: wrap;
 }
 
-.header-actions {
+.expiry-header-actions {
   display: flex;
   align-items: center;
   gap: 12px;
   margin-top: 8px;
 }
 
-.purchases-tabs {
+.expiry-tabs {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
+  background: var(--overlay-03);
+  padding: 6px;
+  border-radius: 14px;
+  border: 1px solid var(--outline-variant);
+  width: fit-content;
   margin-top: 18px;
-  flex-wrap: wrap;
 }
 
-.p-tab {
+.expiry-tab {
   padding: 10px 18px;
-  border-radius: 12px;
-  min-width: 110px;
+  border-radius: 10px;
+  font-family: "Outfit", sans-serif;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-dim);
+  cursor: pointer;
+  transition: all 0.2s;
+  border: none;
+  background: none;
+  min-width: 100px;
   display: flex;
   justify-content: center;
   align-items: center;
+}
+
+.expiry-tab:hover {
+  color: var(--text);
+}
+
+.expiry-tab.active {
+  background: var(--surface-container-highest);
+  color: var(--primary);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
 }

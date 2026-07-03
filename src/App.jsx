@@ -364,7 +364,16 @@ function AppContent() {
     if (result.subscriptionExpired) {
       navigate(result.redirectTo || "/billing");
     } else if (result.isNew) {
-      navigate("/dashboard");
+      // Post-registration routing based on subscription status
+      if (result.subscriptionStatus === "PENDING") {
+        // Paid plan — needs checkout
+        navigate("/checkout");
+      } else {
+        // Free trial or free plan — go to dashboard
+        fetchData();
+        fetchSettings();
+        navigate("/dashboard");
+      }
     } else {
       fetchData();
       fetchSettings();
