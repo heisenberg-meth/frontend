@@ -259,7 +259,7 @@ function AppContent() {
     } catch (e) {
       console.error("Failed to refresh user after payment", e);
     }
-    navigate("/settings", { replace: true });
+    navigate("/dashboard", { replace: true });
   }, [navigate, refreshUser]);
 
   const handleSelectPro = useCallback(() => {
@@ -367,7 +367,7 @@ function AppContent() {
       // Post-registration routing based on subscription status
       if (result.subscriptionStatus === "PENDING") {
         // Paid plan — needs checkout
-        navigate("/checkout");
+        navigate("/payment");
       } else {
         // Free trial or free plan — go to dashboard
         fetchData();

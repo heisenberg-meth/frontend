@@ -170,7 +170,7 @@ export default function SignupPage() {
       // Route based on subscription status
       if (result?.subscriptionStatus === "PENDING") {
         // Paid plan — needs checkout
-        navigate("/checkout");
+        navigate("/payment");
       } else {
         // Free trial or free plan — go to dashboard
         navigate("/dashboard");

@@ -170,7 +170,7 @@ export default function AppRoutes({
         />
 
         {/* Public Checkout Route (Desktop Payment Flow) */}
-        <Route path="/checkout" element={<CheckoutPage />} />
+        <Route path="/checkout" element={<Navigate to="/payment" replace />} />
 
         {/* Public Legal Routes */}
         <Route path="/legal" element={<LegalPages showBackButton={false} />} />
@@ -185,7 +185,7 @@ export default function AppRoutes({
                 <Navigate to="/pricing" replace />
               ) : subStatus === SubscriptionStatus.PENDING ||
                 subStatus === "PENDING" ? (
-                <Navigate to="/checkout" replace />
+                <Navigate to="/payment" replace />
               ) : (
                 <DashboardLayout
                   user={user}

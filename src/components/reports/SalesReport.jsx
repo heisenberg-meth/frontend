@@ -290,10 +290,28 @@ export default function SalesReport({ from, to, showToast }) {
   const pCash = paymentMethods[0].percentage;
   const pUpi = paymentMethods[1].percentage;
   const pCard = paymentMethods[2].percentage;
-  const donutBg =
-    pCash > 0 || pUpi > 0 || pCard > 0
-      ? `conic-gradient(var(--primary) 0% ${pCash}%, var(--info) ${pCash}% ${pCash + pUpi}%, var(--success) ${pCash + pUpi}% 100%)`
-      : "var(--overlay-03)";
+
+  const donutBg = (() => {
+    const activeSegments = [];
+    if (pCash > 0)
+      activeSegments.push({ color: "var(--primary)", value: pCash });
+    if (pUpi > 0) activeSegments.push({ color: "var(--info)", value: pUpi });
+    if (pCard > 0)
+      activeSegments.push({ color: "var(--success)", value: pCard });
+
+    if (activeSegments.length === 0) return "var(--overlay-03)";
+    if (activeSegments.length === 1) return activeSegments[0].color;
+
+    let currentPos = 0;
+    const parts = activeSegments.map((seg, idx) => {
+      const start = currentPos;
+      const end =
+        idx === activeSegments.length - 1 ? 100 : currentPos + seg.value;
+      currentPos = end;
+      return `${seg.color} ${start}% ${end}%`;
+    });
+    return `conic-gradient(${parts.join(", ")})`;
+  })();
 
   return (
     <>

@@ -57,10 +57,16 @@ export default function PaymentGateway({ user, onPaymentComplete, amount }) {
         razorpayRef.current = null;
       }
 
+      const selectedPlanId =
+        sessionStorage.getItem("selectedPlanId") || "starter";
+      const planName =
+        selectedPlanId === "starter" ? "Starter Plan" : "MedAssist Basic";
+      const planId = selectedPlanId;
+
       const orderRes = await api.post(API_ROUTES.PAYMENTS_CREATE_ORDER, {
-        amount: safeNumber(amount) || 1,
-        planName: "MedAssist Basic",
-        planId: "pro",
+        amount: safeNumber(amount) || 599,
+        planName,
+        planId,
         billingCycle: "monthly",
         _ts: Date.now(),
       });
@@ -269,7 +275,9 @@ export default function PaymentGateway({ user, onPaymentComplete, amount }) {
                   <div>
                     <p className="font-bold text-on-surface">Subscription</p>
                     <p className="text-xs text-on-surface-variant">
-                      Annual Subscription
+                      {sessionStorage.getItem("selectedPlanId") === "starter"
+                        ? "Starter Plan (Monthly)"
+                        : "Professional Plan (Monthly)"}
                     </p>
                   </div>
                 </div>

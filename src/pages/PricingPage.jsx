@@ -1,6 +1,8 @@
 import { useNavigate } from "react-router-dom";
-import { Check, ArrowLeft, Zap, Star, Crown, Building2 } from "lucide-react";
+import { Check, ArrowLeft, Zap, Star } from "lucide-react";
 import { useAuth } from "../hooks/useAuth";
+import api from "../api";
+import { API_ROUTES } from "../constants/api.routes";
 
 const PLANS = [
   {
@@ -26,12 +28,12 @@ const PLANS = [
   {
     id: "starter",
     name: "Starter",
-    price: 999,
+    price: 599,
     duration: "/month",
     description: "Perfect for small pharmacies getting started.",
     icon: Star,
-    highlight: false,
-    badge: null,
+    highlight: true,
+    badge: "POPULAR",
     features: [
       "Everything in Free Trial",
       "Up to 3 Users",
@@ -41,58 +43,29 @@ const PLANS = [
       "Priority Support",
     ],
   },
-  {
-    id: "professional",
-    name: "Professional",
-    price: 2999,
-    duration: "/month",
-    description: "For growing pharmacies that need more power.",
-    icon: Crown,
-    highlight: true,
-    badge: "POPULAR",
-    features: [
-      "Everything in Starter",
-      "Up to 10 Users",
-      "5 Branches",
-      "50,000 Batch Records",
-      "Excel & PDF Reports",
-      "Premium Analytics",
-      "Priority Support",
-    ],
-  },
-  {
-    id: "enterprise",
-    name: "Enterprise",
-    price: 9999,
-    duration: "/month",
-    description: "Unlimited scale for pharmacy networks.",
-    icon: Building2,
-    highlight: false,
-    badge: "UNLIMITED",
-    features: [
-      "Everything in Professional",
-      "Unlimited Users",
-      "Unlimited Branches",
-      "Unlimited Batch Records",
-      "Advanced Reports",
-      "Premium Analytics",
-      "Dedicated Support",
-      "Custom Integrations",
-    ],
-  },
 ];
 
 export default function PricingPage() {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, refreshUser, showToast } = useAuth();
 
-  const handleSelectPlan = (planId) => {
+  const handleSelectPlan = async (planId) => {
     sessionStorage.setItem("selectedPlanId", planId);
     if (user) {
-      // Logged-in user selecting a plan — go to checkout or plans
-      navigate("/plans");
+      if (planId === "free-trial") {
+        try {
+          await api.post(API_ROUTES.SUBSCRIPTIONS_TRIAL);
+          if (refreshUser) await refreshUser();
+          if (showToast) showToast("Trial activated successfully", "success");
+          navigate("/dashboard", { replace: true });
+        } catch (err) {
+          console.error("Failed to activate trial:", err);
+          navigate("/dashboard", { replace: true });
+        }
+      } else if (planId === "starter") {
+        navigate("/payment");
+      }
     } else {
-      // New user — go to signup with plan
       navigate(`/signup?plan=${planId}`);
     }
   };
@@ -152,7 +125,7 @@ export default function PricingPage() {
         </div>
 
         {/* Plan Cards Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 w-full">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-3xl mx-auto w-full">
           {PLANS.map((plan) => {
             const Icon = plan.icon;
             return (
@@ -227,7 +200,9 @@ export default function PricingPage() {
                       : "bg-[var(--surface)] text-on-surface hover:bg-primary/10 border border-[var(--surface)] hover:border-primary/30"
                   }`}
                 >
-                  {plan.price === 0 ? "Start Free Trial" : `Choose ${plan.name}`}
+                  {plan.price === 0
+                    ? "Start Free Trial"
+                    : `Choose ${plan.name}`}
                 </button>
               </div>
             );
@@ -237,8 +212,8 @@ export default function PricingPage() {
         {/* Bottom Note */}
         <div className="text-center mt-10">
           <p className="text-sm text-on-surface-variant opacity-70">
-            All plans include a 28-day free trial. No credit card required to start.
-            Cancel anytime.
+            All plans include a 28-day free trial. No credit card required to
+            start. Cancel anytime.
           </p>
         </div>
       </main>
