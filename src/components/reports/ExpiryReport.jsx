@@ -36,10 +36,14 @@ export default function ExpiryReport({ showToast }) {
     setLoading(true);
     setErrorState(null);
     try {
-      const res = await api.get(API_ROUTES.REPORTS_EXPIRY || "reports/expiry");
+      const url = `${API_ROUTES.REPORTS_EXPIRY || "reports/expiry"}?days=120`;
+      const res = await api.get(url);
       if (res.data && res.data.success) {
         const apiData = res.data.data;
-        setExpiryStock(Array.isArray(apiData) ? apiData : []);
+        const stockData = Array.isArray(apiData)
+          ? apiData
+          : apiData?.report || [];
+        setExpiryStock(stockData);
       } else {
         setErrorState("Invalid API response format");
       }
@@ -91,8 +95,11 @@ export default function ExpiryReport({ showToast }) {
     processStockItem,
   );
   const expiredCount = processedStock.filter((i) => i.daysLeft <= 0).length;
-  const expiring30DaysCount = processedStock.filter(
-    (i) => i.daysLeft > 0 && i.daysLeft <= 30,
+  const expiring7DaysCount = processedStock.filter(
+    (i) => i.daysLeft > 0 && i.daysLeft <= 7,
+  ).length;
+  const expiring7To30DaysCount = processedStock.filter(
+    (i) => i.daysLeft > 7 && i.daysLeft <= 30,
   ).length;
   const expiring90DaysCount = processedStock.filter(
     (i) => i.daysLeft > 30 && i.daysLeft <= 90,
@@ -134,6 +141,7 @@ export default function ExpiryReport({ showToast }) {
     const headers = [
       "Medicine",
       "Batch",
+      "MFG Date",
       "Expiry Date",
       "Days Left",
       "Qty",
@@ -143,6 +151,9 @@ export default function ExpiryReport({ showToast }) {
     const rows = filteredStock.map((item) => [
       item.medicineName,
       item.batchNumber,
+      item.manufacturingDate
+        ? new Date(item.manufacturingDate).toLocaleDateString()
+        : "N/A",
       new Date(item.expiryDate).toLocaleDateString(),
       item.daysLeft <= 0 ? "EXPIRED" : `${item.daysLeft} Days`,
       item.quantity,
@@ -311,13 +322,23 @@ export default function ExpiryReport({ showToast }) {
         </div>
         <div
           className="report-kpi-card"
+          onClick={() => setExpiryFilter("< 7 Days")}
+          style={{ cursor: "pointer" }}
+        >
+          <div className="stat-label" style={{ color: "var(--danger)" }}>
+            EXPIRING &lt; 7 DAYS
+          </div>
+          <div className="stat-value">{expiring7DaysCount}</div>
+        </div>
+        <div
+          className="report-kpi-card"
           onClick={() => setExpiryFilter("7-30 Days")}
           style={{ cursor: "pointer" }}
         >
           <div className="stat-label" style={{ color: "var(--warning)" }}>
-            EXPIRING &lt; 30 DAYS
+            EXPIRING 7-30 DAYS
           </div>
-          <div className="stat-value">{expiring30DaysCount}</div>
+          <div className="stat-value">{expiring7To30DaysCount}</div>
         </div>
         <div
           className="report-kpi-card"
@@ -417,6 +438,7 @@ export default function ExpiryReport({ showToast }) {
             <tr>
               <th>Medicine</th>
               <th>Batch</th>
+              <th>MFG Date</th>
               <th>Expiry Date</th>
               <th>Days Left</th>
               <th>Qty</th>
@@ -453,7 +475,7 @@ export default function ExpiryReport({ showToast }) {
             ) : (
               filteredStock.map((item) => (
                 <tr
-                  key={`${item.batchNumber}-${item.expiryDate}`}
+                  key={item.id}
                   className={
                     item.urgency === "danger"
                       ? "expiry-row-danger"
@@ -468,6 +490,11 @@ export default function ExpiryReport({ showToast }) {
                     <div style={{ fontWeight: 700 }}>{item.medicineName}</div>
                   </td>
                   <td className="result-meta">{item.batchNumber}</td>
+                  <td>
+                    {item.manufacturingDate
+                      ? new Date(item.manufacturingDate).toLocaleDateString()
+                      : "N/A"}
+                  </td>
                   <td>{new Date(item.expiryDate).toLocaleDateString()}</td>
                   <td>
                     <b

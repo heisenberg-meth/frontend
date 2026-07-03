@@ -639,7 +639,14 @@ export default function SupplierReturns({ showToast }) {
                               try {
                                 const res = await generateCreditNotePdf(cn.id);
                                 if (res.data?.data?.pdfUrl) {
-                                  window.open(res.data.data.pdfUrl, "_blank");
+                                  const pdfRes = await api.get(
+                                    res.data.data.pdfUrl,
+                                    { responseType: "blob" },
+                                  );
+                                  const blobUrl = window.URL.createObjectURL(
+                                    pdfRes.data,
+                                  );
+                                  window.open(blobUrl, "_blank");
                                 }
                                 notify("PDF generated", "success");
                               } catch (err) {

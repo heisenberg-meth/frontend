@@ -38,6 +38,7 @@ import {
   importSupplierAssignments,
 } from "../services/inventory.service";
 import { getSuppliers } from "../services/suppliers.service";
+import ClearExpiredButton from "./ClearExpiredButton";
 
 function getDays(expiryDate) {
   const exp = new Date(expiryDate);
@@ -77,6 +78,8 @@ export default function ExpiryBatchIntelligence({ showToast }) {
   const [selectedBatchIds, setSelectedBatchIds] = useState(new Set());
   const [showDisposeModal, setShowDisposeModal] = useState(false);
   const [disposing, setDisposing] = useState(false);
+  // Clear-expired reload key: increment to trigger a fresh data fetch
+  const [clearReloadKey, setClearReloadKey] = useState(0);
 
   // Bulk supplier assignment state
   const [showBulkSupplierModal, setShowBulkSupplierModal] = useState(false);
@@ -119,8 +122,9 @@ export default function ExpiryBatchIntelligence({ showToast }) {
           .map((b) => {
             const days = getDays(b.expiryDate);
             return {
-              id: b.batchNumber || b.id,
-              batchId: b.id, // real UUID for API calls
+              id: b.id, // real UUID for API calls and React keys
+              batchNumber: b.batchNumber || "N/A",
+              batchId: b.id, // kept for backwards compatibility in the component
               med: b.medicine?.name || "Unknown",
               exp: b.expiryDate,
               days,
@@ -132,8 +136,8 @@ export default function ExpiryBatchIntelligence({ showToast }) {
                 b.status?.toLowerCase() || computeStatus(days, b.quantity),
               rank: 1,
               received: b.createdAt?.split("T")[0] || "",
-              mfg: b.manufacturingDate?.split("T")[0] || "",
-              supplier: b.supplier?.name || "",
+              mfg: b.manufacturingDate?.split("T")[0] || "N/A",
+              supplier: b.supplier?.name || "N/A",
               supplierId: b.supplierId || b.supplier?.id || null,
               medicineId: b.medicineId || b.medicine?.id || null,
               manufacturer: b.manufacturerName || "",
@@ -178,7 +182,7 @@ export default function ExpiryBatchIntelligence({ showToast }) {
       }
     };
     fetchData();
-  }, []);
+  }, [clearReloadKey]); // re-fetch when clearReloadKey increments (after a clear-expired operation)
 
   const [alertSettings, setAlertSettings] = useState({
     warning: 30,
@@ -427,7 +431,7 @@ export default function ExpiryBatchIntelligence({ showToast }) {
 
       const reportData = batches.map((b) => ({
         Medicine: b.med,
-        Batch: b.id,
+        Batch: b.batchNumber,
         Supplier: b.supplier || "Unknown",
         Manufacturer: b.manufacturer || "Unknown",
         PurchaseInvoice: b.purchaseInvoice || "N/A",
@@ -484,16 +488,20 @@ export default function ExpiryBatchIntelligence({ showToast }) {
         const selectedItemData = batches.find((b) => matchesSelectedItem(b));
         if (!selectedItemData) throw new Error("Batch not found");
         if (!selectedItemData.supplierId) {
-          throw new Error("No supplier assigned to this batch. Please assign a supplier first using the 'Assign Supplier' button.");
+          throw new Error(
+            "No supplier assigned to this batch. Please assign a supplier first using the 'Assign Supplier' button.",
+          );
         }
         await api.post("/supplier-returns", {
           supplierId: selectedItemData.supplierId,
-          items: [{
-            medicineId: selectedItemData.medicineId,
-            batchId: selectedItemData.batchId,
-            quantity: returnQty || 1,
-            reason: returnReason || "Expired Stock Return",
-          }],
+          items: [
+            {
+              medicineId: selectedItemData.medicineId,
+              batchId: selectedItemData.batchId,
+              quantity: returnQty || 1,
+              reason: returnReason || "Expired Stock Return",
+            },
+          ],
           reason: returnReason || "Expired stock returned to supplier",
         });
         setBatches((prev) =>
@@ -600,7 +608,8 @@ export default function ExpiryBatchIntelligence({ showToast }) {
     try {
       const batchIds = [...selectedBatchIds];
       await bulkAssignBatchSupplier(batchIds, bulkSupplierId);
-      const supplierName = suppliers.find((s) => s.id === bulkSupplierId)?.name || "";
+      const supplierName =
+        suppliers.find((s) => s.id === bulkSupplierId)?.name || "";
       showToast(
         `Supplier "${supplierName}" assigned to ${batchIds.length} batches`,
         "success",
@@ -630,7 +639,9 @@ export default function ExpiryBatchIntelligence({ showToast }) {
   const handleBulkReturnToSupplier = async () => {
     if (!selectedBatchIds.size) return;
 
-    const selectedBatches = batches.filter((b) => selectedBatchIds.has(b.batchId));
+    const selectedBatches = batches.filter((b) =>
+      selectedBatchIds.has(b.batchId),
+    );
     const withoutSupplier = selectedBatches.filter((b) => !b.supplierId);
     if (withoutSupplier.length > 0) {
       showToast(
@@ -689,19 +700,31 @@ export default function ExpiryBatchIntelligence({ showToast }) {
 
       const supplierNames = suppliers.map((s) => s.name);
       const rows = [
-        ["batchId", "batchNumber", "medicineName", "expiryDate", "quantity", "supplierName"],
+        [
+          "batchId",
+          "batchNumber",
+          "medicineName",
+          "expiryDate",
+          "quantity",
+          "supplierName",
+        ],
         ...batches.map((b) => [
-          b.id,
+          b.batchId,
           b.batchNumber,
-          b.medicine?.name || "",
-          b.expiryDate?.split("T")[0] || "",
-          b.availableQuantity ?? b.quantity ?? 0,
-          "",
+          b.med,
+          b.exp?.split("T")[0] || "",
+          b.qty,
+          b.supplier,
         ]),
       ];
 
-      const csv = rows.map((r) => r.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(",")).join("\n");
-      const supplierList = "\n\n# Available suppliers:\n" + supplierNames.join("\n");
+      const csv = rows
+        .map((r) =>
+          r.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(","),
+        )
+        .join("\n");
+      const supplierList =
+        "\n\n# Available suppliers:\n" + supplierNames.join("\n");
       const blob = new Blob([csv + supplierList], { type: "text/csv" });
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
@@ -709,7 +732,10 @@ export default function ExpiryBatchIntelligence({ showToast }) {
       a.download = `batches-no-supplier-${new Date().toISOString().slice(0, 10)}.csv`;
       a.click();
       URL.revokeObjectURL(url);
-      showToast(`Exported ${batches.length} batches. Edit supplierName column and import back.`, "success");
+      showToast(
+        `Exported ${batches.length} batches. Edit supplierName column and import back.`,
+        "success",
+      );
     } catch (err) {
       showToast("Export failed: " + (err.message || "Unknown error"), "error");
     }
@@ -721,10 +747,15 @@ export default function ExpiryBatchIntelligence({ showToast }) {
     setImportResult(null);
     try {
       const text = await importFile.text();
-      const lines = text.split("\n").filter((l) => l.trim() && !l.startsWith("#"));
-      if (lines.length < 2) throw new Error("CSV must have a header row and at least one data row");
+      const lines = text
+        .split("\n")
+        .filter((l) => l.trim() && !l.startsWith("#"));
+      if (lines.length < 2)
+        throw new Error("CSV must have a header row and at least one data row");
 
-      const header = lines[0].split(",").map((h) => h.trim().toLowerCase().replace(/"/g, ""));
+      const header = lines[0]
+        .split(",")
+        .map((h) => h.trim().toLowerCase().replace(/"/g, ""));
       const batchIdIdx = header.indexOf("batchid");
       const supplierIdx = header.indexOf("suppliername");
 
@@ -742,7 +773,8 @@ export default function ExpiryBatchIntelligence({ showToast }) {
         }
       }
 
-      if (assignments.length === 0) throw new Error("No valid assignments found in CSV");
+      if (assignments.length === 0)
+        throw new Error("No valid assignments found in CSV");
 
       const res = await importSupplierAssignments(assignments);
       const data = res.data?.data || {};
@@ -799,16 +831,24 @@ export default function ExpiryBatchIntelligence({ showToast }) {
       await api.put(`/inventory/batches/${editBatch.batchId}`, {
         batchNumber: editBatch.batch,
         expiryDate: editBatch.exp,
+        manufacturingDate: editBatch.mfg
+          ? new Date(editBatch.mfg).toISOString()
+          : null,
         purchasePrice: editBatch.purchasePrice,
         rackLocation: editBatch.rackLocation || undefined,
       });
       setBatches((prev) =>
-        prev.map((b) => (b.batchId === editBatch.batchId ? { ...b, ...editBatch } : b)),
+        prev.map((b) =>
+          b.batchId === editBatch.batchId ? { ...b, ...editBatch } : b,
+        ),
       );
       setShowEditBatchModal(false);
       showToast("Batch updated successfully", "success");
     } catch (err) {
-      showToast(err.response?.data?.message || "Failed to update batch", "error");
+      showToast(
+        err.response?.data?.message || "Failed to update batch",
+        "error",
+      );
     }
   };
 
@@ -828,7 +868,10 @@ export default function ExpiryBatchIntelligence({ showToast }) {
       setShowDeleteModal(false);
       setSelectedBatchForDelete(null);
     } catch (err) {
-      showToast(err.response?.data?.message || "Failed to delete batch", "error");
+      showToast(
+        err.response?.data?.message || "Failed to delete batch",
+        "error",
+      );
     }
   };
 
@@ -950,31 +993,49 @@ export default function ExpiryBatchIntelligence({ showToast }) {
       )}
 
       <div className="expiry-stats-grid">
-        {dynamicStats.map((s, i) => (
-          <div
-            key={i}
-            className="pos-stat-card"
-            onClick={() => setFilter(s.key)}
-            style={{
-              borderLeft:
-                filter === s.key
-                  ? `4px solid ${s.col}`
-                  : "1px solid var(--outline-variant)",
-              cursor: "pointer",
-            }}
-          >
-            <div className="stat-card-header">
-              <span className="stat-label">{s.label}</span>
-              <div
-                className="stat-icon"
-                style={{ backgroundColor: `${s.col}15`, color: s.col }}
-              >
-                <s.icon size={16} />
+        {dynamicStats.map((s, i) => {
+          const isExpiredCard = s.key === "EXPIRED";
+          return (
+            <div
+              key={i}
+              className="pos-stat-card"
+              onClick={() => setFilter(s.key)}
+              style={{
+                borderLeft:
+                  filter === s.key
+                    ? `4px solid ${s.col}`
+                    : "1px solid var(--outline-variant)",
+                cursor: "pointer",
+                position: "relative",
+              }}
+            >
+              <div className="stat-card-header">
+                <span className="stat-label">{s.label}</span>
+                <div
+                  className="stat-icon"
+                  style={{ backgroundColor: `${s.col}15`, color: s.col }}
+                >
+                  <s.icon size={16} />
+                </div>
               </div>
+              <div className="stat-value">{s.val}</div>
+              {isExpiredCard && (
+                <div
+                  style={{ marginTop: 8 }}
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <ClearExpiredButton
+                    showToast={showToast}
+                    onCleared={() => {
+                      // Refresh batch list after clearing
+                      setClearReloadKey((k) => k + 1);
+                    }}
+                  />
+                </div>
+              )}
             </div>
-            <div className="stat-value">{s.val}</div>
-          </div>
-        ))}
+          );
+        })}
       </div>
 
       {/* ───────────────────── TIMELINE TAB ───────────────────── */}
@@ -1074,24 +1135,6 @@ export default function ExpiryBatchIntelligence({ showToast }) {
             </div>
 
             <div className="table-controls-row">
-              <div className="filter-pills-row">
-                {[
-                  "ALL",
-                  "EXPIRED",
-                  "< 7 DAYS",
-                  "7-30 DAYS",
-                  "30-90 DAYS",
-                  "SAFE",
-                ].map((p) => (
-                  <button
-                    key={p}
-                    className={`filter-pill ${filter === p ? "active" : ""}`}
-                    onClick={() => setFilter(p)}
-                  >
-                    {p}
-                  </button>
-                ))}
-              </div>
               <div
                 style={{ display: "flex", alignItems: "center", gap: "10px" }}
               >
@@ -1107,19 +1150,6 @@ export default function ExpiryBatchIntelligence({ showToast }) {
                   onClick={handleExportNoSupplier}
                 >
                   Export CSV
-                </button>
-                <button
-                  className="pos-btn outline"
-                  style={{
-                    padding: "6px 14px",
-                    fontSize: "13px",
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "6px",
-                  }}
-                  onClick={() => setShowImportModal(true)}
-                >
-                  Import CSV
                 </button>
                 <button
                   className="pos-btn outline"
@@ -1168,7 +1198,9 @@ export default function ExpiryBatchIntelligence({ showToast }) {
                       disabled={bulkReturning}
                     >
                       <RotateCcw size={14} />
-                      {bulkReturning ? "Returning..." : `Return to Supplier (${selectedBatchIds.size})`}
+                      {bulkReturning
+                        ? "Returning..."
+                        : `Return to Supplier (${selectedBatchIds.size})`}
                     </button>
                     <button
                       className="pos-btn danger"
@@ -1321,7 +1353,7 @@ export default function ExpiryBatchIntelligence({ showToast }) {
                             </div>
                             <div className="result-meta">{b.supplier}</div>
                           </td>
-                          <td className="result-meta">{b.id}</td>
+                          <td className="result-meta">{b.batchNumber}</td>
                           <td
                             className="result-meta"
                             style={{
@@ -1542,8 +1574,7 @@ export default function ExpiryBatchIntelligence({ showToast }) {
                 ) : (
                   invFilteredBatches.map((b) => (
                     <tr key={b.id}>
-                      <td style={{ fontWeight: 700 }}>{b.id}</td>
-                      <td>
+                      <td style={{ fontWeight: 700 }}>
                         {b.med}
                         {b.discountApplied && (
                           <span
@@ -1554,6 +1585,7 @@ export default function ExpiryBatchIntelligence({ showToast }) {
                           </span>
                         )}
                       </td>
+                      <td>{b.batchNumber}</td>
                       <td>{b.exp}</td>
                       <td className="result-meta">{b.received}</td>
                       <td>{b.qty} units</td>
@@ -1770,7 +1802,9 @@ export default function ExpiryBatchIntelligence({ showToast }) {
                                         Rank {b.rank}
                                       </span>
                                     </td>
-                                    <td style={{ fontWeight: 700 }}>{b.id}</td>
+                                    <td style={{ fontWeight: 700 }}>
+                                      {b.batchNumber}
+                                    </td>
                                     <td
                                       style={{
                                         color:
@@ -2079,7 +2113,11 @@ export default function ExpiryBatchIntelligence({ showToast }) {
                       showToast("Settings saved", "success");
                       setShowConfigModal(false);
                     } catch (err) {
-                      showToast(err.response?.data?.message || "Failed to save settings", "error");
+                      showToast(
+                        err.response?.data?.message ||
+                          "Failed to save settings",
+                        "error",
+                      );
                     }
                   }}
                 >
@@ -3120,7 +3158,11 @@ export default function ExpiryBatchIntelligence({ showToast }) {
                 <h3 style={{ margin: 0 }}>Import Supplier Assignments (CSV)</h3>
                 <button
                   className="stock-modal-close"
-                  onClick={() => { setShowImportModal(false); setImportResult(null); setImportFile(null); }}
+                  onClick={() => {
+                    setShowImportModal(false);
+                    setImportResult(null);
+                    setImportFile(null);
+                  }}
                   disabled={importing}
                 >
                   <X size={18} />
@@ -3128,9 +3170,16 @@ export default function ExpiryBatchIntelligence({ showToast }) {
               </div>
 
               <div className="stock-modal-body">
-                <p style={{ fontSize: 13, color: "var(--text-muted)", marginBottom: 16 }}>
-                  Upload a CSV with columns: <strong>batchId</strong> and <strong>supplierName</strong>.
-                  Export CSV first to get the batch IDs and available supplier names.
+                <p
+                  style={{
+                    fontSize: 13,
+                    color: "var(--text-muted)",
+                    marginBottom: 16,
+                  }}
+                >
+                  Upload a CSV with columns: <strong>batchId</strong> and{" "}
+                  <strong>supplierName</strong>. Export CSV first to get the
+                  batch IDs and available supplier names.
                 </p>
 
                 <input
@@ -3145,19 +3194,27 @@ export default function ExpiryBatchIntelligence({ showToast }) {
                     style={{
                       padding: 12,
                       borderRadius: 8,
-                      background: importResult.errors?.length ? "rgba(234,179,8,0.08)" : "rgba(34,197,94,0.08)",
+                      background: importResult.errors?.length
+                        ? "rgba(234,179,8,0.08)"
+                        : "rgba(34,197,94,0.08)",
                       marginBottom: 16,
                       fontSize: 13,
                     }}
                   >
-                    <div><strong>Updated:</strong> {importResult.updated}</div>
-                    <div><strong>Skipped:</strong> {importResult.skipped}</div>
+                    <div>
+                      <strong>Updated:</strong> {importResult.updated}
+                    </div>
+                    <div>
+                      <strong>Skipped:</strong> {importResult.skipped}
+                    </div>
                     {importResult.errors?.length > 0 && (
                       <div style={{ marginTop: 8 }}>
                         <strong>Errors ({importResult.errors.length}):</strong>
                         <ul style={{ margin: "4px 0", paddingLeft: 20 }}>
                           {importResult.errors.slice(0, 10).map((e, i) => (
-                            <li key={i}>{e.batchId?.slice(0,8)} — {e.reason}</li>
+                            <li key={i}>
+                              {e.batchId?.slice(0, 8)} — {e.reason}
+                            </li>
                           ))}
                         </ul>
                       </div>
@@ -3171,7 +3228,11 @@ export default function ExpiryBatchIntelligence({ showToast }) {
                   className="pos-btn outline"
                   style={{ flex: 1 }}
                   disabled={importing}
-                  onClick={() => { setShowImportModal(false); setImportResult(null); setImportFile(null); }}
+                  onClick={() => {
+                    setShowImportModal(false);
+                    setImportResult(null);
+                    setImportFile(null);
+                  }}
                 >
                   {importResult ? "Close" : "Cancel"}
                 </button>

@@ -726,12 +726,16 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
       inv.supplier?.name || inv.supplierName || inv.supplier || "";
     const matchesSupplier =
       filters.supplier === "All Suppliers" || supplierName === filters.supplier;
-    const statusVal = (inv.paymentStatus || inv.status || "")
-      .toLowerCase()
-      .replace(/[\s_-]+/g, "");
+
+    let statusVal = (inv.paymentStatus || inv.status || "").toLowerCase();
+    if (statusVal === "partial") statusVal = "partiallypaid";
+    statusVal = statusVal.replace(/[\s_-]+/g, "");
+
     const filterVal = filters.status.toLowerCase().replace(/[\s_-]+/g, "");
     const matchesStatus =
-      filters.status === "All Status" || statusVal === filterVal;
+      filters.status === "All Status" ||
+      statusVal === filterVal ||
+      (statusVal === "partiallypaid" && filterVal === "partial");
     const matchesSearch =
       (inv.supplierInvoiceNumber || inv.invoiceNumber || inv.id || "")
         .toLowerCase()
@@ -747,9 +751,15 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
       po.supplier?.name || po.supplierName || po.supplier || "";
     const matchesSupplier =
       filters.supplier === "All Suppliers" || supplierName === filters.supplier;
+
+    const statusVal = (po.status || "").toLowerCase().replace(/[\s_-]+/g, "");
+    const filterVal = filters.status.toLowerCase().replace(/[\s_-]+/g, "");
+
     const matchesStatus =
       filters.status === "All Status" ||
-      (po.status || "").toLowerCase() === filters.status.toLowerCase();
+      statusVal === filterVal ||
+      (statusVal === "partiallyreceived" && filterVal === "partiallypaid");
+
     const matchesSearch =
       (po.id || po.poNumber || "")
         .toLowerCase()
@@ -765,9 +775,13 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
       ret.supplier?.name || ret.supplierName || ret.supplier || "";
     const matchesSupplier =
       filters.supplier === "All Suppliers" || supplierName === filters.supplier;
+
+    const statusVal = (ret.status || "").toLowerCase().replace(/[\s_-]+/g, "");
+    const filterVal = filters.status.toLowerCase().replace(/[\s_-]+/g, "");
+
     const matchesStatus =
-      filters.status === "All Status" ||
-      (ret.status || "").toLowerCase() === filters.status.toLowerCase();
+      filters.status === "All Status" || statusVal === filterVal;
+
     const matchesSearch =
       (ret.id || ret.returnNumber || "")
         .toLowerCase()
@@ -1210,14 +1224,26 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
             onChange={(e) => setFilters({ ...filters, status: e.target.value })}
           >
             <option>All Status</option>
-            <option>Paid</option>
-            <option>Pending</option>
-            <option>Partially Paid</option>
-            <option>Sent</option>
-            <option>Confirmed</option>
-            <option>Received</option>
-            <option>Approved</option>
-            <option>Completed</option>
+            {activeTab === "returns" ? (
+              <>
+                <option>Draft</option>
+                <option>Approved</option>
+                <option>Dispatched</option>
+                <option>Received</option>
+                <option>Completed</option>
+              </>
+            ) : (
+              <>
+                <option>Paid</option>
+                <option>Pending</option>
+                <option>Partially Paid</option>
+                <option>Sent</option>
+                <option>Confirmed</option>
+                <option>Received</option>
+                <option>Approved</option>
+                <option>Completed</option>
+              </>
+            )}
           </select>
           <div className="pos-input-group" style={{ flex: 1 }}>
             <input
@@ -1350,8 +1376,6 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
                 <th>Supplier</th>
                 <th>Date</th>
                 <th>Items</th>
-                <th>Total ₹</th>
-                <th>Delivery</th>
                 <th>Status</th>
                 <th>Actions</th>
               </tr>
@@ -1367,10 +1391,6 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
                   </td>
                   <td>{po.date || formatDate(po.createdAt)}</td>
                   <td>{po.items?.length || po.items || 0}</td>
-                  <td style={{ fontWeight: 700 }}>
-                    ₹{(po.totalAmount || po.total || 0).toLocaleString()}
-                  </td>
-                  <td>{po.deliveryDate || po.delivery || "-"}</td>
                   <td>
                     <span
                       className={`p-status ${(po.status || "").toLowerCase()}`}
@@ -1963,7 +1983,11 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
                         <thead>
                           <tr>
                             <th>Medicine</th>
-                            <th>Qty</th>
+                            <th>Batch #</th>
+                            <th style={{ textAlign: "right" }}>Qty</th>
+                            <th style={{ textAlign: "right" }}>Price</th>
+                            <th style={{ textAlign: "right" }}>GST</th>
+                            <th style={{ textAlign: "right" }}>Total</th>
                           </tr>
                         </thead>
                         <tbody>
@@ -1981,7 +2005,35 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
                                   "-"}
                               </td>
                               <td>
+                                {item.batch?.batchNumber ||
+                                  item.batchNumber ||
+                                  "-"}
+                              </td>
+                              <td style={{ textAlign: "right" }}>
                                 {item.quantity || item.receivedQuantity || 0}
+                              </td>
+                              <td style={{ textAlign: "right" }}>
+                                ₹
+                                {safeNumber(
+                                  item.purchasePrice || item.price || 0,
+                                ).toFixed(2)}
+                              </td>
+                              <td style={{ textAlign: "right" }}>
+                                {safeNumber(
+                                  item.gstPercentage || item.gst || 0,
+                                )}
+                                %
+                              </td>
+                              <td style={{ textAlign: "right" }}>
+                                ₹
+                                {safeNumber(
+                                  item.subtotal ||
+                                    item.totalAmount ||
+                                    (item.quantity ||
+                                      item.receivedQuantity ||
+                                      0) *
+                                      (item.purchasePrice || item.price || 0),
+                                ).toFixed(2)}
                               </td>
                             </tr>
                           ))}

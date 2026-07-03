@@ -17,6 +17,7 @@ import { format } from "date-fns";
 import api from "../api";
 import { normalizeObjectResponse } from "../utils/apiNormalizer";
 import { safeNumber } from "../utils/number.js";
+import ClearExpiredButton from "./ClearExpiredButton";
 
 export default function BulkDisposal({ showToast }) {
   const [batches, setBatches] = useState([]);
@@ -198,13 +199,18 @@ export default function BulkDisposal({ showToast }) {
           <h2>Bulk Disposal</h2>
           <p>Select and dispose expired medicines in bulk</p>
         </div>
-        <div className="hub-status-group">
+        <div className="hub-status-group" style={{ display: "flex", alignItems: "center", gap: 10 }}>
           <div className="status-item">
             <Clock size={12} className="text-on-surface-variant" />
             <span className="text-on-surface-variant">
               {batches.length} expired batches
             </span>
           </div>
+          {/* Clear already-disposed batches directly from the disposal page */}
+          <ClearExpiredButton
+            showToast={showToast}
+            onCleared={fetchData}
+          />
         </div>
       </div>
 
