@@ -1,5 +1,5 @@
 import { Suspense, lazy } from "react";
-import { Routes, Route, Navigate, useLocation } from "react-router-dom";
+import { Routes, Route, Navigate } from "react-router-dom";
 import { SubscriptionStatus } from "../constants/enums";
 import ProtectedRoute from "../guards/ProtectedRoute";
 import DashboardLayout from "../layouts/DashboardLayout";
@@ -108,12 +108,16 @@ export default function AppRoutes({
   setShowLogoutModal,
   PaywallComponent,
 }) {
-  const location = useLocation();
   const subStatus = subscription?.status;
-  const isExpired = subStatus === SubscriptionStatus.EXPIRED;
-  const isPrivileged = user?.role === "OWNER" || user?.role === "ADMIN";
-  const needsPlanSelection =
-    !subStatus || subStatus === SubscriptionStatus.PENDING;
+  const isExpired =
+    subStatus === SubscriptionStatus.EXPIRED || subStatus === "EXPIRED";
+  const isPrivileged =
+    user?.role === "OWNER" || user?.role === "ADMIN" || user?.role === "owner";
+  const isActiveOrTrial =
+    subStatus === SubscriptionStatus.ACTIVE ||
+    subStatus === SubscriptionStatus.TRIAL ||
+    subStatus === "ACTIVE" ||
+    subStatus === "TRIAL";
 
   return (
     <Suspense fallback={<LoadingScreen message="Loading clinical module..." />}>
@@ -122,7 +126,11 @@ export default function AppRoutes({
         <Route
           path="/"
           element={
-            user ? <Navigate to="/dashboard" replace /> : <LandingPage />
+            user && isActiveOrTrial ? (
+              <Navigate to="/dashboard" replace />
+            ) : (
+              <LandingPage />
+            )
           }
         />
         <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
@@ -133,7 +141,7 @@ export default function AppRoutes({
         <Route
           path="/pricing"
           element={
-            user ? (
+            user && isActiveOrTrial ? (
               <Navigate to="/dashboard" replace />
             ) : (
               <PricingPage />
@@ -143,7 +151,7 @@ export default function AppRoutes({
         <Route
           path="/signup"
           element={
-            user ? (
+            user && isActiveOrTrial ? (
               <Navigate to="/dashboard" replace />
             ) : (
               <SignupPage />
@@ -173,11 +181,11 @@ export default function AppRoutes({
             <ProtectedRoute>
               {isExpired && isPrivileged ? (
                 <PaywallComponent />
-              ) : needsPlanSelection &&
-                isPrivileged &&
-                location.pathname !== "/plans" &&
-                location.pathname !== "/payment" ? (
-                <Navigate to="/plans" replace />
+              ) : !subStatus ? (
+                <Navigate to="/pricing" replace />
+              ) : subStatus === SubscriptionStatus.PENDING ||
+                subStatus === "PENDING" ? (
+                <Navigate to="/checkout" replace />
               ) : (
                 <DashboardLayout
                   user={user}

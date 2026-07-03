@@ -287,6 +287,14 @@ export default function SalesReport({ from, to, showToast }) {
     );
   }
 
+  const pCash = paymentMethods[0].percentage;
+  const pUpi = paymentMethods[1].percentage;
+  const pCard = paymentMethods[2].percentage;
+  const donutBg =
+    pCash > 0 || pUpi > 0 || pCard > 0
+      ? `conic-gradient(var(--primary) 0% ${pCash}%, var(--info) ${pCash}% ${pCash + pUpi}%, var(--success) ${pCash + pUpi}% 100%)`
+      : "var(--overlay-03)";
+
   return (
     <>
       <div className="reports-kpi-grid">
@@ -399,7 +407,7 @@ export default function SalesReport({ from, to, showToast }) {
         <div className="pos-card">
           <div className="pos-card-title">Payment Mode Distribution</div>
           <div className="donut-container" style={{ marginTop: "20px" }}>
-            <div className="donut-visual">
+            <div className="donut-visual" style={{ background: donutBg }}>
               <div className="donut-inner-text">
                 ₹{(summary.totalRevenue || 0).toLocaleString()}
                 <br />

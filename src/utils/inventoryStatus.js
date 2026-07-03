@@ -39,6 +39,11 @@ export function getMedicineStatus(medicine) {
   const thirtyDays = new Date(today);
   thirtyDays.setDate(thirtyDays.getDate() + 30);
 
+  // Check out of stock
+  if (stock === 0) {
+    return "Out of Stock";
+  }
+
   // Check expired
   if (expiryDate) {
     const expDate = new Date(expiryDate);
@@ -46,11 +51,6 @@ export function getMedicineStatus(medicine) {
     if (expDate <= today) {
       return "Expired";
     }
-  }
-
-  // Check out of stock
-  if (stock === 0) {
-    return "Out of Stock";
   }
 
   // Check low stock
@@ -70,17 +70,9 @@ export function getMedicineStatus(medicine) {
   return "In Stock";
 }
 
-/**
- * Get the nearest expiry date from a medicine
- * Checks both medicine.expiryDate and inventoryBatches
- *
- * @param {Object} medicine - Medicine object
- * @returns {Date|string|null} Expiry date or null
- */
 export function getExpiryDate(medicine) {
   if (!medicine) return null;
 
-  // Direct expiryDate field
   if (medicine.expiryDate) {
     return medicine.expiryDate;
   }
