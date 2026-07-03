@@ -89,35 +89,46 @@
   color-scheme: light;
 }
 
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
+@layer base {
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
 
-body {
-  background-color: var(--bg-dark);
-  color: var(--text);
-  font-family: var(--font-sans);
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  overflow: hidden; /* App shell handles scrolling */
-}
+  body {
+    background-color: var(--bg-dark);
+    color: var(--text);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    overflow-y: auto;
+  }
 
-#root {
-  height: 100vh;
-  width: 100vw;
-}
+  #root {
+    min-height: 100vh;
+    width: 100vw;
+  }
 
-button {
-  font-family: inherit;
-  cursor: pointer;
-}
+  /* Lock viewport and scroll inside app shell for dashboard layout */
+  body:has(.app-shell) {
+    overflow: hidden !important;
+  }
+  #root:has(.app-shell) {
+    height: 100vh !important;
+    overflow: hidden !important;
+  }
 
-input,
-select,
-textarea {
-  font-family: inherit;
+  button {
+    font-family: inherit;
+    cursor: pointer;
+  }
+
+  input,
+  select,
+  textarea {
+    font-family: inherit;
+  }
 }
 
 /* Scrollbar Styling */

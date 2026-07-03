@@ -70,16 +70,23 @@ export default function PricingPage() {
     }
   };
 
+
   return (
-    <div className="dark bg-[var(--bg-dark)] min-h-screen text-on-surface font-['Manrope'] antialiased">
+    <div className="dark:bg-[#0c1321] bg-slate-50 min-h-screen overflow-y-auto text-slate-800 dark:text-slate-100 font-sans antialiased scroll-smooth pb-12">
+      {/* Background blobs for premium dark/light glow */}
+      <div className="absolute inset-0 pointer-events-none overflow-hidden z-0">
+        <div className="absolute top-[-10%] left-[-20%] w-[600px] h-[600px] rounded-full bg-emerald-500/10 blur-[120px] dark:bg-emerald-500/5" />
+        <div className="absolute top-[20%] right-[-10%] w-[500px] h-[500px] rounded-full bg-indigo-500/10 blur-[100px] dark:bg-indigo-500/5" />
+      </div>
+
       {/* Header */}
-      <header className="fixed top-0 w-full z-50 flex justify-between items-center px-6 py-3 bg-[var(--bg-dark)]/90 backdrop-blur-md border-b border-[var(--surface)] shadow-xl">
+      <header className="fixed top-0 w-full z-50 flex justify-between items-center px-6 py-4 bg-white/85 dark:bg-[#0c1321]/90 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-800/55 shadow-sm">
         <div className="flex items-center gap-3">
           <button
             onClick={() => navigate("/")}
-            className="p-2 rounded-lg hover:bg-[var(--surface)] transition-colors"
+            className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-100 transition-colors cursor-pointer"
           >
-            <ArrowLeft className="w-5 h-5 text-on-surface-variant" />
+            <ArrowLeft className="w-5 h-5" />
           </button>
           <img
             src="/viyan_logo.webp"
@@ -91,14 +98,14 @@ export default function PricingPage() {
           {user ? (
             <button
               onClick={() => navigate("/dashboard")}
-              className="lp-btn-ghost text-sm"
+              className="text-sm px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-200 hover:border-emerald-500 dark:hover:border-emerald-400 hover:text-emerald-500 dark:hover:text-emerald-400 transition-all cursor-pointer font-semibold bg-white dark:bg-[#151b2a]"
             >
               Dashboard
             </button>
           ) : (
             <button
               onClick={() => navigate("/login")}
-              className="lp-btn-ghost text-sm"
+              className="text-sm px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-200 hover:border-emerald-500 dark:hover:border-emerald-400 hover:text-emerald-500 dark:hover:text-emerald-400 transition-all cursor-pointer font-semibold bg-white dark:bg-[#151b2a]"
             >
               Log In
             </button>
@@ -107,97 +114,113 @@ export default function PricingPage() {
       </header>
 
       {/* Main Content */}
-      <main className="pt-28 pb-16 px-6 max-w-6xl mx-auto">
+      <main className="relative pt-32 pb-24 px-6 max-w-6xl mx-auto flex flex-col justify-center min-h-screen z-10">
         {/* Header Section */}
-        <div className="text-center mb-12">
-          <span className="text-[10px] font-bold text-primary uppercase tracking-[0.3em] mb-3 block">
+        <div className="text-center mb-16">
+          <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-[0.3em] mb-4 block">
             Choose Your Plan
           </span>
-          <h1 className="text-4xl md:text-5xl font-extrabold text-on-surface mb-3 tracking-tight">
+          <h1 className="text-4xl md:text-5xl lg:text-6xl font-black text-slate-900 dark:text-white mb-6 tracking-tight leading-tight">
             Select the Right Plan
             <br />
-            <span className="text-primary">for Your Pharmacy</span>
+            <span className="text-emerald-600 dark:text-emerald-400">for Your Pharmacy</span>
           </h1>
-          <p className="text-base text-on-surface-variant max-w-xl mx-auto opacity-80">
-            Start with a free trial, then choose a plan that fits your business.
+          <p className="text-base md:text-lg text-slate-500 dark:text-slate-400 max-w-xl mx-auto leading-relaxed">
+            Start with a 28-day free trial, then choose a plan that fits your business.
             Upgrade or downgrade anytime.
           </p>
         </div>
 
         {/* Plan Cards Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-3xl mx-auto w-full">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto w-full px-4 items-stretch">
           {PLANS.map((plan) => {
             const Icon = plan.icon;
             return (
               <div
                 key={plan.id}
-                className={`relative bg-[var(--surface-container)]/50 backdrop-blur-sm border rounded-2xl p-6 flex flex-col transition-all hover:shadow-2xl group ${
+                className={`relative flex flex-col justify-between bg-white dark:bg-[#151b2a] border rounded-3xl p-8 md:p-10 transition-all duration-300 hover:translate-y-[-6px] hover:shadow-2xl group ${
                   plan.highlight
-                    ? "border-primary/60 hover:shadow-primary/10"
-                    : "border-[var(--surface)] hover:border-primary/30 hover:shadow-primary/5"
+                    ? "border-emerald-500 shadow-[0_10px_30px_rgba(16,185,129,0.08)] dark:shadow-[0_10px_30px_rgba(79,219,200,0.05)]"
+                    : "border-slate-200 dark:border-slate-800/80 shadow-[0_4px_20px_rgba(0,0,0,0.02)]"
                 }`}
               >
                 {plan.badge && (
                   <div
-                    className={`absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full text-[9px] font-bold tracking-widest uppercase ${
+                    className={`absolute -top-3.5 left-1/2 -translate-x-1/2 px-4 py-1.5 rounded-full text-[10px] font-black tracking-widest uppercase shadow-sm ${
                       plan.highlight
-                        ? "bg-primary text-black"
-                        : "bg-[var(--surface)] text-on-surface-variant"
+                        ? "bg-emerald-500 text-white"
+                        : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300"
                     }`}
                   >
                     {plan.badge}
                   </div>
                 )}
 
-                <div className="mb-5">
-                  <div className="p-3 bg-[var(--surface)] rounded-xl border border-[var(--surface)] w-fit mb-4">
-                    <Icon className="w-6 h-6 text-primary" />
+                <div>
+                  {/* Icon & Title */}
+                  <div className="flex items-center gap-4 mb-6">
+                    <div className="p-3 bg-slate-50 dark:bg-slate-800/60 rounded-2xl border border-slate-100 dark:border-slate-700/40 transition-transform group-hover:scale-110">
+                      <Icon className="w-6 h-6 text-emerald-600 dark:text-emerald-400" />
+                    </div>
+                    <div>
+                      <h3 className="text-2xl font-bold text-slate-900 dark:text-white">
+                        {plan.name}
+                      </h3>
+                      <p className="text-xs text-slate-400 dark:text-slate-500 uppercase tracking-wider font-semibold">
+                        {plan.price === 0 ? "Free Access" : "Paid Subscription"}
+                      </p>
+                    </div>
                   </div>
-                  <h3 className="text-xl font-bold text-on-surface mb-1">
-                    {plan.name}
-                  </h3>
-                  <p className="text-sm text-on-surface-variant leading-relaxed">
+
+                  {/* Description */}
+                  <p className="text-sm text-slate-500 dark:text-slate-400 leading-relaxed mb-6">
                     {plan.description}
                   </p>
-                </div>
 
-                <div className="mb-5">
-                  <div className="flex items-baseline gap-1">
-                    <span className="text-3xl font-extrabold text-on-surface">
-                      {plan.price === 0 ? "Free" : `₹${plan.price}`}
-                    </span>
-                    {plan.price > 0 && (
-                      <span className="text-sm text-on-surface-variant">
+                  {/* Price */}
+                  <div className="mb-8 pb-8 border-b border-slate-100 dark:border-slate-800/60">
+                    <div className="flex items-baseline gap-1">
+                      <span className="text-4xl md:text-5xl font-black text-slate-900 dark:text-white tracking-tight">
+                        {plan.price === 0 ? "Free" : `₹${plan.price}`}
+                      </span>
+                      {plan.price > 0 && (
+                        <span className="text-base text-slate-400 dark:text-slate-500 font-semibold">
+                          {plan.duration}
+                        </span>
+                      )}
+                    </div>
+                    {plan.price === 0 && (
+                      <span className="text-xs text-slate-400 dark:text-slate-500 font-semibold mt-1 block">
                         {plan.duration}
                       </span>
                     )}
                   </div>
-                  {plan.price === 0 && (
-                    <span className="text-xs text-on-surface-variant">
-                      {plan.duration}
-                    </span>
-                  )}
-                </div>
 
-                <div className="space-y-2.5 mb-8 flex-grow">
-                  {plan.features.map((feature, i) => (
-                    <div key={i} className="flex items-center gap-2.5">
-                      <div className="w-4 h-4 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-                        <Check className="w-2.5 h-2.5 text-primary" />
+                  {/* Features */}
+                  <div className="space-y-4 mb-10">
+                    <p className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
+                      Included Features
+                    </p>
+                    {plan.features.map((feature, i) => (
+                      <div key={i} className="flex items-start gap-3">
+                        <div className="w-5 h-5 rounded-full bg-emerald-500/10 dark:bg-emerald-500/15 flex items-center justify-center flex-shrink-0 mt-0.5">
+                          <Check className="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
+                        </div>
+                        <span className="text-sm text-slate-600 dark:text-slate-300 leading-tight">
+                          {feature}
+                        </span>
                       </div>
-                      <span className="text-sm text-on-surface-variant">
-                        {feature}
-                      </span>
-                    </div>
-                  ))}
+                    ))}
+                  </div>
                 </div>
 
+                {/* Button */}
                 <button
                   onClick={() => handleSelectPlan(plan.id)}
-                  className={`w-full py-3 px-4 rounded-xl font-semibold text-sm transition-all ${
+                  className={`w-full py-4 px-6 rounded-2xl font-bold text-sm transition-all duration-300 cursor-pointer shadow-md ${
                     plan.highlight
-                      ? "bg-primary text-black hover:shadow-lg hover:shadow-primary/20"
-                      : "bg-[var(--surface)] text-on-surface hover:bg-primary/10 border border-[var(--surface)] hover:border-primary/30"
+                      ? "bg-emerald-500 text-white hover:bg-emerald-600 hover:shadow-[0_8px_24px_rgba(16,185,129,0.25)] hover:scale-[1.01]"
+                      : "bg-slate-50 dark:bg-slate-800/40 text-slate-700 dark:text-slate-200 hover:bg-emerald-500 hover:text-white dark:hover:bg-emerald-500 dark:hover:text-white border border-slate-200 dark:border-slate-700/60"
                   }`}
                 >
                   {plan.price === 0
@@ -210,10 +233,9 @@ export default function PricingPage() {
         </div>
 
         {/* Bottom Note */}
-        <div className="text-center mt-10">
-          <p className="text-sm text-on-surface-variant opacity-70">
-            All plans include a 28-day free trial. No credit card required to
-            start. Cancel anytime.
+        <div className="text-center mt-16">
+          <p className="text-sm text-slate-400 dark:text-slate-500 opacity-90 max-w-md mx-auto leading-relaxed">
+            All plans include a 28-day free trial. No credit card required to start. Cancel anytime.
           </p>
         </div>
       </main>
