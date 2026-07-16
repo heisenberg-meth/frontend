@@ -195,31 +195,61 @@ export default function SupplierReturns({ showToast }) {
     [notify, page],
   );
 
+  const loadSuppliers = useCallback(async () => {
+    try {
+      const res = await api.get(API_ROUTES.SUPPLIERS);
+      const payload = res.data;
+      const suppliersList =
+        payload?.data?.suppliers ??
+        payload?.data ??
+        payload?.suppliers ??
+        payload ??
+        [];
+      setSuppliers(Array.isArray(suppliersList) ? suppliersList : []);
+    } catch (err) {
+      console.error("Failed to load suppliers", err);
+      notify(getErrorMessage(err) || "Failed to load suppliers", "error");
+      setSuppliers([]);
+    }
+  }, [notify]);
+
   const fetchExpiredData = useCallback(async () => {
     setLoading(true);
     try {
-      const [returnsRes, creditRes, groupRes, sumRes, supRes] =
+      const [returnsRes, creditRes, groupRes, sumRes] =
         await Promise.all([
           getSupplierReturns({ page: 1, limit: 10 }),
           getCreditNotes({ page: 1, limit: 10 }),
           getExpiredGroupedBySupplier(),
           getExpiredInventorySummary(),
-          api.get(API_ROUTES.SUPPLIERS).catch(() => ({ data: { data: [] } })),
         ]);
 
       setReturns(returnsRes.data?.data?.returns || []);
       setCreditNotes(creditRes.data?.data?.notes || []);
       setExpiredBySupplier(groupRes.data?.data || []);
       setExpiredSummary(sumRes.data?.data);
-
-      const supData = supRes.data?.data?.suppliers || supRes.data?.data || [];
-      setSuppliers(supData);
     } catch (err) {
       notify(getErrorMessage(err) || "Failed to load expired data", "error");
     } finally {
       setLoading(false);
     }
   }, [notify]);
+
+  useEffect(() => {
+    const initSuppliers = async () => {
+      await loadSuppliers();
+    };
+    initSuppliers();
+  }, [loadSuppliers]);
+
+  useEffect(() => {
+    if (showCreateModal) {
+      const fetchModalSuppliers = async () => {
+        await loadSuppliers();
+      };
+      fetchModalSuppliers();
+    }
+  }, [showCreateModal, loadSuppliers]);
 
   const loadEligibleBatches = async (supplierId, reason) => {
     if (!supplierId || !reason) {
@@ -429,8 +459,8 @@ export default function SupplierReturns({ showToast }) {
               style={{
                 padding: "14px 16px",
                 borderRadius: "10px",
-                background: "var(--card-bg, white)",
-                border: "1px solid var(--border-color)",
+                background: "var(--bg-card)",
+                border: "1px solid var(--border)",
               }}
             >
               <div

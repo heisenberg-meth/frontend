@@ -119,7 +119,7 @@ const PLANS = [
   },
   {
     name: "Professional",
-    price: "₹2,999",
+    price: "₹599",
     duration: "/month",
     sub: "For growing pharmacies that need more power.",
     highlight: true,
@@ -368,7 +368,7 @@ export default function LandingPage() {
             <button
               className="lp-btn-ghost"
               id="nav-login-btn"
-              onClick={() => navigate("/pricing")}
+              onClick={() => navigate("/login")}
             >
               Log In
             </button>

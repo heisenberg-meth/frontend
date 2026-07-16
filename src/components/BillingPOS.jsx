@@ -266,6 +266,7 @@ export default function BillingPOS({
   const [loyaltyProfile, setLoyaltyProfile] = useState(null);
   const [returnReason, setReturnReason] = useState("Customer Request");
   const [returnNotes, setReturnNotes] = useState("");
+  const [processingReturn, setProcessingReturn] = useState(false);
   useEffect(() => {
     localStorage.setItem(
       `currentBillingItems_${userKey}`,
@@ -443,16 +444,6 @@ export default function BillingPOS({
     month: "short",
     year: "numeric",
   });
-  const returnAmount = useMemo(() => {
-    const items = resolveInvoiceItems(selectedBill || {}).map(
-      normalizeInvoiceItem,
-    );
-    return Object.entries(returnItems).reduce((acc, [idx, qty]) => {
-      const item = items[idx];
-      return acc + (qty || 0) * (item?.price || 0);
-    }, 0);
-  }, [returnItems, selectedBill]);
-
   const addToLineItems = (med) => {
     if (med.availableStock <= 0 || med.isOutOfStock) {
       showToast("Medicine out of stock", "error");
@@ -789,6 +780,10 @@ ${printDiscount > 0 ? `<div style="display:flex;justify-content:space-between"><
   };
 
   const confirmReturn = async () => {
+    if (processingReturn) return;
+
+    setProcessingReturn(true);
+
     try {
       const invoiceId = selectedBill.id;
       const itemsList =
@@ -816,9 +811,17 @@ ${printDiscount > 0 ? `<div style="display:flex;justify-content:space-between"><
       const res = await api.post(`billing/invoices/${invoiceId}/refund`, {
         items: returnPayload,
         reason: returnReason || "Customer Request",
-        refundAmount: returnAmount,
       });
-      if (res.data?.success || res.data?.data) {
+      if (res.data?.success || res.data?.data || res.data) {
+        const refund =
+          res.data?.data?.actualRefundAmount ??
+          res.data?.actualRefundAmount ??
+          res.data?.data?.refundAmount ??
+          res.data?.refundAmount ??
+          res.data?.data?.totalRefundAmount ??
+          res.data?.totalRefundAmount ??
+          0;
+
         setBills((prev) =>
           prev.map((b) =>
             b.id === selectedBill.id ? { ...b, status: "RETURNED" } : b,
@@ -827,7 +830,10 @@ ${printDiscount > 0 ? `<div style="display:flex;justify-content:space-between"><
         setReturnsCount((c) => c + 1);
         setShowReturnBillModal(false);
         setSelectedBill(null);
-        showToast("Return processed successfully", "success");
+        showToast(
+          `Return processed successfully. Refund: ₹${Number(refund).toFixed(2)}`,
+          "success",
+        );
         window.dispatchEvent(new CustomEvent("dashboard:refresh"));
       }
     } catch (err) {
@@ -836,6 +842,8 @@ ${printDiscount > 0 ? `<div style="display:flex;justify-content:space-between"><
         err.response?.data?.error || "Failed to process return",
         "error",
       );
+    } finally {
+      setProcessingReturn(false);
     }
   };
 
@@ -951,12 +959,6 @@ ${printDiscount > 0 ? `<div style="display:flex;justify-content:space-between"><
             onClick={() => navigate("/analytics")}
           >
             <History size={16} /> Sales History
-          </button>
-          <button
-            className="pos-btn outline"
-            onClick={() => setShowReturnModal(true)}
-          >
-            <RefreshCw size={16} /> Returns
           </button>
           <button className="pos-btn teal" onClick={resetBillForm}>
             <Receipt size={18} /> + New Bill
@@ -2485,32 +2487,35 @@ ${printDiscount > 0 ? `<div style="display:flex;justify-content:space-between"><
                   <span>Return Amount</span>
                   <span
                     style={{
-                      fontWeight: 800,
-                      color: "var(--danger)",
-                      fontSize: "18px",
+                      fontWeight: 700,
+                      color: "var(--text-secondary)",
+                      fontSize: "14px",
                     }}
                   >
-                    ₹{safeNumber(returnAmount).toFixed(2)}
+                    Calculated by server
                   </span>
                 </div>
               </div>
               <div className="stock-modal-footer">
                 <button
                   className="pos-btn outline"
+                  disabled={processingReturn}
                   onClick={() => setShowReturnBillModal(false)}
                 >
                   Cancel
                 </button>
                 <button
                   className="pos-btn outline"
+                  disabled={processingReturn}
                   style={{
                     background: "var(--danger)",
                     color: "white",
                     border: "none",
+                    opacity: processingReturn ? 0.6 : 1,
                   }}
                   onClick={confirmReturn}
                 >
-                  Process Return
+                  {processingReturn ? "Processing..." : "Process Return"}
                 </button>
               </div>
             </motion.div>
@@ -2802,25 +2807,28 @@ ${printDiscount > 0 ? `<div style="display:flex;justify-content:space-between"><
                         return;
                       }
 
+                      if (processingReturn) return;
+                      setProcessingReturn(true);
                       try {
-                        await api.post(
+                        const res = await api.post(
                           `billing/invoices/${returnModalSelectedBill.id}/refund`,
                           {
                             items: returnPayload,
                             reason: returnModalReason,
-                            refundAmount: returnPayload.reduce(
-                              (acc, r) =>
-                                acc +
-                                r.quantity *
-                                  (items.find(
-                                    (i) =>
-                                      (i.medicineId || i.id) === r.medicineId,
-                                  )?.price || 0),
-                              0,
-                            ),
                           },
                         );
-                        showToast("Return processed successfully", "success");
+                        const refund =
+                          res.data?.data?.actualRefundAmount ??
+                          res.data?.actualRefundAmount ??
+                          res.data?.data?.refundAmount ??
+                          res.data?.refundAmount ??
+                          res.data?.data?.totalRefundAmount ??
+                          res.data?.totalRefundAmount ??
+                          0;
+                        showToast(
+                          `Return processed successfully. Refund: ₹${Number(refund).toFixed(2)}`,
+                          "success",
+                        );
                         setShowReturnModal(false);
                         setReturnModalSelectedBill(null);
                         setReturnSearchQuery("");
@@ -2833,10 +2841,12 @@ ${printDiscount > 0 ? `<div style="display:flex;justify-content:space-between"><
                             "Failed to process return",
                           "error",
                         );
+                      } finally {
+                        setProcessingReturn(false);
                       }
                     }}
                   >
-                    Process Return
+                    {processingReturn ? "Processing..." : "Process Return"}
                   </button>
                 )}
               </div>

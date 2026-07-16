@@ -123,11 +123,13 @@ export default function PricingPage() {
           <h1 className="text-4xl md:text-5xl lg:text-6xl font-black text-slate-900 dark:text-white mb-6 tracking-tight leading-tight">
             Select the Right Plan
             <br />
-            <span className="text-emerald-600 dark:text-emerald-400">for Your Pharmacy</span>
+            <span className="text-emerald-600 dark:text-emerald-400">
+              for Your Pharmacy
+            </span>
           </h1>
           <p className="text-base md:text-lg text-slate-500 dark:text-slate-400 max-w-xl mx-auto leading-relaxed">
-            Start with a 28-day free trial, then choose a plan that fits your business.
-            Upgrade or downgrade anytime.
+            Start with a 28-day free trial, then choose a plan that fits your
+            business. Upgrade or downgrade anytime.
           </p>
         </div>
 
@@ -235,7 +237,8 @@ export default function PricingPage() {
         {/* Bottom Note */}
         <div className="text-center mt-16">
           <p className="text-sm text-slate-400 dark:text-slate-500 opacity-90 max-w-md mx-auto leading-relaxed">
-            All plans include a 28-day free trial. No credit card required to start. Cancel anytime.
+            All plans include a 28-day free trial. No credit card required to
+            start. Cancel anytime.
           </p>
         </div>
       </main>

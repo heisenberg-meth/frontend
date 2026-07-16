@@ -275,6 +275,8 @@ export default function PnLReport({ from, to, showToast }) {
                     category: expenseCategory,
                     amount: safeNumber(expenseAmount),
                     description: expenseDescription || undefined,
+                    hasReceipt: Boolean(receiptFile),
+                    attachmentUrl: receiptFile?.name || null,
                   });
                   showToast("Expense Saved", "success");
                   setShowExpenseModal(false);
@@ -283,10 +285,16 @@ export default function PnLReport({ from, to, showToast }) {
                   setReceiptFile(null);
                   fetchPnL();
                 } catch (err) {
-                  showToast(
-                    err.response?.data?.error || "Failed to save expense",
-                    "error",
-                  );
+                  const errData = err.response?.data;
+                  const errorObj = errData?.error;
+                  const details = errorObj?.details || errData?.errors || [];
+                  if (Array.isArray(details) && details.length > 0) {
+                    const firstErr = details[0];
+                    showToast(`Validation Error (${firstErr.field}): ${firstErr.message}`, "error");
+                  } else {
+                    const msg = typeof errorObj === "object" ? errorObj.message : errorObj || errData?.message || err.message || "Failed to save expense";
+                    showToast(msg, "error");
+                  }
                 } finally {
                   setExpenseSaving(false);
                 }

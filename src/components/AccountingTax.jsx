@@ -52,8 +52,12 @@ export default function AccountingTax({ showToast }) {
     try {
       const res = await getAccountingData();
       const data = res.data.data || res.data;
-      if (data?.expenses)
-        setExpenses(Array.isArray(data.expenses) ? data.expenses : []);
+      const expensesList = Array.isArray(data?.expenses)
+        ? data.expenses
+        : Array.isArray(data)
+          ? data
+          : [];
+      setExpenses(expensesList);
       if (data?.gst) setGstData(Array.isArray(data.gst) ? data.gst : []);
     } catch {
       showToast("Failed to load accounting data", "error");
@@ -75,7 +79,12 @@ export default function AccountingTax({ showToast }) {
 
         const data = res.data.data || res.data;
 
-        setExpenses(Array.isArray(data?.expenses) ? data.expenses : []);
+        const expensesList = Array.isArray(data?.expenses)
+          ? data.expenses
+          : Array.isArray(data)
+            ? data
+            : [];
+        setExpenses(expensesList);
 
         setGstData(Array.isArray(data?.gst) ? data.gst : []);
       } catch {
@@ -130,7 +139,16 @@ export default function AccountingTax({ showToast }) {
         receipt: false,
       });
     } catch (err) {
-      showToast(err.response?.data?.error || "Failed to save expense", "error");
+      const errData = err.response?.data;
+      const errorObj = errData?.error;
+      const details = errorObj?.details || errData?.errors || [];
+      if (Array.isArray(details) && details.length > 0) {
+        const firstErr = details[0];
+        showToast(`Validation Error (${firstErr.field}): ${firstErr.message}`, "error");
+      } else {
+        const msg = typeof errorObj === "object" ? errorObj.message : errorObj || errData?.message || err.message || "Failed to save expense";
+        showToast(msg, "error");
+      }
     } finally {
       setSaving(false);
     }
@@ -350,8 +368,10 @@ export default function AccountingTax({ showToast }) {
                     filteredExpenses.map((e) => (
                       <tr key={e.id}>
                         <td>
-                          {e.date
-                            ? new Date(e.date).toLocaleDateString("en-IN", {
+                          {e.date || e.expenseDate
+                            ? new Date(
+                                e.date || e.expenseDate,
+                              ).toLocaleDateString("en-IN", {
                                 day: "numeric",
                                 month: "short",
                               })
@@ -359,16 +379,18 @@ export default function AccountingTax({ showToast }) {
                         </td>
                         <td>
                           <span className="acc-cat-badge">
-                            {e.category || "—"}
+                            {typeof e.category === "object"
+                              ? e.category?.name || "—"
+                              : e.category || "—"}
                           </span>
                         </td>
-                        <td>{e.description || "—"}</td>
+                        <td>{e.description || e.notes || e.title || "—"}</td>
                         <td style={{ fontWeight: 700 }}>
                           ₹{(e.amount || 0).toLocaleString("en-IN")}
                         </td>
                         <td>{e.paymentMethod || e.via || "—"}</td>
                         <td>
-                          {e.hasReceipt || e.receipt ? (
+                          {e.hasReceipt || e.receipt || e.attachmentUrl ? (
                             <CheckCircle
                               size={16}
                               style={{ color: "var(--success)" }}
