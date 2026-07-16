@@ -170,7 +170,14 @@ export default function AppRoutes({
         />
 
         {/* Public Checkout Route (Desktop Payment Flow) */}
-        <Route path="/checkout" element={<Navigate to="/payment" replace />} />
+        <Route
+          path="/checkout"
+          element={
+            <PageErrorBoundary>
+              <CheckoutPage />
+            </PageErrorBoundary>
+          }
+        />
 
         {/* Public Legal Routes */}
         <Route path="/legal" element={<LegalPages showBackButton={false} />} />
