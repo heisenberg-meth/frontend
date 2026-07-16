@@ -11,6 +11,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import api from "../../api.js";
 import { API_ROUTES } from "../../constants/api.routes.js";
 import { safeNumber } from '../../utils/number.js';
+import { SUPPORTED_EXPENSE_CATEGORIES } from "../../constants/expenseCategories.js";
 
 
 export default function PnLReport({ from, to, showToast }) {
@@ -18,10 +19,11 @@ export default function PnLReport({ from, to, showToast }) {
   const [errorState, setErrorState] = useState(null);
   const [data, setData] = useState(null);
   const [showExpenseModal, setShowExpenseModal] = useState(false);
-  const [expenseCategory, setExpenseCategory] = useState("Salary");
+  const [expenseCategory, setExpenseCategory] = useState("");
   const [expenseAmount, setExpenseAmount] = useState("");
   const [expenseDescription, setExpenseDescription] = useState("");
   const [expenseSaving, setExpenseSaving] = useState(false);
+
   const [receiptFile, setReceiptFile] = useState(null);
 
   const fetchPnL = useCallback(async () => {
@@ -174,10 +176,12 @@ export default function PnLReport({ from, to, showToast }) {
                   value={expenseCategory}
                   onChange={(e) => setExpenseCategory(e.target.value)}
                 >
-                  <option>Salary</option>
-                  <option>Rent</option>
-                  <option>Utilities</option>
-                  <option>Maintenance</option>
+                  <option value="">-- Select Category --</option>
+                  {SUPPORTED_EXPENSE_CATEGORIES.map((c) => (
+                    <option key={c} value={c}>
+                      {c}
+                    </option>
+                  ))}
                 </select>
               </div>
               <div className="pos-input-group">
@@ -263,8 +267,12 @@ export default function PnLReport({ from, to, showToast }) {
             <button
               className="pos-btn teal"
               style={{ flex: 2 }}
-              disabled={expenseSaving || !expenseAmount}
+              disabled={expenseSaving || !expenseAmount || !expenseCategory}
               onClick={async () => {
+                if (!expenseCategory) {
+                  showToast("Please select a category", "error");
+                  return;
+                }
                 if (!expenseAmount || safeNumber(expenseAmount) <= 0) {
                   showToast("Enter a valid amount", "error");
                   return;
@@ -290,9 +298,18 @@ export default function PnLReport({ from, to, showToast }) {
                   const details = errorObj?.details || errData?.errors || [];
                   if (Array.isArray(details) && details.length > 0) {
                     const firstErr = details[0];
-                    showToast(`Validation Error (${firstErr.field}): ${firstErr.message}`, "error");
+                    showToast(
+                      `Validation Error (${firstErr.field}): ${firstErr.message}`,
+                      "error",
+                    );
                   } else {
-                    const msg = typeof errorObj === "object" ? errorObj.message : errorObj || errData?.message || err.message || "Failed to save expense";
+                    const msg =
+                      typeof errorObj === "object"
+                        ? errorObj.message
+                        : errorObj ||
+                          errData?.message ||
+                          err.message ||
+                          "Failed to save expense";
                     showToast(msg, "error");
                   }
                 } finally {

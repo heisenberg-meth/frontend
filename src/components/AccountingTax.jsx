@@ -23,6 +23,7 @@ import {
   updateExpense,
   deleteExpense,
 } from "../services/reports.service";
+import { SUPPORTED_EXPENSE_CATEGORIES } from "../constants/expenseCategories.js";
 function Spinner({ size = 14 }) {
   return (
     <Loader2 size={size} style={{ animation: "spin 0.8s linear infinite" }} />
@@ -615,17 +616,11 @@ export default function AccountingTax({ showToast }) {
                       })
                     }
                   >
-                    <option value="">Select</option>
-                    {[
-                      "Rent",
-                      "Utilities",
-                      "Salary",
-                      "Supplies",
-                      "Maintenance",
-                      "Insurance",
-                      "Misc",
-                    ].map((c) => (
-                      <option key={c}>{c}</option>
+                    <option value="">Select Category</option>
+                    {SUPPORTED_EXPENSE_CATEGORIES.map((c) => (
+                      <option key={c} value={c}>
+                        {c}
+                      </option>
                     ))}
                   </select>
                 </div>

@@ -1340,7 +1340,13 @@ export default function ExpiryBatchIntelligence({ showToast }) {
                             ) : null}
                           </td>
                           <td>
-                            <div style={{ fontWeight: 700 }}>
+                            <div
+                              style={{
+                                fontWeight: 700,
+                                fontSize: "14px",
+                                color: "var(--text)",
+                              }}
+                            >
                               {b.med}
                               {b.discountApplied && (
                                 <span
@@ -1351,14 +1357,25 @@ export default function ExpiryBatchIntelligence({ showToast }) {
                                 </span>
                               )}
                             </div>
-                            <div className="result-meta">{b.supplier}</div>
+                            {b.manufacturer && (
+                              <div className="result-meta">
+                                {b.manufacturer}
+                              </div>
+                            )}
                           </td>
-                          <td className="result-meta">{b.batchNumber}</td>
                           <td
-                            className="result-meta"
                             style={{
                               fontWeight: 600,
-                              color: "var(--text-main)",
+                              fontFamily: "Outfit",
+                              color: "var(--text)",
+                            }}
+                          >
+                            {b.batchNumber}
+                          </td>
+                          <td
+                            style={{
+                              fontWeight: 600,
+                              color: "var(--text-muted)",
                             }}
                           >
                             {b.supplier}

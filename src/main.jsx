@@ -32,26 +32,46 @@ import App from "./App.jsx";
 import { safeNumber } from './utils/number.js';
 
 
-// Global logging to catch chunk load errors and unhandled promise rejections
-window.addEventListener("unhandledrejection", (event) => {
-  console.error("[Global Error] Unhandled Promise Rejection:", event.reason);
-});
-
-window.addEventListener("error", (event) => {
-  const msg = event.message || "";
+// Global logging and self-healing auto-reload when Vite/React chunk loading fails (e.g., after deployment or asset hash change)
+const handleDynamicModuleError = (errorMsg) => {
+  const msg = typeof errorMsg === "string" ? errorMsg : errorMsg?.message || "";
   if (
     msg.includes("Failed to fetch dynamically imported module") ||
-    msg.includes("ChunkLoadError")
+    msg.includes("error loading dynamically imported module") ||
+    msg.includes("disallowed MIME type") ||
+    msg.includes("ChunkLoadError") ||
+    msg.includes("Loading module from")
   ) {
     console.error(
-      "[Global Error] Chunk Load Error detected. Reloading page...",
+      "[Global Error] Dynamic import/Chunk Load Error detected. Reloading page to fetch latest build...",
     );
     const lastReload = sessionStorage.getItem("chunk_reload");
     if (!lastReload || Date.now() - safeNumber(lastReload) > 10000) {
       sessionStorage.setItem("chunk_reload", Date.now().toString());
       window.location.reload();
+      return true;
     }
   }
+  return false;
+};
+
+window.addEventListener("vite:preloadError", (event) => {
+  event.preventDefault();
+  handleDynamicModuleError(
+    event.payload || "error loading dynamically imported module",
+  );
+});
+
+window.addEventListener("unhandledrejection", (event) => {
+  if (handleDynamicModuleError(event.reason)) {
+    event.preventDefault();
+    return;
+  }
+  console.error("[Global Error] Unhandled Promise Rejection:", event.reason);
+});
+
+window.addEventListener("error", (event) => {
+  handleDynamicModuleError(event.message || event.error);
 });
 
 createRoot(document.getElementById("root")).render(
