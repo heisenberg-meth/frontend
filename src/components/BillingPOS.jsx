@@ -19,6 +19,8 @@ import {
   Save,
   Eye,
   Loader2,
+  Play,
+  Trash2,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -244,8 +246,8 @@ export default function BillingPOS({
   const [draftSaving, setDraftSaving] = useState(false);
   const [draftSaved, setDraftSaved] = useState(false);
   const [draftError, setDraftError] = useState("");
+  const [editingDraft, setEditingDraft] = useState(null);
   const [, setPrintLoading] = useState(false);
-
   const [phoneFieldError, setPhoneFieldError] = useState("");
   const [findError, setFindError] = useState("");
   const [showAllBillsModal, setShowAllBillsModal] = useState(false);
@@ -507,6 +509,7 @@ export default function BillingPOS({
   };
 
   const resetBillForm = useCallback(() => {
+    setEditingDraft(null);
     setLineItems([]);
     setPatient({ id: null, name: "", phone: "" });
     setDiscount(0);
@@ -561,17 +564,37 @@ export default function BillingPOS({
         isDraft: true,
         branchId: user.branchId,
       };
-      const res = await api.post("billing/invoices/draft", payload);
-      const saved = res.data?.data || res.data;
-      if (saved?.id) {
-        const normalizedDraft = {
-          ...normalizeInvoice(saved),
-          status: "DRAFT",
-          time: "Just now",
-          timeline: ["Draft Created"],
-        };
-        setBills((prev) => [normalizedDraft, ...prev]);
-        showToast(`Draft saved — ${saved.id}`, "success");
+      let saved;
+      if (editingDraft) {
+        const res = await api.put(`${API_ROUTES.BILLING_INVOICES}/${editingDraft.id}`, payload);
+        saved = res.data?.data || res.data;
+        if (saved?.id) {
+          const normalizedDraft = {
+            ...normalizeInvoice(saved),
+            status: "DRAFT",
+            time: "Updated just now",
+          };
+          setBills((prev) => prev.map((b) => (b.id === saved.id ? normalizedDraft : b)));
+          showToast(`Draft updated — ${saved.invoiceNumber || saved.id}`, "success");
+        }
+      } else {
+        const res = await api.post("billing/invoices/draft", payload);
+        saved = res.data?.data || res.data;
+        if (saved?.id) {
+          const normalizedDraft = {
+            ...normalizeInvoice(saved),
+            status: "DRAFT",
+            time: "Just now",
+            timeline: ["Draft Created"],
+          };
+          setBills((prev) => [normalizedDraft, ...prev]);
+          showToast(`Draft saved — ${saved.invoiceNumber || saved.id}`, "success");
+          setEditingDraft({
+            id: saved.id,
+            invoiceNumber: saved.invoiceNumber || saved.id,
+            createdAt: saved.createdAt || new Date().toISOString(),
+          });
+        }
       }
       setDraftSaved(true);
       setTimeout(() => setDraftSaved(false), 1500);
@@ -596,7 +619,78 @@ export default function BillingPOS({
     discountPercentage,
     discountAmount,
     paymentMode,
+    editingDraft,
   ]);
+
+  const handleResumeDraftClick = useCallback(async (bill) => {
+    try {
+      const res = await api.get(`${API_ROUTES.BILLING_INVOICES}/${bill.id}`);
+      const invoice = res.data?.data || res.data;
+      if (!invoice) {
+        showToast("Draft invoice not found", "error");
+        return;
+      }
+
+      setPatient({
+        id: invoice.patientId || null,
+        name: invoice.patientName || invoice.customerName || (invoice.patientId ? "" : "Walk-in Customer"),
+        phone: invoice.patientPhone || invoice.customerPhone || "",
+      });
+      setIsWalkIn(!invoice.patientId || invoice.patientName === "Walk-in Customer");
+
+      const loadedItems = (invoice.items || []).map((it) => ({
+        id: it.medicineId || it.id,
+        name: it.medicine?.name || it.medicineName || it.name || "Medicine",
+        batchId: it.batchId || null,
+        qty: Number(it.quantity || it.qty || 1),
+        price: Number(it.unitPrice || it.price || 0),
+        gst: Number(it.gstPercentage || it.gst || 0),
+        mrp: Number(it.unitPrice || it.mrp || 0),
+      }));
+      setLineItems(loadedItems);
+      setDiscount(Number(invoice.discountPercentage || 0));
+      setPaymentMode(invoice.paymentMethod || "CASH");
+      setEditingDraft({
+        id: invoice.id,
+        invoiceNumber: invoice.invoiceNumber || invoice.id,
+        createdAt: invoice.createdAt || bill.createdAt || new Date().toISOString(),
+      });
+      setShowAllBillsModal(false);
+      showToast(`Resumed draft — ${invoice.invoiceNumber || invoice.id}`, "success");
+    } catch (err) {
+      console.error("[DRAFT] Resume failed:", err);
+      showToast(err.response?.data?.error || "Failed to resume draft", "error");
+    }
+  }, [showToast]);
+
+  const handleDeleteDraftConfirm = useCallback(async (bill) => {
+    if (!window.confirm(`Are you sure you want to delete draft ${bill.invoiceNumber || bill.id}?`)) {
+      return;
+    }
+    try {
+      await api.delete(`${API_ROUTES.BILLING_INVOICES}/${bill.id}`);
+      setBills((prev) => prev.filter((b) => b.id !== bill.id));
+      if (editingDraft && editingDraft.id === bill.id) {
+        resetBillForm();
+      }
+      if (selectedBill && selectedBill.id === bill.id) {
+        setShowBillDetailDrawer(false);
+        setSelectedBill(null);
+      }
+      showToast("Draft invoice deleted", "success");
+    } catch (err) {
+      console.error("[DRAFT] Delete failed:", err);
+      showToast(err.response?.data?.error || "Failed to delete draft", "error");
+    }
+  }, [showToast, editingDraft, selectedBill, resetBillForm]);
+
+  const handleNewBillClick = useCallback(() => {
+    if (editingDraft || lineItems.length > 0) {
+      setShowNewBillConfirm(true);
+    } else {
+      resetBillForm();
+    }
+  }, [editingDraft, lineItems.length, resetBillForm]);
 
   const handlePrint = useCallback(
     (invoice) => {
@@ -734,17 +828,29 @@ ${printDiscount > 0 ? `<div style="display:flex;justify-content:space-between"><
   );
 
   const openBillDetail = (bill) => {
+    if (bill.status === "DRAFT") {
+      handleResumeDraftClick(bill);
+      return;
+    }
     setSelectedBill(bill);
     setShowBillDetailDrawer(true);
   };
 
   const handleBillPrint = (bill) => {
+    if (bill.status === "DRAFT") {
+      showToast("Draft invoices cannot be printed. Please generate invoice first.", "error");
+      return;
+    }
     setBillCardFlash(bill.id);
     setTimeout(() => setBillCardFlash(null), 500);
     handlePrint(bill);
   };
 
   const handleBillWhatsApp = (bill) => {
+    if (bill.status === "DRAFT") {
+      showToast("Draft invoices cannot be sent via WhatsApp. Please generate invoice first.", "error");
+      return;
+    }
     setBillCardFlash(bill.id);
     setTimeout(() => setBillCardFlash(null), 500);
 
@@ -772,6 +878,10 @@ ${printDiscount > 0 ? `<div style="display:flex;justify-content:space-between"><
   };
 
   const handleBillReturn = (bill) => {
+    if (bill.status === "DRAFT") {
+      showToast("Draft invoices cannot be returned.", "error");
+      return;
+    }
     setSelectedBill(bill);
     setReturnItems([]);
     setReturnReason("Customer Request");
@@ -960,11 +1070,45 @@ ${printDiscount > 0 ? `<div style="display:flex;justify-content:space-between"><
           >
             <History size={16} /> Sales History
           </button>
-          <button className="pos-btn teal" onClick={resetBillForm}>
+          <button className="pos-btn teal" onClick={handleNewBillClick}>
             <Receipt size={18} /> + New Bill
           </button>
         </div>
       </div>
+
+      {editingDraft && (
+        <div
+          style={{
+            background: "rgba(20, 184, 166, 0.12)",
+            border: "1px solid var(--color-primary, #14b8a6)",
+            borderRadius: "12px",
+            padding: "12px 18px",
+            marginBottom: "20px",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            color: "var(--color-primary, #14b8a6)",
+          }}
+        >
+          <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+            <span style={{ fontWeight: 600, fontSize: "14px" }}>
+              Editing Draft Invoice:{" "}
+              {editingDraft.invoiceNumber || editingDraft.id}
+            </span>
+            <span style={{ fontSize: "12px", opacity: 0.85 }}>
+              ({new Date(editingDraft.createdAt).toLocaleDateString("en-IN")})
+            </span>
+          </div>
+          <button
+            type="button"
+            className="pos-btn outline"
+            style={{ padding: "4px 12px", fontSize: "12px" }}
+            onClick={resetBillForm}
+          >
+            Exit Draft Mode
+          </button>
+        </div>
+      )}
 
       <div className="pos-stats-row">
         {[
@@ -1622,10 +1766,18 @@ ${printDiscount > 0 ? `<div style="display:flex;justify-content:space-between"><
                         discountType: "PERCENTAGE",
                         branchId: user.branchId,
                       };
-                      const res = await api.post(
-                        API_ROUTES.BILLING_INVOICES,
-                        payload,
-                      );
+                      let res;
+                      if (editingDraft) {
+                        res = await api.post(
+                          `${API_ROUTES.BILLING_INVOICES}/${editingDraft.id}/finalize`,
+                          payload,
+                        );
+                      } else {
+                        res = await api.post(
+                          API_ROUTES.BILLING_INVOICES,
+                          payload,
+                        );
+                      }
                       const rawInv = res.data?.data || res.data;
                       const newInv = normalizeInvoice(rawInv);
 
@@ -1636,17 +1788,30 @@ ${printDiscount > 0 ? `<div style="display:flex;justify-content:space-between"><
                       };
 
                       setActiveInvoice(invoiceWithPatient);
-                      setBills((prev) => [
-                        normalizeBill({
-                          ...newInv,
-                          paymentMethod: paymentMode,
-                          patientName: payload.patientName,
-                          patientPhone: payload.patientPhone,
-                        }),
-                        ...prev,
-                      ]);
+                      const normalizedBillItem = normalizeBill({
+                        ...newInv,
+                        paymentMethod: paymentMode,
+                        patientName: payload.patientName,
+                        patientPhone: payload.patientPhone,
+                      });
+
+                      if (editingDraft) {
+                        setBills((prev) =>
+                          prev.map((b) =>
+                            b.id === editingDraft.id ? normalizedBillItem : b,
+                          ),
+                        );
+                        setEditingDraft(null);
+                      } else {
+                        setBills((prev) => [normalizedBillItem, ...prev]);
+                      }
                       setShowPreview(true);
-                      showToast(`Invoice generated`, "success");
+                      showToast(
+                        editingDraft
+                          ? `Draft finalized into invoice`
+                          : `Invoice generated`,
+                        "success",
+                      );
                       setTimeout(() => barcodeInputRef.current?.focus(), 300);
                     } catch (err) {
                       console.error(err);
@@ -1662,11 +1827,15 @@ ${printDiscount > 0 ? `<div style="display:flex;justify-content:space-between"><
                 >
                   {invoiceSaving ? (
                     <>
-                      <Spinner size={20} /> SAVING INVOICE...
+                      <Spinner size={20} />{" "}
+                      {editingDraft
+                        ? "FINALIZING DRAFT..."
+                        : "SAVING INVOICE..."}
                     </>
                   ) : (
                     <>
-                      <CheckCircle2 size={24} /> GENERATE INVOICE
+                      <CheckCircle2 size={24} />{" "}
+                      {editingDraft ? "FINALIZE DRAFT" : "GENERATE INVOICE"}
                     </>
                   )}
                 </button>
@@ -1784,43 +1953,84 @@ ${printDiscount > 0 ? `<div style="display:flex;justify-content:space-between"><
                         borderTop: "1px solid var(--overlay-05)",
                       }}
                     >
-                      <Printer
-                        size={14}
-                        className={`result-meta bill-action-icon ${bill.status === "DRAFT" ? "action-disabled" : ""}`}
-                        style={{
-                          cursor:
-                            bill.status === "DRAFT" ? "not-allowed" : "pointer",
-                        }}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          if (bill.status !== "DRAFT") handleBillPrint(bill);
-                        }}
-                        title={
-                          bill.status === "DRAFT"
-                            ? "Generate invoice first to print"
-                            : "Print"
-                        }
-                      />
-                      <MessageCircle
-                        size={14}
-                        className="result-meta bill-action-icon"
-                        style={{ cursor: "pointer" }}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleBillWhatsApp(bill);
-                        }}
-                        title="Send WhatsApp"
-                      />
-                      <RefreshCw
-                        size={14}
-                        className="result-meta bill-action-icon"
-                        style={{ cursor: "pointer" }}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleBillReturn(bill);
-                        }}
-                        title="Process Return"
-                      />
+                      {bill.status === "DRAFT" ? (
+                        <div
+                          style={{
+                            display: "flex",
+                            gap: "10px",
+                            width: "100%",
+                            justifyContent: "flex-end",
+                          }}
+                        >
+                          <button
+                            type="button"
+                            className="pos-btn primary"
+                            style={{
+                              padding: "4px 12px",
+                              fontSize: "12px",
+                              display: "flex",
+                              alignItems: "center",
+                              gap: "4px",
+                            }}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleResumeDraftClick(bill);
+                            }}
+                          >
+                            <Play size={12} fill="currentColor" /> Resume
+                          </button>
+                          <button
+                            type="button"
+                            className="pos-btn outline btn-error"
+                            style={{
+                              padding: "4px 12px",
+                              fontSize: "12px",
+                              display: "flex",
+                              alignItems: "center",
+                              gap: "4px",
+                            }}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDeleteDraftConfirm(bill);
+                            }}
+                          >
+                            <Trash2 size={12} /> Delete
+                          </button>
+                        </div>
+                      ) : (
+                        <>
+                          <Printer
+                            size={14}
+                            className="result-meta bill-action-icon"
+                            style={{ cursor: "pointer" }}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleBillPrint(bill);
+                            }}
+                            title="Print"
+                          />
+                          <MessageCircle
+                            size={14}
+                            className="result-meta bill-action-icon"
+                            style={{ cursor: "pointer" }}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleBillWhatsApp(bill);
+                            }}
+                            title="Send WhatsApp"
+                          />
+                          <RefreshCw
+                            size={14}
+                            className="result-meta bill-action-icon"
+                            style={{ cursor: "pointer" }}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleBillReturn(bill);
+                            }}
+                            title="Process Return"
+                          />
+                        </>
+                      )}
                     </div>
                   </motion.div>
                 ))}
@@ -1996,7 +2206,9 @@ ${printDiscount > 0 ? `<div style="display:flex;justify-content:space-between"><
                     marginBottom: "12px",
                   }}
                 >
-                  Start New Bill?
+                  {editingDraft
+                    ? "Exit Draft & Start New Bill?"
+                    : "Start New Bill?"}
                 </h3>
                 <p
                   style={{
@@ -2006,14 +2218,16 @@ ${printDiscount > 0 ? `<div style="display:flex;justify-content:space-between"><
                     color: "var(--text-secondary)",
                   }}
                 >
-                  This will clear the current invoice and begin a new billing
-                  session.
+                  {editingDraft
+                    ? "Any unsaved changes to this draft will be lost if you start a new bill without saving."
+                    : "This will clear the current items and begin a new billing session."}
                 </p>
                 <div
                   style={{
                     display: "flex",
                     gap: "12px",
                     justifyContent: "center",
+                    flexWrap: "wrap",
                   }}
                 >
                   <button
@@ -2022,6 +2236,34 @@ ${printDiscount > 0 ? `<div style="display:flex;justify-content:space-between"><
                   >
                     Cancel
                   </button>
+                  {lineItems.length > 0 && !editingDraft && (
+                    <button
+                      className="pos-btn outline"
+                      onClick={async () => {
+                        setShowNewBillConfirm(false);
+                        await handleSaveDraft();
+                        setShowPreview(false);
+                        resetBillForm();
+                        setActiveInvoice(null);
+                      }}
+                    >
+                      Save Draft & New
+                    </button>
+                  )}
+                  {editingDraft && lineItems.length > 0 && (
+                    <button
+                      className="pos-btn outline"
+                      onClick={async () => {
+                        setShowNewBillConfirm(false);
+                        await handleSaveDraft();
+                        setShowPreview(false);
+                        resetBillForm();
+                        setActiveInvoice(null);
+                      }}
+                    >
+                      Update Draft & New
+                    </button>
+                  )}
                   <button
                     className="pos-btn primary"
                     onClick={() => {
@@ -2151,37 +2393,68 @@ ${printDiscount > 0 ? `<div style="display:flex;justify-content:space-between"><
                             </td>
                             <td>
                               <div className="all-bills-actions">
-                                <button
-                                  className="all-bills-action-btn"
-                                  onClick={() => {
-                                    openBillDetail(bill);
-                                    setShowAllBillsModal(false);
-                                  }}
-                                  title="View"
-                                >
-                                  <Eye size={14} />
-                                </button>
-                                <button
-                                  className="all-bills-action-btn"
-                                  onClick={() => handleBillPrint(bill)}
-                                  title="Print"
-                                >
-                                  <Printer size={14} />
-                                </button>
-                                <button
-                                  className="all-bills-action-btn"
-                                  onClick={() => handleBillWhatsApp(bill)}
-                                  title="WhatsApp"
-                                >
-                                  <MessageCircle size={14} />
-                                </button>
-                                <button
-                                  className="all-bills-action-btn"
-                                  onClick={() => handleBillReturn(bill)}
-                                  title="Return"
-                                >
-                                  <RefreshCw size={14} />
-                                </button>
+                                {bill.status === "DRAFT" ? (
+                                  <>
+                                    <button
+                                      className="all-bills-action-btn"
+                                      onClick={() =>
+                                        handleResumeDraftClick(bill)
+                                      }
+                                      title="Resume Draft"
+                                      style={{
+                                        color: "var(--color-primary, #14b8a6)",
+                                      }}
+                                    >
+                                      <Play size={14} fill="currentColor" />
+                                    </button>
+                                    <button
+                                      className="all-bills-action-btn"
+                                      onClick={() =>
+                                        handleDeleteDraftConfirm(bill)
+                                      }
+                                      title="Delete Draft"
+                                      style={{
+                                        color: "var(--color-error, #ef4444)",
+                                      }}
+                                    >
+                                      <Trash2 size={14} />
+                                    </button>
+                                  </>
+                                ) : (
+                                  <>
+                                    <button
+                                      className="all-bills-action-btn"
+                                      onClick={() => {
+                                        openBillDetail(bill);
+                                        setShowAllBillsModal(false);
+                                      }}
+                                      title="View"
+                                    >
+                                      <Eye size={14} />
+                                    </button>
+                                    <button
+                                      className="all-bills-action-btn"
+                                      onClick={() => handleBillPrint(bill)}
+                                      title="Print"
+                                    >
+                                      <Printer size={14} />
+                                    </button>
+                                    <button
+                                      className="all-bills-action-btn"
+                                      onClick={() => handleBillWhatsApp(bill)}
+                                      title="WhatsApp"
+                                    >
+                                      <MessageCircle size={14} />
+                                    </button>
+                                    <button
+                                      className="all-bills-action-btn"
+                                      onClick={() => handleBillReturn(bill)}
+                                      title="Return"
+                                    >
+                                      <RefreshCw size={14} />
+                                    </button>
+                                  </>
+                                )}
                               </div>
                             </td>
                           </tr>
@@ -2346,34 +2619,70 @@ ${printDiscount > 0 ? `<div style="display:flex;justify-content:space-between"><
                 </div>
               </div>
               <div className="drawer-footer">
-                <button
-                  className="pos-btn outline"
-                  style={{ flex: 1 }}
-                  onClick={() => handleBillPrint(selectedBill)}
-                >
-                  <Printer size={14} /> Print
-                </button>
-                <button
-                  className="pos-btn outline"
-                  style={{ flex: 1 }}
-                  onClick={() => handleBillWhatsApp(selectedBill)}
-                >
-                  <MessageCircle size={14} /> WhatsApp
-                </button>
-                <button
-                  className="pos-btn outline"
-                  style={{
-                    flex: 1,
-                    borderColor: "var(--danger)",
-                    color: "var(--danger)",
-                  }}
-                  onClick={() => {
-                    setShowBillDetailDrawer(false);
-                    handleBillReturn(selectedBill);
-                  }}
-                >
-                  <RefreshCw size={14} /> Return
-                </button>
+                {selectedBill.status === "DRAFT" ? (
+                  <>
+                    <button
+                      className="pos-btn primary"
+                      style={{
+                        flex: 1,
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        gap: "6px",
+                      }}
+                      onClick={() => {
+                        setShowBillDetailDrawer(false);
+                        handleResumeDraftClick(selectedBill);
+                      }}
+                    >
+                      <Play size={14} fill="currentColor" /> Resume Draft
+                    </button>
+                    <button
+                      className="pos-btn outline btn-error"
+                      style={{
+                        flex: 1,
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        gap: "6px",
+                      }}
+                      onClick={() => handleDeleteDraftConfirm(selectedBill)}
+                    >
+                      <Trash2 size={14} /> Delete Draft
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <button
+                      className="pos-btn outline"
+                      style={{ flex: 1 }}
+                      onClick={() => handleBillPrint(selectedBill)}
+                    >
+                      <Printer size={14} /> Print
+                    </button>
+                    <button
+                      className="pos-btn outline"
+                      style={{ flex: 1 }}
+                      onClick={() => handleBillWhatsApp(selectedBill)}
+                    >
+                      <MessageCircle size={14} /> WhatsApp
+                    </button>
+                    <button
+                      className="pos-btn outline"
+                      style={{
+                        flex: 1,
+                        borderColor: "var(--danger)",
+                        color: "var(--danger)",
+                      }}
+                      onClick={() => {
+                        setShowBillDetailDrawer(false);
+                        handleBillReturn(selectedBill);
+                      }}
+                    >
+                      <RefreshCw size={14} /> Return
+                    </button>
+                  </>
+                )}
               </div>
             </motion.div>
           </>
