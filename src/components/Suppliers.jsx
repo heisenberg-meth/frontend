@@ -19,6 +19,8 @@ import {
   Loader2,
   ChevronDown,
   Check,
+  ToggleLeft,
+  ToggleRight,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -258,6 +260,7 @@ function SupplierModal({ onClose, onSave, editData, showToast, saving }) {
     ? {
         ...EMPTY,
         ...editData,
+        status: (editData.status || "active").toLowerCase(),
         contact: editData.contact || editData.contactPerson || "",
         categories: editData.categories || editData.drugCategories || [],
         gst: editData.gst || editData.gstNumber || "",
@@ -380,6 +383,19 @@ function SupplierModal({ onClose, onSave, editData, showToast, saving }) {
                     {opt}
                   </option>
                 ))}
+              </select>
+            </div>
+            <div className="form-group">
+              <label>Status</label>
+              <select
+                className="pos-input"
+                value={(form.status || "active").toLowerCase()}
+                onChange={(e) => set("status", e.target.value)}
+              >
+                <option value="active">Active</option>
+                <option value="inactive">Inactive</option>
+                <option value="suspended">Suspended</option>
+                <option value="blocked">Blocked</option>
               </select>
             </div>
             <div className="form-group full">
@@ -557,6 +573,23 @@ export default function Suppliers({ showToast }) {
     }
   };
 
+  const handleToggleStatus = async (supplier) => {
+    const isCurrentlyActive = (supplier.status || "").toLowerCase() === "active";
+    const nextStatus = isCurrentlyActive ? "INACTIVE" : "ACTIVE";
+    try {
+      await updateSupplier(supplier.id, { status: nextStatus });
+      showToast(`Supplier status updated to ${nextStatus.toLowerCase()} ✓`, "success");
+      await loadSuppliers();
+    } catch (err) {
+      showToast(
+        err.response?.data?.error ||
+          err.response?.data?.message ||
+          "Failed to toggle supplier status",
+        "error",
+      );
+    }
+  };
+
   const handleDelete = async (id, name) => {
     if (!window.confirm(`Delete "${name}"? This cannot be undone.`)) return;
     try {
@@ -657,7 +690,7 @@ export default function Suppliers({ showToast }) {
             </div>
           </div>
           <div className="sup-stat-value text-blue-400">
-            {suppliers.filter((s) => s.status === "active").length}
+            {suppliers.filter((s) => (s.status || "").toLowerCase() === "active").length}
           </div>
         </div>
         <div className="sup-stat-card-v2" onMouseMove={handleMouseMove}>
@@ -682,7 +715,7 @@ export default function Suppliers({ showToast }) {
             </div>
           </div>
           <div className="sup-stat-value text-rose-500">
-            {suppliers.filter((s) => s.status === "inactive").length}
+            {suppliers.filter((s) => (s.status || "").toLowerCase() === "inactive").length}
           </div>
         </div>
       </div>
@@ -801,7 +834,7 @@ export default function Suppliers({ showToast }) {
                       </span>
                     </td>
                     <td>
-                      <span className={`sup-status-badge ${s.status}`}>
+                      <span className={`sup-status-badge ${(s.status || "active").toLowerCase()}`}>
                         <div className="status-dot" />
                         {(s.status || "active").toUpperCase()}
                       </span>
@@ -824,6 +857,17 @@ export default function Suppliers({ showToast }) {
                           }}
                         >
                           <Pencil size={14} />
+                        </button>
+                        <button
+                          className={`sup-row-btn ${(s.status || "").toLowerCase() === "active" ? "danger" : "active"}`}
+                          title={(s.status || "").toLowerCase() === "active" ? "Deactivate Supplier" : "Activate Supplier"}
+                          onClick={() => handleToggleStatus(s)}
+                        >
+                          {(s.status || "").toLowerCase() === "active" ? (
+                            <ToggleRight size={14} />
+                          ) : (
+                            <ToggleLeft size={14} />
+                          )}
                         </button>
                         <button
                           className="sup-row-btn active"
@@ -891,7 +935,7 @@ export default function Suppliers({ showToast }) {
                       {viewTarget.name}
                     </h3>
                     <div className="flex items-center gap-2">
-                      <span className={`sup-status-badge ${viewTarget.status}`}>
+                      <span className={`sup-status-badge ${(viewTarget.status || "active").toLowerCase()}`}>
                         <div className="status-dot" />
                         {(viewTarget.status || "active").toUpperCase()}
                       </span>
