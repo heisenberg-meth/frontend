@@ -927,7 +927,7 @@ export default function Suppliers({ showToast }) {
             >
               <div className="modal-header">
                 <div className="flex items-start gap-5">
-                  <div className="sup-avatar large !w-20 !h-20 !text-[24px]">
+                  <div className="sup-avatar large w-20! h-20! text-[24px]!">
                     {getInitials(viewTarget.name)}
                   </div>
                   <div className="flex-1">

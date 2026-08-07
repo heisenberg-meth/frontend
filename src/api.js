@@ -338,9 +338,12 @@ api.interceptors.response.use(
       if (status === 503) {
         window.dispatchEvent(
           new CustomEvent("api:serviceUnavailable", {
-            detail: { message: "Service is temporarily unavailable." },
+            detail: {
+              message: "Database or service is temporarily unavailable.",
+            },
           }),
         );
+        return Promise.reject(error);
       }
     }
 
