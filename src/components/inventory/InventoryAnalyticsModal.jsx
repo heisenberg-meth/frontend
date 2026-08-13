@@ -1,4 +1,10 @@
-import { useState, useEffect, useMemo, useCallback } from "react";
+import {
+  useState,
+  useEffect,
+  useMemo,
+  useCallback,
+  useEffectEvent,
+} from "react";
 import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
 import {
@@ -107,15 +113,16 @@ export default function InventoryAnalyticsModal({ isOpen, onClose }) {
     run();
   }, [isOpen, fetchAnalytics]);
 
+  const onKeyDown = useEffectEvent((e) => {
+    if (e.key === "Escape" && isOpen) {
+      handleClose();
+    }
+  });
+
   useEffect(() => {
-    const handleKeyDown = (e) => {
-      if (e.key === "Escape" && isOpen) {
-        handleClose();
-      }
-    };
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [isOpen, handleClose]);
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, []);
 
   const totalCategoryValue = useMemo(() => {
     return categories.reduce((acc, curr) => acc + curr.value, 0);
@@ -371,8 +378,8 @@ export default function InventoryAnalyticsModal({ isOpen, onClose }) {
                               </tr>
                             </thead>
                             <tbody>
-                              {highValueStock.map((item, idx) => (
-                                <tr key={item.id || idx}>
+                              {highValueStock.map((item) => (
+                                <tr key={item.id || item.name}>
                                   <td className="font-semibold">{item.name}</td>
                                   <td className="text-on-surface-variant">
                                     {item.genericName || "-"}
@@ -425,9 +432,9 @@ export default function InventoryAnalyticsModal({ isOpen, onClose }) {
                                 stroke="var(--surface)"
                                 strokeWidth={2}
                               >
-                                {categories.map((entry, index) => (
+                                {categories.map((entry) => (
                                   <Cell
-                                    key={`cell-${index}`}
+                                    key={entry.category}
                                     fill={entry.color}
                                   />
                                 ))}
