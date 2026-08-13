@@ -1183,7 +1183,7 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
             icon: Building2,
             col: "var(--primary)",
           },
-        ].map((s, i) => (
+        ].map((s) => (
           <div key={s.label} className="pos-stat-card">
             <div className="stat-card-header">
               <span className="stat-label">{s.label}</span>
@@ -1314,6 +1314,7 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
                       <select
                         className="payment-status-dropdown"
                         value={inv.paymentStatus || "PENDING"}
+                        disabled={inv.paymentStatus === "PAID"}
                         onChange={(e) =>
                           updatePaymentStatus(inv.id, e.target.value)
                         }
@@ -1991,11 +1992,7 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
                         <thead>
                           <tr>
                             <th>Medicine</th>
-                            <th>Batch #</th>
                             <th style={{ textAlign: "right" }}>Qty</th>
-                            <th style={{ textAlign: "right" }}>Price</th>
-                            <th style={{ textAlign: "right" }}>GST</th>
-                            <th style={{ textAlign: "right" }}>Total</th>
                           </tr>
                         </thead>
                         <tbody>
@@ -2005,43 +2002,15 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
                             selectedRow?.supplierReturnItems ||
                             []
                           ).map((item, idx) => (
-                            <tr key={item.name}>
+                            <tr key={item.id || item.name || idx}>
                               <td>
                                 {item.medicine?.name ||
                                   item.medicineName ||
                                   item.name ||
                                   "-"}
                               </td>
-                              <td>
-                                {item.batch?.batchNumber ||
-                                  item.batchNumber ||
-                                  "-"}
-                              </td>
                               <td style={{ textAlign: "right" }}>
                                 {item.quantity || item.receivedQuantity || 0}
-                              </td>
-                              <td style={{ textAlign: "right" }}>
-                                ₹
-                                {safeNumber(
-                                  item.purchasePrice || item.price || 0,
-                                ).toFixed(2)}
-                              </td>
-                              <td style={{ textAlign: "right" }}>
-                                {safeNumber(
-                                  item.gstPercentage || item.gst || 0,
-                                )}
-                                %
-                              </td>
-                              <td style={{ textAlign: "right" }}>
-                                ₹
-                                {safeNumber(
-                                  item.subtotal ||
-                                    item.totalAmount ||
-                                    (item.quantity ||
-                                      item.receivedQuantity ||
-                                      0) *
-                                      (item.purchasePrice || item.price || 0),
-                                ).toFixed(2)}
                               </td>
                             </tr>
                           ))}
@@ -2056,7 +2025,7 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
                               selectedRow?.supplierReturnItems
                             )?.length === 0) && (
                             <tr>
-                              <td colSpan="4">No item details available.</td>
+                              <td colSpan="2">No item details available.</td>
                             </tr>
                           )}
                         </tbody>
