@@ -1,13 +1,13 @@
 import { useState, useEffect } from "react";
-import { assignBatchSupplier } from "../services/inventory.service";
+import { assignBatchSupplier } from "../../services/inventory.service.js";
 import { Package, X, FileText, CheckCircle2 } from "lucide-react";
 import { motion } from "framer-motion";
-import { getSuppliers } from "../services/suppliers.service";
+import { getSuppliers } from "../../services/suppliers.service.js";
 import {
   createReorder,
   getPurchaseOrderPdfUrl,
-} from "../services/purchases.service";
-import { safeNumber } from "../utils/number.js";
+} from "../../services/purchases.service.js";
+import { safeNumber } from "../../utils/number.js";
 import { Spinner } from "./InventoryCore.jsx";
 
 /* ─── Reorder Modal ─── */

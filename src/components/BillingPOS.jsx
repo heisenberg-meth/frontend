@@ -1482,7 +1482,7 @@ export default function BillingPOS({
             icon: ArrowLeft,
             col: "var(--danger)",
           },
-        ].map((s, i) => (
+        ].map((s) => (
           <div key={s.label} className="pos-stat-card">
             <div className="stat-card-header">
               <span className="stat-label">{s.label}</span>
@@ -1599,7 +1599,7 @@ export default function BillingPOS({
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -5 }}
                 >
-                  {patientResults.map((p, i) => (
+                  {patientResults.map((p) => (
                     <div
                       key={p.name}
                       className="patient-result-row"
@@ -2874,7 +2874,7 @@ export default function BillingPOS({
                   <tbody>
                     {(selectedBill.itemsList || [])
                       .map(normalizeInvoiceItem)
-                      .map((item, idx) => (
+                      .map((item) => (
                         <tr key={item.name}>
                           <td>{item.name}</td>
                           <td>{safeNumber(item.qty)}</td>
@@ -2926,7 +2926,7 @@ export default function BillingPOS({
                   <div className="stat-label" style={{ marginBottom: "8px" }}>
                     TIMELINE
                   </div>
-                  {(selectedBill.timeline || []).map((t, i) => (
+                  {(selectedBill.timeline || []).map((t) => (
                     <div key={t} className="timeline-item">
                       <div className="timeline-dot" />
                       <span>{t}</span>

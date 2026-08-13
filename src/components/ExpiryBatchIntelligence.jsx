@@ -207,8 +207,9 @@ export default function ExpiryBatchIntelligence({ showToast }) {
   const INV_FILTER_OPTIONS = [
     { label: "All Batches", value: "ALL" },
     { label: "Expired", value: "EXPIRED" },
-    { label: "Critical (< 7 days)", value: "DANGER" },
-    { label: "Warning (7-30 days)", value: "WARNING" },
+    { label: "Critical (< 7 days)", value: "< 7 DAYS" },
+    { label: "Warning (7-30 days)", value: "7-30 DAYS" },
+    { label: "Attention (30-90 days)", value: "30-90 DAYS" },
     { label: "Safe (90+ days)", value: "SAFE" },
   ];
 
@@ -232,27 +233,104 @@ export default function ExpiryBatchIntelligence({ showToast }) {
 
   const filteredBatches = useMemo(() => {
     return batches.filter((b) => {
-      if ((b.qty || b.quantity) <= 0) return false;
+      if ((b.qty ?? b.quantity ?? 0) <= 0) return false;
+      const q = (searchQuery || "").toLowerCase();
       const matchesSearch =
-        !invSearch ||
-        b.med?.toLowerCase().includes(invSearch.toLowerCase()) ||
-        b.supplier?.toLowerCase().includes(invSearch.toLowerCase()) ||
-        b.batch?.toLowerCase().includes(invSearch.toLowerCase());
+        !q ||
+        b.med?.toLowerCase().includes(q) ||
+        b.medicineName?.toLowerCase().includes(q) ||
+        b.supplier?.toLowerCase().includes(q) ||
+        b.batch?.toLowerCase().includes(q) ||
+        b.batchNumber?.toLowerCase().includes(q);
       if (!matchesSearch) return false;
-      if (invFilter === "ALL") return true;
-      if (invFilter === "EXPIRED") return b.days < 0;
-      if (invFilter === "DANGER" || invFilter === "< 7 DAYS")
-        return b.days >= 0 && b.days < 7;
-      if (invFilter === "WARNING" || invFilter === "< 30 DAYS")
-        return b.days >= 0 && b.days < 30;
-      if (invFilter === "< 90 DAYS") return b.days >= 0 && b.days < 90;
-      if (invFilter === "SAFE") return b.days >= 90;
-      if (invFilter === "ACTIVE") return b.days >= 0 && b.days <= 365;
-      return b.status === invFilter.toLowerCase();
+
+      const f = (filter || "ALL").toUpperCase();
+      if (f === "ALL") return true;
+      if (f === "EXPIRED")
+        return b.days < 0 || b.status?.toLowerCase() === "expired";
+      if (
+        f === "DANGER" ||
+        f === "< 7 DAYS" ||
+        f === "0-7 DAYS" ||
+        f === "EXPIRING < 7 DAYS"
+      )
+        return (
+          b.days >= 0 && b.days <= 7 && b.status?.toLowerCase() !== "expired"
+        );
+      if (
+        f === "WARNING" ||
+        f === "7-30 DAYS" ||
+        f === "8-30 DAYS" ||
+        f === "< 30 DAYS" ||
+        f === "EXPIRING 7-30 DAYS"
+      )
+        return (
+          b.days > 7 && b.days <= 30 && b.status?.toLowerCase() !== "expired"
+        );
+      if (
+        f === "ATTENTION" ||
+        f === "30-90 DAYS" ||
+        f === "31-90 DAYS" ||
+        f === "< 90 DAYS" ||
+        f === "EXPIRING 30-90 DAYS"
+      )
+        return (
+          b.days > 30 && b.days <= 90 && b.status?.toLowerCase() !== "expired"
+        );
+      if (f === "SAFE" || f === "90+ DAYS" || f === "SAFE (90+ DAYS)")
+        return b.days > 90 && b.status?.toLowerCase() !== "expired";
+      if (f === "ACTIVE")
+        return b.days >= 0 && b.status?.toLowerCase() !== "expired";
+      return b.status?.toLowerCase() === f.toLowerCase();
+    });
+  }, [batches, searchQuery, filter]);
+
+  const invFilteredBatches = useMemo(() => {
+    return batches.filter((b) => {
+      if ((b.qty ?? b.quantity ?? 0) <= 0) return false;
+      const q = (invSearch || "").toLowerCase();
+      const matchesSearch =
+        !q ||
+        b.med?.toLowerCase().includes(q) ||
+        b.medicineName?.toLowerCase().includes(q) ||
+        b.supplier?.toLowerCase().includes(q) ||
+        b.batch?.toLowerCase().includes(q) ||
+        b.batchNumber?.toLowerCase().includes(q);
+      if (!matchesSearch) return false;
+
+      const f = (invFilter || "ALL").toUpperCase();
+      if (f === "ALL") return true;
+      if (f === "EXPIRED")
+        return b.days < 0 || b.status?.toLowerCase() === "expired";
+      if (f === "DANGER" || f === "< 7 DAYS" || f === "0-7 DAYS")
+        return (
+          b.days >= 0 && b.days <= 7 && b.status?.toLowerCase() !== "expired"
+        );
+      if (
+        f === "WARNING" ||
+        f === "7-30 DAYS" ||
+        f === "8-30 DAYS" ||
+        f === "< 30 DAYS"
+      )
+        return (
+          b.days > 7 && b.days <= 30 && b.status?.toLowerCase() !== "expired"
+        );
+      if (
+        f === "ATTENTION" ||
+        f === "30-90 DAYS" ||
+        f === "31-90 DAYS" ||
+        f === "< 90 DAYS"
+      )
+        return (
+          b.days > 30 && b.days <= 90 && b.status?.toLowerCase() !== "expired"
+        );
+      if (f === "SAFE" || f === "90+ DAYS")
+        return b.days > 90 && b.status?.toLowerCase() !== "expired";
+      if (f === "ACTIVE")
+        return b.days >= 0 && b.status?.toLowerCase() !== "expired";
+      return b.status?.toLowerCase() === f.toLowerCase();
     });
   }, [batches, invSearch, invFilter]);
-
-  const invFilteredBatches = filteredBatches;
 
   const dynamicStats = useMemo(() => {
     // Use unified backend metrics if available, fallback to local calculation
@@ -273,21 +351,18 @@ export default function ExpiryBatchIntelligence({ showToast }) {
           key: "< 7 DAYS",
         },
         {
-          label: "EXPIRING < 30 DAYS",
-          val:
-            expiryMetrics.expiring30CombinedBatches ??
-            expiryMetrics.expiring30Batches ??
-            0,
+          label: "EXPIRING 7-30 DAYS",
+          val: expiryMetrics.expiring30Batches ?? 0,
           col: "var(--warning)",
           icon: CalendarDays,
-          key: "< 30 DAYS",
+          key: "7-30 DAYS",
         },
         {
-          label: "EXPIRING < 90 DAYS",
+          label: "EXPIRING 30-90 DAYS",
           val: expiryMetrics.expiring90Batches ?? 0,
           col: "var(--info)",
           icon: CalendarCheck,
-          key: "< 90 DAYS",
+          key: "30-90 DAYS",
         },
         {
           label: "TOTAL BATCHES",
@@ -301,15 +376,20 @@ export default function ExpiryBatchIntelligence({ showToast }) {
 
     // Fallback: local calculation from batch data
     const activeBatches = batches.filter((b) => (b.qty || b.quantity) > 0);
-    const expired = activeBatches.filter((b) => b.days < 0).length;
+    const expired = activeBatches.filter(
+      (b) => b.days < 0 || b.status?.toLowerCase() === "expired",
+    ).length;
     const expiring7Days = activeBatches.filter(
-      (b) => b.days >= 0 && b.days < 7,
+      (b) =>
+        b.days >= 0 && b.days <= 7 && b.status?.toLowerCase() !== "expired",
     ).length;
     const expiring30Days = activeBatches.filter(
-      (b) => b.days >= 0 && b.days < 30,
+      (b) =>
+        b.days > 7 && b.days <= 30 && b.status?.toLowerCase() !== "expired",
     ).length;
     const expiring90Days = activeBatches.filter(
-      (b) => b.days >= 0 && b.days < 90,
+      (b) =>
+        b.days > 30 && b.days <= 90 && b.status?.toLowerCase() !== "expired",
     ).length;
     return [
       {
@@ -327,18 +407,18 @@ export default function ExpiryBatchIntelligence({ showToast }) {
         key: "< 7 DAYS",
       },
       {
-        label: "EXPIRING < 30 DAYS",
+        label: "EXPIRING 7-30 DAYS",
         val: expiring30Days,
         col: "var(--warning)",
         icon: CalendarDays,
-        key: "< 30 DAYS",
+        key: "7-30 DAYS",
       },
       {
-        label: "EXPIRING < 90 DAYS",
+        label: "EXPIRING 30-90 DAYS",
         val: expiring90Days,
         col: "var(--info)",
         icon: CalendarCheck,
-        key: "< 90 DAYS",
+        key: "30-90 DAYS",
       },
       {
         label: "TOTAL BATCHES",
@@ -353,19 +433,22 @@ export default function ExpiryBatchIntelligence({ showToast }) {
   const timelineCounts = useMemo(() => {
     // Use unified backend metrics if available
     if (expiryMetrics) {
+      const expired = expiryMetrics.expiredBatches ?? 0;
+      const urg7 = expiryMetrics.expiring7Batches ?? 0;
+      const urg30 = expiryMetrics.expiring30Batches ?? 0;
+      const urg90 = expiryMetrics.expiring90Batches ?? 0;
+      const total = expiryMetrics.totalBatches ?? (batches.length || 1);
+      const safe =
+        expiryMetrics.safeBatches ??
+        Math.max(0, total - expired - urg7 - urg30 - urg90);
+
       return {
-        expired: expiryMetrics.expiredBatches ?? 0,
-        urg7: expiryMetrics.expiring7Batches ?? 0,
-        urg30:
-          expiryMetrics.expiring30CombinedBatches ??
-          expiryMetrics.expiring30Batches ??
-          0,
-        urg90: expiryMetrics.expiring90Batches ?? 0,
-        safe:
-          (expiryMetrics.totalBatches ?? 0) -
-          (expiryMetrics.expiredBatches ?? 0) -
-          (expiryMetrics.expiring90Batches ?? 0),
-        total: expiryMetrics.totalBatches ?? 1,
+        expired,
+        urg7,
+        urg30,
+        urg90,
+        safe,
+        total: total || 1,
       };
     }
 
@@ -374,15 +457,17 @@ export default function ExpiryBatchIntelligence({ showToast }) {
     const expired = activeBatches.filter(
       (b) => b.status === "expired" || b.days < 0,
     ).length;
-    const urg7 = activeBatches.filter((b) => b.days >= 0 && b.days < 7).length;
+    const urg7 = activeBatches.filter(
+      (b) => b.days >= 0 && b.days <= 7 && b.status !== "expired",
+    ).length;
     const urg30 = activeBatches.filter(
-      (b) => b.days >= 0 && b.days < 30,
+      (b) => b.days > 7 && b.days <= 30 && b.status !== "expired",
     ).length;
     const urg90 = activeBatches.filter(
-      (b) => b.days >= 0 && b.days < 90,
+      (b) => b.days > 30 && b.days <= 90 && b.status !== "expired",
     ).length;
     const safe = activeBatches.filter(
-      (b) => b.days >= 90 || b.status === "safe",
+      (b) => (b.days > 90 || b.status === "safe") && b.status !== "expired",
     ).length;
     const total = activeBatches.length || 1;
     return { expired, urg7, urg30, urg90, safe, total };
@@ -993,7 +1078,7 @@ export default function ExpiryBatchIntelligence({ showToast }) {
       )}
 
       <div className="expiry-stats-grid">
-        {dynamicStats.map((s, i) => {
+        {dynamicStats.map((s) => {
           const isExpiredCard = s.key === "EXPIRED";
           return (
             <div
@@ -1103,7 +1188,7 @@ export default function ExpiryBatchIntelligence({ showToast }) {
                   onClick={() => setFilter("7-30 DAYS")}
                   title={`7-30 DAYS: ${timelineCounts.urg30}`}
                 >
-                  <span>&lt; 30D {timelineCounts.urg30}</span>
+                  <span>7-30D {timelineCounts.urg30}</span>
                 </div>
                 <div
                   className="timeline-segment urg-90"
@@ -1116,7 +1201,7 @@ export default function ExpiryBatchIntelligence({ showToast }) {
                   onClick={() => setFilter("30-90 DAYS")}
                   title={`30-90 DAYS: ${timelineCounts.urg90}`}
                 >
-                  <span>&lt; 90D {timelineCounts.urg90}</span>
+                  <span>30-90D {timelineCounts.urg90}</span>
                 </div>
                 <div
                   className="timeline-segment safe"
@@ -1896,7 +1981,7 @@ export default function ExpiryBatchIntelligence({ showToast }) {
           {suggestions.length === 0 ? (
             <div className="empty-state">No recommendations available</div>
           ) : (
-            suggestions.map((s, i) => (
+            suggestions.map((s) => (
               <motion.div
                 key={s.days}
                 className={`suggestion-card ${s.urgency}`}
@@ -3229,7 +3314,7 @@ export default function ExpiryBatchIntelligence({ showToast }) {
                       <div style={{ marginTop: 8 }}>
                         <strong>Errors ({importResult.errors.length}):</strong>
                         <ul style={{ margin: "4px 0", paddingLeft: 20 }}>
-                          {importResult.errors.slice(0, 10).map((e, i) => (
+                          {importResult.errors.slice(0, 10).map((e) => (
                             <li key={e.batchId}>
                               {e.batchId?.slice(0, 8)} — {e.reason}
                             </li>

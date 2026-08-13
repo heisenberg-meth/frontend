@@ -11,9 +11,9 @@ import {
   Check,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { getSuppliers } from "../services/suppliers.service";
-import { safeNumber } from "../utils/number.js";
-import { getMedicineStatus } from "../utils/inventoryStatus";
+import { getSuppliers } from "../../services/suppliers.service.js";
+import { safeNumber } from "../../utils/number.js";
+import { getMedicineStatus } from "../../utils/inventoryStatus.js";
 
 export function CustomDropdown({
   value,
