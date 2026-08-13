@@ -1,39 +1,5 @@
 import api from "../api";
 
-/* ─── Reports ─── */
-export const getSalesReport = (params) => api.get("reports/sales", { params });
-export const getPurchaseReport = (params) =>
-  api.get("reports/purchases", { params });
-export const getFinanceReport = (params) =>
-  api.get("reports/finance", { params });
-export const getExpiryReport = (params) =>
-  api.get("reports/expiry", { params });
-export const exportSalesReport = (params) =>
-  api.get("reports/export/sales", { params, responseType: "blob" });
-export const triggerManualAggregation = (data) =>
-  api.post("reports/aggregate/manual", data);
-
-/* ─── Expiry Intelligence ─── */
-export const getExpiryAlerts = () => api.get("intelligence/alerts");
-export const getCriticalExpiryAlerts = () => api.get("intelligence/critical");
-export const resolveExpiryAlert = (id) =>
-  api.put(`intelligence/alerts/${id}/resolve`);
-export const triggerManualScan = () => api.post("intelligence/scan/manual");
-export const getExpiryBatches = (params) =>
-  api.get("intelligence/batches", { params });
-export const getNearExpiryBatches = () =>
-  api.get("intelligence/batches/near-expiry");
-export const quarantineBatch = (data) =>
-  api.post("intelligence/batches/quarantine", data);
-export const getExpiryRecommendations = () =>
-  api.get("intelligence/recommendations");
-export const triggerRecommendationGeneration = () =>
-  api.post("intelligence/recommendations/generate");
-
-/* ─── Unified Expiry Metrics (Single Source of Truth) ─── */
-export const getExpiryMetrics = (params) =>
-  api.get("inventory/expiry-metrics", { params });
-
 /* ─── Barcodes ─── */
 export const getBarcodes = (params) =>
   api.get("inventory/barcode/generate", { params });

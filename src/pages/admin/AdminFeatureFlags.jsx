@@ -38,7 +38,9 @@ export default function AdminFeatureFlags() {
       toast.success("Feature flag updated");
       fetchFlags();
     } catch (err) {
-      toast.error(err.response?.data?.message || "Failed to toggle feature flag");
+      toast.error(
+        err.response?.data?.message || "Failed to toggle feature flag",
+      );
     }
   };
 

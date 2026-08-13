@@ -1,4 +1,4 @@
-import { safeNumber } from '../../utils/number.js';
+import { safeNumber } from "../../utils/number.js";
 export const normalizeMedicine = (data) => {
   if (!data) return {};
   const batch = data.inventoryBatches?.[0];

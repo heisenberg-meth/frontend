@@ -199,7 +199,10 @@ export default function BulkDisposal({ showToast }) {
           <h2>Bulk Disposal</h2>
           <p>Select and dispose expired medicines in bulk</p>
         </div>
-        <div className="hub-status-group" style={{ display: "flex", alignItems: "center", gap: 10 }}>
+        <div
+          className="hub-status-group"
+          style={{ display: "flex", alignItems: "center", gap: 10 }}
+        >
           <div className="status-item">
             <Clock size={12} className="text-on-surface-variant" />
             <span className="text-on-surface-variant">
@@ -207,10 +210,7 @@ export default function BulkDisposal({ showToast }) {
             </span>
           </div>
           {/* Clear already-disposed batches directly from the disposal page */}
-          <ClearExpiredButton
-            showToast={showToast}
-            onCleared={fetchData}
-          />
+          <ClearExpiredButton showToast={showToast} onCleared={fetchData} />
         </div>
       </div>
 

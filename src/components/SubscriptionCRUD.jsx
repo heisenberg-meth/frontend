@@ -56,7 +56,7 @@ export default function SubscriptionCRUD({ showToast, user }) {
   const [subscription, setSubscription] = useState(null);
   const [paymentHistory, setPaymentHistory] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [billingCycle, setBillingCycle] = useState("monthly");
+  const [billingCycle] = useState("monthly");
   const [upgrading, setUpgrading] = useState(false);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState(null);

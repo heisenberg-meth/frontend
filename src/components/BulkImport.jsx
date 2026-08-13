@@ -863,16 +863,27 @@ export default function BulkImport({ fetchData, showToast }) {
             <div className="error-details-section">
               <h3>{commitResult.errors.length} Records Failed</h3>
               <div className="error-summary-badges">
-                {[...new Set(commitResult.errors.map(e => e.field))].map(field => {
-                  const count = commitResult.errors.filter(e => e.field === field).length;
-                  return (
-                    <span key={field} className="match-badge danger" style={{ margin: "0 4px" }}>
-                      {field}: {count}
-                    </span>
-                  );
-                })}
+                {[...new Set(commitResult.errors.map((e) => e.field))].map(
+                  (field) => {
+                    const count = commitResult.errors.filter(
+                      (e) => e.field === field,
+                    ).length;
+                    return (
+                      <span
+                        key={field}
+                        className="match-badge danger"
+                        style={{ margin: "0 4px" }}
+                      >
+                        {field}: {count}
+                      </span>
+                    );
+                  },
+                )}
               </div>
-              <div className="table-overflow" style={{ maxHeight: "400px", marginTop: "12px" }}>
+              <div
+                className="table-overflow"
+                style={{ maxHeight: "400px", marginTop: "12px" }}
+              >
                 <table className="results-table">
                   <thead>
                     <tr>
@@ -889,16 +900,25 @@ export default function BulkImport({ fetchData, showToast }) {
                         <td>Row {err.row}</td>
                         <td>{err.name || "Unknown"}</td>
                         <td>
-                          <span className="match-badge danger" style={{ fontSize: "11px" }}>
+                          <span
+                            className="match-badge danger"
+                            style={{ fontSize: "11px" }}
+                          >
                             {err.field || "—"}
                           </span>
                         </td>
-                        <td style={{ fontFamily: "monospace", fontSize: "12px" }}>
-                          {err.value !== undefined && err.value !== null && err.value !== ""
+                        <td
+                          style={{ fontFamily: "monospace", fontSize: "12px" }}
+                        >
+                          {err.value !== undefined &&
+                          err.value !== null &&
+                          err.value !== ""
                             ? `"${err.value}"`
                             : "(empty)"}
                         </td>
-                        <td style={{ color: "var(--danger)" }}>{err.message || err.reason}</td>
+                        <td style={{ color: "var(--danger)" }}>
+                          {err.message || err.reason}
+                        </td>
                       </tr>
                     ))}
                   </tbody>

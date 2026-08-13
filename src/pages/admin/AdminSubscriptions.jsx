@@ -12,8 +12,7 @@ import {
   History,
 } from "lucide-react";
 import toast from "react-hot-toast";
-import { safeNumber } from '../../utils/number.js';
-
+import { safeNumber } from "../../utils/number.js";
 
 export default function AdminSubscriptions() {
   const [subscriptions, setSubscriptions] = useState([]);
@@ -256,7 +255,9 @@ export default function AdminSubscriptions() {
                       </td>
                       <td>{s.tenant?.email || "—"}</td>
                       <td>{s.plan?.name || "—"}</td>
-                      <td>₹{safeNumber(s.plan?.price || 0).toLocaleString()}</td>
+                      <td>
+                        ₹{safeNumber(s.plan?.price || 0).toLocaleString()}
+                      </td>
                       <td>
                         <span
                           className="admin-badge"
@@ -407,15 +408,29 @@ export default function AdminSubscriptions() {
                       <td>{h.action}</td>
                       <td>{h.oldStatus || "—"}</td>
                       <td>{h.newStatus || "—"}</td>
-                      <td>{h.oldExpiry ? new Date(h.oldExpiry).toLocaleDateString() : "—"}</td>
-                      <td>{h.newExpiry ? new Date(h.newExpiry).toLocaleDateString() : "—"}</td>
+                      <td>
+                        {h.oldExpiry
+                          ? new Date(h.oldExpiry).toLocaleDateString()
+                          : "—"}
+                      </td>
+                      <td>
+                        {h.newExpiry
+                          ? new Date(h.newExpiry).toLocaleDateString()
+                          : "—"}
+                      </td>
                       <td>{new Date(h.createdAt).toLocaleString()}</td>
                     </tr>
                   ))}
                 </tbody>
               </table>
             )}
-            <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 12 }}>
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "flex-end",
+                marginTop: 12,
+              }}
+            >
               <button
                 className="admin-btn"
                 style={{ background: "#333", color: "#fff" }}
@@ -479,7 +494,12 @@ export default function AdminSubscriptions() {
             ) : (
               <div className="admin-form-group">
                 <label>
-                  Days to {actionType === "extendTrial" ? "add" : actionType === "reduceTrial" ? "remove" : actionType}
+                  Days to{" "}
+                  {actionType === "extendTrial"
+                    ? "add"
+                    : actionType === "reduceTrial"
+                      ? "remove"
+                      : actionType}
                 </label>
                 <input
                   type="number"
@@ -493,7 +513,12 @@ export default function AdminSubscriptions() {
                       <button
                         key={d}
                         className="admin-btn"
-                        style={{ background: "#333", color: "#fff", fontSize: 12, padding: "4px 8px" }}
+                        style={{
+                          background: "#333",
+                          color: "#fff",
+                          fontSize: 12,
+                          padding: "4px 8px",
+                        }}
                         onClick={() => setActionValue(String(d))}
                       >
                         +{d}

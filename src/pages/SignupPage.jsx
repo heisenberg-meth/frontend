@@ -201,7 +201,7 @@ export default function SignupPage() {
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-[#0c1321] text-slate-900 dark:text-slate-100 font-sans antialiased flex flex-col lg:flex-row relative selection:bg-emerald-500 selection:text-white">
       {/* Left Branding Section (Always Dark/Rich Theme for clinical contrast) */}
-      <div className="hidden lg:flex lg:w-5/12 xl:w-1/2 relative overflow-hidden bg-gradient-to-br from-[#0c1321] via-[#121c2f] to-[#08151f] text-white p-12 xl:p-16 flex-col justify-between border-r border-slate-200/80 dark:border-slate-800/80">
+      <div className="hidden lg:flex lg:w-5/12 xl:w-1/2 relative overflow-hidden bg-linear-to-br from-[#0c1321] via-[#121c2f] to-[#08151f] text-white p-12 xl:p-16 flex-col justify-between border-r border-slate-200/80 dark:border-slate-800/80">
         <div className="absolute inset-0 pointer-events-none">
           <div className="absolute -top-24 -left-24 w-96 h-96 rounded-full bg-emerald-500/10 blur-[120px]" />
           <div className="absolute -bottom-24 -right-24 w-96 h-96 rounded-full bg-indigo-500/10 blur-[120px]" />
@@ -471,7 +471,7 @@ export default function SignupPage() {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full py-4 px-6 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white dark:bg-emerald-500 dark:hover:bg-emerald-400 dark:text-[#031424] font-black text-base tracking-wide shadow-lg shadow-emerald-600/20 dark:shadow-emerald-500/20 hover:shadow-xl hover:shadow-emerald-600/30 dark:hover:shadow-emerald-500/30 hover:translate-y-[-1px] active:translate-y-[1px] transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 flex items-center justify-center gap-2.5 cursor-pointer"
+                className="w-full py-4 px-6 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white dark:bg-emerald-500 dark:hover:bg-emerald-400 dark:text-[#031424] font-black text-base tracking-wide shadow-lg shadow-emerald-600/20 dark:shadow-emerald-500/20 hover:shadow-xl hover:shadow-emerald-600/30 dark:hover:shadow-emerald-500/30 hover:-translate-y-px active:translate-y-px transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 flex items-center justify-center gap-2.5 cursor-pointer"
               >
                 {loading ? (
                   <>
@@ -503,4 +503,3 @@ export default function SignupPage() {
     </div>
   );
 }
-

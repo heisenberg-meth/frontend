@@ -350,7 +350,10 @@ export default function ManageTeam({ user, showToast }) {
                             style={{ position: "relative", overflow: "hidden" }}
                           >
                             <img
-                              src={getAvatarUrl(m.avatar, m.fullName || m.username)}
+                              src={getAvatarUrl(
+                                m.avatar,
+                                m.fullName || m.username,
+                              )}
                               alt=""
                               style={{
                                 width: "100%",

@@ -22,8 +22,7 @@ import {
   PauseCircle,
 } from "lucide-react";
 import toast from "react-hot-toast";
-import { safeNumber } from '../../utils/number.js';
-
+import { safeNumber } from "../../utils/number.js";
 
 export default function AdminUsers() {
   const [users, setUsers] = useState([]);
@@ -160,7 +159,9 @@ export default function AdminUsers() {
       const res = await adminApi.getTenantDetail(id);
       if (res.success) setDetail(res.data);
     } catch (err) {
-      toast.error(err.response?.data?.message || "Failed to load tenant details");
+      toast.error(
+        err.response?.data?.message || "Failed to load tenant details",
+      );
     } finally {
       setDetailLoading(false);
     }

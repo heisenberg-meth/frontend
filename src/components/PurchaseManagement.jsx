@@ -86,7 +86,7 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
   const [loading, setLoading] = useState(false);
   const [receiveItems, setReceiveItems] = useState([]);
   const [isReceiving, setIsReceiving] = useState(false);
-  const [differentBatch, setDifferentBatch] = useState({});
+  const [, setDifferentBatch] = useState({});
 
   const handleOpenReceiveModal = async (po) => {
     setSelectedRow(po);

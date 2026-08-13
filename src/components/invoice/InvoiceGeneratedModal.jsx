@@ -127,27 +127,49 @@ export default function InvoiceGeneratedModal({
   const handlePrint = () => {
     exportAsLightMode(() => {
       return new Promise((resolve) => {
-        const content = document.getElementById(
-          "invoice-preview-capture",
-        ).innerHTML;
+        const source = document.getElementById("invoice-preview-capture");
+
+        if (!source) {
+          if (showToast) showToast("Invoice preview not found", "error");
+          resolve();
+          return;
+        }
+
         const printWindow = window.open("", "_blank");
-        printWindow.document.write("<html><head><title>Print Invoice</title>");
-        const styles = document.querySelectorAll(
+
+        if (!printWindow) {
+          if (showToast) {
+            showToast("Pop-up blocked. Please allow pop-ups.", "error");
+          }
+          resolve();
+          return;
+        }
+
+        const printDocument = printWindow.document;
+
+        printDocument.title = "Print Invoice";
+
+        const styleElements = document.querySelectorAll(
           "style, link[rel='stylesheet']",
         );
-        styles.forEach((s) => {
-          printWindow.document.write(s.outerHTML);
+
+        styleElements.forEach((styleElement) => {
+          printDocument.head.appendChild(styleElement.cloneNode(true));
         });
-        printWindow.document.write(
-          "</head><body class='invoice-overlay' data-theme='light' style='background: white; padding: 0;'>",
-        );
-        printWindow.document.write(content);
-        printWindow.document.write("</body></html>");
-        printWindow.document.close();
+
+        printDocument.body.className = "invoice-overlay";
+        printDocument.body.dataset.theme = "light";
+        printDocument.body.style.background = "white";
+        printDocument.body.style.padding = "0";
+
+        printDocument.body.appendChild(source.cloneNode(true));
+
         printWindow.focus();
+
         setTimeout(() => {
           printWindow.print();
           printWindow.close();
+
           if (showToast) showToast("Sent to printer", "success");
           resolve();
         }, 500);

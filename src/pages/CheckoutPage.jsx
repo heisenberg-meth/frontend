@@ -112,13 +112,13 @@ export default function CheckoutPage() {
           } catch (err) {
             console.error("[Razorpay] Verification error:", err);
             setLoadState("error");
-            
+
             // Extract the actual error message sent by the backend (if any)
-            const backendReason = 
-              err.response?.data?.reason || 
-              err.response?.data?.error?.message || 
+            const backendReason =
+              err.response?.data?.reason ||
+              err.response?.data?.error?.message ||
               err.message;
-              
+
             setLoadError(
               backendReason || "Failed to verify payment with server.",
             );

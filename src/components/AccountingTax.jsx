@@ -145,9 +145,18 @@ export default function AccountingTax({ showToast }) {
       const details = errorObj?.details || errData?.errors || [];
       if (Array.isArray(details) && details.length > 0) {
         const firstErr = details[0];
-        showToast(`Validation Error (${firstErr.field}): ${firstErr.message}`, "error");
+        showToast(
+          `Validation Error (${firstErr.field}): ${firstErr.message}`,
+          "error",
+        );
       } else {
-        const msg = typeof errorObj === "object" ? errorObj.message : errorObj || errData?.message || err.message || "Failed to save expense";
+        const msg =
+          typeof errorObj === "object"
+            ? errorObj.message
+            : errorObj ||
+              errData?.message ||
+              err.message ||
+              "Failed to save expense";
         showToast(msg, "error");
       }
     } finally {

@@ -1,9 +1,8 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { adminApi } from "../../services/admin.service";
 import { Search, RotateCcw, CheckCircle, XCircle } from "lucide-react";
-import { safeNumber } from '../../utils/number.js';
+import { safeNumber } from "../../utils/number.js";
 import toast from "react-hot-toast";
-
 
 const STATUS_COLORS = {
   SUCCESS: { bg: "#22c55e" },
@@ -68,7 +67,9 @@ export default function AdminPayments() {
       toast.success(`Payment status updated to ${status}`);
       fetchPayments();
     } catch (err) {
-      toast.error(err.response?.data?.message || "Failed to update payment status");
+      toast.error(
+        err.response?.data?.message || "Failed to update payment status",
+      );
     }
   };
 

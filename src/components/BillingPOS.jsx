@@ -29,7 +29,6 @@ import {
 } from "../utils/apiNormalizer";
 import { useAuth } from "../hooks/useAuth";
 import { normalizeInvoice } from "../utils/billingNormalizer";
-import { escapeHtml } from "../utils/escapeHtml";
 import "../styles/BillingPOS.css";
 import InvoiceGeneratedModal from "./invoice/InvoiceGeneratedModal";
 
@@ -566,7 +565,10 @@ export default function BillingPOS({
       };
       let saved;
       if (editingDraft) {
-        const res = await api.put(`${API_ROUTES.BILLING_INVOICES}/${editingDraft.id}`, payload);
+        const res = await api.put(
+          `${API_ROUTES.BILLING_INVOICES}/${editingDraft.id}`,
+          payload,
+        );
         saved = res.data?.data || res.data;
         if (saved?.id) {
           const normalizedDraft = {
@@ -574,8 +576,13 @@ export default function BillingPOS({
             status: "DRAFT",
             time: "Updated just now",
           };
-          setBills((prev) => prev.map((b) => (b.id === saved.id ? normalizedDraft : b)));
-          showToast(`Draft updated — ${saved.invoiceNumber || saved.id}`, "success");
+          setBills((prev) =>
+            prev.map((b) => (b.id === saved.id ? normalizedDraft : b)),
+          );
+          showToast(
+            `Draft updated — ${saved.invoiceNumber || saved.id}`,
+            "success",
+          );
         }
       } else {
         const res = await api.post("billing/invoices/draft", payload);
@@ -588,7 +595,10 @@ export default function BillingPOS({
             timeline: ["Draft Created"],
           };
           setBills((prev) => [normalizedDraft, ...prev]);
-          showToast(`Draft saved — ${saved.invoiceNumber || saved.id}`, "success");
+          showToast(
+            `Draft saved — ${saved.invoiceNumber || saved.id}`,
+            "success",
+          );
           setEditingDraft({
             id: saved.id,
             invoiceNumber: saved.invoiceNumber || saved.id,
@@ -622,67 +632,92 @@ export default function BillingPOS({
     editingDraft,
   ]);
 
-  const handleResumeDraftClick = useCallback(async (bill) => {
-    try {
-      const res = await api.get(`${API_ROUTES.BILLING_INVOICES}/${bill.id}`);
-      const invoice = res.data?.data || res.data;
-      if (!invoice) {
-        showToast("Draft invoice not found", "error");
+  const handleResumeDraftClick = useCallback(
+    async (bill) => {
+      try {
+        const res = await api.get(`${API_ROUTES.BILLING_INVOICES}/${bill.id}`);
+        const invoice = res.data?.data || res.data;
+        if (!invoice) {
+          showToast("Draft invoice not found", "error");
+          return;
+        }
+
+        setPatient({
+          id: invoice.patientId || null,
+          name:
+            invoice.patientName ||
+            invoice.customerName ||
+            (invoice.patientId ? "" : "Walk-in Customer"),
+          phone: invoice.patientPhone || invoice.customerPhone || "",
+        });
+        setIsWalkIn(
+          !invoice.patientId || invoice.patientName === "Walk-in Customer",
+        );
+
+        const loadedItems = (invoice.items || []).map((it) => ({
+          id: it.medicineId || it.id,
+          name: it.medicine?.name || it.medicineName || it.name || "Medicine",
+          batchId: it.batchId || null,
+          qty: Number(it.quantity || it.qty || 1),
+          price: Number(it.unitPrice || it.price || 0),
+          gst: Number(it.gstPercentage || it.gst || 0),
+          mrp: Number(it.unitPrice || it.mrp || 0),
+        }));
+        setLineItems(loadedItems);
+        setDiscount(Number(invoice.discountPercentage || 0));
+        setPaymentMode(invoice.paymentMethod || "CASH");
+        setEditingDraft({
+          id: invoice.id,
+          invoiceNumber: invoice.invoiceNumber || invoice.id,
+          createdAt:
+            invoice.createdAt || bill.createdAt || new Date().toISOString(),
+        });
+        setShowAllBillsModal(false);
+        showToast(
+          `Resumed draft — ${invoice.invoiceNumber || invoice.id}`,
+          "success",
+        );
+      } catch (err) {
+        console.error("[DRAFT] Resume failed:", err);
+        showToast(
+          err.response?.data?.error || "Failed to resume draft",
+          "error",
+        );
+      }
+    },
+    [showToast],
+  );
+
+  const handleDeleteDraftConfirm = useCallback(
+    async (bill) => {
+      if (
+        !window.confirm(
+          `Are you sure you want to delete draft ${bill.invoiceNumber || bill.id}?`,
+        )
+      ) {
         return;
       }
-
-      setPatient({
-        id: invoice.patientId || null,
-        name: invoice.patientName || invoice.customerName || (invoice.patientId ? "" : "Walk-in Customer"),
-        phone: invoice.patientPhone || invoice.customerPhone || "",
-      });
-      setIsWalkIn(!invoice.patientId || invoice.patientName === "Walk-in Customer");
-
-      const loadedItems = (invoice.items || []).map((it) => ({
-        id: it.medicineId || it.id,
-        name: it.medicine?.name || it.medicineName || it.name || "Medicine",
-        batchId: it.batchId || null,
-        qty: Number(it.quantity || it.qty || 1),
-        price: Number(it.unitPrice || it.price || 0),
-        gst: Number(it.gstPercentage || it.gst || 0),
-        mrp: Number(it.unitPrice || it.mrp || 0),
-      }));
-      setLineItems(loadedItems);
-      setDiscount(Number(invoice.discountPercentage || 0));
-      setPaymentMode(invoice.paymentMethod || "CASH");
-      setEditingDraft({
-        id: invoice.id,
-        invoiceNumber: invoice.invoiceNumber || invoice.id,
-        createdAt: invoice.createdAt || bill.createdAt || new Date().toISOString(),
-      });
-      setShowAllBillsModal(false);
-      showToast(`Resumed draft — ${invoice.invoiceNumber || invoice.id}`, "success");
-    } catch (err) {
-      console.error("[DRAFT] Resume failed:", err);
-      showToast(err.response?.data?.error || "Failed to resume draft", "error");
-    }
-  }, [showToast]);
-
-  const handleDeleteDraftConfirm = useCallback(async (bill) => {
-    if (!window.confirm(`Are you sure you want to delete draft ${bill.invoiceNumber || bill.id}?`)) {
-      return;
-    }
-    try {
-      await api.delete(`${API_ROUTES.BILLING_INVOICES}/${bill.id}`);
-      setBills((prev) => prev.filter((b) => b.id !== bill.id));
-      if (editingDraft && editingDraft.id === bill.id) {
-        resetBillForm();
+      try {
+        await api.delete(`${API_ROUTES.BILLING_INVOICES}/${bill.id}`);
+        setBills((prev) => prev.filter((b) => b.id !== bill.id));
+        if (editingDraft && editingDraft.id === bill.id) {
+          resetBillForm();
+        }
+        if (selectedBill && selectedBill.id === bill.id) {
+          setShowBillDetailDrawer(false);
+          setSelectedBill(null);
+        }
+        showToast("Draft invoice deleted", "success");
+      } catch (err) {
+        console.error("[DRAFT] Delete failed:", err);
+        showToast(
+          err.response?.data?.error || "Failed to delete draft",
+          "error",
+        );
       }
-      if (selectedBill && selectedBill.id === bill.id) {
-        setShowBillDetailDrawer(false);
-        setSelectedBill(null);
-      }
-      showToast("Draft invoice deleted", "success");
-    } catch (err) {
-      console.error("[DRAFT] Delete failed:", err);
-      showToast(err.response?.data?.error || "Failed to delete draft", "error");
-    }
-  }, [showToast, editingDraft, selectedBill, resetBillForm]);
+    },
+    [showToast, editingDraft, selectedBill, resetBillForm],
+  );
 
   const handleNewBillClick = useCallback(() => {
     if (editingDraft || lineItems.length > 0) {
@@ -695,11 +730,13 @@ export default function BillingPOS({
   const handlePrint = useCallback(
     (invoice) => {
       const inv = invoice || activeInvoice;
+
       if (!inv) {
         if (lineItems.length === 0) {
           showToast("Add at least one medicine to print", "error");
           return;
         }
+
         if (!isWalkIn && !patient.name) {
           showToast("Please enter patient name", "error");
           return;
@@ -707,6 +744,7 @@ export default function BillingPOS({
       }
 
       setPrintLoading(true);
+
       const invData = inv
         ? { ...inv, items: resolveInvoiceItems(inv) }
         : {
@@ -727,37 +765,57 @@ export default function BillingPOS({
             total: grandTotal,
           };
 
-      const itemsRows = resolveInvoiceItems(invData)
-        .map(normalizeInvoiceItem)
-        .map((i) => {
-          const iPrice = safeNumber(i.price);
-          const iQty = safeNumber(i.qty);
-          const iGst = safeNumber(i.gst || i.gstPercentage);
-          const iDiscP = safeNumber(i.discPercent || i.discountPercent);
-          const lineGross = iPrice * iQty;
-          const lineDisc = lineGross * (iDiscP / 100);
-          const taxable = lineGross - lineDisc;
-          const lineTax = taxable * (iGst / 100);
-          const lineTotal = taxable + lineTax;
-          return `<tr><td style="padding:8px;border-bottom:1px solid #eee">${escapeHtml(i.name)}</td><td style="text-align:center;border-bottom:1px solid #eee">${escapeHtml(iQty)}</td><td style="text-align:center;border-bottom:1px solid #eee">₹${iPrice.toFixed(2)}</td><td style="text-align:center;border-bottom:1px solid #eee">${iGst}%</td><td style="text-align:right;border-bottom:1px solid #eee">₹${lineTax.toFixed(2)}</td><td style="text-align:right;border-bottom:1px solid #eee">₹${lineTotal.toFixed(2)}</td></tr>`;
-        })
-        .join("");
+      const printWindow = window.open("", "_blank");
+
+      if (!printWindow) {
+        showToast("Popup blocked. Please allow popups for this site.", "error");
+        setPrintLoading(false);
+        return;
+      }
+
+      const printDocument = printWindow.document;
+
+      const createElement = (tag, text, styles = {}) => {
+        const element = printDocument.createElement(tag);
+
+        if (text !== undefined && text !== null) {
+          element.textContent = String(text);
+        }
+
+        Object.assign(element.style, styles);
+
+        return element;
+      };
+
+      const createRowValue = (value, styles = {}) =>
+        createElement("td", value, {
+          padding: "8px",
+          borderBottom: "1px solid #eee",
+          ...styles,
+        });
 
       const printPatient = resolveInvoiceField(
         invData,
         "patientName",
         "Walk-in Customer",
       );
+
       const printPhone = resolveInvoiceField(invData, "patientPhone", "-");
+
       const printSubtotal = safeNumber(
         resolveInvoiceField(invData, "subtotal", 0),
       );
+
       const printCgst = safeNumber(resolveInvoiceField(invData, "cgst", 0));
+
       const printSgst = safeNumber(resolveInvoiceField(invData, "sgst", 0));
+
       const printDiscount = safeNumber(
         resolveInvoiceField(invData, "discount", 0),
       );
+
       const printTotal = safeNumber(resolveInvoiceField(invData, "total", 0));
+
       const printDate = resolveInvoiceField(
         invData,
         "date",
@@ -768,44 +826,326 @@ export default function BillingPOS({
         }),
       );
 
-      const html = `<!DOCTYPE html><html><head><title>Invoice ${invData.id}</title>
-<style>
-body{font-family:Arial,sans-serif;padding:20px;margin:0;background:#fff;color:#000}
-@media print{.no-print,.invoice-actions{display:none!important}body{margin:0;padding:20px}}
-@media screen{.invoice-actions{display:flex;gap:10px;padding:16px}}
-table{width:100%;border-collapse:collapse}
-</style></head><body>
-<div style="text-align:center;margin-bottom:32px">
-<div style="font-size:24px;font-weight:800">VIYAN MEDASSIST</div>
-<div style="font-size:12px">123, Healthcare Street, Medical Hub, Bangalore</div>
-<div style="font-size:12px">GSTIN: 29ABCDE1234F1Z1 | Ph: +91 98765 43210</div>
-</div>
-<div style="display:flex;justify-content:space-between"><div><b>INVOICE #</b> ${escapeHtml(invData.id)}</div><div><b>DATE:</b> ${escapeHtml(printDate)}</div></div>
-<div style="display:flex;justify-content:space-between;margin-top:8px"><div><b>PATIENT:</b> ${escapeHtml(printPatient)}</div><div><b>PHONE:</b> ${escapeHtml(printPhone)}</div></div>
-<table><thead><tr style="border-bottom:2px solid #000"><th style="text-align:left;padding:8px">Medicine</th><th>Qty</th><th>MRP</th><th>GST%</th><th style="text-align:right">Tax</th><th style="text-align:right">Total</th></tr></thead><tbody>${itemsRows}</tbody></table>
-<div style="margin-top:20px;margin-left:auto;width:200px">
-<div style="display:flex;justify-content:space-between"><span>Subtotal</span><span>₹${printSubtotal.toFixed(2)}</span></div>
-<div style="display:flex;justify-content:space-between"><span>CGST</span><span>₹${printCgst.toFixed(2)}</span></div>
-<div style="display:flex;justify-content:space-between"><span>SGST</span><span>₹${printSgst.toFixed(2)}</span></div>
-${printDiscount > 0 ? `<div style="display:flex;justify-content:space-between"><span>Discount</span><span>-₹${printDiscount.toFixed(2)}</span></div>` : ""}
-<div style="display:flex;justify-content:space-between;border-top:1px solid #000;font-weight:800;margin-top:8px;padding-top:8px"><span>TOTAL</span><span>₹${printTotal.toFixed(2)}</span></div>
-</div>
-<div style="margin-top:40px;font-size:12px;text-align:center;border-top:1px solid #000;padding-top:20px">Thank you for visiting! Get well soon.</div>
-<div class="no-print invoice-actions" style="display:flex;gap:10px;padding:16px;justify-content:center;margin-top:20px">
-<button onclick="window.print()" style="padding:10px 20px;background:#00C9A7;color:#000;border:none;border-radius:8px;cursor:pointer;font-weight:700">Print</button>
-<button onclick="window.close()" style="padding:10px 20px;background:#eee;border:none;border-radius:8px;cursor:pointer">Close</button>
-</div>
-</body></html>`;
+      /*
+       * Document head
+       */
+      printDocument.title = `Invoice ${String(invData.id)}`;
 
-      const printWindow = window.open("", "_blank");
-      if (!printWindow) {
-        showToast("Popup blocked. Please allow popups for this site.", "error");
-        setPrintLoading(false);
-        return;
+      const style = printDocument.createElement("style");
+
+      style.textContent = `
+      body {
+        font-family: Arial, sans-serif;
+        padding: 20px;
+        margin: 0;
+        background: #fff;
+        color: #000;
       }
-      printWindow.document.write(html);
-      printWindow.document.close();
+
+      @media print {
+        .no-print,
+        .invoice-actions {
+          display: none !important;
+        }
+
+        body {
+          margin: 0;
+          padding: 20px;
+        }
+      }
+
+      @media screen {
+        .invoice-actions {
+          display: flex;
+          gap: 10px;
+          padding: 16px;
+        }
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+    `;
+
+      printDocument.head.appendChild(style);
+
+      /*
+       * Header
+       */
+      const header = createElement("div");
+
+      Object.assign(header.style, {
+        textAlign: "center",
+        marginBottom: "32px",
+      });
+
+      header.appendChild(
+        createElement("div", "VIYAN MEDASSIST", {
+          fontSize: "24px",
+          fontWeight: "800",
+        }),
+      );
+
+      header.appendChild(
+        createElement("div", "123, Healthcare Street, Medical Hub, Bangalore", {
+          fontSize: "12px",
+        }),
+      );
+
+      header.appendChild(
+        createElement("div", "GSTIN: 29ABCDE1234F1Z1 | Ph: +91 98765 43210", {
+          fontSize: "12px",
+        }),
+      );
+
+      printDocument.body.appendChild(header);
+
+      /*
+       * Invoice metadata
+       */
+      const invoiceMeta = createElement("div");
+
+      Object.assign(invoiceMeta.style, {
+        display: "flex",
+        justifyContent: "space-between",
+      });
+
+      const invoiceNumber = createElement("div");
+      invoiceNumber.appendChild(createElement("b", "INVOICE #"));
+      invoiceNumber.appendChild(
+        printDocument.createTextNode(` ${String(invData.id)}`),
+      );
+
+      const invoiceDate = createElement("div");
+      invoiceDate.appendChild(createElement("b", "DATE:"));
+      invoiceDate.appendChild(
+        printDocument.createTextNode(` ${String(printDate)}`),
+      );
+
+      invoiceMeta.append(invoiceNumber, invoiceDate);
+      printDocument.body.appendChild(invoiceMeta);
+
+      /*
+       * Patient metadata
+       */
+      const patientMeta = createElement("div");
+
+      Object.assign(patientMeta.style, {
+        display: "flex",
+        justifyContent: "space-between",
+        marginTop: "8px",
+      });
+
+      const patientElement = createElement("div");
+      patientElement.appendChild(createElement("b", "PATIENT:"));
+      patientElement.appendChild(
+        printDocument.createTextNode(` ${String(printPatient)}`),
+      );
+
+      const phoneElement = createElement("div");
+      phoneElement.appendChild(createElement("b", "PHONE:"));
+      phoneElement.appendChild(
+        printDocument.createTextNode(` ${String(printPhone)}`),
+      );
+
+      patientMeta.append(patientElement, phoneElement);
+      printDocument.body.appendChild(patientMeta);
+
+      /*
+       * Invoice table
+       */
+      const table = printDocument.createElement("table");
+
+      const thead = printDocument.createElement("thead");
+      const headerRow = printDocument.createElement("tr");
+
+      Object.assign(headerRow.style, {
+        borderBottom: "2px solid #000",
+      });
+
+      const headers = [
+        ["Medicine", "left"],
+        ["Qty", "center"],
+        ["MRP", "center"],
+        ["GST%", "center"],
+        ["Tax", "right"],
+        ["Total", "right"],
+      ];
+
+      headers.forEach(([label, alignment]) => {
+        const th = createElement("th", label, {
+          padding: "8px",
+          textAlign: alignment,
+        });
+
+        headerRow.appendChild(th);
+      });
+
+      thead.appendChild(headerRow);
+
+      const tbody = printDocument.createElement("tbody");
+
+      resolveInvoiceItems(invData)
+        .map(normalizeInvoiceItem)
+        .forEach((item) => {
+          const iPrice = safeNumber(item.price);
+          const iQty = safeNumber(item.qty);
+          const iGst = safeNumber(item.gst || item.gstPercentage);
+          const iDiscP = safeNumber(item.discPercent || item.discountPercent);
+
+          const lineGross = iPrice * iQty;
+          const lineDisc = lineGross * (iDiscP / 100);
+          const taxable = lineGross - lineDisc;
+          const lineTax = taxable * (iGst / 100);
+          const lineTotal = taxable + lineTax;
+
+          const row = printDocument.createElement("tr");
+
+          row.appendChild(createRowValue(item.name));
+          row.appendChild(
+            createRowValue(iQty, {
+              textAlign: "center",
+            }),
+          );
+          row.appendChild(
+            createRowValue(`₹${iPrice.toFixed(2)}`, {
+              textAlign: "center",
+            }),
+          );
+          row.appendChild(
+            createRowValue(`${iGst}%`, {
+              textAlign: "center",
+            }),
+          );
+          row.appendChild(
+            createRowValue(`₹${lineTax.toFixed(2)}`, {
+              textAlign: "right",
+            }),
+          );
+          row.appendChild(
+            createRowValue(`₹${lineTotal.toFixed(2)}`, {
+              textAlign: "right",
+            }),
+          );
+
+          tbody.appendChild(row);
+        });
+
+      table.append(thead, tbody);
+      printDocument.body.appendChild(table);
+
+      /*
+       * Totals
+       */
+      const totals = createElement("div");
+
+      Object.assign(totals.style, {
+        marginTop: "20px",
+        marginLeft: "auto",
+        width: "200px",
+      });
+
+      const addTotalRow = (label, value, styles = {}) => {
+        const row = createElement("div");
+
+        Object.assign(row.style, {
+          display: "flex",
+          justifyContent: "space-between",
+          ...styles,
+        });
+
+        row.append(createElement("span", label), createElement("span", value));
+
+        totals.appendChild(row);
+      };
+
+      addTotalRow("Subtotal", `₹${printSubtotal.toFixed(2)}`);
+      addTotalRow("CGST", `₹${printCgst.toFixed(2)}`);
+      addTotalRow("SGST", `₹${printSgst.toFixed(2)}`);
+
+      if (printDiscount > 0) {
+        addTotalRow("Discount", `-₹${printDiscount.toFixed(2)}`);
+      }
+
+      addTotalRow("TOTAL", `₹${printTotal.toFixed(2)}`, {
+        borderTop: "1px solid #000",
+        fontWeight: "800",
+        marginTop: "8px",
+        paddingTop: "8px",
+      });
+
+      printDocument.body.appendChild(totals);
+
+      /*
+       * Footer
+       */
+      const footer = createElement(
+        "div",
+        "Thank you for visiting! Get well soon.",
+        {
+          marginTop: "40px",
+          fontSize: "12px",
+          textAlign: "center",
+          borderTop: "1px solid #000",
+          paddingTop: "20px",
+        },
+      );
+
+      printDocument.body.appendChild(footer);
+
+      /*
+       * Print controls
+       *
+       * Event listeners are used instead of inline onclick HTML.
+       */
+      const actions = createElement("div");
+
+      actions.className = "no-print invoice-actions";
+
+      Object.assign(actions.style, {
+        display: "flex",
+        gap: "10px",
+        padding: "16px",
+        justifyContent: "center",
+        marginTop: "20px",
+      });
+
+      const printButton = createElement("button", "Print");
+
+      Object.assign(printButton.style, {
+        padding: "10px 20px",
+        background: "#00C9A7",
+        color: "#000",
+        border: "none",
+        borderRadius: "8px",
+        cursor: "pointer",
+        fontWeight: "700",
+      });
+
+      printButton.addEventListener("click", () => {
+        printWindow.print();
+      });
+
+      const closeButton = createElement("button", "Close");
+
+      Object.assign(closeButton.style, {
+        padding: "10px 20px",
+        background: "#eee",
+        border: "none",
+        borderRadius: "8px",
+        cursor: "pointer",
+      });
+
+      closeButton.addEventListener("click", () => {
+        printWindow.close();
+      });
+
+      actions.append(printButton, closeButton);
+      printDocument.body.appendChild(actions);
+
       printWindow.focus();
+
       setTimeout(() => {
         printWindow.print();
         printWindow.close();
@@ -838,7 +1178,10 @@ ${printDiscount > 0 ? `<div style="display:flex;justify-content:space-between"><
 
   const handleBillPrint = (bill) => {
     if (bill.status === "DRAFT") {
-      showToast("Draft invoices cannot be printed. Please generate invoice first.", "error");
+      showToast(
+        "Draft invoices cannot be printed. Please generate invoice first.",
+        "error",
+      );
       return;
     }
     setBillCardFlash(bill.id);
@@ -848,7 +1191,10 @@ ${printDiscount > 0 ? `<div style="display:flex;justify-content:space-between"><
 
   const handleBillWhatsApp = (bill) => {
     if (bill.status === "DRAFT") {
-      showToast("Draft invoices cannot be sent via WhatsApp. Please generate invoice first.", "error");
+      showToast(
+        "Draft invoices cannot be sent via WhatsApp. Please generate invoice first.",
+        "error",
+      );
       return;
     }
     setBillCardFlash(bill.id);
@@ -1000,7 +1346,9 @@ ${printDiscount > 0 ? `<div style="display:flex;justify-content:space-between"><
   };
 
   useEffect(() => {
-    setTimeout(() => barcodeInputRef.current?.focus(), 300);
+    const timerId = setTimeout(() => barcodeInputRef.current?.focus(), 300);
+
+    return () => clearTimeout(timerId);
   }, []);
 
   useEffect(() => {

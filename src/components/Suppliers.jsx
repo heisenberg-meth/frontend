@@ -574,11 +574,15 @@ export default function Suppliers({ showToast }) {
   };
 
   const handleToggleStatus = async (supplier) => {
-    const isCurrentlyActive = (supplier.status || "").toLowerCase() === "active";
+    const isCurrentlyActive =
+      (supplier.status || "").toLowerCase() === "active";
     const nextStatus = isCurrentlyActive ? "INACTIVE" : "ACTIVE";
     try {
       await updateSupplier(supplier.id, { status: nextStatus });
-      showToast(`Supplier status updated to ${nextStatus.toLowerCase()} ✓`, "success");
+      showToast(
+        `Supplier status updated to ${nextStatus.toLowerCase()} ✓`,
+        "success",
+      );
       await loadSuppliers();
     } catch (err) {
       showToast(
@@ -690,7 +694,11 @@ export default function Suppliers({ showToast }) {
             </div>
           </div>
           <div className="sup-stat-value text-blue-400">
-            {suppliers.filter((s) => (s.status || "").toLowerCase() === "active").length}
+            {
+              suppliers.filter(
+                (s) => (s.status || "").toLowerCase() === "active",
+              ).length
+            }
           </div>
         </div>
         <div className="sup-stat-card-v2" onMouseMove={handleMouseMove}>
@@ -715,7 +723,11 @@ export default function Suppliers({ showToast }) {
             </div>
           </div>
           <div className="sup-stat-value text-rose-500">
-            {suppliers.filter((s) => (s.status || "").toLowerCase() === "inactive").length}
+            {
+              suppliers.filter(
+                (s) => (s.status || "").toLowerCase() === "inactive",
+              ).length
+            }
           </div>
         </div>
       </div>
@@ -834,7 +846,9 @@ export default function Suppliers({ showToast }) {
                       </span>
                     </td>
                     <td>
-                      <span className={`sup-status-badge ${(s.status || "active").toLowerCase()}`}>
+                      <span
+                        className={`sup-status-badge ${(s.status || "active").toLowerCase()}`}
+                      >
                         <div className="status-dot" />
                         {(s.status || "active").toUpperCase()}
                       </span>
@@ -860,7 +874,11 @@ export default function Suppliers({ showToast }) {
                         </button>
                         <button
                           className={`sup-row-btn ${(s.status || "").toLowerCase() === "active" ? "danger" : "active"}`}
-                          title={(s.status || "").toLowerCase() === "active" ? "Deactivate Supplier" : "Activate Supplier"}
+                          title={
+                            (s.status || "").toLowerCase() === "active"
+                              ? "Deactivate Supplier"
+                              : "Activate Supplier"
+                          }
                           onClick={() => handleToggleStatus(s)}
                         >
                           {(s.status || "").toLowerCase() === "active" ? (
@@ -935,7 +953,9 @@ export default function Suppliers({ showToast }) {
                       {viewTarget.name}
                     </h3>
                     <div className="flex items-center gap-2">
-                      <span className={`sup-status-badge ${(viewTarget.status || "active").toLowerCase()}`}>
+                      <span
+                        className={`sup-status-badge ${(viewTarget.status || "active").toLowerCase()}`}
+                      >
                         <div className="status-dot" />
                         {(viewTarget.status || "active").toUpperCase()}
                       </span>

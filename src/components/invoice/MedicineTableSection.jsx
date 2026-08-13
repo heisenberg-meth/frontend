@@ -11,8 +11,7 @@ import {
 import api from "../../api.js";
 import { API_ROUTES } from "../../constants/api.routes.js";
 import { normalizeArrayResponse } from "../../utils/apiNormalizer";
-import { safeNumber } from '../../utils/number.js';
-
+import { safeNumber } from "../../utils/number.js";
 
 // ─── Stable blank row factory ───────────────────────────────────────────────
 let _rowId = 0;
@@ -421,7 +420,10 @@ function MedicineRow({
           value={item.qty || 1}
           disabled={!isSelected}
           onChange={(e) => {
-            const val = Math.max(1, Math.floor(safeNumber(e.target.value) || 1));
+            const val = Math.max(
+              1,
+              Math.floor(safeNumber(e.target.value) || 1),
+            );
             if (val > (item.stock || 9999)) {
               showToast(`Only ${item.stock} units in stock`, "warning");
               onUpdate(idx, "qty", item.stock);
@@ -457,7 +459,10 @@ function MedicineRow({
           value={item.discount || ""}
           disabled={!isSelected}
           onChange={(e) => {
-            const val = Math.min(100, Math.max(0, safeNumber(e.target.value) || 0));
+            const val = Math.min(
+              100,
+              Math.max(0, safeNumber(e.target.value) || 0),
+            );
             onUpdate(idx, "discount", val);
           }}
         />

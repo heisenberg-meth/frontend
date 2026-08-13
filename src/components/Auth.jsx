@@ -344,17 +344,6 @@ export default function Auth({ onAuth }) {
                 <Shield size={16} />
                 <span>Facility Admin</span>
               </button>
-              {/* <button
-                type="button"
-                className={`type-btn ${loginType === "staff" ? "active" : ""}`}
-                onClick={() => {
-                  setLoginType("staff");
-                  setError("");
-                }}
-              >
-                <Check size={16} />
-                <span>Clinical Staff</span>
-              </button> */}
             </div>
           )}
 

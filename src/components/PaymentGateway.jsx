@@ -212,8 +212,8 @@ export default function PaymentGateway({ user, onPaymentComplete, amount }) {
 
   if (status === "success") {
     return (
-      <div className="dark bg-[var(--bg-dark)] min-h-screen flex items-center justify-center p-6 font-['Manrope']">
-        <div className="bg-[var(--surface)] border border-[var(--surface)] rounded-2xl p-12 max-w-md w-full text-center shadow-2xl animate-in">
+      <div className="dark bg-(--bg-dark) min-h-screen flex items-center justify-center p-6 font-['Manrope']">
+        <div className="bg-(--surface) border border-(--surface) rounded-2xl p-12 max-w-md w-full text-center shadow-2xl animate-in">
           <div className="w-20 h-20 bg-primary/20 rounded-full flex items-center justify-center mx-auto mb-8">
             <span
               className="material-symbols-outlined text-primary text-5xl"
@@ -230,7 +230,7 @@ export default function PaymentGateway({ user, onPaymentComplete, amount }) {
           </p>
           <button
             onClick={onPaymentComplete}
-            className="w-full bg-primary text-[var(--bg-dark)] py-4 rounded-xl font-extrabold shadow-lg hover:brightness-110 transition-all flex items-center justify-center gap-3"
+            className="w-full bg-primary text-(--bg-dark) py-4 rounded-xl font-extrabold shadow-lg hover:brightness-110 transition-all flex items-center justify-center gap-3"
           >
             <span>Enter Dashboard</span>
             <span className="material-symbols-outlined">arrow_forward</span>
@@ -241,8 +241,8 @@ export default function PaymentGateway({ user, onPaymentComplete, amount }) {
   }
 
   return (
-    <div className="dark bg-[var(--bg-dark)] h-screen text-on-surface font-['Manrope'] antialiased overflow-y-auto">
-      <header className="fixed top-0 w-full z-50 flex justify-between items-center px-6 py-3 bg-[var(--bg-dark)]/90 backdrop-blur-md border-b border-[var(--surface)] shadow-xl">
+    <div className="dark bg-(--bg-dark) h-screen text-on-surface font-['Manrope'] antialiased overflow-y-auto">
+      <header className="fixed top-0 w-full z-50 flex justify-between items-center px-6 py-3 bg-(--bg-dark)/90 backdrop-blur-md border-b border-(--surface) shadow-xl">
         <div className="flex items-center gap-3">
           <img
             src="/viyan_logo.webp"
@@ -261,11 +261,11 @@ export default function PaymentGateway({ user, onPaymentComplete, amount }) {
       <main className="pt-24 pb-12 px-6 max-w-7xl mx-auto">
         <div className="flex flex-col md:flex-row gap-8">
           <div className="w-full md:w-5/12 lg:w-4/12">
-            <div className="bg-[var(--surface)] rounded-xl border border-[var(--surface)] p-6 sticky top-24 shadow-2xl">
+            <div className="bg-(--surface) rounded-xl border border-(--surface) p-6 sticky top-24 shadow-2xl">
               <h3 className="text-2xl font-bold mb-6 text-on-surface">
                 Order Summary
               </h3>
-              <div className="flex items-center justify-between py-4 border-b border-[var(--surface)]">
+              <div className="flex items-center justify-between py-4 border-b border-(--surface)">
                 <div className="flex items-center gap-3">
                   <div className="w-12 h-12 rounded bg-primary/10 flex items-center justify-center">
                     <span className="material-symbols-outlined text-primary">
@@ -288,7 +288,7 @@ export default function PaymentGateway({ user, onPaymentComplete, amount }) {
                   <span>Subtotal</span>
                   <span>₹{amount}.00</span>
                 </div>
-                <div className="pt-4 border-t border-[var(--surface)] flex justify-between items-center">
+                <div className="pt-4 border-t border-(--surface) flex justify-between items-center">
                   <span className="text-lg font-bold text-on-surface">
                     Total
                   </span>
@@ -301,14 +301,14 @@ export default function PaymentGateway({ user, onPaymentComplete, amount }) {
           </div>
 
           <div className="w-full md:w-7/12 lg:w-8/12">
-            <div className="bg-[var(--surface)] rounded-xl border border-[var(--surface)] p-8 shadow-2xl">
+            <div className="bg-(--surface) rounded-xl border border-(--surface) p-8 shadow-2xl">
               <h2 className="text-3xl font-bold mb-8 text-on-surface">
                 Complete Payment
               </h2>
               <div className="grid grid-cols-3 gap-4 mb-8">
                 <button
                   onClick={() => setMethod("card")}
-                  className={`flex flex-col items-center justify-center p-4 rounded-xl border-2 transition-all ${method === "card" ? "border-primary bg-primary/10 text-primary" : "border-[var(--surface)] bg-[var(--bg-dark)] text-on-surface-variant"}`}
+                  className={`flex flex-col items-center justify-center p-4 rounded-xl border-2 transition-all ${method === "card" ? "border-primary bg-primary/10 text-primary" : "border-(--surface) bg-(--bg-dark) text-on-surface-variant"}`}
                 >
                   <span className="material-symbols-outlined text-3xl mb-1">
                     credit_card
@@ -319,7 +319,7 @@ export default function PaymentGateway({ user, onPaymentComplete, amount }) {
                 </button>
                 <button
                   onClick={() => setMethod("upi")}
-                  className={`flex flex-col items-center justify-center p-4 rounded-xl border-2 transition-all ${method === "upi" ? "border-primary bg-primary/10 text-primary" : "border-[var(--surface)] bg-[var(--bg-dark)] text-on-surface-variant"}`}
+                  className={`flex flex-col items-center justify-center p-4 rounded-xl border-2 transition-all ${method === "upi" ? "border-primary bg-primary/10 text-primary" : "border-(--surface) bg-(--bg-dark) text-on-surface-variant"}`}
                 >
                   <span className="material-symbols-outlined text-3xl mb-1">
                     account_balance
@@ -330,7 +330,7 @@ export default function PaymentGateway({ user, onPaymentComplete, amount }) {
                 </button>
                 <button
                   onClick={() => setMethod("qr")}
-                  className={`flex flex-col items-center justify-center p-4 rounded-xl border-2 transition-all ${method === "qr" ? "border-primary bg-primary/10 text-primary" : "border-[var(--surface)] bg-[var(--bg-dark)] text-on-surface-variant"}`}
+                  className={`flex flex-col items-center justify-center p-4 rounded-xl border-2 transition-all ${method === "qr" ? "border-primary bg-primary/10 text-primary" : "border-(--surface) bg-(--bg-dark) text-on-surface-variant"}`}
                 >
                   <span className="material-symbols-outlined text-3xl mb-1">
                     qr_code_2
@@ -341,7 +341,7 @@ export default function PaymentGateway({ user, onPaymentComplete, amount }) {
                 </button>
               </div>
 
-              <div className="p-6 bg-[var(--surface)] rounded-xl border border-primary/20 text-center">
+              <div className="p-6 bg-(--surface) rounded-xl border border-primary/20 text-center">
                 <p className="text-on-surface-variant text-sm mb-6 italic">
                   Razorpay secure checkout will launch to handle your{" "}
                   {method.toUpperCase()} payment safely.
@@ -364,7 +364,7 @@ export default function PaymentGateway({ user, onPaymentComplete, amount }) {
                 <button
                   onClick={handlePay}
                   disabled={status === "processing"}
-                  className="w-full bg-primary hover:brightness-110 text-[var(--bg-dark)] font-extrabold py-5 rounded-xl shadow-lg flex items-center justify-center gap-3 active:scale-[0.98] transition-all disabled:opacity-50"
+                  className="w-full bg-primary hover:brightness-110 text-(--bg-dark) font-extrabold py-5 rounded-xl shadow-lg flex items-center justify-center gap-3 active:scale-[0.98] transition-all disabled:opacity-50"
                 >
                   {status === "processing"
                     ? "Initializing..."

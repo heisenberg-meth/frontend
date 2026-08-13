@@ -10,9 +10,8 @@ import {
 import { motion, AnimatePresence } from "framer-motion";
 import api from "../../api.js";
 import { API_ROUTES } from "../../constants/api.routes.js";
-import { safeNumber } from '../../utils/number.js';
+import { safeNumber } from "../../utils/number.js";
 import { SUPPORTED_EXPENSE_CATEGORIES } from "../../constants/expenseCategories.js";
-
 
 export default function PnLReport({ from, to, showToast }) {
   const [loading, setLoading] = useState(false);

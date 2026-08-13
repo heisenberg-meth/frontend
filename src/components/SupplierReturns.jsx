@@ -216,13 +216,12 @@ export default function SupplierReturns({ showToast }) {
   const fetchExpiredData = useCallback(async () => {
     setLoading(true);
     try {
-      const [returnsRes, creditRes, groupRes, sumRes] =
-        await Promise.all([
-          getSupplierReturns({ page: 1, limit: 10 }),
-          getCreditNotes({ page: 1, limit: 10 }),
-          getExpiredGroupedBySupplier(),
-          getExpiredInventorySummary(),
-        ]);
+      const [returnsRes, creditRes, groupRes, sumRes] = await Promise.all([
+        getSupplierReturns({ page: 1, limit: 10 }),
+        getCreditNotes({ page: 1, limit: 10 }),
+        getExpiredGroupedBySupplier(),
+        getExpiredInventorySummary(),
+      ]);
 
       setReturns(returnsRes.data?.data?.returns || []);
       setCreditNotes(creditRes.data?.data?.notes || []);

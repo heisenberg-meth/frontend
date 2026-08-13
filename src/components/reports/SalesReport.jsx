@@ -15,7 +15,6 @@ import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import api from "../../api.js";
 import { API_ROUTES } from "../../constants/api.routes.js";
-import { escapeHtml } from "../../utils/escapeHtml";
 import { safeNumber } from "../../utils/number.js";
 
 export default function SalesReport({ from, to, showToast }) {
@@ -108,35 +107,45 @@ export default function SalesReport({ from, to, showToast }) {
       showToast("Report section not found", "error");
       return;
     }
+
     const win = window.open("", "_blank");
     if (!win) {
       showToast("Pop-up blocked. Please allow pop-ups.", "error");
       return;
     }
-    win.document.write(`
-      <html>
-        <head>
-          <title>Sales Report Print</title>
-          <style>
-            body { font-family: sans-serif; padding: 20px; color: #333; }
-            table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-            th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
-            th { background-color: #f5f5f5; }
-            .header { margin-bottom: 20px; }
-            .no-print { display: none !important; }
-          </style>
-        </head>
-        <body>
-          <div class="header">
-            <h2>Viyan MedAssist - Sales Analytics Report</h2>
-            <p>Period: ${escapeHtml(from)} to ${escapeHtml(to)}</p>
-          </div>
-          ${section.outerHTML}
-        </body>
-      </html>
-    `);
-    win.document.close();
+
+    const doc = win.document;
+
+    doc.title = "Sales Report Print";
+
+    const style = doc.createElement("style");
+    style.textContent = `
+    body { font-family: sans-serif; padding: 20px; color: #333; }
+    table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+    th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+    th { background-color: #f5f5f5; }
+    .header { margin-bottom: 20px; }
+    .no-print { display: none !important; }
+  `;
+
+    const header = doc.createElement("div");
+    header.className = "header";
+
+    const title = doc.createElement("h2");
+    title.textContent = "Viyan MedAssist - Sales Analytics Report";
+
+    const period = doc.createElement("p");
+    period.textContent = `Period: ${from} to ${to}`;
+
+    header.append(title, period);
+
+    const report = section.cloneNode(true);
+
+    doc.head.appendChild(style);
+    doc.body.append(header, report);
+
     win.focus();
+
     setTimeout(() => {
       win.print();
       win.close();

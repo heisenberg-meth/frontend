@@ -24,7 +24,6 @@ import {
   generateBarcode,
 } from "../services/inventory.service";
 import { getBarcodes, verifyBarcode } from "../services/reports.service";
-import { escapeHtml } from "../utils/escapeHtml";
 import "../styles/BarcodeEcosystem.css";
 
 function Spinner({ size = 14 }) {
@@ -218,11 +217,15 @@ export default function BarcodeEcosystem({ showToast }) {
       showToast("Select a medicine first", "error");
       return;
     }
+
     setIsPrinting(true);
+
     try {
       const templateInfo =
         LABEL_TEMPLATES[template] || LABEL_TEMPLATES.Standard;
+
       const labelItem = selectedMedicine;
+
       const expiryStr = labelItem.expiryDate
         ? new Date(labelItem.expiryDate).toLocaleDateString("en-IN", {
             month: "2-digit",
@@ -231,6 +234,7 @@ export default function BarcodeEcosystem({ showToast }) {
         : "—";
 
       let barcodeDataUri = "";
+
       if (labelFields.barcode) {
         try {
           const barcodeText =
@@ -238,13 +242,18 @@ export default function BarcodeEcosystem({ showToast }) {
             labelItem.sku ||
             labelItem.batchNumber ||
             labelItem.id.substring(0, 8);
+
           const res = await generateBarcode(barcodeText);
+
           const blob = new Blob([res.data], {
             type: res.headers["content-type"] || "image/png",
           });
+
           barcodeDataUri = await new Promise((resolve) => {
             const reader = new FileReader();
+
             reader.onloadend = () => resolve(reader.result);
+
             reader.readAsDataURL(blob);
           });
         } catch (err) {
@@ -252,68 +261,210 @@ export default function BarcodeEcosystem({ showToast }) {
         }
       }
 
-      const labelHtml = `
-        <html>
-          <head>
-            <title>Print Label — ${labelItem.name}</title>
-            <style>
-              @page {
-                size: ${templateInfo.width}mm ${templateInfo.height}mm;
-                margin: 0;
-              }
-              * { box-sizing: border-box; margin: 0; padding: 0; }
-              body {
-                width: ${templateInfo.width}mm;
-                height: ${templateInfo.height}mm;
-                font-family: 'Courier New', monospace;
-                padding: 4px;
-                display: flex;
-                flex-direction: column;
-                justify-content: center;
-              }
-              .name { font-size: 11px; font-weight: bold; }
-              .generic { font-size: 8px; color: #555; }
-              .meta { font-size: 8px; display: flex; justify-content: space-between; margin-top: 2px; }
-              .mrp { font-size: 9px; font-weight: bold; margin-top: 2px; }
-              .barcode { margin-top: 2px; height: 18px; width: 100%; display: flex; align-items: center; justify-content: center; }
-              .barcode img { max-width: 100%; max-height: 100%; object-fit: contain; }
-              .qr-code { position: absolute; bottom: 2px; right: 2px; width: 18px; height: 18px; border: 1px solid black; display: flex; align-items: center; justify-content: center; font-size: 6px; }
-            </style>
-          </head>
-          <body>
-            ${labelFields.medName ? `<div class="name">${escapeHtml(labelItem.name)}</div>` : ""}
-            ${labelFields.generic ? `<div class="generic">(${escapeHtml(labelItem.genericName || labelItem.name)})</div>` : ""}
-            ${labelFields.batch || labelFields.expiry ? `<div class="meta">${labelFields.batch ? `Batch: ${escapeHtml(labelItem.batchNumber || "—")}` : ""}${labelFields.expiry ? ` Exp: ${escapeHtml(expiryStr)}` : ""}</div>` : ""}
-            ${labelFields.mrp ? `<div class="mrp">MRP: ₹${(labelItem.mrp || 0).toFixed(2)}/tab</div>` : ""}
-            ${labelFields.barcode ? `<div class="barcode">${barcodeDataUri ? `<img src="${barcodeDataUri}" />` : "Barcode Error"}</div>` : ""}
-            ${labelFields.qr ? `<div class="qr-code">QR</div>` : ""}
-          </body>
-        </html>
-      `;
-
       const printWindow = window.open("", "_blank");
+
       if (!printWindow) {
         showToast("Pop-up blocked. Please allow pop-ups.", "error");
         setIsPrinting(false);
         return;
       }
-      const allLabels = Array.from({ length: labelQty }, () => labelHtml).join(
-        '<div style="page-break-after: always;"></div>',
-      );
-      printWindow.document.write(allLabels);
-      printWindow.document.close();
+
+      const printDocument = printWindow.document;
+
+      printDocument.title = `Print Label — ${String(labelItem.name)}`;
+
+      const style = printDocument.createElement("style");
+
+      style.textContent = `
+      @page {
+        size: ${templateInfo.width}mm ${templateInfo.height}mm;
+        margin: 0;
+      }
+
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      body {
+        font-family: 'Courier New', monospace;
+        background: white;
+      }
+
+      .label {
+        width: ${templateInfo.width}mm;
+        height: ${templateInfo.height}mm;
+        padding: 4px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        position: relative;
+        page-break-after: always;
+        break-after: page;
+      }
+
+      .label:last-child {
+        page-break-after: auto;
+        break-after: auto;
+      }
+
+      .name {
+        font-size: 11px;
+        font-weight: bold;
+      }
+
+      .generic {
+        font-size: 8px;
+        color: #555;
+      }
+
+      .meta {
+        font-size: 8px;
+        display: flex;
+        justify-content: space-between;
+        margin-top: 2px;
+      }
+
+      .mrp {
+        font-size: 9px;
+        font-weight: bold;
+        margin-top: 2px;
+      }
+
+      .barcode {
+        margin-top: 2px;
+        height: 18px;
+        width: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .barcode img {
+        max-width: 100%;
+        max-height: 100%;
+        object-fit: contain;
+      }
+
+      .qr-code {
+        position: absolute;
+        bottom: 2px;
+        right: 2px;
+        width: 18px;
+        height: 18px;
+        border: 1px solid black;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 6px;
+      }
+    `;
+
+      printDocument.head.appendChild(style);
+
+      const createTextElement = (tagName, text, className) => {
+        const element = printDocument.createElement(tagName);
+
+        if (className) {
+          element.className = className;
+        }
+
+        element.textContent = String(text);
+
+        return element;
+      };
+
+      const createLabel = () => {
+        const label = printDocument.createElement("div");
+        label.className = "label";
+
+        if (labelFields.medName) {
+          label.appendChild(createTextElement("div", labelItem.name, "name"));
+        }
+
+        if (labelFields.generic) {
+          label.appendChild(
+            createTextElement(
+              "div",
+              `(${labelItem.genericName || labelItem.name})`,
+              "generic",
+            ),
+          );
+        }
+
+        if (labelFields.batch || labelFields.expiry) {
+          const meta = printDocument.createElement("div");
+          meta.className = "meta";
+
+          if (labelFields.batch) {
+            meta.appendChild(
+              createTextElement(
+                "span",
+                `Batch: ${labelItem.batchNumber || "—"}`,
+              ),
+            );
+          }
+
+          if (labelFields.expiry) {
+            meta.appendChild(createTextElement("span", `Exp: ${expiryStr}`));
+          }
+
+          label.appendChild(meta);
+        }
+
+        if (labelFields.mrp) {
+          label.appendChild(
+            createTextElement(
+              "div",
+              `MRP: ₹${(labelItem.mrp || 0).toFixed(2)}/tab`,
+              "mrp",
+            ),
+          );
+        }
+
+        if (labelFields.barcode) {
+          const barcode = printDocument.createElement("div");
+          barcode.className = "barcode";
+
+          if (barcodeDataUri) {
+            const image = printDocument.createElement("img");
+            image.src = barcodeDataUri;
+            image.alt = "Barcode";
+
+            barcode.appendChild(image);
+          } else {
+            barcode.textContent = "Barcode Error";
+          }
+
+          label.appendChild(barcode);
+        }
+
+        if (labelFields.qr) {
+          label.appendChild(createTextElement("div", "QR", "qr-code"));
+        }
+
+        return label;
+      };
+
+      for (let index = 0; index < labelQty; index += 1) {
+        printDocument.body.appendChild(createLabel());
+      }
+
       printWindow.focus();
+
       printWindow.onafterprint = () => {
         printWindow.close();
         setIsPrinting(false);
       };
+
       setTimeout(() => {
         printWindow.print();
         showToast(`Printing ${labelQty} labels...`, "success");
       }, 500);
     } catch (err) {
       console.error("Print error:", err);
-      showToast("Print failed: " + err.message, "error");
+      showToast(`Print failed: ${err.message}`, "error");
       setIsPrinting(false);
     }
   };

@@ -390,7 +390,7 @@ export default function Dashboard({
             <div className="flex justify-between items-center mb-6">
               <div className="flex items-center gap-3">
                 <AlertTriangle size={20} className="text-yellow-500" />
-                <h3 className="bento-title !mb-0">Needs Reorder</h3>
+                <h3 className="bento-title mb-0!">Needs Reorder</h3>
                 {stats.lowStock > 0 && (
                   <span className="count-badge warning">{stats.lowStock}</span>
                 )}

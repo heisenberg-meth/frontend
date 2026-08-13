@@ -1,4 +1,4 @@
-import { safeNumber } from '../../utils/number.js';
+import { safeNumber } from "../../utils/number.js";
 export const normalizeInventory = (data) => {
   if (!data) return {};
   return {

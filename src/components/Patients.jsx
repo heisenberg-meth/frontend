@@ -17,7 +17,7 @@ import {
   Upload,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { safeNumber } from '../utils/number.js';
+import { safeNumber } from "../utils/number.js";
 
 function Spinner({ size = 14 }) {
   return <Loader2 size={size} className="spinner-icon" />;
@@ -303,9 +303,7 @@ export default function Patients({ showToast }) {
                         <div className="l-main">
                           <b>{entry.type.replace(/_/g, " ")}</b>
                           <p>{entry.notes || "Manual Transaction"}</p>
-                          <small>
-                            {formatDate(entry.createdAt)}
-                          </small>
+                          <small>{formatDate(entry.createdAt)}</small>
                         </div>
                         <div
                           className="l-amt"

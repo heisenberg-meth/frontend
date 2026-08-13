@@ -66,7 +66,9 @@ export default function ClearExpiredButton({
         if (!ignore) setCount(0);
       }
     })();
-    return () => { ignore = true; };
+    return () => {
+      ignore = true;
+    };
   }, [branchId]);
 
   /* ── Handler: user clicks the trigger button ────────────────── */

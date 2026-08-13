@@ -14,8 +14,6 @@ const SignupPage = lazy(() => import("../pages/SignupPage"));
 const PrivacyPolicyPage = lazy(() => import("../pages/PrivacyPolicyPage"));
 const TermsOfServicePage = lazy(() => import("../pages/TermsOfServicePage"));
 const CookiePolicyPage = lazy(() => import("../pages/CookiePolicyPage"));
-
-// Admin pages
 const AdminLogin = lazy(() => import("../pages/admin/AdminLogin"));
 const AdminLayout = lazy(() => import("../pages/admin/AdminLayout"));
 const AdminDashboard = lazy(() => import("../pages/admin/AdminDashboard"));

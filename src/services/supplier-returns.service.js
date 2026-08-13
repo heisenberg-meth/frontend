@@ -3,8 +3,7 @@ import { API_ROUTES } from "../constants/api.routes";
 
 const BASE = API_ROUTES.SUPPLIER_RETURNS;
 
-export const getDashboardMetrics = () =>
-  api.get(`${BASE}/dashboard/metrics`);
+export const getDashboardMetrics = () => api.get(`${BASE}/dashboard/metrics`);
 
 export const getExpiredGroupedBySupplier = () =>
   api.get(API_ROUTES.SUPPLIER_RETURNS_EXPIRED_GROUPED);

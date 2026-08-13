@@ -8,9 +8,9 @@ export default function PlanSelection({ onSelectTrial, onSelectPro }) {
   };
 
   return (
-    <div className="dark bg-[var(--bg-dark)] h-screen text-on-surface font-['Manrope'] antialiased overflow-y-auto">
+    <div className="dark bg-(--bg-dark) h-screen text-on-surface font-['Manrope'] antialiased overflow-y-auto">
       {/* TopAppBar Segment */}
-      <header className="fixed top-0 w-full z-50 flex justify-between items-center px-6 py-3 bg-[var(--bg-dark)]/90 backdrop-blur-md border-b border-[var(--surface)] shadow-xl">
+      <header className="fixed top-0 w-full z-50 flex justify-between items-center px-6 py-3 bg-(--bg-dark)/90 backdrop-blur-md border-b border-(--surface) shadow-xl">
         <div className="flex items-center gap-3">
           <img
             src="/viyan_logo.webp"
@@ -50,15 +50,15 @@ export default function PlanSelection({ onSelectTrial, onSelectPro }) {
         {/* Plan Cards Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 w-full max-w-6xl">
           {/* Trial Card */}
-          <div className="bg-[var(--surface-container)]/50 backdrop-blur-sm border border-[var(--surface)] rounded-2xl p-7 flex flex-col transition-all hover:border-primary/40 hover:shadow-2xl hover:shadow-primary/5 group relative overflow-hidden">
+          <div className="bg-(--surface-container)/50 backdrop-blur-sm border border-(--surface) rounded-2xl p-7 flex flex-col transition-all hover:border-primary/40 hover:shadow-2xl hover:shadow-primary/5 group relative overflow-hidden">
             <div className="mb-6">
               <div className="flex justify-between items-start mb-4">
-                <div className="p-3 bg-[var(--surface)] rounded-xl border border-[var(--surface)]">
+                <div className="p-3 bg-(--surface) rounded-xl border border-(--surface)">
                   <span className="material-symbols-outlined text-primary text-2xl">
                     biotech
                   </span>
                 </div>
-                <span className="bg-[var(--surface)] px-3 py-1 rounded-full text-[9px] font-bold text-on-surface-variant tracking-widest uppercase">
+                <span className="bg-(--surface) px-3 py-1 rounded-full text-[9px] font-bold text-on-surface-variant tracking-widest uppercase">
                   EVALUATION
                 </span>
               </div>
@@ -70,7 +70,7 @@ export default function PlanSelection({ onSelectTrial, onSelectPro }) {
               </p>
             </div>
 
-            <div className="space-y-3 mb-8 flex-grow">
+            <div className="space-y-3 mb-8 grow">
               {[
                 "Full Clinical Analytics",
                 "Unlimited Pharmacy SKUs",
@@ -86,7 +86,7 @@ export default function PlanSelection({ onSelectTrial, onSelectPro }) {
               ))}
             </div>
 
-            <div className="mt-auto pt-6 border-t border-[var(--surface)]">
+            <div className="mt-auto pt-6 border-t border-(--surface)">
               <div className="mb-5">
                 <span className="text-3xl font-extrabold text-on-surface">
                   ₹0
@@ -97,7 +97,7 @@ export default function PlanSelection({ onSelectTrial, onSelectPro }) {
               </div>
               <button
                 onClick={handleTrialClick}
-                className="w-full bg-[var(--surface)] border border-[var(--surface)] text-on-surface py-4 rounded-xl font-bold hover:bg-[var(--surface)] hover:border-primary/50 transition-all active:scale-[0.98] shadow-lg"
+                className="w-full bg-(--surface) border border-(--surface) text-on-surface py-4 rounded-xl font-bold hover:bg-(--surface) hover:border-primary/50 transition-all active:scale-[0.98] shadow-lg"
               >
                 Start Free Trial
               </button>
@@ -105,15 +105,15 @@ export default function PlanSelection({ onSelectTrial, onSelectPro }) {
           </div>
 
           {/* Basic Card */}
-          <div className="bg-[var(--surface-container)]/50 backdrop-blur-sm border border-[var(--surface)] rounded-2xl p-7 flex flex-col transition-all hover:border-primary/40 hover:shadow-2xl hover:shadow-primary/5 group relative overflow-hidden">
+          <div className="bg-(--surface-container)/50 backdrop-blur-sm border border-(--surface) rounded-2xl p-7 flex flex-col transition-all hover:border-primary/40 hover:shadow-2xl hover:shadow-primary/5 group relative overflow-hidden">
             <div className="mb-6">
               <div className="flex justify-between items-start mb-4">
-                <div className="p-3 bg-[var(--surface)] rounded-xl border border-[var(--surface)]">
+                <div className="p-3 bg-(--surface) rounded-xl border border-(--surface)">
                   <span className="material-symbols-outlined text-primary text-2xl">
                     inventory_2
                   </span>
                 </div>
-                <span className="bg-[var(--surface)] px-3 py-1 rounded-full text-[9px] font-bold text-on-surface-variant tracking-widest uppercase">
+                <span className="bg-(--surface) px-3 py-1 rounded-full text-[9px] font-bold text-on-surface-variant tracking-widest uppercase">
                   ESSENTIAL
                 </span>
               </div>
@@ -125,7 +125,7 @@ export default function PlanSelection({ onSelectTrial, onSelectPro }) {
               </p>
             </div>
 
-            <div className="space-y-3 mb-8 flex-grow">
+            <div className="space-y-3 mb-8 grow">
               {[
                 "Unlimited Medicines",
                 "Basic Analytics",
@@ -141,7 +141,7 @@ export default function PlanSelection({ onSelectTrial, onSelectPro }) {
               ))}
             </div>
 
-            <div className="mt-auto pt-6 border-t border-[var(--surface)]">
+            <div className="mt-auto pt-6 border-t border-(--surface)">
               <div className="mb-5">
                 <span className="text-3xl font-extrabold text-on-surface">
                   ₹499
@@ -152,7 +152,7 @@ export default function PlanSelection({ onSelectTrial, onSelectPro }) {
               </div>
               <button
                 onClick={handleProClick}
-                className="w-full bg-[var(--surface)] border border-[var(--surface)] text-on-surface py-4 rounded-xl font-bold hover:bg-[var(--surface)] hover:border-primary/50 transition-all active:scale-[0.98] shadow-lg"
+                className="w-full bg-(--surface) border border-(--surface) text-on-surface py-4 rounded-xl font-bold hover:bg-(--surface) hover:border-primary/50 transition-all active:scale-[0.98] shadow-lg"
               >
                 Get Started
               </button>
@@ -160,7 +160,7 @@ export default function PlanSelection({ onSelectTrial, onSelectPro }) {
           </div>
 
           {/* Pro Card */}
-          <div className="bg-[var(--surface-container)]/80 backdrop-blur-sm border-2 border-primary rounded-2xl p-7 flex flex-col transition-all relative overflow-hidden shadow-2xl shadow-primary/10 group">
+          <div className="bg-(--surface-container)/80 backdrop-blur-sm border-2 border-primary rounded-2xl p-7 flex flex-col transition-all relative overflow-hidden shadow-2xl shadow-primary/10 group">
             {/* Premium Glow */}
             <div className="absolute top-0 right-0 w-32 h-32 bg-primary/10 blur-[60px] pointer-events-none"></div>
 
@@ -174,7 +174,7 @@ export default function PlanSelection({ onSelectTrial, onSelectPro }) {
                     rocket_launch
                   </span>
                 </div>
-                <span className="bg-primary text-[var(--bg-dark)] px-3 py-1 rounded-full text-[9px] font-bold tracking-widest uppercase shadow-lg shadow-primary/20">
+                <span className="bg-primary text-(--bg-dark) px-3 py-1 rounded-full text-[9px] font-bold tracking-widest uppercase shadow-lg shadow-primary/20">
                   RECOMMENDED
                 </span>
               </div>
@@ -186,7 +186,7 @@ export default function PlanSelection({ onSelectTrial, onSelectPro }) {
               </p>
             </div>
 
-            <div className="space-y-3 mb-8 flex-grow">
+            <div className="space-y-3 mb-8 grow">
               {[
                 "Full Intelligence Hub",
                 "Unlimited Inventory SKUs",
@@ -219,7 +219,7 @@ export default function PlanSelection({ onSelectTrial, onSelectPro }) {
               </div>
               <button
                 onClick={handleProClick}
-                className="w-full bg-primary text-[var(--bg-dark)] py-4 rounded-xl font-extrabold shadow-xl shadow-primary/20 hover:brightness-110 hover:scale-[1.02] transition-all active:scale-[0.98]"
+                className="w-full bg-primary text-(--bg-dark) py-4 rounded-xl font-extrabold shadow-xl shadow-primary/20 hover:brightness-110 hover:scale-[1.02] transition-all active:scale-[0.98]"
               >
                 Activate Pro License
               </button>
@@ -251,7 +251,7 @@ export default function PlanSelection({ onSelectTrial, onSelectPro }) {
       </main>
 
       {/* Background Decor */}
-      <div className="fixed bottom-0 left-0 w-full h-1/2 bg-gradient-to-t from-primary/5 to-transparent -z-10 pointer-events-none"></div>
+      <div className="fixed bottom-0 left-0 w-full h-1/2 bg-linear-to-t from-primary/5 to-transparent -z-10 pointer-events-none"></div>
     </div>
   );
 }

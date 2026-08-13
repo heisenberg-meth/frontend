@@ -70,13 +70,12 @@ export default function PricingPage() {
     }
   };
 
-
   return (
     <div className="dark:bg-[#0c1321] bg-slate-50 min-h-screen overflow-y-auto text-slate-800 dark:text-slate-100 font-sans antialiased scroll-smooth pb-12">
       {/* Background blobs for premium dark/light glow */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden z-0">
-        <div className="absolute top-[-10%] left-[-20%] w-[600px] h-[600px] rounded-full bg-emerald-500/10 blur-[120px] dark:bg-emerald-500/5" />
-        <div className="absolute top-[20%] right-[-10%] w-[500px] h-[500px] rounded-full bg-indigo-500/10 blur-[100px] dark:bg-indigo-500/5" />
+        <div className="absolute top-[-10%] left-[-20%] w-150 h-150 rounded-full bg-emerald-500/10 blur-[120px] dark:bg-emerald-500/5" />
+        <div className="absolute top-[20%] right-[-10%] w-125 h-125 rounded-full bg-indigo-500/10 blur-[100px] dark:bg-indigo-500/5" />
       </div>
 
       {/* Header */}
@@ -140,7 +139,7 @@ export default function PricingPage() {
             return (
               <div
                 key={plan.id}
-                className={`relative flex flex-col justify-between bg-white dark:bg-[#151b2a] border rounded-3xl p-8 md:p-10 transition-all duration-300 hover:translate-y-[-6px] hover:shadow-2xl group ${
+                className={`relative flex flex-col justify-between bg-white dark:bg-[#151b2a] border rounded-3xl p-8 md:p-10 transition-all duration-300 hover:-translate-y-1.5 hover:shadow-2xl group ${
                   plan.highlight
                     ? "border-emerald-500 shadow-[0_10px_30px_rgba(16,185,129,0.08)] dark:shadow-[0_10px_30px_rgba(79,219,200,0.05)]"
                     : "border-slate-200 dark:border-slate-800/80 shadow-[0_4px_20px_rgba(0,0,0,0.02)]"
@@ -205,7 +204,7 @@ export default function PricingPage() {
                     </p>
                     {plan.features.map((feature, i) => (
                       <div key={i} className="flex items-start gap-3">
-                        <div className="w-5 h-5 rounded-full bg-emerald-500/10 dark:bg-emerald-500/15 flex items-center justify-center flex-shrink-0 mt-0.5">
+                        <div className="w-5 h-5 rounded-full bg-emerald-500/10 dark:bg-emerald-500/15 flex items-center justify-center shrink-0 mt-0.5">
                           <Check className="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
                         </div>
                         <span className="text-sm text-slate-600 dark:text-slate-300 leading-tight">
