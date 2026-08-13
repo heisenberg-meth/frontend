@@ -3,14 +3,6 @@ export const safeNumber = (value) => {
   return Number.isFinite(num) ? num : 0;
 };
 
-export const formatCurrency = (value) => {
-  return safeNumber(value).toFixed(2);
-};
-
-export const formatNumber = (value, decimals = 2) => {
-  return safeNumber(value).toFixed(decimals);
-};
-
 export const formatDate = (value) => {
   if (!value) return "—";
   const date = new Date(value);

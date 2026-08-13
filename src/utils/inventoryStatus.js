@@ -108,34 +108,6 @@ export function getExpiryDate(medicine) {
 }
 
 /**
- * Get stock quantity from a medicine
- *
- * @param {Object} medicine - Medicine object
- * @returns {number} Stock quantity
- */
-export function getStock(medicine) {
-  if (!medicine) return 0;
-  return Number(
-    medicine.availableStock ??
-      medicine.stock ??
-      medicine.currentStock ??
-      medicine.availableQuantity ??
-      0,
-  );
-}
-
-/**
- * Get reorder level from a medicine
- *
- * @param {Object} medicine - Medicine object
- * @returns {number} Reorder level
- */
-export function getReorderLevel(medicine) {
-  if (!medicine) return 10;
-  return Number(medicine.reorderLevel ?? medicine.reorderPoint ?? 10);
-}
-
-/**
  * Get all status options for filter dropdown
  */
 export const STATUS_OPTIONS = [
@@ -146,26 +118,3 @@ export const STATUS_OPTIONS = [
   "Expiring Soon",
   "Expired",
 ];
-
-/**
- * Get status color for badge display
- *
- * @param {string} status - Medicine status
- * @returns {string} CSS color class
- */
-export function getStatusColor(status) {
-  switch (status) {
-    case "Expired":
-      return "danger";
-    case "Out of Stock":
-      return "danger";
-    case "Low Stock":
-      return "warning";
-    case "Expiring Soon":
-      return "warning";
-    case "In Stock":
-      return "success";
-    default:
-      return "default";
-  }
-}
