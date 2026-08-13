@@ -469,7 +469,7 @@ export default function SubscriptionCRUD({ showToast, user }) {
                 </div>
                 <ul className="sub-plan-features">
                   {plan.features.map((f, idx) => (
-                    <li key={idx}>
+                    <li key={f}>
                       <span className="sub-check">✓</span>
                       <span>{f}</span>
                     </li>

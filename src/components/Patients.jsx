@@ -284,7 +284,7 @@ export default function Patients({ showToast }) {
                 ) : drawerTab === "ledger" ? (
                   <div className="ledger-stack">
                     {creditLedger.map((entry, idx) => (
-                      <div key={idx} className="ledger-entry">
+                      <div key={entry.type} className="ledger-entry">
                         <div
                           className="l-icon"
                           style={{

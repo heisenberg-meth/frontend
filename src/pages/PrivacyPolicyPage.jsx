@@ -99,7 +99,10 @@ export default function PrivacyPolicyPage() {
       );
 
       sections.forEach((section) => observer.observe(section));
-      return () => observer.disconnect();
+      return () => {
+        sections.forEach((section) => observer.unobserve(section));
+        observer.disconnect();
+      };
     }
   }, [contentElement]);
 

@@ -486,7 +486,7 @@ export default function AccountingTax({ showToast }) {
                     </tr>
                   ) : (
                     gstData.map((g, i) => (
-                      <tr key={i}>
+                      <tr key={g.inputCgst}>
                         <td style={{ fontWeight: 700 }}>{g.rate || "—"}</td>
                         <td>₹{(g.sales || 0).toLocaleString("en-IN")}</td>
                         <td>

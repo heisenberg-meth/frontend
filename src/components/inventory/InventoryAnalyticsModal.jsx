@@ -470,7 +470,7 @@ export default function InventoryAnalyticsModal({ isOpen, onClose }) {
                             return (
                               <div
                                 className="category-breakdown-item"
-                                key={idx}
+                                key={cat.value}
                               >
                                 <div className="category-breakdown-header">
                                   <span className="name">

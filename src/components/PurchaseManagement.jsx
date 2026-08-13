@@ -1184,7 +1184,7 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
             col: "var(--primary)",
           },
         ].map((s, i) => (
-          <div key={i} className="pos-stat-card">
+          <div key={s.label} className="pos-stat-card">
             <div className="stat-card-header">
               <span className="stat-label">{s.label}</span>
               <div
@@ -2005,7 +2005,7 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
                             selectedRow?.supplierReturnItems ||
                             []
                           ).map((item, idx) => (
-                            <tr key={idx}>
+                            <tr key={item.name}>
                               <td>
                                 {item.medicine?.name ||
                                   item.medicineName ||
@@ -2256,7 +2256,7 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
                     ) : (
                       returnSelections.map((sel, idx) => (
                         <div
-                          key={idx}
+                          key={sel.medicineName}
                           style={{
                             padding: "12px",
                             marginBottom: "12px",
@@ -2484,7 +2484,7 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
                     <tbody>
                       {receiveItems.map((item, idx) => {
                         return (
-                          <tr key={idx}>
+                          <tr key={item.name}>
                             <td>
                               {item.medicine?.name ||
                                 item.medicineName ||

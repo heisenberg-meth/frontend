@@ -170,7 +170,7 @@ export default function InvoicePreview({
                   const amount = itemSub - itemDisc;
                   return (
                     <tr
-                      key={idx}
+                      key={item.name}
                       className={`inv-tr ${idx % 2 === 0 ? "" : "inv-tr-alt"}`}
                     >
                       <td className="inv-td inv-td-left">

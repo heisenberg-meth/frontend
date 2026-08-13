@@ -77,7 +77,7 @@ export default function PlanSelection({ onSelectTrial, onSelectPro }) {
                 "Audit Logs",
                 "Community Intelligence",
               ].map((feature, i) => (
-                <div key={i} className="flex items-center gap-3">
+                <div key={feature} className="flex items-center gap-3">
                   <span className="material-symbols-outlined text-primary text-lg">
                     check_circle
                   </span>
@@ -132,7 +132,7 @@ export default function PlanSelection({ onSelectTrial, onSelectPro }) {
                 "Up to 3 Users",
                 "Standard Support",
               ].map((feature, i) => (
-                <div key={i} className="flex items-center gap-3">
+                <div key={feature} className="flex items-center gap-3">
                   <span className="material-symbols-outlined text-primary text-lg">
                     check_circle
                   </span>
@@ -194,7 +194,7 @@ export default function PlanSelection({ onSelectTrial, onSelectPro }) {
                 "Advanced Bulk Import",
                 "Personnel Multi-Tenancy",
               ].map((feature, i) => (
-                <div key={i} className="flex items-center gap-3">
+                <div key={feature} className="flex items-center gap-3">
                   <span
                     className="material-symbols-outlined text-primary text-lg"
                     style={{ fontVariationSettings: "'FILL' 1" }}

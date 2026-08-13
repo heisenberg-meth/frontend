@@ -351,7 +351,7 @@ export default function SalesReport({ from, to, showToast }) {
             col: "var(--info)",
           },
         ].map((kpi, i) => (
-          <div key={i} className="report-kpi-card">
+          <div key={kpi.label} className="report-kpi-card">
             <div className="stat-card-header">
               <span className="stat-label">{kpi.label}</span>
               <div
@@ -393,7 +393,7 @@ export default function SalesReport({ from, to, showToast }) {
           <div style={{ marginTop: "20px" }}>
             {topMedicines.map((m, idx) => (
               <div
-                key={idx}
+                key={m.revenue}
                 className="med-revenue-row"
                 onClick={() =>
                   showToast(`Opening detail for ${m.medicineName}`, "info")
@@ -443,7 +443,7 @@ export default function SalesReport({ from, to, showToast }) {
             </div>
             <div className="donut-legend">
               {paymentMethods.map((pm, idx) => (
-                <div className="legend-item" key={idx}>
+                <div className="legend-item" key={pm.method}>
                   <div
                     className="legend-dot"
                     style={{
@@ -478,7 +478,7 @@ export default function SalesReport({ from, to, showToast }) {
             </thead>
             <tbody>
               {data.chart.map((d, i) => (
-                <tr key={i}>
+                <tr key={d.date}>
                   <td>{d.date}</td>
                   <td style={{ fontWeight: 700, textAlign: "right" }}>
                     {d.bills}

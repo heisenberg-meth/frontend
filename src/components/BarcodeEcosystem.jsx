@@ -1124,7 +1124,7 @@ export default function BarcodeEcosystem({ showToast }) {
                           >
                             {[...Array(30)].map((_, i) => (
                               <rect
-                                key={i}
+                                key={_}
                                 x={i * 3.3}
                                 y="0"
                                 width={(i * 7) % 10 > 4 ? 1 : 2}

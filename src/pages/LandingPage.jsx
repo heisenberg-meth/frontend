@@ -440,7 +440,7 @@ export default function LandingPage() {
           <div className="lp-hero-trust">
             <div className="lp-trust-avatars">
               {["👨‍⚕️", "👩‍⚕️", "🧑‍⚕️", "👩‍💼"].map((e, i) => (
-                <div key={i} className="lp-trust-avatar">
+                <div key={e} className="lp-trust-avatar">
                   {e}
                 </div>
               ))}
@@ -469,7 +469,7 @@ export default function LandingPage() {
                   { Icon: CalendarClock },
                 ].map((item, i) => (
                   <div
-                    key={i}
+                    key={item.Icon}
                     className={`lp-mock-sidebar-item ${i === 0 ? "active" : ""}`}
                   >
                     <item.Icon size={16} />

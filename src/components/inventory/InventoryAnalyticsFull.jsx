@@ -356,7 +356,7 @@ export default function InventoryAnalyticsFull() {
                 </thead>
                 <tbody>
                   {highValueStock.map((item, i) => (
-                    <tr key={i}>
+                    <tr key={item.name}>
                       <td>
                         {item.name}{" "}
                         <span
@@ -441,7 +441,7 @@ export default function InventoryAnalyticsFull() {
                 </thead>
                 <tbody>
                   {riskItems.map((item, i) => (
-                    <tr key={i}>
+                    <tr key={item.name}>
                       <td>{item.name}</td>
                       <td className="numeric">₹{item.value}</td>
                       <td className="numeric">
@@ -473,7 +473,7 @@ export default function InventoryAnalyticsFull() {
                 </thead>
                 <tbody>
                   {deadStock.map((item, i) => (
-                    <tr key={i}>
+                    <tr key={item.name}>
                       <td>{item.name}</td>
                       <td className="numeric">₹{item.value}</td>
                       <td className="numeric">

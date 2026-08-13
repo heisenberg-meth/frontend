@@ -2477,14 +2477,10 @@ export default function InventoryCRUD({
                 <ChevronLeft size={16} /> Prev
               </button>
 
-              {getVisiblePages().map((page, i, arr) => {
-                const isEllipsis = page === "...";
-                const isFirstEllipsis = isEllipsis && i < arr.length / 2;
-                const uniqueKey = isEllipsis ? (isFirstEllipsis ? "ellipsis-left" : "ellipsis-right") : `page-${page}`;
-                
-                return isEllipsis ? (
+              {getVisiblePages().map((page, index) =>
+                page === "..." ? (
                   <span
-                    key={uniqueKey}
+                    key={`ellipsis-${index}`}
                     className="inv-ellipsis"
                     style={{
                       color: "var(--text-muted)",
@@ -2496,14 +2492,14 @@ export default function InventoryCRUD({
                   </span>
                 ) : (
                   <button
-                    key={uniqueKey}
+                    key={`page-${page}-${index}`}
                     className={`inv-page-btn ${currentPage === page ? "active" : ""}`}
                     onClick={() => setCurrentPage(page)}
                   >
                     {page}
                   </button>
-                );
-              })}
+                ),
+              )}
 
               <button
                 className="inv-page-btn prev-next"

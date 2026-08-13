@@ -1483,7 +1483,7 @@ export default function BillingPOS({
             col: "var(--danger)",
           },
         ].map((s, i) => (
-          <div key={i} className="pos-stat-card">
+          <div key={s.label} className="pos-stat-card">
             <div className="stat-card-header">
               <span className="stat-label">{s.label}</span>
               <div
@@ -1601,7 +1601,7 @@ export default function BillingPOS({
                 >
                   {patientResults.map((p, i) => (
                     <div
-                      key={i}
+                      key={p.name}
                       className="patient-result-row"
                       onClick={() => selectPatient(p)}
                     >
@@ -2875,7 +2875,7 @@ export default function BillingPOS({
                     {(selectedBill.itemsList || [])
                       .map(normalizeInvoiceItem)
                       .map((item, idx) => (
-                        <tr key={idx}>
+                        <tr key={item.name}>
                           <td>{item.name}</td>
                           <td>{safeNumber(item.qty)}</td>
                           <td>₹{safeNumber(item.price).toFixed(2)}</td>
@@ -2927,7 +2927,7 @@ export default function BillingPOS({
                     TIMELINE
                   </div>
                   {(selectedBill.timeline || []).map((t, i) => (
-                    <div key={i} className="timeline-item">
+                    <div key={t} className="timeline-item">
                       <div className="timeline-dot" />
                       <span>{t}</span>
                     </div>
@@ -3048,7 +3048,7 @@ export default function BillingPOS({
                     {resolveInvoiceItems(selectedBill)
                       .map(normalizeInvoiceItem)
                       .map((item, idx) => (
-                        <tr key={idx}>
+                        <tr key={item.name}>
                           <td>{item.name}</td>
                           <td>{item.qty}</td>
                           <td>
@@ -3324,7 +3324,7 @@ export default function BillingPOS({
                         .map(normalizeInvoiceItem)
                         .map((item, idx) => (
                           <div
-                            key={idx}
+                            key={item.name}
                             style={{
                               display: "flex",
                               alignItems: "center",

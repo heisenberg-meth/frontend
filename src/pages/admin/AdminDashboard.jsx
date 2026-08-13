@@ -36,7 +36,7 @@ const ChartTooltip = ({ active, payload, label }) => {
       >
         <p style={{ color: "#888", marginBottom: 4 }}>{label}</p>
         {payload.map((p, i) => (
-          <p key={i} style={{ color: p.color, margin: 0 }}>
+          <p key={p.name} style={{ color: p.color, margin: 0 }}>
             {p.name}: {p.value}
           </p>
         ))}

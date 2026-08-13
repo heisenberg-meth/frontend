@@ -456,7 +456,7 @@ export default function PnLReport({ from, to, showToast }) {
             </div>
           ) : (
             expensesDistribution.map((c, i) => (
-              <div key={i} className="expense-cat-card">
+              <div key={c.name} className="expense-cat-card">
                 <div
                   className="cat-icon-box"
                   style={{

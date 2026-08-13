@@ -168,7 +168,7 @@ export default function PurchaseReport({ from, to }) {
                 const heightPct = Math.round((val / maxVal) * 100);
                 return (
                   <div
-                    key={i}
+                    key={val}
                     style={{
                       flex: 1,
                       display: "flex",

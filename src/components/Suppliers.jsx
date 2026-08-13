@@ -100,7 +100,15 @@ function CustomDropdown({ value, onChange, options, placeholder = "Select" }) {
   );
 }
 
-function SupplierActionMenu({ supplier, handleView, setEditTarget, setModalOpen, handleToggleStatus, navigate, handleDelete }) {
+function SupplierActionMenu({
+  supplier,
+  handleView,
+  setEditTarget,
+  setModalOpen,
+  handleToggleStatus,
+  navigate,
+  handleDelete,
+}) {
   const [isOpen, setIsOpen] = useState(false);
   const [menuStyle, setMenuStyle] = useState({});
   const buttonRef = useRef(null);
@@ -109,8 +117,10 @@ function SupplierActionMenu({ supplier, handleView, setEditTarget, setModalOpen,
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (
-        buttonRef.current && !buttonRef.current.contains(event.target) &&
-        menuRef.current && !menuRef.current.contains(event.target)
+        buttonRef.current &&
+        !buttonRef.current.contains(event.target) &&
+        menuRef.current &&
+        !menuRef.current.contains(event.target)
       ) {
         setIsOpen(false);
       }
@@ -165,33 +175,82 @@ function SupplierActionMenu({ supplier, handleView, setEditTarget, setModalOpen,
             <motion.div
               ref={menuRef}
               className="custom-dropdown-menu"
-              initial={{ opacity: 0, y: menuStyle.bottom !== "auto" ? 10 : -10, scale: 0.95 }}
+              initial={{
+                opacity: 0,
+                y: menuStyle.bottom !== "auto" ? 10 : -10,
+                scale: 0.95,
+              }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: menuStyle.bottom !== "auto" ? 10 : -10, scale: 0.95 }}
+              exit={{
+                opacity: 0,
+                y: menuStyle.bottom !== "auto" ? 10 : -10,
+                scale: 0.95,
+              }}
               transition={{ duration: 0.15 }}
               role="menu"
               style={{ ...menuStyle, position: "fixed" }}
             >
-              <div className="custom-dropdown-item" onClick={() => { setIsOpen(false); handleView(supplier); }}>
+              <div
+                className="custom-dropdown-item"
+                onClick={() => {
+                  setIsOpen(false);
+                  handleView(supplier);
+                }}
+              >
                 <Eye size={14} style={{ marginRight: "8px" }} /> View Details
               </div>
-              <div className="custom-dropdown-item" onClick={() => { setIsOpen(false); setEditTarget(supplier); setModalOpen(true); }}>
+              <div
+                className="custom-dropdown-item"
+                onClick={() => {
+                  setIsOpen(false);
+                  setEditTarget(supplier);
+                  setModalOpen(true);
+                }}
+              >
                 <Pencil size={14} style={{ marginRight: "8px" }} /> Edit Profile
               </div>
-              <div className="custom-dropdown-item" onClick={() => { setIsOpen(false); handleToggleStatus(supplier); }}>
-                {(supplier.status || "").toLowerCase() === "active" ? <ToggleLeft size={14} style={{ marginRight: "8px" }} /> : <ToggleRight size={14} style={{ marginRight: "8px" }} />}
-                {(supplier.status || "").toLowerCase() === "active" ? "Deactivate" : "Activate"}
+              <div
+                className="custom-dropdown-item"
+                onClick={() => {
+                  setIsOpen(false);
+                  handleToggleStatus(supplier);
+                }}
+              >
+                {(supplier.status || "").toLowerCase() === "active" ? (
+                  <ToggleLeft size={14} style={{ marginRight: "8px" }} />
+                ) : (
+                  <ToggleRight size={14} style={{ marginRight: "8px" }} />
+                )}
+                {(supplier.status || "").toLowerCase() === "active"
+                  ? "Deactivate"
+                  : "Activate"}
               </div>
-              <div className="custom-dropdown-item" onClick={() => { setIsOpen(false); navigate("/purchases", { state: { action: "raise-po", supplierId: supplier.id } }); }}>
-                <ClipboardList size={14} style={{ marginRight: "8px" }} /> Raise PO
+              <div
+                className="custom-dropdown-item"
+                onClick={() => {
+                  setIsOpen(false);
+                  navigate("/purchases", {
+                    state: { action: "raise-po", supplierId: supplier.id },
+                  });
+                }}
+              >
+                <ClipboardList size={14} style={{ marginRight: "8px" }} /> Raise
+                PO
               </div>
-              <div className="custom-dropdown-item" onClick={() => { setIsOpen(false); handleDelete(supplier.id, supplier.name); }} style={{ color: "var(--danger)" }}>
+              <div
+                className="custom-dropdown-item"
+                onClick={() => {
+                  setIsOpen(false);
+                  handleDelete(supplier.id, supplier.name);
+                }}
+                style={{ color: "var(--danger)" }}
+              >
                 <Trash2 size={14} style={{ marginRight: "8px" }} /> Delete
               </div>
             </motion.div>
           )}
         </AnimatePresence>,
-        document.body
+        document.body,
       )}
     </div>
   );
@@ -954,7 +1013,7 @@ export default function Suppliers({ showToast }) {
                     </td>
                     <td>
                       <div className="sup-row-actions">
-                        <SupplierActionMenu 
+                        <SupplierActionMenu
                           supplier={s}
                           handleView={handleView}
                           setEditTarget={setEditTarget}
