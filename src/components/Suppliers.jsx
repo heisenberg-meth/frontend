@@ -1,4 +1,5 @@
 import { useState, useRef, useMemo, useEffect, useCallback } from "react";
+import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
 import {
   Truck,
@@ -21,6 +22,7 @@ import {
   Check,
   ToggleLeft,
   ToggleRight,
+  MoreVertical,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -94,6 +96,103 @@ function CustomDropdown({ value, onChange, options, placeholder = "Select" }) {
           </motion.div>
         )}
       </AnimatePresence>
+    </div>
+  );
+}
+
+function SupplierActionMenu({ supplier, handleView, setEditTarget, setModalOpen, handleToggleStatus, navigate, handleDelete }) {
+  const [isOpen, setIsOpen] = useState(false);
+  const [menuStyle, setMenuStyle] = useState({});
+  const buttonRef = useRef(null);
+  const menuRef = useRef(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (
+        buttonRef.current && !buttonRef.current.contains(event.target) &&
+        menuRef.current && !menuRef.current.contains(event.target)
+      ) {
+        setIsOpen(false);
+      }
+    };
+
+    const handleScroll = () => {
+      setIsOpen(false);
+    };
+
+    if (isOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+      window.addEventListener("scroll", handleScroll, true);
+    }
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      window.removeEventListener("scroll", handleScroll, true);
+    };
+  }, [isOpen]);
+
+  const toggleMenu = () => {
+    if (!isOpen && buttonRef.current) {
+      const rect = buttonRef.current.getBoundingClientRect();
+      const isBottomClipped = rect.bottom + 220 > window.innerHeight; // approx menu height
+
+      setMenuStyle({
+        top: isBottomClipped ? "auto" : rect.bottom + 8,
+        bottom: isBottomClipped ? window.innerHeight - rect.top + 8 : "auto",
+        right: window.innerWidth - rect.right,
+        width: "160px",
+        zIndex: 99999,
+      });
+    }
+    setIsOpen(!isOpen);
+  };
+
+  return (
+    <div className="custom-dropdown-container">
+      <button
+        ref={buttonRef}
+        className="sup-row-btn"
+        onClick={toggleMenu}
+        aria-haspopup="menu"
+        aria-expanded={isOpen}
+        title="Actions"
+      >
+        <MoreVertical size={16} />
+      </button>
+
+      {createPortal(
+        <AnimatePresence>
+          {isOpen && (
+            <motion.div
+              ref={menuRef}
+              className="custom-dropdown-menu"
+              initial={{ opacity: 0, y: menuStyle.bottom !== "auto" ? 10 : -10, scale: 0.95 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: menuStyle.bottom !== "auto" ? 10 : -10, scale: 0.95 }}
+              transition={{ duration: 0.15 }}
+              role="menu"
+              style={{ ...menuStyle, position: "fixed" }}
+            >
+              <div className="custom-dropdown-item" onClick={() => { setIsOpen(false); handleView(supplier); }}>
+                <Eye size={14} style={{ marginRight: "8px" }} /> View Details
+              </div>
+              <div className="custom-dropdown-item" onClick={() => { setIsOpen(false); setEditTarget(supplier); setModalOpen(true); }}>
+                <Pencil size={14} style={{ marginRight: "8px" }} /> Edit Profile
+              </div>
+              <div className="custom-dropdown-item" onClick={() => { setIsOpen(false); handleToggleStatus(supplier); }}>
+                {(supplier.status || "").toLowerCase() === "active" ? <ToggleLeft size={14} style={{ marginRight: "8px" }} /> : <ToggleRight size={14} style={{ marginRight: "8px" }} />}
+                {(supplier.status || "").toLowerCase() === "active" ? "Deactivate" : "Activate"}
+              </div>
+              <div className="custom-dropdown-item" onClick={() => { setIsOpen(false); navigate("/purchases", { state: { action: "raise-po", supplierId: supplier.id } }); }}>
+                <ClipboardList size={14} style={{ marginRight: "8px" }} /> Raise PO
+              </div>
+              <div className="custom-dropdown-item" onClick={() => { setIsOpen(false); handleDelete(supplier.id, supplier.name); }} style={{ color: "var(--danger)" }}>
+                <Trash2 size={14} style={{ marginRight: "8px" }} /> Delete
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>,
+        document.body
+      )}
     </div>
   );
 }
@@ -855,59 +954,15 @@ export default function Suppliers({ showToast }) {
                     </td>
                     <td>
                       <div className="sup-row-actions">
-                        <button
-                          className="sup-row-btn"
-                          title="View Details"
-                          onClick={() => handleView(s)}
-                        >
-                          <Eye size={14} />
-                        </button>
-                        <button
-                          className="sup-row-btn"
-                          title="Edit Profile"
-                          onClick={() => {
-                            setEditTarget(s);
-                            setModalOpen(true);
-                          }}
-                        >
-                          <Pencil size={14} />
-                        </button>
-                        <button
-                          className={`sup-row-btn ${(s.status || "").toLowerCase() === "active" ? "danger" : "active"}`}
-                          title={
-                            (s.status || "").toLowerCase() === "active"
-                              ? "Deactivate Supplier"
-                              : "Activate Supplier"
-                          }
-                          onClick={() => handleToggleStatus(s)}
-                        >
-                          {(s.status || "").toLowerCase() === "active" ? (
-                            <ToggleRight size={14} />
-                          ) : (
-                            <ToggleLeft size={14} />
-                          )}
-                        </button>
-                        <button
-                          className="sup-row-btn active"
-                          title="Raise PO"
-                          onClick={() =>
-                            navigate("/purchases", {
-                              state: {
-                                action: "raise-po",
-                                supplierId: s.id,
-                              },
-                            })
-                          }
-                        >
-                          <ClipboardList size={14} />
-                        </button>
-                        <button
-                          className="sup-row-btn danger"
-                          title="Delete"
-                          onClick={() => handleDelete(s.id, s.name)}
-                        >
-                          <Trash2 size={14} />
-                        </button>
+                        <SupplierActionMenu 
+                          supplier={s}
+                          handleView={handleView}
+                          setEditTarget={setEditTarget}
+                          setModalOpen={setModalOpen}
+                          handleToggleStatus={handleToggleStatus}
+                          navigate={navigate}
+                          handleDelete={handleDelete}
+                        />
                       </div>
                     </td>
                   </tr>

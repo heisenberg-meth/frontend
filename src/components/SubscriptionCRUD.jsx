@@ -243,7 +243,7 @@ export default function SubscriptionCRUD({ showToast, user }) {
       }
 
       const rzp = new window.Razorpay(options);
-      rzp.on("payment.failed", function (failResponse) {
+      rzp["on"]("payment.failed", function (failResponse) {
         console.error("Razorpay Payment Failed:", failResponse);
         showToast(
           `Payment failed: ${failResponse.error?.description || "Unknown error"}`,

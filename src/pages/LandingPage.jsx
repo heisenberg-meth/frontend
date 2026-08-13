@@ -244,15 +244,19 @@ export default function LandingPage() {
   const downloadRef = useRef(null);
 
   useEffect(() => {
+    let timerId;
     if (location.state?.scrollToSection) {
       const sectionId = location.state.scrollToSection;
       navigate("/", { replace: true, state: {} });
-      setTimeout(() => {
+      timerId = setTimeout(() => {
         document
           .getElementById(sectionId)
           ?.scrollIntoView({ behavior: "smooth" });
       }, 200);
     }
+    return () => {
+      if (timerId) clearTimeout(timerId);
+    };
   }, [location.pathname, location.state, navigate]);
 
   useEffect(() => {

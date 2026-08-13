@@ -186,7 +186,7 @@ export default function PaymentGateway({ user, onPaymentComplete, amount }) {
       }
 
       const rzp = new window.Razorpay(options);
-      rzp.on("payment.failed", function (failResponse) {
+      rzp["on"]("payment.failed", function (failResponse) {
         console.error("Razorpay Payment Failed:", failResponse);
         setPaymentError(
           `Payment failed: ${failResponse.error?.description || "Unknown error"}`,

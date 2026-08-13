@@ -49,6 +49,7 @@ export default function CheckoutPage() {
     if (paramError) return;
 
     let cancelled = false;
+    let rzpInstance = null;
 
     const launch = async () => {
       setLoadState("loading");
@@ -145,7 +146,9 @@ export default function CheckoutPage() {
 
       try {
         const rzp = new window.Razorpay(options);
-        rzp.on("payment.failed", (failResponse) => {
+        if (cancelled) return;
+        rzpInstance = rzp;
+        rzp["on"]("payment.failed", (failResponse) => {
           console.error(
             "[Razorpay] payment.failed event fired. Response:",
             failResponse,
@@ -173,6 +176,13 @@ export default function CheckoutPage() {
 
     return () => {
       cancelled = true;
+      if (rzpInstance) {
+        try {
+          rzpInstance.close();
+        } catch (e) {
+          void e;
+        }
+      }
     };
   }, [paramError, orderId, key, amount, currency, callback]);
 

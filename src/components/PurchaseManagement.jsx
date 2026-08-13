@@ -625,17 +625,21 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
   };
 
   useEffect(() => {
+    let timerId;
     if (drawer === "invoice-detail" && selectedRow) {
       const supplierId = selectedRow.supplierId || selectedRow.supplier?.id;
       if (
         supplierId &&
         (selectedRow.paymentStatus || selectedRow.status) !== "PAID"
       ) {
-        setTimeout(() => {
+        timerId = setTimeout(() => {
           fetchSupplierCredits(supplierId);
         }, 0);
       }
     }
+    return () => {
+      if (timerId) clearTimeout(timerId);
+    };
   }, [drawer, selectedRow]);
 
   const handleApplyCredit = async () => {
@@ -686,8 +690,9 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
     const state = location.state;
     if (!state) return;
 
+    let timerId;
     if (state.action === "raise-po") {
-      setTimeout(() => {
+      timerId = setTimeout(() => {
         handleOpenDrawer("new-purchase");
 
         if (state.medicine) {
@@ -712,6 +717,9 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
         navigate(location.pathname, { replace: true, state: {} });
       }, 0);
     }
+    return () => {
+      if (timerId) clearTimeout(timerId);
+    };
   }, [
     location.state,
     suppliers,

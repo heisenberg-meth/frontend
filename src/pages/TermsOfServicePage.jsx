@@ -69,25 +69,26 @@ export default function TermsOfServicePage() {
   }, [contentElement]);
 
   useEffect(() => {
-    if (!contentElement) return;
-    const sections = document.querySelectorAll(".legal-section");
+    if (contentElement) {
+      const sections = document.querySelectorAll(".legal-section");
 
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            setActiveSection(entry.target.id);
-          }
-        });
-      },
-      {
-        root: contentElement,
-        rootMargin: "-20px 0px -60% 0px",
-      },
-    );
+      const observer = new IntersectionObserver(
+        (entries) => {
+          entries.forEach((entry) => {
+            if (entry.isIntersecting) {
+              setActiveSection(entry.target.id);
+            }
+          });
+        },
+        {
+          root: contentElement,
+          rootMargin: "-20px 0px -60% 0px",
+        },
+      );
 
-    sections.forEach((section) => observer.observe(section));
-    return () => observer.disconnect();
+      sections.forEach((section) => observer.observe(section));
+      return () => observer.disconnect();
+    }
   }, [contentElement]);
 
   const handleScrollTo = (id) => {

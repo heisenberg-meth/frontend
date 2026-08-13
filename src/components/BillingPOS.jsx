@@ -1123,9 +1123,9 @@ export default function BillingPOS({
         fontWeight: "700",
       });
 
-      printButton.addEventListener("click", () => {
+      printButton.onclick = () => {
         printWindow.print();
-      });
+      };
 
       const closeButton = createElement("button", "Close");
 
@@ -1137,9 +1137,9 @@ export default function BillingPOS({
         cursor: "pointer",
       });
 
-      closeButton.addEventListener("click", () => {
+      closeButton.onclick = () => {
         printWindow.close();
-      });
+      };
 
       actions.append(printButton, closeButton);
       printDocument.body.appendChild(actions);

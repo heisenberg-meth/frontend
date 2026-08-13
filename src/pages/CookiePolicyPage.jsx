@@ -62,25 +62,29 @@ export default function CookiePolicyPage() {
   }, [contentElement]);
 
   useEffect(() => {
-    if (!contentElement) return;
-    const sections = document.querySelectorAll(".legal-section");
+    let observer = null;
+    if (contentElement) {
+      const sections = document.querySelectorAll(".legal-section");
 
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            setActiveSection(entry.target.id);
-          }
-        });
-      },
-      {
-        root: contentElement,
-        rootMargin: "-20px 0px -60% 0px",
-      },
-    );
+      observer = new IntersectionObserver(
+        (entries) => {
+          entries.forEach((entry) => {
+            if (entry.isIntersecting) {
+              setActiveSection(entry.target.id);
+            }
+          });
+        },
+        {
+          root: contentElement,
+          rootMargin: "-20px 0px -60% 0px",
+        },
+      );
 
-    sections.forEach((section) => observer.observe(section));
-    return () => observer.disconnect();
+      sections.forEach((section) => observer.observe(section));
+    }
+    return () => {
+      if (observer) observer.disconnect();
+    };
   }, [contentElement]);
 
   const handleScrollTo = (id) => {
