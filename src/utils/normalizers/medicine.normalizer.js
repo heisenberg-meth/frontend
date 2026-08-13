@@ -23,6 +23,14 @@ export const normalizeMedicine = (data) => {
       : "";
   const manufacturerId = data.manufacturerId || manufacturerObj?.id || "";
 
+  const availableStock = safeNumber(
+    data.availableStock ??
+      data.stock ??
+      data.currentStock ??
+      data.quantity ??
+      0,
+  );
+
   return {
     ...data,
     name: String(data.name || ""),
@@ -37,7 +45,9 @@ export const normalizeMedicine = (data) => {
     purchaseCost: safeNumber(
       data.purchaseCost ?? data.purchasePrice ?? batch?.purchasePrice ?? 0,
     ),
-    stock: safeNumber(data.currentStock ?? data.stock ?? data.quantity ?? 0),
+    stock: availableStock,
+    availableStock,
+    isOutOfStock: data.isOutOfStock ?? availableStock <= 0,
     reorderLevel: safeNumber(data.reorderLevel ?? data.reorderPoint ?? 10),
     gst: safeNumber(data.gst ?? data.gstPercentage ?? 12),
     supplier: data.supplier || "",
