@@ -73,54 +73,61 @@ function Toast({ message, type }) {
   );
 }
 
-function AppContent() {
-  const navigate = useNavigate();
-  const {
-    user,
-    subscription,
-    loading: authLoading,
-    restored,
-    toast,
-    showToast,
-    login,
-    register,
-    logout,
-    updateUser,
-    refreshUser,
-    tenant,
-  } = useAuth();
-
-  const [medicines, setMedicines] = useState([]);
-  const [theme, setTheme] = useState(
-    () => localStorage.getItem("viyan-theme") || "dark",
+function AppLoadingScreen() {
+  return (
+    <div
+      className="auth-loading-screen"
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        justifyContent: "center",
+        height: "100vh",
+        width: "100vw",
+        backgroundColor: "var(--bg-dark)",
+      }}
+    >
+      <motion.div
+        className="auth-loading-spinner"
+        animate={{ rotate: 360 }}
+        transition={{ repeat: Infinity, duration: 1, ease: "linear" }}
+        style={{
+          width: 40,
+          height: 40,
+          border: "4px solid rgba(79, 219, 200, 0.2)",
+          borderTopColor: "var(--primary)",
+          borderRadius: "50%",
+          marginBottom: 16,
+        }}
+      />
+      <p style={{ color: "var(--text-muted)" }}>
+        Initializing secure session...
+      </p>
+    </div>
   );
+}
+
+function useAppData({ status, restored, user, showToast }) {
+  const [medicines, setMedicines] = useState([]);
   const [lowStock, setLowStock] = useState(10);
   const [expiryDays, setExpiryDays] = useState(30);
   const [storeProfile, setStoreProfile] = useState(null);
-  const [currency] = useState({
-    code: "INR",
-    symbol: "₹",
-    rate: 83.5,
-  });
-
-  const [showLogoutModal, setShowLogoutModal] = useState(false);
   const [lastSync, setLastSync] = useState(new Date());
-
-  // fetchProfile removed to avoid duplicate API calls; profile data is synced via AuthContext
-
-  const status = subscription?.status;
 
   const fetchData = useCallback(async () => {
     if (
       !status ||
       status === SubscriptionStatus.EXPIRED ||
       status === SubscriptionStatus.CANCELLED
-    )
+    ) {
       return;
+    }
+
     try {
       const res = await api.get(API_ROUTES.INVENTORY_MEDICINES, {
         params: { limit: 100 },
       });
+
       setMedicines(normalizeArrayResponse(res));
       setLastSync(new Date());
     } catch {
@@ -133,8 +140,10 @@ function AppContent() {
       !status ||
       status === SubscriptionStatus.EXPIRED ||
       status === SubscriptionStatus.CANCELLED
-    )
+    ) {
       return;
+    }
+
     try {
       const res = await api.get(API_ROUTES.SETTINGS);
       const {
@@ -143,12 +152,14 @@ function AppContent() {
         theme: backendTheme,
         storeProfile,
       } = res.data?.data || res.data || {};
+
       setLowStock(lowStock ?? 10);
       setExpiryDays(expiryDays ?? 30);
       setStoreProfile(storeProfile || {});
+
       const localTheme = localStorage.getItem("viyan-theme");
+
       if (!localTheme && backendTheme) {
-        setTheme(backendTheme);
         localStorage.setItem("viyan-theme", backendTheme);
         document.documentElement.setAttribute("data-theme", backendTheme);
       }
@@ -158,12 +169,13 @@ function AppContent() {
   }, [status]);
 
   useEffect(() => {
-    if (!restored) return;
+    let ignore = false;
+
+    if (!restored || !user) return;
 
     if (
-      !user ||
-      (status !== SubscriptionStatus.TRIAL &&
-        status !== SubscriptionStatus.ACTIVE)
+      status !== SubscriptionStatus.TRIAL &&
+      status !== SubscriptionStatus.ACTIVE
     ) {
       return;
     }
@@ -172,11 +184,17 @@ function AppContent() {
       try {
         await Promise.all([fetchData(), fetchSettings()]);
       } catch (err) {
-        console.error("[APP INIT ERROR]", err);
+        if (!ignore) {
+          console.error("[APP INIT ERROR]", err);
+        }
       }
     };
 
     boot();
+
+    return () => {
+      ignore = true;
+    };
   }, [restored, user, status, fetchData, fetchSettings]);
 
   useEffect(() => {
@@ -199,6 +217,234 @@ function AppContent() {
 
     return () => clearInterval(syncInterval);
   }, [restored, user, status, fetchSettings, fetchData]);
+
+  return {
+    medicines,
+    setMedicines,
+    lowStock,
+    setLowStock,
+    expiryDays,
+    setExpiryDays,
+    storeProfile,
+    lastSync,
+    fetchData,
+    fetchSettings,
+  };
+}
+
+function useAppActions({
+  navigate,
+  showToast,
+  logout,
+  login,
+  register,
+  refreshUser,
+  updateUser,
+  fetchData,
+  fetchSettings,
+  setMedicines,
+  setShowLogoutModal,
+}) {
+  const handleSignOut = useCallback(async () => {
+    await logout();
+    setMedicines([]);
+    setShowLogoutModal(false);
+    navigate("/login");
+  }, [logout, setMedicines, setShowLogoutModal, navigate]);
+
+  const handlePaymentComplete = useCallback(async () => {
+    try {
+      await refreshUser();
+    } catch (e) {
+      console.error("Failed to refresh user after payment", e);
+    }
+
+    navigate("/dashboard", { replace: true });
+  }, [navigate, refreshUser]);
+
+  const handleSelectPro = useCallback(() => {
+    navigate("/payment");
+  }, [navigate]);
+
+  const handleSelectTrial = useCallback(async () => {
+    try {
+      await api.post(API_ROUTES.SUBSCRIPTIONS_TRIAL);
+      await refreshUser();
+      showToast("Trial activated successfully", "success");
+      navigate("/dashboard", { replace: true });
+    } catch (err) {
+      showToast("Failed to activate trial", err);
+    }
+  }, [navigate, refreshUser, showToast]);
+
+  const handleClearAll = useCallback(async () => {
+    try {
+      await api.delete("inventory/medicines-clear-all");
+      showToast("Inventory reset successfully", "success");
+      await fetchData();
+    } catch {
+      showToast("Reset failed", "error");
+    }
+  }, [fetchData, showToast]);
+
+  const handleSaveSettings = useCallback(
+    async (settings) => {
+      try {
+        await api.put("settings", settings);
+        showToast("Configuration saved and synchronized", "success");
+        await fetchSettings();
+      } catch {
+        showToast("Failed to save settings", "error");
+      }
+    },
+    [fetchSettings, showToast],
+  );
+
+  const handleAvatarUpload = useCallback(
+    async (file) => {
+      if (!file) return;
+
+      const formData = new FormData();
+      formData.append("avatar", file);
+
+      const res = await api.post("uploads/avatar", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+
+      const avatarUrl = res.data?.data?.avatarUrl || res.data?.avatarUrl;
+
+      updateUser({ avatar: avatarUrl });
+      await refreshUser();
+
+      return avatarUrl;
+    },
+    [refreshUser, updateUser],
+  );
+
+  const handleActivateSubscription = useCallback(async () => {
+    try {
+      await refreshUser();
+      showToast("Subscription status synchronized", "success");
+    } catch {
+      showToast("Failed to refresh status", "error");
+    }
+  }, [refreshUser, showToast]);
+
+  const handleAuthSuccess = useCallback(
+    async (credentials, isRegister) => {
+      const result = isRegister
+        ? await register(credentials)
+        : await login(credentials);
+
+      if (result?.deviceVerificationRequired) {
+        return result;
+      }
+
+      if (result.subscriptionExpired) {
+        navigate(result.redirectTo || "/billing");
+      } else if (result.isNew) {
+        if (result.subscriptionStatus === "PENDING") {
+          navigate("/payment");
+        } else {
+          await fetchData();
+          await fetchSettings();
+          navigate("/dashboard");
+        }
+      } else {
+        await fetchData();
+        await fetchSettings();
+        navigate("/dashboard");
+      }
+
+      return result;
+    },
+    [register, login, navigate, fetchData, fetchSettings],
+  );
+
+  return {
+    handleSignOut,
+    handlePaymentComplete,
+    handleSelectPro,
+    handleSelectTrial,
+    handleClearAll,
+    handleSaveSettings,
+    handleAvatarUpload,
+    handleActivateSubscription,
+    handleAuthSuccess,
+  };
+}
+
+function AppContent() {
+  const navigate = useNavigate();
+
+  const {
+    user,
+    subscription,
+    loading: authLoading,
+    restored,
+    toast,
+    showToast,
+    login,
+    register,
+    logout,
+    updateUser,
+    refreshUser,
+    tenant,
+  } = useAuth();
+
+  const [theme, setTheme] = useState(
+    () => localStorage.getItem("viyan-theme") || "dark",
+  );
+  const [currency] = useState({
+    code: "INR",
+    symbol: "₹",
+    rate: 83.5,
+  });
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
+
+  const status = subscription?.status;
+
+  const {
+    medicines,
+    setMedicines,
+    lowStock,
+    setLowStock,
+    expiryDays,
+    setExpiryDays,
+    storeProfile,
+    lastSync,
+    fetchData,
+    fetchSettings,
+  } = useAppData({
+    status,
+    restored,
+    user,
+    showToast,
+  });
+
+  const {
+    handleSignOut,
+    handlePaymentComplete,
+    handleSelectPro,
+    handleSelectTrial,
+    handleClearAll,
+    handleSaveSettings,
+    handleAvatarUpload,
+    handleActivateSubscription,
+    handleAuthSuccess,
+  } = useAppActions({
+    navigate,
+    showToast,
+    logout,
+    login,
+    register,
+    refreshUser,
+    updateUser,
+    fetchData,
+    fetchSettings,
+    setMedicines,
+    setShowLogoutModal,
+  });
 
   useEffect(() => {
     const saved = localStorage.getItem("viyan-theme");
@@ -234,84 +480,6 @@ function AppContent() {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [navigate]);
 
-  const toggleTheme = async () => {
-    const newTheme = theme === "dark" ? "light" : "dark";
-    setTheme(newTheme);
-    localStorage.setItem("viyan-theme", newTheme);
-    document.documentElement.setAttribute("data-theme", newTheme);
-    try {
-      await api.put("settings", { lowStock, expiryDays, theme: newTheme });
-    } catch {
-      console.error("Failed to save theme preference");
-    }
-  };
-
-  const handleSignOut = async () => {
-    await logout();
-    setMedicines([]);
-    setShowLogoutModal(false);
-    navigate("/login");
-  };
-
-  const handlePaymentComplete = useCallback(async () => {
-    try {
-      await refreshUser();
-    } catch (e) {
-      console.error("Failed to refresh user after payment", e);
-    }
-    navigate("/dashboard", { replace: true });
-  }, [navigate, refreshUser]);
-
-  const handleSelectPro = useCallback(() => {
-    navigate("/payment");
-  }, [navigate]);
-
-  const handleSelectTrial = useCallback(async () => {
-    try {
-      await api.post(API_ROUTES.SUBSCRIPTIONS_TRIAL);
-      await refreshUser();
-      showToast("Trial activated successfully", "success");
-      navigate("/dashboard", { replace: true });
-    } catch (err) {
-      showToast("Failed to activate trial", err);
-    }
-  }, [navigate, refreshUser, showToast]);
-
-  const handleClearAll = async () => {
-    try {
-      await api.delete("inventory/medicines-clear-all");
-      showToast("Inventory reset successfully", "success");
-      fetchData();
-    } catch {
-      showToast("Reset failed", "error");
-    }
-  };
-
-  const handleSaveSettings = async (settings) => {
-    try {
-      await api.put("settings", settings);
-      showToast("Configuration saved and synchronized", "success");
-      await fetchSettings();
-    } catch {
-      showToast("Failed to save settings", "error");
-    }
-  };
-
-  const handleAvatarUpload = async (file) => {
-    if (!file) return;
-    const formData = new FormData();
-    formData.append("avatar", file);
-
-    const res = await api.post("uploads/avatar", formData, {
-      headers: { "Content-Type": "multipart/form-data" },
-    });
-    const avatarUrl = res.data?.data?.avatarUrl || res.data?.avatarUrl;
-
-    updateUser({ avatar: avatarUrl });
-    refreshUser();
-    return avatarUrl;
-  };
-
   useEffect(() => {
     const handleSubscriptionExpired = (e) => {
       refreshUser();
@@ -341,128 +509,69 @@ function AppContent() {
       );
       window.removeEventListener("auth:sessionExpired", handleSessionExpired);
     };
-  }, [refreshUser, showToast, navigate, logout]);
+  }, [refreshUser, showToast, navigate, logout, setShowLogoutModal]);
 
-  const handleActivateSubscription = async () => {
+  const toggleTheme = useCallback(async () => {
+    const newTheme = theme === "dark" ? "light" : "dark";
+    setTheme(newTheme);
+    localStorage.setItem("viyan-theme", newTheme);
+    document.documentElement.setAttribute("data-theme", newTheme);
     try {
-      await refreshUser();
-      showToast("Subscription status synchronized", "success");
+      await api.put("settings", { lowStock, expiryDays, theme: newTheme });
     } catch {
-      showToast("Failed to refresh status", "error");
+      console.error("Failed to save theme preference");
     }
-  };
-
-  const handleAuthSuccess = async (credentials, isRegister) => {
-    const result = isRegister
-      ? await register(credentials)
-      : await login(credentials);
-
-    if (result?.deviceVerificationRequired) {
-      return result;
-    }
-
-    if (result.subscriptionExpired) {
-      navigate(result.redirectTo || "/billing");
-    } else if (result.isNew) {
-      // Post-registration routing based on subscription status
-      if (result.subscriptionStatus === "PENDING") {
-        // Paid plan — needs checkout
-        navigate("/payment");
-      } else {
-        // Free trial or free plan — go to dashboard
-        fetchData();
-        fetchSettings();
-        navigate("/dashboard");
-      }
-    } else {
-      fetchData();
-      fetchSettings();
-      navigate("/dashboard");
-    }
-    return result;
-  };
+  }, [theme, lowStock, expiryDays]);
 
   if (!restored || authLoading) {
-    return (
-      <div
-        className="auth-loading-screen"
-        style={{
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          justifyContent: "center",
-          height: "100vh",
-          width: "100vw",
-          backgroundColor: "var(--bg-dark)",
-        }}
-      >
-        <motion.div
-          className="auth-loading-spinner"
-          animate={{ rotate: 360 }}
-          transition={{ repeat: Infinity, duration: 1, ease: "linear" }}
-          style={{
-            width: 40,
-            height: 40,
-            border: "4px solid rgba(79, 219, 200, 0.2)",
-            borderTopColor: "var(--primary)",
-            borderRadius: "50%",
-            marginBottom: 16,
-          }}
-        />
-        <p style={{ color: "var(--text-muted)" }}>
-          Initializing secure session...
-        </p>
-      </div>
-    );
+    return <AppLoadingScreen />;
   }
 
   return (
-    <>
-      <div className="app-shell-root" data-theme={theme}>
-        <AppRoutes
-          user={user}
-          subscription={subscription}
-          theme={theme}
-          storeProfile={storeProfile}
-          medicines={medicines}
-          expiryDays={expiryDays}
-          lowStock={lowStock}
-          currency={currency}
-          lastSync={lastSync}
-          fetchData={fetchData}
-          showToast={showToast}
-          toggleTheme={toggleTheme}
-          handleClearAll={handleClearAll}
-          handleSaveSettings={handleSaveSettings}
-          setLowStock={setLowStock}
-          setExpiryDays={setExpiryDays}
-          setTheme={setTheme}
-          handleActivateSubscription={handleActivateSubscription}
-          handleAuthSuccess={handleAuthSuccess}
-          handleAvatarUpload={handleAvatarUpload}
-          profile={{ ...user, shopName: tenant?.name || "" }}
-          refreshProfile={refreshUser}
-          setShowLogoutModal={setShowLogoutModal}
-          handlePaymentComplete={handlePaymentComplete}
-          handleSelectPro={handleSelectPro}
-          handleSelectTrial={handleSelectTrial}
-          PaywallComponent={() => (
-            <Paywall onActivate={() => navigate("/plans")} />
-          )}
-        />
+    <div className="app-shell-root" data-theme={theme}>
+      <AppRoutes
+        user={user}
+        subscription={subscription}
+        theme={theme}
+        storeProfile={storeProfile}
+        medicines={medicines}
+        expiryDays={expiryDays}
+        lowStock={lowStock}
+        currency={currency}
+        lastSync={lastSync}
+        fetchData={fetchData}
+        showToast={showToast}
+        toggleTheme={toggleTheme}
+        handleClearAll={handleClearAll}
+        handleSaveSettings={handleSaveSettings}
+        setLowStock={setLowStock}
+        setExpiryDays={setExpiryDays}
+        setTheme={setTheme}
+        handleActivateSubscription={handleActivateSubscription}
+        handleAuthSuccess={handleAuthSuccess}
+        handleAvatarUpload={handleAvatarUpload}
+        profile={{ ...user, shopName: tenant?.name || "" }}
+        refreshProfile={refreshUser}
+        setShowLogoutModal={setShowLogoutModal}
+        handlePaymentComplete={handlePaymentComplete}
+        handleSelectPro={handleSelectPro}
+        handleSelectTrial={handleSelectTrial}
+        PaywallComponent={() => (
+          <Paywall onActivate={() => navigate("/plans")} />
+        )}
+      />
 
-        <AnimatePresence>
-          {toast && <Toast message={toast.message} type={toast.type} />}
-        </AnimatePresence>
+      <AnimatePresence>
+        {toast && <Toast message={toast.message} type={toast.type} />}
+      </AnimatePresence>
 
-        <LogoutModal
-          isOpen={showLogoutModal}
-          onClose={() => setShowLogoutModal(false)}
-          onConfirmLogout={handleSignOut}
-          user={user}
-        />
-      </div>
-    </>
+      <LogoutModal
+        isOpen={showLogoutModal}
+        onClose={() => setShowLogoutModal(false)}
+        onConfirmLogout={handleSignOut}
+        user={user}
+      />
+    </div>
   );
 }
 

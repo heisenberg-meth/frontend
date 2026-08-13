@@ -1,4 +1,3 @@
-import { safeNumber } from "../utils/number.js";
 export function normalizeArrayResponse(response, fallbackKey = null) {
   if (!response) return [];
 
@@ -50,17 +49,6 @@ export function normalizeObjectResponse(response) {
   if (data.success && data.data) return data.data;
   return data;
 }
-
-export const normalizeInvoiceItem = (item = {}) => {
-  return {
-    id: item.id || item._id || "",
-    name: item.name || item.medicineName || "",
-    qty: safeNumber(item.qty || item.quantity || 0),
-    price: safeNumber(item.price || item.mrp || 0),
-    total: safeNumber(item.total || 0),
-    batchId: item.batchId || item.batch || "",
-  };
-};
 
 export const getMedicineName = (item) => {
   if (!item) return "Unknown Medicine";

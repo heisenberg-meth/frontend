@@ -2028,39 +2028,7 @@ export default function BillingPOS({
                       </>
                     )}
                   </button>
-                  {/* <button
-                    className={`pos-btn outline ${printLoading ? "btn-loading" : ""}`}
-                    style={{ flex: 1 }}
-                    onClick={() => handlePrint()}
-                    disabled={printLoading || lineItems.length === 0}
-                    title="Print (F4)"
-                  >
-                    {printLoading ? (
-                      <>
-                        <Spinner size={16} /> Printing...
-                      </>
-                    ) : (
-                      <>
-                        <Printer size={16} /> Print
-                      </>
-                    )}
-                  </button> */}
                 </div>
-                {/* <button
-                  className={`pos-btn outline ${whatsappLoading ? "btn-loading" : ""}`}
-                  onClick={handleSendWhatsApp}
-                  disabled={whatsappLoading}
-                >
-                  {whatsappLoading ? (
-                    <>
-                      <Spinner size={16} /> Opening WhatsApp...
-                    </>
-                  ) : (
-                    <>
-                      <MessageCircle size={16} /> Send WhatsApp
-                    </>
-                  )}
-                </button> */}
                 <button
                   id="generate-invoice-btn"
                   className="pos-btn teal"

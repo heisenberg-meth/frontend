@@ -35,14 +35,5 @@ export const applyCreditNote = (id, data) =>
 export const getSupplierCreditBalance = (id) =>
   api.get(API_ROUTES.PURCHASE_SUPPLIER_CREDIT_BALANCE.replace("{id}", id));
 
-export const getSupplierInward = (supplierId, params) =>
-  api.get(`${BASE}/suppliers/${supplierId}/inward`, { params });
-
 export const updateDispatchStatus = (id, dispatchStatus) =>
   api.patch(`${BASE}/${id}/dispatch-status`, { dispatchStatus });
-
-export const getSupplierReturnsTxn = (supplierId, params) =>
-  api.get(`${BASE}/suppliers/${supplierId}/returns`, { params });
-
-export const getSupplierLedger = (supplierId, params) =>
-  api.get(`${BASE}/suppliers/${supplierId}/ledger`, { params });
