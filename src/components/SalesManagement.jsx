@@ -88,7 +88,12 @@ export default function SalesManagement({ showToast, storeProfile }) {
           },
         }),
         api.get(API_ROUTES.BILLING_RETURNS),
-        api.get(API_ROUTES.SALES_HOURLY),
+        api.get(API_ROUTES.SALES_HOURLY, {
+          params: {
+            startDate: dateRange.start,
+            endDate: dateRange.end,
+          },
+        }),
       ]);
 
       const salesData = normalizeArrayResponse(salesRes);
@@ -122,7 +127,12 @@ export default function SalesManagement({ showToast, storeProfile }) {
             },
           }),
           api.get(API_ROUTES.BILLING_RETURNS),
-          api.get(API_ROUTES.SALES_HOURLY),
+          api.get(API_ROUTES.SALES_HOURLY, {
+            params: {
+              startDate: dateRange.start,
+              endDate: dateRange.end,
+            },
+          }),
         ]);
 
         if (!mounted) return;
@@ -1097,43 +1107,75 @@ export default function SalesManagement({ showToast, storeProfile }) {
                   Hourly Revenue
                 </div>
               </div>
+
               <div className="bar-chart-container">
                 {hourlyData && hourlyData.length > 0 ? (
-                  hourlyData.map((d, i) => (
-                    <div
-                      key={d.count}
-                      className="chart-bar-wrapper"
-                      onMouseEnter={() => setHoveredBar(i)}
-                      onMouseLeave={() => setHoveredBar(null)}
-                    >
-                      <motion.div
-                        className="chart-bar"
-                        initial={{ scaleY: 0 }}
-                        animate={{ scaleY: 1 }}
-                        style={{
-                          height: `${(d.revenue / (Math.max(...hourlyData.map((h) => h.revenue)) || 1)) * 100}%`,
-                          transformOrigin: "bottom",
-                          background: hoveredBar === i ? "var(--primary)" : "",
-                        }}
-                      />
-                      <span className="chart-label">{d.hour}</span>
-                      {hoveredBar === i && (
+                  hourlyData.map((d, i) => {
+                    const revenue = Number(d.revenue) || 0;
+
+                    const maxRevenue = Math.max(
+                      ...hourlyData.map((h) => Number(h.revenue) || 0),
+                      1,
+                    );
+
+                    const barHeight =
+                      revenue > 0
+                        ? Math.max((revenue / maxRevenue) * 100, 4)
+                        : 0;
+
+                    return (
+                      <div
+                        key={d.hour}
+                        className="chart-bar-wrapper"
+                        onMouseEnter={() => setHoveredBar(i)}
+                        onMouseLeave={() => setHoveredBar(null)}
+                      >
                         <motion.div
-                          className="chart-tooltip"
-                          initial={{ opacity: 0 }}
-                          animate={{ opacity: 1 }}
-                        >
-                          <b>{d.hour}</b>
-                          <br />
-                          {d.count} bills
-                          <br />
-                          <span style={{ color: "var(--primary)" }}>
-                            ₹{(d.revenue || 0).toLocaleString()}
-                          </span>
-                        </motion.div>
-                      )}
-                    </div>
-                  ))
+                          className="chart-bar"
+                          initial={{ height: 0 }}
+                          animate={{ height: `${barHeight}%` }}
+                          transition={{
+                            duration: 0.4,
+                            ease: "easeOut",
+                          }}
+                          style={{
+                            transformOrigin: "bottom",
+                            background: "var(--primary)",
+                          }}
+                        />
+
+                        <span className="chart-label">
+                          {d.label || `${d.hour}:00`}
+                        </span>
+
+                        {hoveredBar === i && (
+                          <motion.div
+                            className="chart-tooltip"
+                            initial={{
+                              opacity: 0,
+                              y: 5,
+                            }}
+                            animate={{
+                              opacity: 1,
+                              y: 0,
+                            }}
+                          >
+                            <b>{d.label || `${d.hour}:00`}</b>
+                            <br />
+                            {d.count} bills
+                            <br />
+                            <span style={{ color: "var(--primary)" }}>
+                              ₹
+                              {revenue.toLocaleString("en-IN", {
+                                minimumFractionDigits: 2,
+                                maximumFractionDigits: 2,
+                              })}
+                            </span>
+                          </motion.div>
+                        )}
+                      </div>
+                    );
+                  })
                 ) : (
                   <div
                     style={{

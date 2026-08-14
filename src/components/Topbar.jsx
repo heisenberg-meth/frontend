@@ -445,14 +445,6 @@ export default function Topbar({
 
         <div className="top-bar-actions">
           <div className="action-icons">
-            <button
-              className="topbar-icon-btn"
-              onClick={() => toggleTheme(theme === "dark" ? "light" : "dark")}
-              title="Toggle theme"
-            >
-              {theme === "dark" ? <Sun size={20} /> : <Moon size={20} />}
-            </button>
-
             <AnimatePresence>
               {subscription && subscription.status === "EXPIRED" && (
                 <motion.div
@@ -492,6 +484,14 @@ export default function Topbar({
                   </motion.div>
                 )}
             </AnimatePresence>
+
+            <button
+              className="topbar-icon-btn"
+              onClick={() => toggleTheme(theme === "dark" ? "light" : "dark")}
+              title="Toggle theme"
+            >
+              {theme === "dark" ? <Sun size={20} /> : <Moon size={20} />}
+            </button>
 
             <div className="notification-wrap" style={{ position: "relative" }}>
               <button

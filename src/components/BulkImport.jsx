@@ -479,7 +479,11 @@ export default function BulkImport({ fetchData, showToast }) {
       }
     } catch (err) {
       console.error(err);
-      showToast(err.message || "Failed to analyze import data", "error");
+      const errMsg =
+        err.response?.data?.message ||
+        err.message ||
+        "Failed to analyze import data";
+      showToast(errMsg, "error");
     } finally {
       setIsAnalyzing(false);
     }
@@ -752,6 +756,7 @@ export default function BulkImport({ fetchData, showToast }) {
 
       const res = await api.post("/import/bulk/commit", {
         medicines,
+        fileName: file?.name || "bulk_import.csv",
         supplier: selectedSupplier,
         duplicateStrategy,
         barcodeOptions,
@@ -778,7 +783,11 @@ export default function BulkImport({ fetchData, showToast }) {
     } catch (error) {
       console.error(error);
       setImportStatus("idle");
-      showToast(error.message || "Failed to commit import", "error");
+      const errMsg =
+        error.response?.data?.message ||
+        error.message ||
+        "Failed to commit import";
+      showToast(errMsg, "error");
     }
   };
 
@@ -1619,18 +1628,31 @@ export default function BulkImport({ fetchData, showToast }) {
                         </span>
                       </div>
                       <div className="stats-row">
-                        {item.records} records imported
+                        {item.records ??
+                          item.extractedData?.summary?.importedCount ??
+                          0}{" "}
+                        records imported
                       </div>
                       <div className="tags-row">
-                        <span className="tag supplier">{item.supplier}</span>
-                        <span className="tag type">{item.type}</span>
-                        <span className="tag ai">AI Mapping</span>
+                        <span className="tag supplier">
+                          {item.supplier ||
+                            item.extractedData?.supplier ||
+                            "General / CSV"}
+                        </span>
+                        <span className="tag type">
+                          {item.type || item.importType || "BULK"}
+                        </span>
+                        <span className="tag ai">
+                          {item.strategy
+                            ? `Strategy: ${item.strategy}`
+                            : "AI Mapping"}
+                        </span>
                       </div>
                       <div className="footer-row">
                         <span
-                          className={`status-badge ${String(item.status || "").toLowerCase()}`}
+                          className={`status-badge ${String(item.status || item.importStatus || "").toLowerCase()}`}
                         >
-                          {item.status}
+                          {item.status || item.importStatus}
                         </span>
                         <div className="links">
                           <button

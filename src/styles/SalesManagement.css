@@ -77,40 +77,56 @@
 }
 
 .bar-chart-container {
-  height: 200px;
+  height: 240px;
   display: flex;
-  align-items: flex-end;
-  gap: 8px;
+  align-items: stretch;
+  gap: 6px;
   padding-top: 20px;
+  box-sizing: border-box;
 }
 
 .chart-bar-wrapper {
   flex: 1;
+  min-width: 0;
+  height: 100%;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 8px;
+  justify-content: flex-end;
   position: relative;
+  padding-bottom: 22px;
+  box-sizing: border-box;
 }
+
 
 .chart-bar {
   width: 100%;
+  min-height: 0;
   background: var(--primary);
   border-radius: 4px 4px 0 0;
-  transition: all 0.3s;
+  transition:
+    height 0.3s ease,
+    opacity 0.3s ease,
+    filter 0.3s ease;
   cursor: pointer;
-  opacity: 0.6;
+  opacity: 0.7;
+  flex-shrink: 0;
 }
 
 .chart-bar:hover {
   opacity: 1;
-  filter: brightness(1.2);
+  filter: brightness(1.15);
 }
 
 .chart-label {
-  font-size: 10px;
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 9px;
   color: var(--text-dim);
   font-weight: 700;
+  white-space: nowrap;
 }
 
 .chart-tooltip {
