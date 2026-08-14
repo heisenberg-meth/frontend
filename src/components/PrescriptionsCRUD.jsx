@@ -542,7 +542,7 @@ function PrescriptionViewModal({
         <div className="rx-view-section">
           <h4>Medications ({meds.length})</h4>
           <div className="rx-med-list-view">
-            {meds.map((m, i) => (
+            {meds.map((m) => (
               <div key={m.name} className="rx-med-item-view">
                 <Pill size={14} style={{ color: "var(--primary)" }} />
                 <div>
@@ -1023,7 +1023,7 @@ export default function PrescriptionsCRUD({ showToast }) {
                       <div className="rx-med-list">
                         {(rx.medications || rx.meds || [])
                           .slice(0, 2)
-                          .map((m, i) => (
+                          .map((m) => (
                             <span key={m.name} className="rx-med-tag">
                               <Pill size={10} />
                               {m.name || m}

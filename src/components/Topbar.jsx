@@ -803,23 +803,33 @@ export default function Topbar({
                       <h4>Recent Searches</h4>
                       {recentSearches.length > 0 ? (
                         <div className="recent-searches-list">
-                          {recentSearches.map((item) => (
-                            <div
-                              key={item}
-                              className="recent-search-item"
-                              onClick={() => handleSearchChange(item)}
-                            >
-                              <Clock size={14} />
-                              <span className="recent-text">{item}</span>
-                              <button
-                                className="remove-recent-btn"
-                                onClick={(e) => removeRecentSearch(item, e)}
-                                title="Remove"
+                          {recentSearches.map((item, idx) => {
+                            const label =
+                              typeof item === "string"
+                                ? item
+                                : item?.text || item?.name || item?.query || "";
+                            const key =
+                              typeof item === "string"
+                                ? `recent-search-${item}-${idx}`
+                                : item?.id || `recent-search-${label}-${idx}`;
+                            return (
+                              <div
+                                key={key}
+                                className="recent-search-item"
+                                onClick={() => handleSearchChange(label)}
                               >
-                                <X size={12} />
-                              </button>
-                            </div>
-                          ))}
+                                <Clock size={14} />
+                                <span className="recent-text">{label}</span>
+                                <button
+                                  className="remove-recent-btn"
+                                  onClick={(e) => removeRecentSearch(item, e)}
+                                  title="Remove"
+                                >
+                                  <X size={12} />
+                                </button>
+                              </div>
+                            );
+                          })}
                         </div>
                       ) : (
                         <div className="empty-recent">

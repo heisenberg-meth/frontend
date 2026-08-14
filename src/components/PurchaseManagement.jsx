@@ -2136,7 +2136,13 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
                             );
                             const lineTotal = unitPrice * qty;
                             return (
-                              <tr key={item.id || item.name || idx}>
+                              <tr
+                                key={
+                                  item.id ||
+                                  item.medicineId ||
+                                  `drawer-item-${item.name || "med"}-${item.batchNumber || ""}-${idx}`
+                                }
+                              >
                                 <td>
                                   <div style={{ fontWeight: 600 }}>
                                     {item.medicine?.name ||
@@ -2396,7 +2402,7 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
                     ) : (
                       returnSelections.map((sel, idx) => (
                         <div
-                          key={sel.medicineName}
+                          key={sel.medicineId || `${sel.medicineName}-${idx}`}
                           style={{
                             padding: "12px",
                             marginBottom: "12px",
@@ -2624,7 +2630,13 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
                     <tbody>
                       {receiveItems.map((item, idx) => {
                         return (
-                          <tr key={item.name}>
+                          <tr
+                            key={
+                              item.id ||
+                              item.medicineId ||
+                              `${item.medicine?.name || item.medicineName || item.name || "item"}-${idx}`
+                            }
+                          >
                             <td>
                               {item.medicine?.name ||
                                 item.medicineName ||

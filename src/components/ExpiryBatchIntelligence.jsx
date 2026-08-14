@@ -1390,7 +1390,11 @@ export default function ExpiryBatchIntelligence({ showToast }) {
                         isExpiredRow && selectedBatchIds.has(b.batchId);
                       return (
                         <tr
-                          key={b.id}
+                          key={
+                            b.id ||
+                            b.batchId ||
+                            `${b.med}-${b.batchNumber || b.batch}`
+                          }
                           className={`expiry-row-${b.status}${isChecked ? " selected-for-disposal" : ""}`}
                           style={
                             isChecked
@@ -1675,7 +1679,13 @@ export default function ExpiryBatchIntelligence({ showToast }) {
                   </tr>
                 ) : (
                   invFilteredBatches.map((b) => (
-                    <tr key={b.id}>
+                    <tr
+                      key={
+                        b.id ||
+                        b.batchId ||
+                        `${b.med}-${b.batchNumber || b.batch}`
+                      }
+                    >
                       <td style={{ fontWeight: 700 }}>
                         {b.med}
                         {b.discountApplied && (
@@ -1897,7 +1907,13 @@ export default function ExpiryBatchIntelligence({ showToast }) {
                                   100,
                                 );
                                 return (
-                                  <tr key={b.id}>
+                                  <tr
+                                    key={
+                                      b.id ||
+                                      b.batchId ||
+                                      `${b.batchNumber || b.batch}-${b.rank}`
+                                    }
+                                  >
                                     <td>
                                       <span
                                         className={`fifo-badge ${b.rank === 1 ? "active" : "next"}`}
@@ -1983,7 +1999,7 @@ export default function ExpiryBatchIntelligence({ showToast }) {
           ) : (
             suggestions.map((s) => (
               <motion.div
-                key={s.days}
+                key={s.id || s.batchId || `${s.med}-${s.batch}-${s.days}`}
                 className={`suggestion-card ${s.urgency}`}
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}

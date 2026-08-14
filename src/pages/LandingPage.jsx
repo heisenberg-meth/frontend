@@ -439,7 +439,7 @@ export default function LandingPage() {
           </div>
           <div className="lp-hero-trust">
             <div className="lp-trust-avatars">
-              {["👨‍⚕️", "👩‍⚕️", "🧑‍⚕️", "👩‍💼"].map((e, i) => (
+              {["👨‍⚕️", "👩‍⚕️", "🧑‍⚕️", "👩‍💼"].map((e) => (
                 <div key={e} className="lp-trust-avatar">
                   {e}
                 </div>
@@ -461,15 +461,15 @@ export default function LandingPage() {
             <div className="lp-mockup-body">
               <div className="lp-mock-sidebar">
                 {[
-                  { Icon: BarChart2 },
-                  { Icon: Package },
-                  { Icon: Receipt },
-                  { Icon: ScanBarcode },
-                  { Icon: Truck },
-                  { Icon: CalendarClock },
+                  { Icon: BarChart2, name: "barchart" },
+                  { Icon: Package, name: "package" },
+                  { Icon: Receipt, name: "receipt" },
+                  { Icon: ScanBarcode, name: "barcode" },
+                  { Icon: Truck, name: "truck" },
+                  { Icon: CalendarClock, name: "clock" },
                 ].map((item, i) => (
                   <div
-                    key={item.Icon}
+                    key={item.name}
                     className={`lp-mock-sidebar-item ${i === 0 ? "active" : ""}`}
                   >
                     <item.Icon size={16} />
@@ -678,8 +678,8 @@ export default function LandingPage() {
                     </span>
                   </div>
                   <ul className="lp-plan-features">
-                    {plan.features.map((f) => (
-                      <li key={f}>
+                    {plan.features.map((f, i) => (
+                      <li key={`${plan.name}-feat-${i}`}>
                         <span className="lp-check">✓</span>
                         {f}
                       </li>

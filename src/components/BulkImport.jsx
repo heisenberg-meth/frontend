@@ -895,8 +895,13 @@ export default function BulkImport({ fetchData, showToast }) {
                     </tr>
                   </thead>
                   <tbody>
-                    {commitResult.errors.map((err) => (
-                      <tr key={err.name}>
+                    {commitResult.errors.map((err, errIdx) => (
+                      <tr
+                        key={
+                          err.id ||
+                          `${err.row}-${err.field || err.name || errIdx}`
+                        }
+                      >
                         <td>Row {err.row}</td>
                         <td>{err.name || "Unknown"}</td>
                         <td>
@@ -1024,8 +1029,14 @@ export default function BulkImport({ fetchData, showToast }) {
                               </tr>
                             </thead>
                             <tbody>
-                              {dataPreview.map((row) => (
-                                <tr key={row}>
+                              {dataPreview.map((row, rIdx) => (
+                                <tr
+                                  key={
+                                    row.id || row.name
+                                      ? `${row.id || row.name}-${rIdx}`
+                                      : `preview-row-${rIdx}`
+                                  }
+                                >
                                   {headers.slice(0, 5).map((h) => (
                                     <td key={h}>{row[h] || "---"}</td>
                                   ))}
@@ -1322,9 +1333,9 @@ export default function BulkImport({ fetchData, showToast }) {
                         </tr>
                       </thead>
                       <tbody>
-                        {duplicateResults.rows.map((r) => (
+                        {duplicateResults.rows.map((r, rIdx) => (
                           <tr
-                            key={r.name}
+                            key={r.id || `${r.row}-${r.name || rIdx}`}
                             className={r.conflict ? "conflict-row" : ""}
                           >
                             <td>Row {r.row}</td>
@@ -1448,8 +1459,14 @@ export default function BulkImport({ fetchData, showToast }) {
                             </tr>
                           </thead>
                           <tbody>
-                            {duplicateResults.errors.map((err) => (
-                              <tr key={err.name} className="conflict-row">
+                            {duplicateResults.errors.map((err, errIdx) => (
+                              <tr
+                                key={
+                                  err.id ||
+                                  `${err.row}-${err.field || err.name || errIdx}`
+                                }
+                                className="conflict-row"
+                              >
                                 <td>Row {err.row}</td>
                                 <td className="bold">
                                   {err.name || "Unknown"}

@@ -1124,7 +1124,7 @@ export default function BarcodeEcosystem({ showToast }) {
                           >
                             {[...Array(30)].map((_, i) => (
                               <rect
-                                key={_}
+                                key={`barcode-bar-${i}`}
                                 x={i * 3.3}
                                 y="0"
                                 width={(i * 7) % 10 > 4 ? 1 : 2}
@@ -1561,7 +1561,11 @@ export default function BarcodeEcosystem({ showToast }) {
                 </tr>
               ) : (
                 scanHistory.map((h, i) => (
-                  <tr key={h._id || i}>
+                  <tr
+                    key={
+                      h.id || h._id || `scan-hist-${h.barcode || "item"}-${i}`
+                    }
+                  >
                     <td>
                       {h.createdAt
                         ? new Date(h.createdAt).toLocaleString()

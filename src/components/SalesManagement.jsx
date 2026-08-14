@@ -756,8 +756,12 @@ export default function SalesManagement({ showToast, storeProfile }) {
             icon: ArrowLeft,
             col: "var(--danger)",
           },
-        ].map((s, i) => (
-          <div key={s.label} className="pos-stat-card" style={{ cursor: "default" }}>
+        ].map((s) => (
+          <div
+            key={s.label}
+            className="pos-stat-card"
+            style={{ cursor: "default" }}
+          >
             <div className="stat-card-header">
               <span className="stat-label">{s.label}</span>
               <div
@@ -952,7 +956,7 @@ export default function SalesManagement({ showToast, storeProfile }) {
                         <td>
                           {sale.items && sale.items.length > 0 ? (
                             <div>
-                              {sale.items.slice(0, 2).map((it, idx) => (
+                              {sale.items.slice(0, 2).map((it) => (
                                 <div
                                   key={it.qty}
                                   style={{
@@ -1246,7 +1250,7 @@ export default function SalesManagement({ showToast, storeProfile }) {
                     <td>
                       {sale.items && sale.items.length > 0 ? (
                         <div>
-                          {sale.items.slice(0, 2).map((it, idx) => (
+                          {sale.items.slice(0, 2).map((it) => (
                             <div
                               key={it.qty}
                               style={{
@@ -1552,7 +1556,7 @@ export default function SalesManagement({ showToast, storeProfile }) {
                         </tr>
                       </thead>
                       <tbody>
-                        {(selectedSale.items || []).map((it, idx) => (
+                        {(selectedSale.items || []).map((it) => (
                           <tr
                             key={it.gst}
                             style={{

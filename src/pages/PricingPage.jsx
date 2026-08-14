@@ -203,7 +203,10 @@ export default function PricingPage() {
                       Included Features
                     </p>
                     {plan.features.map((feature, i) => (
-                      <div key={feature} className="flex items-start gap-3">
+                      <div
+                        key={`${plan.id}-feat-${i}`}
+                        className="flex items-start gap-3"
+                      >
                         <div className="w-5 h-5 rounded-full bg-emerald-500/10 dark:bg-emerald-500/15 flex items-center justify-center shrink-0 mt-0.5">
                           <Check className="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
                         </div>

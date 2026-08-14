@@ -35,67 +35,136 @@ import { getSupplierCreditBalance } from "../services/supplier-returns.service.j
 
 function CustomDropdown({ value, onChange, options, placeholder = "Select" }) {
   const [isOpen, setIsOpen] = useState(false);
+  const [menuStyle, setMenuStyle] = useState({});
   const dropdownRef = useRef(null);
+  const buttonRef = useRef(null);
+  const menuRef = useRef(null);
 
   useEffect(() => {
     const handleClickOutside = (event) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+      if (
+        buttonRef.current &&
+        !buttonRef.current.contains(event.target) &&
+        menuRef.current &&
+        !menuRef.current.contains(event.target)
+      ) {
         setIsOpen(false);
       }
     };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
+
+    const handleScroll = () => {
+      setIsOpen(false);
+    };
+
+    if (isOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+      window.addEventListener("scroll", handleScroll, true);
+    }
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      window.removeEventListener("scroll", handleScroll, true);
+    };
+  }, [isOpen]);
+
+  const toggleDropdown = () => {
+    if (!isOpen && buttonRef.current) {
+      const rect = buttonRef.current.getBoundingClientRect();
+
+      const estimatedMenuHeight = Math.min(options.length * 42 + 16, 300);
+      const spaceBelow = window.innerHeight - rect.bottom;
+      const spaceAbove = rect.top;
+
+      const openUpward =
+        spaceBelow < estimatedMenuHeight && spaceAbove > spaceBelow;
+
+      setMenuStyle({
+        position: "fixed",
+        top: openUpward ? "auto" : `${rect.bottom + 8}px`,
+        bottom: openUpward ? `${window.innerHeight - rect.top + 8}px` : "auto",
+        right: `${window.innerWidth - rect.right}px`,
+        width: `${Math.max(rect.width, 148)}px`,
+        zIndex: 99999,
+      });
+    }
+
+    setIsOpen((prev) => !prev);
+  };
 
   return (
     <div className="custom-dropdown-container" ref={dropdownRef}>
       <button
+        ref={buttonRef}
         className="custom-dropdown-trigger"
-        onClick={() => setIsOpen(!isOpen)}
+        onClick={toggleDropdown}
         aria-haspopup="listbox"
         aria-expanded={isOpen}
+        type="button"
       >
         <span>{value === "All Categories" ? placeholder : value}</span>
+
         <ChevronDown
           size={16}
           className={`dropdown-icon ${isOpen ? "open" : ""}`}
         />
       </button>
 
-      <AnimatePresence>
-        {isOpen && (
-          <motion.div
-            className="custom-dropdown-menu"
-            initial={{ opacity: 0, y: -10, scale: 0.95 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: -10, scale: 0.95 }}
-            transition={{ duration: 0.15 }}
-            role="listbox"
-          >
-            {options.map((opt) => {
-              const optValue = typeof opt === "object" ? opt.value : opt;
-              const optLabel = typeof opt === "object" ? opt.label : opt;
-              return (
-                <div
-                  key={optValue}
-                  className={`custom-dropdown-item ${value === optValue ? "selected" : ""}`}
-                  onClick={() => {
-                    onChange(optValue);
-                    setIsOpen(false);
-                  }}
-                  role="option"
-                  aria-selected={value === optValue}
-                >
-                  <span>{optLabel}</span>
-                  {value === optValue && (
-                    <Check size={14} className="check-icon" />
-                  )}
-                </div>
-              );
-            })}
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {createPortal(
+        <AnimatePresence>
+          {isOpen && (
+            <motion.div
+              ref={menuRef}
+              className="custom-dropdown-menu"
+              initial={{
+                opacity: 0,
+                y: menuStyle.bottom !== "auto" ? 10 : -10,
+                scale: 0.95,
+              }}
+              animate={{
+                opacity: 1,
+                y: 0,
+                scale: 1,
+              }}
+              exit={{
+                opacity: 0,
+                y: menuStyle.bottom !== "auto" ? 10 : -10,
+                scale: 0.95,
+              }}
+              transition={{ duration: 0.15 }}
+              role="listbox"
+              style={menuStyle}
+            >
+              {options.map((opt) => {
+                const optValue = typeof opt === "object" ? opt.value : opt;
+
+                const optLabel = typeof opt === "object" ? opt.label : opt;
+
+                return (
+                  <div
+                    key={optValue}
+                    className={`custom-dropdown-item ${
+                      value === optValue ? "selected" : ""
+                    }`}
+                    onClick={() => {
+                      onChange(optValue);
+                      setIsOpen(false);
+                    }}
+                    role="option"
+                    aria-selected={value === optValue}
+                  >
+                    <span>{optLabel}</span>
+
+                    {value === optValue && (
+                      <Check size={14} className="check-icon" />
+                    )}
+                  </div>
+                );
+              })}
+            </motion.div>
+          )}
+        </AnimatePresence>,
+        document.body,
+      )}
     </div>
   );
 }
@@ -979,7 +1048,10 @@ export default function Suppliers({ showToast }) {
                         {(s.drugCategories || s.categories || [])
                           .slice(0, 2)
                           .map((c, i) => (
-                            <span key={i} className="sup-tag-v2">
+                            <span
+                              key={`${s.id || s.name}-cat-${c}-${i}`}
+                              className="sup-tag-v2"
+                            >
                               {c}
                             </span>
                           ))}

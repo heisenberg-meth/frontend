@@ -1616,9 +1616,13 @@ export default function BillingPOS({
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -5 }}
                 >
-                  {patientResults.map((p) => (
+                  {patientResults.map((p, pIdx) => (
                     <div
-                      key={p.name}
+                      key={
+                        p.id ||
+                        p._id ||
+                        `pat-${p.fullName || p.name || "p"}-${p.phone || ""}-${pIdx}`
+                      }
                       className="patient-result-row"
                       onClick={() => selectPatient(p)}
                     >
@@ -2891,8 +2895,14 @@ export default function BillingPOS({
                   <tbody>
                     {(selectedBill.itemsList || [])
                       .map(normalizeInvoiceItem)
-                      .map((item) => (
-                        <tr key={item.name}>
+                      .map((item, idx) => (
+                        <tr
+                          key={
+                            item.id ||
+                            item.medicineId ||
+                            `${item.name}-${item.batchNumber || ""}-${idx}`
+                          }
+                        >
                           <td>{item.name}</td>
                           <td>{safeNumber(item.qty)}</td>
                           <td>₹{safeNumber(item.price).toFixed(2)}</td>
@@ -2943,10 +2953,21 @@ export default function BillingPOS({
                   <div className="stat-label" style={{ marginBottom: "8px" }}>
                     TIMELINE
                   </div>
-                  {(selectedBill.timeline || []).map((t) => (
-                    <div key={t} className="timeline-item">
+                  {(selectedBill.timeline || []).map((t, tIdx) => (
+                    <div
+                      key={
+                        typeof t === "string"
+                          ? `timeline-${t}-${tIdx}`
+                          : t?.id || `timeline-${tIdx}`
+                      }
+                      className="timeline-item"
+                    >
                       <div className="timeline-dot" />
-                      <span>{t}</span>
+                      <span>
+                        {typeof t === "string"
+                          ? t
+                          : t?.message || t?.title || JSON.stringify(t)}
+                      </span>
                     </div>
                   ))}
                 </div>
@@ -3065,7 +3086,13 @@ export default function BillingPOS({
                     {resolveInvoiceItems(selectedBill)
                       .map(normalizeInvoiceItem)
                       .map((item, idx) => (
-                        <tr key={item.name}>
+                        <tr
+                          key={
+                            item.id ||
+                            item.medicineId ||
+                            `${item.name}-${item.batchNumber || ""}-${idx}`
+                          }
+                        >
                           <td>{item.name}</td>
                           <td>{item.qty}</td>
                           <td>
@@ -3341,7 +3368,11 @@ export default function BillingPOS({
                         .map(normalizeInvoiceItem)
                         .map((item, idx) => (
                           <div
-                            key={item.name}
+                            key={
+                              item.id ||
+                              item.medicineId ||
+                              `${item.name}-${item.batchNumber || ""}-${idx}`
+                            }
                             style={{
                               display: "flex",
                               alignItems: "center",

@@ -775,7 +775,14 @@ export default function SupplierReturns({ showToast }) {
             ) : (
               <div className="supplier-groups">
                 {expiredBySupplier.map((group, idx) => (
-                  <div key={group.itemCount} className="supplier-group-card">
+                  <div
+                    key={
+                      group.supplier?.id ||
+                      group.supplier?.supplierCode ||
+                      `sup-group-${idx}`
+                    }
+                    className="supplier-group-card"
+                  >
                     <div
                       className="supplier-group-header"
                       onClick={() =>
