@@ -400,7 +400,7 @@ export default function BulkDisposal({ showToast }) {
                 >
                   {result.items
                     .filter((i) => i.status === "SKIPPED")
-                    .map((item, idx) => (
+                    .map((item) => (
                       <li key={item.reason} style={{ marginBottom: 4 }}>
                         {item.reason || "Unknown reason"}
                       </li>

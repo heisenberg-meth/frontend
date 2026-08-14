@@ -21,6 +21,7 @@ import {
   Loader2,
   Play,
   Trash2,
+  TrendingUp,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -1481,6 +1482,22 @@ export default function BillingPOS({
             val: String(returnsCount),
             icon: ArrowLeft,
             col: "var(--danger)",
+          },
+          {
+            label: "AVERAGE BILL VALUE",
+            val: (() => {
+              const totalRevenue = todayBills.reduce(
+                (sum, b) => sum + safeNumber(b.total),
+                0,
+              );
+              const billCount = todayBills.length;
+              if (!billCount || billCount === 0) return "₹0";
+              const avg = totalRevenue / billCount;
+              if (isNaN(avg) || !isFinite(avg)) return "₹0";
+              return "₹" + Math.round(avg).toLocaleString();
+            })(),
+            icon: TrendingUp,
+            col: "var(--warning)",
           },
         ].map((s) => (
           <div key={s.label} className="pos-stat-card">

@@ -467,7 +467,7 @@ export default function InventoryAnalyticsModal({ isOpen, onClose }) {
                       </h3>
                       {categories && categories.length > 0 ? (
                         <div className="category-breakdown-list">
-                          {categories.map((cat, idx) => {
+                          {categories.map((cat) => {
                             const percentage = totalCategoryValue
                               ? (
                                   (cat.value / totalCategoryValue) *

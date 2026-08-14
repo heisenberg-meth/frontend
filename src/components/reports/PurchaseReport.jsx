@@ -163,7 +163,7 @@ export default function PurchaseReport({ from, to }) {
                 No trend comparison data available.
               </div>
             ) : (
-              comparisonData.map((val, i) => {
+              comparisonData.map((val) => {
                 const maxVal = Math.max(...comparisonData, 100);
                 const heightPct = Math.round((val / maxVal) * 100);
                 return (

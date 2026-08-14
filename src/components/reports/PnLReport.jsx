@@ -455,7 +455,7 @@ export default function PnLReport({ from, to, showToast }) {
               No operational expenses logged for this range.
             </div>
           ) : (
-            expensesDistribution.map((c, i) => (
+            expensesDistribution.map((c) => (
               <div key={c.name} className="expense-cat-card">
                 <div
                   className="cat-icon-box"

@@ -148,6 +148,52 @@
   color: var(--danger);
 }
 
+/* Batch and Item Badges */
+.batch-pill {
+  display: inline-block;
+  padding: 3px 8px;
+  background: var(--surface-container-high, rgba(255, 255, 255, 0.06));
+  border: 1px solid var(--outline-variant);
+  border-radius: 6px;
+  font-size: 12px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  color: var(--primary);
+  letter-spacing: 0.02em;
+}
+
+.batch-pill-multi {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  background: rgba(79, 219, 200, 0.1);
+  border: 1px solid rgba(79, 219, 200, 0.3);
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--primary);
+  cursor: help;
+  transition: all 0.2s ease;
+}
+
+.batch-pill-multi:hover {
+  background: rgba(79, 219, 200, 0.2);
+  border-color: var(--primary);
+}
+
+.badge-subtle {
+  display: inline-block;
+  padding: 2px 6px;
+  background: var(--surface-container, rgba(255, 255, 255, 0.05));
+  border: 1px solid var(--outline-variant);
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-muted);
+  margin-left: 6px;
+  cursor: help;
+}
+
 /* Payment Status Dropdown */
 .payment-status-dropdown {
   padding: 6px 12px;

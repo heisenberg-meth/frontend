@@ -63,6 +63,96 @@ const safeData = (result, ...keys) => {
   return [];
 };
 
+const renderInvoiceItemsSummary = (inv) => {
+  const items = inv?.items || inv?.inventoryBatches || [];
+  if (!items || items.length === 0) {
+    return {
+      medicineDisplay: inv?.medicines ? `${inv.medicines} items` : "-",
+      batchDisplay: "-",
+      expiryDisplay: "-",
+      priceDisplay: "-",
+    };
+  }
+
+  if (items.length === 1) {
+    const item = items[0];
+    const medName =
+      item.medicine?.name || item.medicineName || item.name || "-";
+    const batchNo = item.batchNumber || "-";
+    const expiry = item.expiryDate ? formatDate(item.expiryDate) : "-";
+    const price = safeNumber(
+      item.purchasePrice || item.unitPrice || item.price || 0,
+    );
+    return {
+      medicineDisplay: medName,
+      batchDisplay:
+        batchNo !== "-" ? <span className="batch-pill">{batchNo}</span> : "-",
+      expiryDisplay: expiry,
+      priceDisplay:
+        price > 0
+          ? `₹${price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+          : "-",
+    };
+  }
+
+  // Multiple items
+  const firstMed =
+    items[0].medicine?.name || items[0].medicineName || items[0].name || "Item";
+  const allMeds = items
+    .map((i) => i.medicine?.name || i.medicineName || i.name || "Item")
+    .join(", ");
+  const allBatches = items
+    .map((i) => i.batchNumber)
+    .filter(Boolean)
+    .join(", ");
+
+  const validExpiries = items
+    .map((i) => (i.expiryDate ? new Date(i.expiryDate).getTime() : null))
+    .filter((t) => t && !isNaN(t));
+  const earliestExpiry =
+    validExpiries.length > 0 ? new Date(Math.min(...validExpiries)) : null;
+
+  const prices = items
+    .map((i) => safeNumber(i.purchasePrice || i.unitPrice || i.price || 0))
+    .filter((p) => p > 0);
+  const minPrice = prices.length > 0 ? Math.min(...prices) : 0;
+  const maxPrice = prices.length > 0 ? Math.max(...prices) : 0;
+
+  return {
+    medicineDisplay: (
+      <span>
+        {firstMed}
+        <span className="badge-subtle" title={allMeds}>
+          +{items.length - 1} more
+        </span>
+      </span>
+    ),
+    batchDisplay: (
+      <span
+        className="batch-pill-multi"
+        title={
+          allBatches ? `Batches: ${allBatches}` : `${items.length} Batches`
+        }
+      >
+        {items.length} Batches
+      </span>
+    ),
+    expiryDisplay: earliestExpiry ? (
+      <span title={`Earliest expiry: ${formatDate(earliestExpiry)}`}>
+        {formatDate(earliestExpiry)}
+      </span>
+    ) : (
+      "Multiple"
+    ),
+    priceDisplay:
+      prices.length === 0
+        ? "-"
+        : minPrice === maxPrice
+          ? `₹${minPrice.toFixed(2)}`
+          : `₹${minPrice.toFixed(2)} - ₹${maxPrice.toFixed(2)}`,
+  };
+};
+
 export default function PurchaseManagement({ showToast, storeProfile }) {
   const { user } = useAuth();
   const location = useLocation();
@@ -1286,6 +1376,9 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
                   <th>Supplier Inv #</th>
                   <th>Supplier</th>
                   <th>Medicines</th>
+                  <th>Batch</th>
+                  <th>Expiry</th>
+                  <th>Price ₹</th>
                   <th>Total ₹</th>
                   <th>GST ₹</th>
                   <th>Payment</th>
@@ -1293,80 +1386,106 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
                 </tr>
               </thead>
               <tbody>
-                {filteredInvoices.map((inv) => (
-                  <tr
-                    key={inv.id}
-                    onClick={() => handleOpenDrawer("invoice-detail", inv)}
-                  >
-                    <td>{inv.date || formatDate(inv.createdAt)}</td>
-                    <td style={{ fontWeight: 700 }}>
-                      {inv.supplierInvoiceNumber || inv.invoiceNumber || "-"}
-                    </td>
-                    <td>
-                      {inv.supplier?.name || inv.supplierName || inv.supplier}
-                    </td>
-                    <td>{inv.items?.length || inv.medicines || 0} items</td>
-                    <td style={{ fontWeight: 700 }}>
-                      ₹{(inv.totalAmount || inv.total || 0).toLocaleString()}
-                    </td>
-                    <td className="result-meta">₹{inv.gstAmount || 0}</td>
-                    <td onClick={(e) => e.stopPropagation()}>
-                      <select
-                        className="payment-status-dropdown"
-                        value={inv.paymentStatus || "PENDING"}
-                        disabled={inv.paymentStatus === "PAID"}
-                        onChange={(e) =>
-                          updatePaymentStatus(inv.id, e.target.value)
-                        }
-                      >
-                        <option value="PENDING">Pending</option>
-                        <option value="PARTIAL">Partially Paid</option>
-                        <option value="PAID">Paid</option>
-                      </select>
-                    </td>
-                    <td>
-                      <div style={{ display: "flex", gap: "8px" }}>
-                        <button
-                          className="micro-btn"
-                          title="View"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleOpenDrawer("invoice-detail", inv);
-                          }}
+                {filteredInvoices.map((inv) => {
+                  const summary = renderInvoiceItemsSummary(inv);
+                  return (
+                    <tr
+                      key={inv.id}
+                      onClick={() => handleOpenDrawer("invoice-detail", inv)}
+                    >
+                      <td>{inv.date || formatDate(inv.createdAt)}</td>
+                      <td style={{ fontWeight: 700 }}>
+                        {inv.supplierInvoiceNumber || inv.invoiceNumber || "-"}
+                      </td>
+                      <td>
+                        {inv.supplier?.name ||
+                          inv.supplierName ||
+                          inv.supplier ||
+                          "-"}
+                      </td>
+                      <td>{summary.medicineDisplay}</td>
+                      <td>{summary.batchDisplay}</td>
+                      <td>{summary.expiryDisplay}</td>
+                      <td style={{ fontWeight: 600 }}>
+                        {summary.priceDisplay}
+                      </td>
+                      <td style={{ fontWeight: 700 }}>
+                        ₹
+                        {safeNumber(
+                          inv.totalAmount || inv.total || 0,
+                        ).toLocaleString(undefined, {
+                          minimumFractionDigits: 2,
+                          maximumFractionDigits: 2,
+                        })}
+                      </td>
+                      <td className="result-meta">
+                        ₹
+                        {safeNumber(inv.gstAmount || 0).toLocaleString(
+                          undefined,
+                          {
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2,
+                          },
+                        )}
+                      </td>
+                      <td onClick={(e) => e.stopPropagation()}>
+                        <select
+                          className="payment-status-dropdown"
+                          value={inv.paymentStatus || "PENDING"}
+                          disabled={inv.paymentStatus === "PAID"}
+                          onChange={(e) =>
+                            updatePaymentStatus(inv.id, e.target.value)
+                          }
                         >
-                          <Eye size={14} />
-                        </button>
-                        <button
-                          className="micro-btn"
-                          title="Edit"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleOpenDrawer("edit-purchase", inv);
-                          }}
-                        >
-                          <Edit2 size={14} />
-                        </button>
-                        <button
-                          className="micro-btn"
-                          title="Return"
-                          style={{ color: "var(--danger)" }}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setSelectedRow(inv);
-                            setShowReturnModal(true);
-                            loadReturnBatches(inv);
-                          }}
-                        >
-                          <ArrowLeft size={14} />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
+                          <option value="PENDING">Pending</option>
+                          <option value="PARTIAL">Partially Paid</option>
+                          <option value="PAID">Paid</option>
+                        </select>
+                      </td>
+                      <td>
+                        <div style={{ display: "flex", gap: "8px" }}>
+                          <button
+                            className="micro-btn"
+                            title="View"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleOpenDrawer("invoice-detail", inv);
+                            }}
+                          >
+                            <Eye size={14} />
+                          </button>
+                          <button
+                            className="micro-btn"
+                            title="Edit"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleOpenDrawer("edit-purchase", inv);
+                            }}
+                          >
+                            <Edit2 size={14} />
+                          </button>
+                          <button
+                            className="micro-btn"
+                            title="Return"
+                            style={{ color: "var(--danger)" }}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSelectedRow(inv);
+                              setShowReturnModal(true);
+                              loadReturnBatches(inv);
+                            }}
+                          >
+                            <ArrowLeft size={14} />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
                 {filteredInvoices.length === 0 && (
                   <tr>
                     <td
-                      colSpan="8"
+                      colSpan="11"
                       style={{ textAlign: "center", padding: "20px" }}
                     >
                       No invoices found.
@@ -1987,12 +2106,16 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
                     </div>
 
                     <div style={{ marginTop: "32px" }}>
-                      <span className="p-label">ITEMS</span>
+                      <span className="p-label">ITEMS & BATCHES</span>
                       <table className="p-line-table">
                         <thead>
                           <tr>
                             <th>Medicine</th>
+                            <th>Batch #</th>
+                            <th>Expiry</th>
+                            <th style={{ textAlign: "right" }}>Price ₹</th>
                             <th style={{ textAlign: "right" }}>Qty</th>
+                            <th style={{ textAlign: "right" }}>Total ₹</th>
                           </tr>
                         </thead>
                         <tbody>
@@ -2001,19 +2124,67 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
                             selectedRow?.inventoryBatches ||
                             selectedRow?.supplierReturnItems ||
                             []
-                          ).map((item, idx) => (
-                            <tr key={item.id || item.name || idx}>
-                              <td>
-                                {item.medicine?.name ||
-                                  item.medicineName ||
-                                  item.name ||
-                                  "-"}
-                              </td>
-                              <td style={{ textAlign: "right" }}>
-                                {item.quantity || item.receivedQuantity || 0}
-                              </td>
-                            </tr>
-                          ))}
+                          ).map((item, idx) => {
+                            const unitPrice = safeNumber(
+                              item.purchasePrice ||
+                                item.unitPrice ||
+                                item.price ||
+                                0,
+                            );
+                            const qty = safeNumber(
+                              item.quantity || item.receivedQuantity || 0,
+                            );
+                            const lineTotal = unitPrice * qty;
+                            return (
+                              <tr key={item.id || item.name || idx}>
+                                <td>
+                                  <div style={{ fontWeight: 600 }}>
+                                    {item.medicine?.name ||
+                                      item.medicineName ||
+                                      item.name ||
+                                      "-"}
+                                  </div>
+                                </td>
+                                <td>
+                                  {item.batchNumber ? (
+                                    <span className="batch-pill">
+                                      {item.batchNumber}
+                                    </span>
+                                  ) : (
+                                    "-"
+                                  )}
+                                </td>
+                                <td>
+                                  {item.expiryDate
+                                    ? formatDate(item.expiryDate)
+                                    : "-"}
+                                </td>
+                                <td style={{ textAlign: "right" }}>
+                                  {unitPrice > 0
+                                    ? `₹${unitPrice.toFixed(2)}`
+                                    : "-"}
+                                </td>
+                                <td
+                                  style={{
+                                    textAlign: "right",
+                                    fontWeight: 600,
+                                  }}
+                                >
+                                  {qty}
+                                </td>
+                                <td
+                                  style={{
+                                    textAlign: "right",
+                                    fontWeight: 700,
+                                  }}
+                                >
+                                  {lineTotal > 0
+                                    ? `₹${lineTotal.toFixed(2)}`
+                                    : "-"}
+                                </td>
+                              </tr>
+                            );
+                          })}
                           {(!(
                             selectedRow?.items ||
                             selectedRow?.inventoryBatches ||
@@ -2025,7 +2196,7 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
                               selectedRow?.supplierReturnItems
                             )?.length === 0) && (
                             <tr>
-                              <td colSpan="2">No item details available.</td>
+                              <td colSpan="6">No item details available.</td>
                             </tr>
                           )}
                         </tbody>

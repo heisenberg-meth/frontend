@@ -350,7 +350,7 @@ export default function SalesReport({ from, to, showToast }) {
             icon: Activity,
             col: "var(--info)",
           },
-        ].map((kpi, i) => (
+        ].map((kpi) => (
           <div key={kpi.label} className="report-kpi-card">
             <div className="stat-card-header">
               <span className="stat-label">{kpi.label}</span>
@@ -391,7 +391,7 @@ export default function SalesReport({ from, to, showToast }) {
         <div className="pos-card">
           <div className="pos-card-title">Top medicines by Revenue</div>
           <div style={{ marginTop: "20px" }}>
-            {topMedicines.map((m, idx) => (
+            {topMedicines.map((m) => (
               <div
                 key={m.revenue}
                 className="med-revenue-row"
@@ -477,7 +477,7 @@ export default function SalesReport({ from, to, showToast }) {
               </tr>
             </thead>
             <tbody>
-              {data.chart.map((d, i) => (
+              {data.chart.map((d) => (
                 <tr key={d.date}>
                   <td>{d.date}</td>
                   <td style={{ fontWeight: 700, textAlign: "right" }}>

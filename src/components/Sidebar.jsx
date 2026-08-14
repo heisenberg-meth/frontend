@@ -112,13 +112,13 @@ export default function Sidebar({ user, onSignOut }) {
             <History size={18} />
             <span>Disposal History</span>
           </NavLink>
-          <NavLink
+          {/* <NavLink
             to="/barcode"
             className={({ isActive }) => `nav-link ${isActive ? "active" : ""}`}
           >
             <QrCode size={18} />
             <span>Barcode & QR</span>
-          </NavLink>
+          </NavLink> */}
           <NavLink
             to="/supplier-returns"
             className={({ isActive }) => `nav-link ${isActive ? "active" : ""}`}
