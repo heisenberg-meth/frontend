@@ -13,7 +13,7 @@ import {
   ChevronRight,
 } from "lucide-react";
 import { format } from "date-fns";
-import { motion, AnimatePresence } from "framer-motion";
+import { AnimatePresence, m } from "framer-motion";
 import ExcelJS from "exceljs";
 import { saveAs } from "file-saver";
 import api from "../api";
@@ -483,7 +483,7 @@ export default function DisposalHistory({ showToast }) {
                     onMouseLeave={(e) => {
                       e.currentTarget.style.background = "transparent";
                     }}
-                    onClick={() => setSelectedItem(item)}
+                    onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.currentTarget.click(); } }} onClick={() => setSelectedItem(item)}
                   >
                     <td style={{ padding: "10px 16px" }}>
                       <div
@@ -682,17 +682,17 @@ export default function DisposalHistory({ showToast }) {
       {/* Detail Modal */}
       <AnimatePresence>
         {selectedItem && (
-          <div
+          <div role="button" tabIndex={0}
             className="stock-modal-overlay"
-            onClick={() => setSelectedItem(null)}
+            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.currentTarget.click(); } }} onClick={() => setSelectedItem(null)}
           >
-            <motion.div
+            <m.div role="button" tabIndex={0}
               className="stock-modal-content"
               style={{ maxWidth: 520 }}
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              onClick={(e) => e.stopPropagation()}
+              onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.currentTarget.click(); } }} onClick={(e) => e.stopPropagation()}
             >
               <div className="stock-modal-header">
                 <h3>Disposal Record Details</h3>
@@ -856,7 +856,7 @@ export default function DisposalHistory({ showToast }) {
                   Close
                 </button>
               </div>
-            </motion.div>
+            </m.div>
           </div>
         )}
       </AnimatePresence>

@@ -287,7 +287,15 @@ export default function LandingPage() {
       <nav className={`lp-nav ${scrolled ? "lp-nav--scrolled" : ""}`}>
         <div className="lp-nav-inner">
           <div
+            role="button"
+            tabIndex={0}
             className="lp-logo"
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                e.currentTarget.click();
+              }
+            }}
             onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
           >
             <img
@@ -332,34 +340,34 @@ export default function LandingPage() {
 
               {downloadOpen && (
                 <div className="lp-download-dropdown-menu">
-                  <a
-                    href="#"
+                  <button
+                    type="button"
                     className="lp-dropdown-item"
                     onClick={() => setDownloadOpen(false)}
                   >
                     <span>⬇</span> Desktop for Windows (.exe)
-                  </a>
-                  <a
-                    href="#"
+                  </button>
+                  <button
+                    type="button"
                     className="lp-dropdown-item"
                     onClick={() => setDownloadOpen(false)}
                   >
                     <span>⬇</span> Desktop for macOS (.dmg)
-                  </a>
-                  <a
-                    href="#"
+                  </button>
+                  <button
+                    type="button"
                     className="lp-dropdown-item"
                     onClick={() => setDownloadOpen(false)}
                   >
                     <span>⬇</span> Desktop for Linux (.AppImage)
-                  </a>
-                  <a
-                    href="#"
+                  </button>
+                  <button
+                    type="button"
                     className="lp-dropdown-item"
                     onClick={() => setDownloadOpen(false)}
                   >
                     <span>🤖</span> Android
-                  </a>
+                  </button>
                 </div>
               )}
             </div>
@@ -737,7 +745,15 @@ export default function LandingPage() {
           <div className="lp-footer-top">
             <div className="lp-footer-brand">
               <div
+                role="button"
+                tabIndex={0}
                 className="lp-logo"
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    e.currentTarget.click();
+                  }
+                }}
                 onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
               >
                 <img

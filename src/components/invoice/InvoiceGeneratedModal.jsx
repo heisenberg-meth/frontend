@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
-import { motion } from "framer-motion";
+import { m } from "framer-motion";
 import { CheckCircle2, Printer, Download, MessageCircle } from "lucide-react";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
@@ -221,7 +221,7 @@ export default function InvoiceGeneratedModal({
   };
 
   return createPortal(
-    <motion.div
+    <m.div
       className="invoice-overlay"
       data-theme={theme}
       variants={backdropVariants}
@@ -230,7 +230,7 @@ export default function InvoiceGeneratedModal({
       exit="hidden"
       style={{ zIndex: 10001 }}
     >
-      <motion.div
+      <m.div
         className="invoice-generated-modal"
         data-theme={theme}
         variants={modalVariants}
@@ -299,8 +299,8 @@ export default function InvoiceGeneratedModal({
             </div>
           </div>
         </div>
-      </motion.div>
-    </motion.div>,
+      </m.div>
+    </m.div>,
     document.body,
   );
 }

@@ -57,7 +57,15 @@ export default function AdminBroadcast() {
 
       <form onSubmit={handleSend} style={{ maxWidth: 640 }}>
         <div className="admin-form-group">
-          <label>Channel</label>
+          <div
+            style={{
+              display: "block",
+              marginBottom: "0.5rem",
+              fontWeight: 600,
+            }}
+          >
+            Channel
+          </div>
           <div style={{ display: "flex", gap: 12, marginTop: 4 }}>
             {channels.map((ch) => {
               const Icon = ch.icon;
@@ -92,8 +100,9 @@ export default function AdminBroadcast() {
         </div>
 
         <div className="admin-form-group">
-          <label>Subject</label>
+          <label htmlFor="subject">Subject</label>
           <input
+            id="subject"
             type="text"
             value={subject}
             onChange={(e) => setSubject(e.target.value)}
@@ -103,8 +112,9 @@ export default function AdminBroadcast() {
         </div>
 
         <div className="admin-form-group">
-          <label>Message</label>
+          <label htmlFor="message">Message</label>
           <textarea
+            id="message"
             value={message}
             onChange={(e) => setMessage(e.target.value)}
             placeholder="Type your message here..."
@@ -116,8 +126,9 @@ export default function AdminBroadcast() {
 
         <div style={{ display: "flex", gap: 16 }}>
           <div className="admin-form-group" style={{ flex: 1 }}>
-            <label>Status Filter (optional)</label>
+            <label htmlFor="statusFilter">Status Filter (optional)</label>
             <select
+              id="statusFilter"
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
               disabled={sending}
@@ -129,8 +140,9 @@ export default function AdminBroadcast() {
             </select>
           </div>
           <div className="admin-form-group" style={{ flex: 1 }}>
-            <label>Plan Filter (optional)</label>
+            <label htmlFor="planFilter">Plan Filter (optional)</label>
             <select
+              id="planFilter"
               value={planFilter}
               onChange={(e) => setPlanFilter(e.target.value)}
               disabled={sending}

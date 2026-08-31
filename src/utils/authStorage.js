@@ -1,4 +1,4 @@
-const USER_KEY = "viyan_user";
+const USER_KEY = "viyan_user:v1";
 
 export function setUser(user) {
   try {
@@ -17,6 +17,7 @@ export function setUser(user) {
 
 export function getStoredUser() {
   try {
+    localStorage.removeItem("viyan_user");
     const raw = localStorage.getItem(USER_KEY);
     return raw && raw !== "undefined" && raw !== "null"
       ? JSON.parse(raw)
@@ -26,8 +27,9 @@ export function getStoredUser() {
   }
 }
 
-export function clearUser() {
+function clearUser() {
   try {
+    localStorage.removeItem("viyan_user");
     localStorage.removeItem(USER_KEY);
     localStorage.removeItem("viyan_token");
   } catch {

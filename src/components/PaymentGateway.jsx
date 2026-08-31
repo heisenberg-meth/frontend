@@ -10,7 +10,7 @@ export default function PaymentGateway({ user, onPaymentComplete, amount }) {
   const [status, setStatus] = useState("checkout");
   const [method, setMethod] = useState("card");
   const [paymentError, setPaymentError] = useState(null);
-  const [retryCount, setRetryCount] = useState(0);
+  const retryCountRef = useRef(0);
   const razorpayRef = useRef(null);
   const pollRef = useRef(null);
   const authorizedRef = useRef(false);
@@ -36,7 +36,7 @@ export default function PaymentGateway({ user, onPaymentComplete, amount }) {
 
   const handlePay = useCallback(async () => {
     if (isProcessingRef.current || status === "processing") return;
-    if (retryCount >= MAX_RETRIES) {
+    if (retryCountRef.current >= MAX_RETRIES) {
       setPaymentError("Maximum retry attempts reached.");
       return;
     }
@@ -197,7 +197,7 @@ export default function PaymentGateway({ user, onPaymentComplete, amount }) {
       razorpayRef.current = rzp;
       rzp.open();
     } catch (error) {
-      setRetryCount((prev) => prev + 1);
+      retryCountRef.current += 1;
       setStatus("checkout");
       const errorMessage =
         typeof error.response?.data?.error === "string"
@@ -208,7 +208,7 @@ export default function PaymentGateway({ user, onPaymentComplete, amount }) {
       setPaymentError(errorMessage);
       isProcessingRef.current = false;
     }
-  }, [user, amount, retryCount, status, refreshUser]);
+  }, [user, amount, status, refreshUser]);
 
   if (status === "success") {
     return (
@@ -230,7 +230,7 @@ export default function PaymentGateway({ user, onPaymentComplete, amount }) {
           </p>
           <button
             onClick={onPaymentComplete}
-            className="w-full bg-primary text-(--bg-dark) py-4 rounded-xl font-extrabold shadow-lg hover:brightness-110 transition-all flex items-center justify-center gap-3"
+            className="w-full bg-primary text-(--bg-dark) py-4 rounded-xl font-extrabold shadow-lg hover:brightness-110 transition flex items-center justify-center gap-3"
           >
             <span>Enter Dashboard</span>
             <span className="material-symbols-outlined">arrow_forward</span>
@@ -308,7 +308,7 @@ export default function PaymentGateway({ user, onPaymentComplete, amount }) {
               <div className="grid grid-cols-3 gap-4 mb-8">
                 <button
                   onClick={() => setMethod("card")}
-                  className={`flex flex-col items-center justify-center p-4 rounded-xl border-2 transition-all ${method === "card" ? "border-primary bg-primary/10 text-primary" : "border-(--surface) bg-(--bg-dark) text-on-surface-variant"}`}
+                  className={`flex flex-col items-center justify-center p-4 rounded-xl border-2 transition ${method === "card" ? "border-primary bg-primary/10 text-primary" : "border-(--surface) bg-(--bg-dark) text-on-surface-variant"}`}
                 >
                   <span className="material-symbols-outlined text-3xl mb-1">
                     credit_card
@@ -319,7 +319,7 @@ export default function PaymentGateway({ user, onPaymentComplete, amount }) {
                 </button>
                 <button
                   onClick={() => setMethod("upi")}
-                  className={`flex flex-col items-center justify-center p-4 rounded-xl border-2 transition-all ${method === "upi" ? "border-primary bg-primary/10 text-primary" : "border-(--surface) bg-(--bg-dark) text-on-surface-variant"}`}
+                  className={`flex flex-col items-center justify-center p-4 rounded-xl border-2 transition ${method === "upi" ? "border-primary bg-primary/10 text-primary" : "border-(--surface) bg-(--bg-dark) text-on-surface-variant"}`}
                 >
                   <span className="material-symbols-outlined text-3xl mb-1">
                     account_balance
@@ -330,7 +330,7 @@ export default function PaymentGateway({ user, onPaymentComplete, amount }) {
                 </button>
                 <button
                   onClick={() => setMethod("qr")}
-                  className={`flex flex-col items-center justify-center p-4 rounded-xl border-2 transition-all ${method === "qr" ? "border-primary bg-primary/10 text-primary" : "border-(--surface) bg-(--bg-dark) text-on-surface-variant"}`}
+                  className={`flex flex-col items-center justify-center p-4 rounded-xl border-2 transition ${method === "qr" ? "border-primary bg-primary/10 text-primary" : "border-(--surface) bg-(--bg-dark) text-on-surface-variant"}`}
                 >
                   <span className="material-symbols-outlined text-3xl mb-1">
                     qr_code_2
@@ -364,7 +364,7 @@ export default function PaymentGateway({ user, onPaymentComplete, amount }) {
                 <button
                   onClick={handlePay}
                   disabled={status === "processing"}
-                  className="w-full bg-primary hover:brightness-110 text-(--bg-dark) font-extrabold py-5 rounded-xl shadow-lg flex items-center justify-center gap-3 active:scale-[0.98] transition-all disabled:opacity-50"
+                  className="w-full bg-primary hover:brightness-110 text-(--bg-dark) font-extrabold py-5 rounded-xl shadow-lg flex items-center justify-center gap-3 active:scale-[0.98] transition disabled:opacity-50"
                 >
                   {status === "processing"
                     ? "Initializing..."

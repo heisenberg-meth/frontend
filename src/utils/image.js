@@ -25,7 +25,7 @@ function isRelativePath(url) {
   );
 }
 
-export function sanitizeImageUrl(url) {
+function sanitizeImageUrl(url) {
   if (!url || typeof url !== "string") return null;
 
   let cleaned = url.trim();
@@ -70,5 +70,3 @@ export function getAvatarUrl(avatarPath, fullName) {
 
   return PLACEHOLDER_IMAGE;
 }
-
-export { PLACEHOLDER_IMAGE };

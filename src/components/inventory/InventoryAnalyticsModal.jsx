@@ -1,8 +1,8 @@
 import {
-  useState,
   useEffect,
   useMemo,
   useCallback,
+  useReducer,
   useEffectEvent,
 } from "react";
 import { createPortal } from "react-dom";
@@ -23,14 +23,48 @@ import {
   PieChart as PieChartIcon,
 } from "lucide-react";
 import { toast } from "react-hot-toast";
-import { motion, AnimatePresence } from "framer-motion";
-import {
-  PieChart,
-  Pie,
-  Cell,
-  Tooltip as RechartsTooltip,
-  ResponsiveContainer,
-} from "recharts";
+import { AnimatePresence, m } from "framer-motion";
+import { lazy, Suspense } from "react";
+
+const LazyModalChart = lazy(() =>
+  import("recharts").then((m) => ({
+    default: function ModalChart({ categories, fmt }) {
+      return (
+        <m.ResponsiveContainer width="100%" height="100%">
+          <m.PieChart>
+            <m.Pie
+              data={categories}
+              cx="50%"
+              cy="50%"
+              innerRadius={80}
+              outerRadius={120}
+              paddingAngle={4}
+              dataKey="value"
+              nameKey="category"
+              stroke="var(--surface)"
+              strokeWidth={2}
+            >
+              {categories.map((entry) => (
+                <m.Cell key={entry.category} fill={entry.color} />
+              ))}
+            </m.Pie>
+            <m.Tooltip
+              formatter={(value) => fmt(value)}
+              contentStyle={{
+                backgroundColor: "var(--surface)",
+                borderColor: "var(--border)",
+                borderRadius: "12px",
+                color: "var(--on-surface)",
+                boxShadow: "0 10px 15px -3px rgba(0, 0, 0, 0.1)",
+                padding: "12px 16px",
+              }}
+            />
+          </m.PieChart>
+        </m.ResponsiveContainer>
+      );
+    },
+  })),
+);
 import {
   getInventoryValueSummary,
   getInventoryCategoryBreakdown,
@@ -40,30 +74,109 @@ import {
 import "../../styles/InventoryAnalyticsModal.css";
 import { formatInvoiceTime } from "../../utils/dateTime.js";
 
-const fmt = (val) =>
-  new Intl.NumberFormat("en-IN", {
-    style: "currency",
-    currency: "INR",
-    maximumFractionDigits: 0,
-  }).format(val || 0);
+const INR_FORMATTER = new Intl.NumberFormat("en-IN", {
+  style: "currency",
+  currency: "INR",
+  maximumFractionDigits: 0,
+});
+
+const fmt = (val) => INR_FORMATTER.format(val || 0);
 
 export default function InventoryAnalyticsModal({ isOpen, onClose }) {
-  const [activeTab, setActiveTab] = useState("overview");
-  const [loading, setLoading] = useState(true);
-  const [summary, setSummary] = useState(null);
-  const [categories, setCategories] = useState([]);
-  const [highValueStock, setHighValueStock] = useState([]);
-  const [expiryRisk, setExpiryRisk] = useState(null);
-  const [exporting, setExporting] = useState(false);
-  const [printing, setPrinting] = useState(false);
-  const [isPrinting, setIsPrinting] = useState(false);
+  const [analyticsState, dispatchAnalytics] = useReducer(
+    (state, action) => {
+      if (action.type === "SET_FIELD") {
+        return {
+          ...state,
+          [action.field]:
+            typeof action.value === "function"
+              ? action.value(state[action.field])
+              : action.value,
+        };
+      }
+      return state;
+    },
+    {
+      activeTab: "overview",
+      loading: true,
+      summary: null,
+      categories: [],
+      highValueStock: [],
+      expiryRisk: null,
+      exporting: false,
+      printing: false,
+      isPrinting: false,
+    },
+  );
+
+  const {
+    activeTab,
+    loading,
+    summary,
+    categories,
+    highValueStock,
+    expiryRisk,
+    exporting,
+    printing,
+    isPrinting,
+  } = analyticsState;
+
+  const setActiveTab = useCallback(
+    (val) =>
+      dispatchAnalytics({ type: "SET_FIELD", field: "activeTab", value: val }),
+    [],
+  );
+  const setLoading = useCallback(
+    (val) =>
+      dispatchAnalytics({ type: "SET_FIELD", field: "loading", value: val }),
+    [],
+  );
+  const setSummary = useCallback(
+    (val) =>
+      dispatchAnalytics({ type: "SET_FIELD", field: "summary", value: val }),
+    [],
+  );
+  const setCategories = useCallback(
+    (val) =>
+      dispatchAnalytics({ type: "SET_FIELD", field: "categories", value: val }),
+    [],
+  );
+  const setHighValueStock = useCallback(
+    (val) =>
+      dispatchAnalytics({
+        type: "SET_FIELD",
+        field: "highValueStock",
+        value: val,
+      }),
+    [],
+  );
+  const setExpiryRisk = useCallback(
+    (val) =>
+      dispatchAnalytics({ type: "SET_FIELD", field: "expiryRisk", value: val }),
+    [],
+  );
+  const setExporting = useCallback(
+    (val) =>
+      dispatchAnalytics({ type: "SET_FIELD", field: "exporting", value: val }),
+    [],
+  );
+  const setPrinting = useCallback(
+    (val) =>
+      dispatchAnalytics({ type: "SET_FIELD", field: "printing", value: val }),
+    [],
+  );
+  const setIsPrinting = useCallback(
+    (val) =>
+      dispatchAnalytics({ type: "SET_FIELD", field: "isPrinting", value: val }),
+    [],
+  );
 
   const navigate = useNavigate();
 
   const handleClose = useCallback(() => {
     setActiveTab("overview");
     onClose();
-  }, [onClose]);
+  }, [onClose, setActiveTab]);
 
   const fetchAnalytics = useCallback(async () => {
     try {
@@ -101,7 +214,7 @@ export default function InventoryAnalyticsModal({ isOpen, onClose }) {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [setCategories, setExpiryRisk, setHighValueStock, setLoading, setSummary]);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -221,13 +334,32 @@ export default function InventoryAnalyticsModal({ isOpen, onClose }) {
 
   return createPortal(
     <AnimatePresence>
-      <div className="inventory-analytics-overlay" onClick={handleClose}>
-        <motion.div
+      <div
+        role="button"
+        tabIndex={0}
+        className="inventory-analytics-overlay"
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            e.currentTarget.click();
+          }
+        }}
+        onClick={handleClose}
+      >
+        <m.div
+          role="button"
+          tabIndex={0}
           className="inventory-analytics-modal"
           initial={{ opacity: 0, y: 30, scale: 0.95 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
           exit={{ opacity: 0, y: 20, scale: 0.95 }}
           transition={{ duration: 0.2, ease: "easeOut" }}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === " ") {
+              e.preventDefault();
+              e.currentTarget.click();
+            }
+          }}
           onClick={(e) => e.stopPropagation()}
         >
           {/* Header */}
@@ -286,7 +418,7 @@ export default function InventoryAnalyticsModal({ isOpen, onClose }) {
               <>
                 {/* TAB: OVERVIEW */}
                 {(activeTab === "overview" || isPrinting) && (
-                  <motion.div
+                  <m.div
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.3 }}
@@ -401,12 +533,12 @@ export default function InventoryAnalyticsModal({ isOpen, onClose }) {
                         )}
                       </div>
                     </div>
-                  </motion.div>
+                  </m.div>
                 )}
 
                 {/* TAB: CATEGORIES */}
                 {(activeTab === "categories" || isPrinting) && (
-                  <motion.div
+                  <m.div
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.3 }}
@@ -418,41 +550,15 @@ export default function InventoryAnalyticsModal({ isOpen, onClose }) {
                       </h3>
                       {categories && categories.length > 0 ? (
                         <div className="inventory-chart-wrapper">
-                          <ResponsiveContainer width="100%" height="100%">
-                            <PieChart>
-                              <Pie
-                                data={categories}
-                                cx="50%"
-                                cy="50%"
-                                innerRadius={80}
-                                outerRadius={120}
-                                paddingAngle={4}
-                                dataKey="value"
-                                nameKey="category"
-                                stroke="var(--surface)"
-                                strokeWidth={2}
-                              >
-                                {categories.map((entry) => (
-                                  <Cell
-                                    key={entry.category}
-                                    fill={entry.color}
-                                  />
-                                ))}
-                              </Pie>
-                              <RechartsTooltip
-                                formatter={(value) => fmt(value)}
-                                contentStyle={{
-                                  backgroundColor: "var(--surface)",
-                                  borderColor: "var(--border)",
-                                  borderRadius: "12px",
-                                  color: "var(--on-surface)",
-                                  boxShadow:
-                                    "0 10px 15px -3px rgba(0, 0, 0, 0.1)",
-                                  padding: "12px 16px",
-                                }}
-                              />
-                            </PieChart>
-                          </ResponsiveContainer>
+                          <Suspense
+                            fallback={
+                              <div className="flex justify-center items-center h-full">
+                                <Loader2 className="animate-spin text-primary" />
+                              </div>
+                            }
+                          >
+                            <LazyModalChart categories={categories} fmt={fmt} />
+                          </Suspense>
                         </div>
                       ) : (
                         <div className="flex items-center justify-center p-8 text-on-surface-variant font-medium text-sm">
@@ -512,12 +618,12 @@ export default function InventoryAnalyticsModal({ isOpen, onClose }) {
                         </div>
                       )}
                     </div>
-                  </motion.div>
+                  </m.div>
                 )}
 
                 {/* TAB: RISK & DEAD STOCK */}
                 {(activeTab === "risk" || isPrinting) && (
-                  <motion.div
+                  <m.div
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.3 }}
@@ -597,7 +703,7 @@ export default function InventoryAnalyticsModal({ isOpen, onClose }) {
                         </div>
                       </div>
                     </div>
-                  </motion.div>
+                  </m.div>
                 )}
               </>
             )}
@@ -636,7 +742,7 @@ export default function InventoryAnalyticsModal({ isOpen, onClose }) {
               {exporting ? "Exporting..." : "Export CSV"}
             </button>
           </div>
-        </motion.div>
+        </m.div>
       </div>
     </AnimatePresence>,
     document.body,

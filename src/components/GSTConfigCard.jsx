@@ -152,41 +152,41 @@ function GSTModal({ onClose, onRefresh, showToast, storeProfile }) {
   };
 
   return (
-    <div
+    <div role="button" tabIndex={0}
       className="sys-modal-overlay"
       ref={overlayRef}
-      onClick={(e) => {
+      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.currentTarget.click(); } }} onClick={(e) => {
         if (e.target === overlayRef.current) onClose();
       }}
     >
-      <div
+      <div role="button" tabIndex={0}
         className="sys-modal"
         style={{ textAlign: "left", maxWidth: 520 }}
-        onClick={(e) => e.stopPropagation()}
+        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.currentTarget.click(); } }} onClick={(e) => e.stopPropagation()}
       >
         <>
           <h2 style={{ marginBottom: 24 }}>Edit GST Configuration</h2>
 
           <div className="sys-form-group">
-            <label className="sys-label">GSTIN</label>
+            <label htmlFor="field_lmmozb" className="sys-label">GSTIN</label>
             <input
-              className="sys-input"
+ id="field_lmmozb"              className="sys-input"
               value={form.gstin}
               onChange={(e) => handleChange("gstin", e.target.value)}
             />
           </div>
           <div className="sys-form-group">
-            <label className="sys-label">Business Name</label>
+            <label htmlFor="field_z81581" className="sys-label">Business Name</label>
             <input
-              className="sys-input"
+ id="field_z81581"              className="sys-input"
               value={form.businessName}
               onChange={(e) => handleChange("businessName", e.target.value)}
             />
           </div>
           <div className="sys-form-group">
-            <label className="sys-label">GST State</label>
+            <label htmlFor="field_c3ytb5" className="sys-label">GST State</label>
             <select
-              className="sys-select"
+ id="field_c3ytb5"              className="sys-select"
               value={form.state}
               onChange={(e) => handleChange("state", e.target.value)}
             >
@@ -199,9 +199,9 @@ function GSTModal({ onClose, onRefresh, showToast, storeProfile }) {
             </select>
           </div>
           <div className="sys-form-group">
-            <label className="sys-label">Filing Frequency</label>
+            <label htmlFor="field_txwz0p" className="sys-label">Filing Frequency</label>
             <select
-              className="sys-select"
+ id="field_txwz0p"              className="sys-select"
               value={form.filingFrequency}
               onChange={(e) => handleChange("filingFrequency", e.target.value)}
             >

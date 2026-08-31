@@ -137,7 +137,7 @@ export function getMedicineStatus(medicine) {
   return "In Stock";
 }
 
-export function getExpiryDate(medicine) {
+function getExpiryDate(medicine) {
   if (!medicine) return null;
 
   const today = new Date();

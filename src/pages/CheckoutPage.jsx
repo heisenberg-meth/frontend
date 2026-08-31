@@ -213,7 +213,7 @@ export default function CheckoutPage() {
             <p className="text-gray-300 text-sm mb-6">{message}</p>
             <button
               onClick={() => window.location.reload()}
-              className="px-6 py-2.5 bg-[#4fdbc8] text-[#0a0f1e] rounded-lg font-bold text-sm hover:brightness-110 transition-all"
+              className="px-6 py-2.5 bg-[#4fdbc8] text-[#0a0f1e] rounded-lg font-bold text-sm hover:brightness-110 transition"
             >
               Retry
             </button>

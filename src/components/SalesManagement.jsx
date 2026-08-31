@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from "react";
+import { useMemo, useEffect, useReducer, useCallback } from "react";
 import api from "../api.js";
 import { API_ROUTES } from "../constants/api.routes.js";
 import { useAuth } from "../hooks/useAuth";
@@ -20,7 +20,7 @@ import {
   Smartphone,
   Banknote,
 } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
+import { AnimatePresence, m } from "framer-motion";
 import { X } from "lucide-react";
 import { format, addDays, subDays } from "date-fns";
 import ExcelJS from "exceljs";
@@ -42,40 +42,220 @@ import {
 
 export default function SalesManagement({ showToast, storeProfile }) {
   const { user } = useAuth();
-  const [showInvoiceModal, setShowInvoiceModal] = useState(false);
-  const [showGeneratedInvoiceModal, setShowGeneratedInvoiceModal] =
-    useState(false);
-  const [generatedInvoice, setGeneratedInvoice] = useState(null);
-  const [activeTab, setActiveTab] = useState("daily");
-  const [currentDate, setCurrentDate] = useState(new Date());
-  const [hoveredBar, setHoveredBar] = useState(null);
-  const [selectedSale, setSelectedSale] = useState(null);
-  const [showDetailModal, setShowDetailModal] = useState(false);
-  const [showWhatsAppModal, setShowWhatsAppModal] = useState(false);
-  const [showReturnModal, setShowReturnModal] = useState(false);
-  const [showDateRangeModal, setShowDateRangeModal] = useState(false);
-  const [sales, setSales] = useState([]);
-  const [returns, setReturns] = useState([]);
-  const [hourlyData, setHourlyData] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [returnQuantities, setReturnQuantities] = useState({});
-  const [returnChecked, setReturnChecked] = useState({});
-  const [returnModalReason, setReturnModalReason] = useState("Patient Request");
-  const [dateRange, setDateRange] = useState({
-    start: format(subDays(new Date(), 30), "yyyy-MM-dd"),
-    end: format(new Date(), "yyyy-MM-dd"),
-  });
-  const [tempDateRange, setTempDateRange] = useState({
-    start: format(subDays(new Date(), 30), "yyyy-MM-dd"),
-    end: format(new Date(), "yyyy-MM-dd"),
-  });
+  const [salesState, dispatchSales] = useReducer(
+    (state, action) => {
+      if (action.type === "SET_FIELD") {
+        return {
+          ...state,
+          [action.field]:
+            typeof action.value === "function"
+              ? action.value(state[action.field])
+              : action.value,
+        };
+      }
+      return state;
+    },
+    null,
+    () => {
+      const start = format(subDays(new Date(), 30), "yyyy-MM-dd");
+      const end = format(new Date(), "yyyy-MM-dd");
+      return {
+        showInvoiceModal: false,
+        showGeneratedInvoiceModal: false,
+        generatedInvoice: null,
+        activeTab: "daily",
+        currentDate: new Date(),
+        hoveredBar: null,
+        selectedSale: null,
+        showDetailModal: false,
+        showWhatsAppModal: false,
+        showReturnModal: false,
+        showDateRangeModal: false,
+        sales: [],
+        returns: [],
+        hourlyData: [],
+        loading: true,
+        error: null,
+        returnQuantities: {},
+        returnChecked: {},
+        returnModalReason: "Patient Request",
+        dateRange: { start, end },
+        tempDateRange: { start, end },
+        filters: {
+          search: "",
+          payment: "All Payment Modes",
+          status: "All Status",
+        },
+      };
+    },
+  );
 
-  const [filters, setFilters] = useState({
-    search: "",
-    payment: "All Payment Modes",
-    status: "All Status",
-  });
+  const {
+    showInvoiceModal,
+    showGeneratedInvoiceModal,
+    generatedInvoice,
+    activeTab,
+    currentDate,
+    hoveredBar,
+    selectedSale,
+    showDetailModal,
+    showWhatsAppModal,
+    showReturnModal,
+    showDateRangeModal,
+    sales,
+    returns,
+    hourlyData,
+    loading,
+    error,
+    returnQuantities,
+    returnChecked,
+    returnModalReason,
+    dateRange,
+    tempDateRange,
+    filters,
+  } = salesState;
+
+  const setShowInvoiceModal = useCallback(
+    (val) =>
+      dispatchSales({
+        type: "SET_FIELD",
+        field: "showInvoiceModal",
+        value: val,
+      }),
+    [],
+  );
+  const setShowGeneratedInvoiceModal = useCallback(
+    (val) =>
+      dispatchSales({
+        type: "SET_FIELD",
+        field: "showGeneratedInvoiceModal",
+        value: val,
+      }),
+    [],
+  );
+  const setGeneratedInvoice = useCallback(
+    (val) =>
+      dispatchSales({
+        type: "SET_FIELD",
+        field: "generatedInvoice",
+        value: val,
+      }),
+    [],
+  );
+  const setActiveTab = useCallback(
+    (val) =>
+      dispatchSales({ type: "SET_FIELD", field: "activeTab", value: val }),
+    [],
+  );
+  const setCurrentDate = useCallback(
+    (val) =>
+      dispatchSales({ type: "SET_FIELD", field: "currentDate", value: val }),
+    [],
+  );
+  const setHoveredBar = useCallback(
+    (val) =>
+      dispatchSales({ type: "SET_FIELD", field: "hoveredBar", value: val }),
+    [],
+  );
+  const setSelectedSale = useCallback(
+    (val) =>
+      dispatchSales({ type: "SET_FIELD", field: "selectedSale", value: val }),
+    [],
+  );
+  const setShowDetailModal = useCallback(
+    (val) =>
+      dispatchSales({
+        type: "SET_FIELD",
+        field: "showDetailModal",
+        value: val,
+      }),
+    [],
+  );
+  const setShowWhatsAppModal = useCallback(
+    (val) =>
+      dispatchSales({
+        type: "SET_FIELD",
+        field: "showWhatsAppModal",
+        value: val,
+      }),
+    [],
+  );
+  const setShowReturnModal = useCallback(
+    (val) =>
+      dispatchSales({
+        type: "SET_FIELD",
+        field: "showReturnModal",
+        value: val,
+      }),
+    [],
+  );
+  const setShowDateRangeModal = useCallback(
+    (val) =>
+      dispatchSales({
+        type: "SET_FIELD",
+        field: "showDateRangeModal",
+        value: val,
+      }),
+    [],
+  );
+  const setSales = useCallback(
+    (val) => dispatchSales({ type: "SET_FIELD", field: "sales", value: val }),
+    [],
+  );
+  const setReturns = useCallback(
+    (val) => dispatchSales({ type: "SET_FIELD", field: "returns", value: val }),
+    [],
+  );
+  const setHourlyData = useCallback(
+    (val) =>
+      dispatchSales({ type: "SET_FIELD", field: "hourlyData", value: val }),
+    [],
+  );
+  const setLoading = useCallback(
+    (val) => dispatchSales({ type: "SET_FIELD", field: "loading", value: val }),
+    [],
+  );
+  const setError = useCallback(
+    (val) => dispatchSales({ type: "SET_FIELD", field: "error", value: val }),
+    [],
+  );
+  const setReturnQuantities = useCallback(
+    (val) =>
+      dispatchSales({
+        type: "SET_FIELD",
+        field: "returnQuantities",
+        value: val,
+      }),
+    [],
+  );
+  const setReturnChecked = useCallback(
+    (val) =>
+      dispatchSales({ type: "SET_FIELD", field: "returnChecked", value: val }),
+    [],
+  );
+  const setReturnModalReason = useCallback(
+    (val) =>
+      dispatchSales({
+        type: "SET_FIELD",
+        field: "returnModalReason",
+        value: val,
+      }),
+    [],
+  );
+  const setDateRange = useCallback(
+    (val) =>
+      dispatchSales({ type: "SET_FIELD", field: "dateRange", value: val }),
+    [],
+  );
+  const setTempDateRange = useCallback(
+    (val) =>
+      dispatchSales({ type: "SET_FIELD", field: "tempDateRange", value: val }),
+    [],
+  );
+  const setFilters = useCallback(
+    (val) => dispatchSales({ type: "SET_FIELD", field: "filters", value: val }),
+    [],
+  );
 
   const refreshSalesData = async () => {
     try {
@@ -146,9 +326,8 @@ export default function SalesManagement({ showToast, storeProfile }) {
         setHourlyData(Array.isArray(hourly) ? hourly : []);
       } catch (error) {
         console.error(error);
-        setError("Failed to fetch sales data");
-
         if (mounted) {
+          setError("Failed to fetch sales data");
           showToast("Failed to fetch sales data", "error");
         }
       } finally {
@@ -163,7 +342,15 @@ export default function SalesManagement({ showToast, storeProfile }) {
     return () => {
       mounted = false;
     };
-  }, [dateRange, showToast]);
+  }, [
+    dateRange,
+    setError,
+    setHourlyData,
+    setLoading,
+    setReturns,
+    setSales,
+    showToast,
+  ]);
 
   /* ── Filter Logic (memoized) ── */
   const filteredSales = useMemo(
@@ -932,7 +1119,15 @@ export default function SalesManagement({ showToast, storeProfile }) {
                   ) : (
                     dailySales.map((sale) => (
                       <tr
+                        role="button"
+                        tabIndex={0}
                         key={sale.id}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter" || e.key === " ") {
+                            e.preventDefault();
+                            e.currentTarget.click();
+                          }
+                        }}
                         onClick={() => handleOpenDetail(sale)}
                         style={{ cursor: "pointer" }}
                         className="table-row-hover"
@@ -1130,15 +1325,16 @@ export default function SalesManagement({ showToast, storeProfile }) {
                         onMouseEnter={() => setHoveredBar(i)}
                         onMouseLeave={() => setHoveredBar(null)}
                       >
-                        <motion.div
+                        <m.div
                           className="chart-bar"
-                          initial={{ height: 0 }}
-                          animate={{ height: `${barHeight}%` }}
+                          initial={{ scaleY: 0 }}
+                          animate={{ scaleY: barHeight / 100 }}
                           transition={{
                             duration: 0.4,
                             ease: "easeOut",
                           }}
                           style={{
+                            height: "100%",
                             transformOrigin: "bottom",
                             background: "var(--primary)",
                           }}
@@ -1149,7 +1345,7 @@ export default function SalesManagement({ showToast, storeProfile }) {
                         </span>
 
                         {hoveredBar === i && (
-                          <motion.div
+                          <m.div
                             className="chart-tooltip"
                             initial={{
                               opacity: 0,
@@ -1171,7 +1367,7 @@ export default function SalesManagement({ showToast, storeProfile }) {
                                 maximumFractionDigits: 2,
                               })}
                             </span>
-                          </motion.div>
+                          </m.div>
                         )}
                       </div>
                     );
@@ -1482,7 +1678,7 @@ export default function SalesManagement({ showToast, storeProfile }) {
       <AnimatePresence>
         {showDetailModal && selectedSale && (
           <div className="stock-modal-overlay">
-            <motion.div
+            <m.div
               className="sale-details-modal stock-modal-content"
               style={{
                 width: "95vw",
@@ -1559,7 +1755,7 @@ export default function SalesManagement({ showToast, storeProfile }) {
                 </div>
 
                 <div className="pos-input-group">
-                  <label>Bill Items</label>
+                  <span>Bill Items</span>
                   <div
                     className="table-wrapper"
                     style={{
@@ -1799,7 +1995,7 @@ export default function SalesManagement({ showToast, storeProfile }) {
                   <Printer size={16} /> Print Bill
                 </button>
               </div>
-            </motion.div>
+            </m.div>
           </div>
         )}
       </AnimatePresence>
@@ -1808,7 +2004,7 @@ export default function SalesManagement({ showToast, storeProfile }) {
       <AnimatePresence>
         {showWhatsAppModal && selectedSale && (
           <div className="stock-modal-overlay">
-            <motion.div
+            <m.div
               className="stock-modal-content"
               style={{ width: "450px" }}
               initial={{ opacity: 0, scale: 0.9 }}
@@ -1828,8 +2024,9 @@ export default function SalesManagement({ showToast, storeProfile }) {
               </div>
               <div className="stock-modal-body">
                 <div className="pos-input-group">
-                  <label>Phone Number</label>
+                  <label htmlFor="field_jqkqjp">Phone Number</label>
                   <input
+                    id="field_jqkqjp"
                     required
                     className="pos-input"
                     style={{ width: "100%" }}
@@ -1837,8 +2034,9 @@ export default function SalesManagement({ showToast, storeProfile }) {
                   />
                 </div>
                 <div className="pos-input-group" style={{ marginTop: "16px" }}>
-                  <label>Message Preview</label>
+                  <label htmlFor="field_miw5kd">Message Preview</label>
                   <textarea
+                    id="field_miw5kd"
                     className="pos-input"
                     rows={4}
                     style={{ width: "100%", fontSize: "12px" }}
@@ -1865,7 +2063,7 @@ export default function SalesManagement({ showToast, storeProfile }) {
                   <MessageCircle size={16} /> Send WhatsApp
                 </button>
               </div>
-            </motion.div>
+            </m.div>
           </div>
         )}
       </AnimatePresence>
@@ -1874,7 +2072,7 @@ export default function SalesManagement({ showToast, storeProfile }) {
       <AnimatePresence>
         {showReturnModal && selectedSale && (
           <div className="stock-modal-overlay">
-            <motion.div
+            <m.div
               className="stock-modal-content"
               style={{ width: "500px" }}
               initial={{ opacity: 0, scale: 0.9 }}
@@ -1985,8 +2183,9 @@ export default function SalesManagement({ showToast, storeProfile }) {
                 </div>
 
                 <div className="pos-input-group" style={{ marginTop: "20px" }}>
-                  <label>Return Reason</label>
+                  <label htmlFor="field_fvivco">Return Reason</label>
                   <select
+                    id="field_fvivco"
                     className="pos-input"
                     style={{ width: "100%" }}
                     value={returnModalReason}
@@ -2018,7 +2217,7 @@ export default function SalesManagement({ showToast, storeProfile }) {
                   Process Refund
                 </button>
               </div>
-            </motion.div>
+            </m.div>
           </div>
         )}
       </AnimatePresence>
@@ -2026,7 +2225,7 @@ export default function SalesManagement({ showToast, storeProfile }) {
       <AnimatePresence>
         {showDateRangeModal && (
           <div className="stock-modal-overlay">
-            <motion.div
+            <m.div
               className="stock-modal-content"
               style={{ width: "400px" }}
               initial={{ opacity: 0, scale: 0.9 }}
@@ -2046,8 +2245,9 @@ export default function SalesManagement({ showToast, storeProfile }) {
               </div>
               <div className="stock-modal-body">
                 <div className="pos-input-group">
-                  <label>Start Date</label>
+                  <label htmlFor="field_86ablk">Start Date</label>
                   <input
+                    id="field_86ablk"
                     required
                     type="date"
                     className="pos-input"
@@ -2062,8 +2262,9 @@ export default function SalesManagement({ showToast, storeProfile }) {
                   />
                 </div>
                 <div className="pos-input-group" style={{ marginTop: "16px" }}>
-                  <label>End Date</label>
+                  <label htmlFor="field_c00a5e">End Date</label>
                   <input
+                    id="field_c00a5e"
                     required
                     type="date"
                     className="pos-input"
@@ -2209,7 +2410,7 @@ export default function SalesManagement({ showToast, storeProfile }) {
                   Apply Filter
                 </button>
               </div>
-            </motion.div>
+            </m.div>
           </div>
         )}
         {showInvoiceModal && (

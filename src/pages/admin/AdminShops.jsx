@@ -371,17 +371,37 @@ export default function AdminShops() {
         selected !== null &&
         reason !== undefined && (
           <div
+            role="button"
+            tabIndex={0}
             className="admin-overlay"
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                e.currentTarget.click();
+              }
+            }}
             onClick={() => {
               setSelected(null);
               setReason("");
             }}
           >
-            <div className="admin-modal" onClick={(e) => e.stopPropagation()}>
+            <div
+              role="button"
+              tabIndex={0}
+              className="admin-modal"
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  e.currentTarget.click();
+                }
+              }}
+              onClick={(e) => e.stopPropagation()}
+            >
               <h3>Block Shop — {selected?.name || selected?.shopName}</h3>
               <div className="admin-form-group">
-                <label>Reason</label>
+                <label htmlFor="blockReason">Reason</label>
                 <textarea
+                  id="blockReason"
                   value={reason}
                   onChange={(e) => setReason(e.target.value)}
                   rows={3}

@@ -1,6 +1,6 @@
-import { useState, useMemo, useEffect } from "react";
+import { useMemo, useEffect, useReducer, useCallback } from "react";
 import { createPortal } from "react-dom";
-import { motion } from "framer-motion";
+import { m } from "framer-motion";
 import { X, Receipt, Eye, EyeOff, FileText, FolderOpen } from "lucide-react";
 import CustomerDetailsSection from "./CustomerDetailsSection";
 import MedicineTableSection from "./MedicineTableSection";
@@ -33,24 +33,130 @@ export default function InvoiceModal({
   user,
   storeProfile,
 }) {
-  const [theme, setTheme] = useState("light");
-  const [patient, setPatient] = useState({ id: null, name: "", phone: "" });
-  const [doctorName, setDoctorName] = useState("");
-  const [prescriptionNo, setPrescriptionNo] = useState("");
-  const [address, setAddress] = useState("");
-  const [gstNumber, setGstNumber] = useState("");
-  const [paymentTerms, setPaymentTerms] = useState("Cash");
-  const [dueDate, setDueDate] = useState(() => {
-    const d = new Date();
-    d.setDate(d.getDate() + 30);
-    return d.toISOString().split("T")[0]; // YYYY-MM-DD
-  });
-  const [lineItems, setLineItems] = useState([]);
-  const [isWalkIn, setIsWalkIn] = useState(false);
-  const [showPreview, setShowPreview] = useState(true);
+  const [invoiceState, dispatchInvoice] = useReducer(
+    (state, action) => {
+      if (action.type === "SET_FIELD") {
+        return {
+          ...state,
+          [action.field]:
+            typeof action.value === "function"
+              ? action.value(state[action.field])
+              : action.value,
+        };
+      }
+      return state;
+    },
+    null,
+    () => {
+      const d = new Date();
+      d.setDate(d.getDate() + 30);
+      const dueDate = d.toISOString().split("T")[0];
+      return {
+        theme: "light",
+        patient: { id: null, name: "", phone: "" },
+        doctorName: "",
+        prescriptionNo: "",
+        address: "",
+        gstNumber: "",
+        paymentTerms: "Cash",
+        dueDate,
+        lineItems: [],
+        isWalkIn: false,
+        showPreview: true,
+        savingDraft: false,
+        savingInvoice: false,
+      };
+    },
+  );
 
-  const [savingDraft, setSavingDraft] = useState(false);
-  const [savingInvoice, setSavingInvoice] = useState(false);
+  const {
+    theme,
+    patient,
+    doctorName,
+    prescriptionNo,
+    address,
+    gstNumber,
+    paymentTerms,
+    dueDate,
+    lineItems,
+    isWalkIn,
+    showPreview,
+    savingDraft,
+    savingInvoice,
+  } = invoiceState;
+
+  const setTheme = useCallback(
+    (val) => dispatchInvoice({ type: "SET_FIELD", field: "theme", value: val }),
+    [],
+  );
+  const setPatient = useCallback(
+    (val) =>
+      dispatchInvoice({ type: "SET_FIELD", field: "patient", value: val }),
+    [],
+  );
+  const setDoctorName = useCallback(
+    (val) =>
+      dispatchInvoice({ type: "SET_FIELD", field: "doctorName", value: val }),
+    [],
+  );
+  const setPrescriptionNo = useCallback(
+    (val) =>
+      dispatchInvoice({
+        type: "SET_FIELD",
+        field: "prescriptionNo",
+        value: val,
+      }),
+    [],
+  );
+  const setAddress = useCallback(
+    (val) =>
+      dispatchInvoice({ type: "SET_FIELD", field: "address", value: val }),
+    [],
+  );
+  const setGstNumber = useCallback(
+    (val) =>
+      dispatchInvoice({ type: "SET_FIELD", field: "gstNumber", value: val }),
+    [],
+  );
+  const setPaymentTerms = useCallback(
+    (val) =>
+      dispatchInvoice({ type: "SET_FIELD", field: "paymentTerms", value: val }),
+    [],
+  );
+  const setDueDate = useCallback(
+    (val) =>
+      dispatchInvoice({ type: "SET_FIELD", field: "dueDate", value: val }),
+    [],
+  );
+  const setLineItems = useCallback(
+    (val) =>
+      dispatchInvoice({ type: "SET_FIELD", field: "lineItems", value: val }),
+    [],
+  );
+  const setIsWalkIn = useCallback(
+    (val) =>
+      dispatchInvoice({ type: "SET_FIELD", field: "isWalkIn", value: val }),
+    [],
+  );
+  const setShowPreview = useCallback(
+    (val) =>
+      dispatchInvoice({ type: "SET_FIELD", field: "showPreview", value: val }),
+    [],
+  );
+  const setSavingDraft = useCallback(
+    (val) =>
+      dispatchInvoice({ type: "SET_FIELD", field: "savingDraft", value: val }),
+    [],
+  );
+  const setSavingInvoice = useCallback(
+    (val) =>
+      dispatchInvoice({
+        type: "SET_FIELD",
+        field: "savingInvoice",
+        value: val,
+      }),
+    [],
+  );
 
   // Monitor theme changes on document.documentElement to adapt modal theme dynamically
   useEffect(() => {
@@ -82,7 +188,7 @@ export default function InvoiceModal({
       observer.disconnect();
       document.body.classList.remove("modal-open");
     };
-  }, [isOpen]);
+  }, [isOpen, setTheme]);
 
   // Calculations
   const subtotal = useMemo(() => {
@@ -155,17 +261,20 @@ export default function InvoiceModal({
         gstNumber: gstNumber || null,
         paymentTerms: paymentTerms,
         dueDate: dueDate,
-        items: lineItems
-          .filter((i) => !i.isNew && i.id)
-          .map((i) => ({
-            medicineId: i.id,
-            medicineName: i.name,
-            quantity: i.qty,
-            unitPrice: i.price,
-            gstPercentage: i.gst || 0,
-            discountPercentage: i.discount || 0,
-            batchId: i.batchId || null,
-          })),
+        items: lineItems.reduce((acc, i) => {
+          if (!i.isNew && i.id) {
+            acc.push({
+              medicineId: i.id,
+              medicineName: i.name,
+              quantity: i.qty,
+              unitPrice: i.price,
+              gstPercentage: i.gst || 0,
+              discountPercentage: i.discount || 0,
+              batchId: i.batchId || null,
+            });
+          }
+          return acc;
+        }, []),
         subtotal,
         cgst: tax / 2,
         sgst: tax / 2,
@@ -234,16 +343,19 @@ export default function InvoiceModal({
         gstNumber: gstNumber || null,
         paymentTerms: paymentTerms,
         dueDate: dueDate,
-        items: lineItems
-          .filter((it) => !it.isNew && it.id)
-          .map((it) => ({
-            medicineId: it.id,
-            batchId: it.batchId,
-            quantity: it.qty,
-            unitPrice: it.price,
-            gstPercentage: it.gst || 0,
-            discountPercentage: it.discount || 0,
-          })),
+        items: lineItems.reduce((acc, it) => {
+          if (!it.isNew && it.id) {
+            acc.push({
+              medicineId: it.id,
+              batchId: it.batchId,
+              quantity: it.qty,
+              unitPrice: it.price,
+              gstPercentage: it.gst || 0,
+              discountPercentage: it.discount || 0,
+            });
+          }
+          return acc;
+        }, []),
         paymentMode:
           paymentTerms === "Cash"
             ? "CASH"
@@ -279,7 +391,7 @@ export default function InvoiceModal({
   if (!isOpen) return null;
 
   return createPortal(
-    <motion.div
+    <m.div
       className="invoice-overlay"
       data-theme={theme}
       variants={backdropVariants}
@@ -287,7 +399,7 @@ export default function InvoiceModal({
       animate="visible"
       exit="hidden"
     >
-      <motion.div
+      <m.div
         className={`invoice-modal ${showPreview ? "has-preview" : "no-preview"}`}
         data-theme={theme}
         variants={modalVariants}
@@ -327,7 +439,7 @@ export default function InvoiceModal({
             </button>
             <button
               onClick={onClose}
-              className="w-8 h-8 rounded-lg bg-slate-50 hover:bg-slate-100 flex items-center justify-center text-slate-500 transition-all focus:outline-none dark:bg-slate-800 dark:hover:bg-slate-750 dark:text-slate-300"
+              className="w-8 h-8 rounded-lg bg-slate-50 hover:bg-slate-100 flex items-center justify-center text-slate-500 transition focus:outline-none dark:bg-slate-800 dark:hover:bg-slate-750 dark:text-slate-300"
             >
               <X size={16} />
             </button>
@@ -437,8 +549,8 @@ export default function InvoiceModal({
             </div>
           )}
         </div>
-      </motion.div>
-    </motion.div>,
+      </m.div>
+    </m.div>,
     document.body,
   );
 }

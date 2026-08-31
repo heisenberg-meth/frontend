@@ -10,7 +10,7 @@ import {
   ChevronDown,
   Check,
 } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
+import { AnimatePresence, m } from "framer-motion";
 import { getSuppliers } from "../../services/suppliers.service.js";
 import { safeNumber } from "../../utils/number.js";
 import { getMedicineStatus } from "../../utils/inventoryStatus.js";
@@ -53,7 +53,7 @@ export function CustomDropdown({
 
       <AnimatePresence>
         {isOpen && (
-          <motion.div
+          <m.div
             className="custom-dropdown-menu"
             initial={{ opacity: 0, y: -10, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -68,12 +68,19 @@ export function CustomDropdown({
                 <div
                   key={optValue}
                   className={`custom-dropdown-item ${value === optValue ? "selected" : ""}`}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      e.currentTarget.click();
+                    }
+                  }}
                   onClick={() => {
                     onChange(optValue);
                     setIsOpen(false);
                   }}
                   role="option"
                   aria-selected={value === optValue}
+                  tabIndex={0}
                 >
                   <span>{optLabel}</span>
                   {value === optValue && (
@@ -82,7 +89,7 @@ export function CustomDropdown({
                 </div>
               );
             })}
-          </motion.div>
+          </m.div>
         )}
       </AnimatePresence>
     </div>
@@ -150,18 +157,24 @@ export function MedicineModal({
   const [loadingSuppliers, setLoadingSuppliers] = useState(false);
 
   useEffect(() => {
+    let ignore = false;
     const loadSuppliers = async () => {
       setLoadingSuppliers(true);
       try {
         const res = await getSuppliers({ limit: 500 });
-        setSuppliers(res.data?.data || res.data || []);
+        if (!ignore) {
+          setSuppliers(res.data?.data || res.data || []);
+        }
       } catch (err) {
-        showToast("Failed to load suppliers", err);
+        if (!ignore) showToast("Failed to load suppliers", err);
       } finally {
-        setLoadingSuppliers(false);
+        if (!ignore) setLoadingSuppliers(false);
       }
     };
     loadSuppliers();
+    return () => {
+      ignore = true;
+    };
   }, [showToast]);
   const set = (key, val) => {
     setForm((f) => ({ ...f, [key]: val }));
@@ -247,12 +260,31 @@ export function MedicineModal({
   };
 
   return (
-    <div className="inv-modal-overlay" onClick={onClose}>
-      <motion.div
+    <div
+      role="button"
+      tabIndex={0}
+      className="inv-modal-overlay"
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          e.currentTarget.click();
+        }
+      }}
+      onClick={onClose}
+    >
+      <m.div
+        role="button"
+        tabIndex={0}
         className="inv-modal-content"
         initial={{ opacity: 0, scale: 0.95, y: 20 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.95, y: 20 }}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            e.currentTarget.click();
+          }
+        }}
         onClick={(e) => e.stopPropagation()}
       >
         <div className="inv-modal-header">
@@ -268,8 +300,9 @@ export function MedicineModal({
           <div className="inv-form-grid">
             {/* Medicine Name */}
             <div className="form-group full">
-              <label>Medicine Name *</label>
+              <label htmlFor="field_3whfsd">Medicine Name *</label>
               <input
+                id="field_3whfsd"
                 required
                 placeholder="e.g. Amoxicillin 500mg Capsules"
                 value={form.name || ""}
@@ -283,8 +316,9 @@ export function MedicineModal({
 
             {/* Generic & Brand */}
             <div className="form-group">
-              <label>Generic Name *</label>
+              <label htmlFor="field_ftzanu">Generic Name *</label>
               <input
+                id="field_ftzanu"
                 required
                 placeholder="e.g. Amoxicillin"
                 value={form.genericName || ""}
@@ -296,8 +330,9 @@ export function MedicineModal({
               )}
             </div>
             <div className="form-group">
-              <label>Manufacturer</label>
+              <label htmlFor="field_c6eanv">Manufacturer</label>
               <input
+                id="field_c6eanv"
                 required
                 placeholder="e.g. Cipla Ltd"
                 value={form.manufacturer || ""}
@@ -307,9 +342,10 @@ export function MedicineModal({
 
             {/* Category & Schedule */}
             <div className="form-group">
-              <label>Category *</label>
+              <label htmlFor="field_r0jnco">Category *</label>
               {categories.length > 0 ? (
                 <select
+                  id="field_r0jnco"
                   value={form.categoryId || ""}
                   onChange={(e) => set("categoryId", e.target.value)}
                   className={errors.category ? "input-error" : ""}
@@ -335,8 +371,9 @@ export function MedicineModal({
               )}
             </div>
             <div className="form-group">
-              <label>Schedule</label>
+              <label htmlFor="field_8yi3yp">Schedule</label>
               <select
+                id="field_8yi3yp"
                 value={form.schedule || ""}
                 onChange={(e) => set("schedule", e.target.value)}
               >
@@ -351,8 +388,9 @@ export function MedicineModal({
             {!editData && (
               <>
                 <div className="form-group">
-                  <label>Batch Number *</label>
+                  <label htmlFor="field_k6t4hl">Batch Number *</label>
                   <input
+                    id="field_k6t4hl"
                     required
                     placeholder="e.g. B-20241"
                     value={form.batchNumber || ""}
@@ -364,8 +402,9 @@ export function MedicineModal({
                   )}
                 </div>
                 <div className="form-group">
-                  <label>Expiry Date *</label>
+                  <label htmlFor="field_zpxyd7">Expiry Date *</label>
                   <input
+                    id="field_zpxyd7"
                     required
                     type="date"
                     value={form.expiryDate || ""}
@@ -379,8 +418,9 @@ export function MedicineModal({
 
                 {/* Pricing */}
                 <div className="form-group">
-                  <label>MRP (₹) *</label>
+                  <label htmlFor="field_jsq6da">MRP (₹) *</label>
                   <input
+                    id="field_jsq6da"
                     required
                     type="number"
                     step="0.01"
@@ -394,8 +434,9 @@ export function MedicineModal({
                   )}
                 </div>
                 <div className="form-group">
-                  <label>Selling Price (₹) *</label>
+                  <label htmlFor="field_e3k95g">Selling Price (₹) *</label>
                   <input
+                    id="field_e3k95g"
                     required
                     type="number"
                     step="0.01"
@@ -409,8 +450,9 @@ export function MedicineModal({
                   )}
                 </div>
                 <div className="form-group">
-                  <label>Purchase Cost (₹)</label>
+                  <label htmlFor="field_gkrafq">Purchase Cost (₹)</label>
                   <input
+                    id="field_gkrafq"
                     required
                     type="number"
                     step="0.01"
@@ -426,8 +468,9 @@ export function MedicineModal({
 
                 {/* Quantity & Reorder */}
                 <div className="form-group">
-                  <label>Stock Quantity *</label>
+                  <label htmlFor="field_ryi210">Stock Quantity *</label>
                   <input
+                    id="field_ryi210"
                     required
                     type="number"
                     placeholder="0"
@@ -442,8 +485,9 @@ export function MedicineModal({
               </>
             )}
             <div className="form-group">
-              <label>Reorder Level</label>
+              <label htmlFor="field_95cr8v">Reorder Level</label>
               <input
+                id="field_95cr8v"
                 required
                 type="number"
                 placeholder="10"
@@ -454,8 +498,9 @@ export function MedicineModal({
 
             {/* GST & HSN */}
             <div className="form-group">
-              <label>GST %</label>
+              <label htmlFor="field_nllaj6">GST %</label>
               <select
+                id="field_nllaj6"
                 value={form.gst ?? ""}
                 onChange={(e) => set("gst", e.target.value)}
               >
@@ -467,8 +512,9 @@ export function MedicineModal({
               </select>
             </div>
             <div className="form-group">
-              <label>HSN Code</label>
+              <label htmlFor="field_zd1vfb">HSN Code</label>
               <input
+                id="field_zd1vfb"
                 required
                 placeholder="e.g. 3004"
                 value={form.hsnCode || ""}
@@ -478,8 +524,9 @@ export function MedicineModal({
 
             {/* Barcode & SKU */}
             <div className="form-group full">
-              <label>Barcode / SKU</label>
+              <label htmlFor="field_4wbhtl">Barcode / SKU</label>
               <input
+                id="field_4wbhtl"
                 required
                 placeholder="Scan or enter barcode"
                 value={form.barcode || ""}
@@ -489,7 +536,7 @@ export function MedicineModal({
 
             {/* Supplier */}
             <div className="form-group full">
-              <label>Supplier</label>
+              <label htmlFor="field_zybujv">Supplier</label>
               {loadingSuppliers ? (
                 <div
                   style={{
@@ -502,6 +549,7 @@ export function MedicineModal({
                 </div>
               ) : suppliers.length > 0 ? (
                 <select
+                  id="field_zybujv"
                   value={form.supplierId || ""}
                   onChange={(e) => set("supplierId", e.target.value)}
                   className={errors.supplierId ? "input-error" : ""}
@@ -554,8 +602,9 @@ export function MedicineModal({
 
             {/* Notes */}
             <div className="form-group full">
-              <label>Notes</label>
+              <label htmlFor="field_rgmt7s">Notes</label>
               <textarea
+                id="field_rgmt7s"
                 placeholder="Storage instructions, side effects, etc."
                 value={form.notes || ""}
                 onChange={(e) => set("notes", e.target.value)}
@@ -585,7 +634,7 @@ export function MedicineModal({
             )}
           </button>
         </div>
-      </motion.div>
+      </m.div>
     </div>
   );
 }
@@ -606,13 +655,32 @@ export function MedicineViewModal({
   const isOutOfStock = medicineStatus === "Out of Stock";
 
   return (
-    <div className="inv-modal-overlay" onClick={onClose}>
-      <motion.div
+    <div
+      role="button"
+      tabIndex={0}
+      className="inv-modal-overlay"
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          e.currentTarget.click();
+        }
+      }}
+      onClick={onClose}
+    >
+      <m.div
+        role="button"
+        tabIndex={0}
         className="inv-modal-content inv-view-modal"
         style={{ width: "800px" }}
         initial={{ opacity: 0, scale: 0.95, y: 20 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.95, y: 20 }}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            e.currentTarget.click();
+          }
+        }}
         onClick={(e) => e.stopPropagation()}
       >
         <div className="inv-view-header">
@@ -653,37 +721,37 @@ export function MedicineViewModal({
 
           <div className="inv-view-grid">
             <div className="inv-detail-item">
-              <label>Category</label>
+              <span>Category</span>
               <span>{medicine.category?.name || medicine.category || "—"}</span>
             </div>
             <div className="inv-detail-item">
-              <label>GST</label>
+              <span>GST</span>
               <span>{medicine.gstPercentage ?? 12}%</span>
             </div>
             <div className="inv-detail-item">
-              <label>HSN Code</label>
+              <span>HSN Code</span>
               <span className="mono">{medicine.hsnCode || "—"}</span>
             </div>
             <div className="inv-detail-item">
-              <label>Barcode</label>
+              <span>Barcode</span>
               <span className="mono">{medicine.barcode || "—"}</span>
             </div>
             <div className="inv-detail-item">
-              <label>Manufacturer</label>
+              <span>Manufacturer</span>
               <span>
                 {medicine.manufacturer?.name || medicine.manufacturer || "—"}
               </span>
             </div>
             <div className="inv-detail-item">
-              <label>Supplier</label>
+              <span>Supplier</span>
               <span>{medicine.supplier?.name || medicine.supplier || "—"}</span>
             </div>
             <div className="inv-detail-item">
-              <label>Reorder Level</label>
+              <span>Reorder Level</span>
               <span>{medicine.reorderLevel || 10} units</span>
             </div>
             <div className="inv-detail-item">
-              <label>Total Stock</label>
+              <span>Total Stock</span>
               <span
                 style={{
                   color: isLowStock ? "var(--warning)" : "var(--success)",
@@ -820,7 +888,7 @@ export function MedicineViewModal({
 
           {medicine.description && (
             <div className="inv-view-notes">
-              <label>Notes</label>
+              <span>Notes</span>
               <p>{medicine.description}</p>
             </div>
           )}
@@ -831,7 +899,7 @@ export function MedicineViewModal({
             Close
           </button>
         </div>
-      </motion.div>
+      </m.div>
     </div>
   );
 }

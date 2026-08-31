@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useReducer, useRef } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import api from "../api.js";
 import { useAuth } from "../hooks/useAuth.js";
@@ -31,7 +31,7 @@ import {
   Loader2,
   Check,
 } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
+import { AnimatePresence, m } from "framer-motion";
 import { safeNumber } from "../utils/number.js";
 
 function Spinner({ size = 14 }) {
@@ -102,19 +102,22 @@ const renderInvoiceItemsSummary = (inv) => {
     .map((i) => i.medicine?.name || i.medicineName || i.name || "Item")
     .join(", ");
   const allBatches = items
-    .map((i) => i.batchNumber)
-    .filter(Boolean)
+    .flatMap((i) => (i.batchNumber ? [i.batchNumber] : []))
     .join(", ");
 
-  const validExpiries = items
-    .map((i) => (i.expiryDate ? new Date(i.expiryDate).getTime() : null))
-    .filter((t) => t && !isNaN(t));
+  const validExpiries = items.reduce((acc, i) => {
+    const t = i.expiryDate ? new Date(i.expiryDate).getTime() : null;
+    if (t && !isNaN(t)) acc.push(t);
+    return acc;
+  }, []);
   const earliestExpiry =
     validExpiries.length > 0 ? new Date(Math.min(...validExpiries)) : null;
 
-  const prices = items
-    .map((i) => safeNumber(i.purchasePrice || i.unitPrice || i.price || 0))
-    .filter((p) => p > 0);
+  const prices = items.reduce((acc, i) => {
+    const p = safeNumber(i.purchasePrice || i.unitPrice || i.price || 0);
+    if (p > 0) acc.push(p);
+    return acc;
+  }, []);
   const minPrice = prices.length > 0 ? Math.min(...prices) : 0;
   const maxPrice = prices.length > 0 ? Math.max(...prices) : 0;
 
@@ -157,79 +160,267 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
   const { user } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState("invoices");
-  const [drawer, setDrawer] = useState(null);
-  const [selectedRow, setSelectedRow] = useState(null);
-  const [branches, setBranches] = useState([]);
-  const [selectedBranchId, setSelectedBranchId] = useState("");
-  const [showReturnModal, setShowReturnModal] = useState(false);
-  const [returnSelections, setReturnSelections] = useState([]);
-  const [loadingReturnBatches, setLoadingReturnBatches] = useState(false);
-  const [showReceiveModal, setShowReceiveModal] = useState(false);
-  const [medicines, setMedicines] = useState([]);
-  const [suppliers, setSuppliers] = useState([]);
-  const [orders, setOrders] = useState([]);
-  const [loadingMedicines, setLoadingMedicines] = useState(false);
-  const [returns, setReturns] = useState([]);
-  const [invoices, setInvoices] = useState([]);
-  const [purchaseItems, setPurchaseItems] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [receiveItems, setReceiveItems] = useState([]);
-  const [isReceiving, setIsReceiving] = useState(false);
-  const [, setDifferentBatch] = useState({});
+  const [purchaseState, dispatchPurchase] = useReducer(
+    (state, action) => {
+      if (action.type === "SET_FIELD") {
+        return {
+          ...state,
+          [action.field]:
+            typeof action.value === "function"
+              ? action.value(state[action.field])
+              : action.value,
+        };
+      }
+      return state;
+    },
+    {
+      activeTab: "invoices",
+      drawer: null,
+      selectedRow: null,
+      branches: [],
+      selectedBranchId: "",
+      showReturnModal: false,
+      returnSelections: [],
+      loadingReturnBatches: false,
+      showReceiveModal: false,
+      medicines: [],
+      suppliers: [],
+      orders: [],
+      loadingMedicines: false,
+      returns: [],
+      invoices: [],
+      purchaseItems: [],
+      loading: false,
+      receiveItems: [],
+      isReceiving: false,
+      differentBatch: {},
+    },
+  );
+
+  const {
+    activeTab,
+    drawer,
+    selectedRow,
+    branches,
+    selectedBranchId,
+    showReturnModal,
+    returnSelections,
+    loadingReturnBatches,
+    showReceiveModal,
+    medicines,
+    suppliers,
+    orders,
+    loadingMedicines,
+    returns,
+    invoices,
+    purchaseItems,
+    loading,
+    receiveItems,
+    isReceiving,
+  } = purchaseState;
+
+  const isOpeningReceiveModalRef = useRef(false);
+  const isUpdatingPaymentRef = useRef(false);
+  const isProcessingReturnRef = useRef(false);
+  const isApprovingPORef = useRef(false);
+
+  const setActiveTab = useCallback(
+    (val) =>
+      dispatchPurchase({ type: "SET_FIELD", field: "activeTab", value: val }),
+    [],
+  );
+  const setDrawer = useCallback(
+    (val) =>
+      dispatchPurchase({ type: "SET_FIELD", field: "drawer", value: val }),
+    [],
+  );
+  const setSelectedRow = useCallback(
+    (val) =>
+      dispatchPurchase({ type: "SET_FIELD", field: "selectedRow", value: val }),
+    [],
+  );
+  const setBranches = useCallback(
+    (val) =>
+      dispatchPurchase({ type: "SET_FIELD", field: "branches", value: val }),
+    [],
+  );
+  const setSelectedBranchId = useCallback(
+    (val) =>
+      dispatchPurchase({
+        type: "SET_FIELD",
+        field: "selectedBranchId",
+        value: val,
+      }),
+    [],
+  );
+  const setShowReturnModal = useCallback(
+    (val) =>
+      dispatchPurchase({
+        type: "SET_FIELD",
+        field: "showReturnModal",
+        value: val,
+      }),
+    [],
+  );
+  const setReturnSelections = useCallback(
+    (val) =>
+      dispatchPurchase({
+        type: "SET_FIELD",
+        field: "returnSelections",
+        value: val,
+      }),
+    [],
+  );
+  const setLoadingReturnBatches = useCallback(
+    (val) =>
+      dispatchPurchase({
+        type: "SET_FIELD",
+        field: "loadingReturnBatches",
+        value: val,
+      }),
+    [],
+  );
+  const setShowReceiveModal = useCallback(
+    (val) =>
+      dispatchPurchase({
+        type: "SET_FIELD",
+        field: "showReceiveModal",
+        value: val,
+      }),
+    [],
+  );
+  const setMedicines = useCallback(
+    (val) =>
+      dispatchPurchase({ type: "SET_FIELD", field: "medicines", value: val }),
+    [],
+  );
+  const setSuppliers = useCallback(
+    (val) =>
+      dispatchPurchase({ type: "SET_FIELD", field: "suppliers", value: val }),
+    [],
+  );
+  const setOrders = useCallback(
+    (val) =>
+      dispatchPurchase({ type: "SET_FIELD", field: "orders", value: val }),
+    [],
+  );
+  const setLoadingMedicines = useCallback(
+    (val) =>
+      dispatchPurchase({
+        type: "SET_FIELD",
+        field: "loadingMedicines",
+        value: val,
+      }),
+    [],
+  );
+  const setReturns = useCallback(
+    (val) =>
+      dispatchPurchase({ type: "SET_FIELD", field: "returns", value: val }),
+    [],
+  );
+  const setInvoices = useCallback(
+    (val) =>
+      dispatchPurchase({ type: "SET_FIELD", field: "invoices", value: val }),
+    [],
+  );
+  const setPurchaseItems = useCallback(
+    (val) =>
+      dispatchPurchase({
+        type: "SET_FIELD",
+        field: "purchaseItems",
+        value: val,
+      }),
+    [],
+  );
+  const setLoading = useCallback(
+    (val) =>
+      dispatchPurchase({ type: "SET_FIELD", field: "loading", value: val }),
+    [],
+  );
+  const setReceiveItems = useCallback(
+    (val) =>
+      dispatchPurchase({
+        type: "SET_FIELD",
+        field: "receiveItems",
+        value: val,
+      }),
+    [],
+  );
+  const setIsReceiving = useCallback(
+    (val) =>
+      dispatchPurchase({ type: "SET_FIELD", field: "isReceiving", value: val }),
+    [],
+  );
+  const setDifferentBatch = useCallback(
+    (val) =>
+      dispatchPurchase({
+        type: "SET_FIELD",
+        field: "differentBatch",
+        value: val,
+      }),
+    [],
+  );
 
   const handleOpenReceiveModal = async (po) => {
-    setSelectedRow(po);
-    setDifferentBatch({});
-    setGrnInvoiceNumber("");
-    setGrnInvoiceDate(new Date().toISOString().split("T")[0]);
-
-    let priorGRN = null;
+    if (isOpeningReceiveModalRef.current) return;
+    isOpeningReceiveModalRef.current = true;
     try {
-      const { data } = await api.get(`${API_ROUTES.PURCHASES_ORDERS}/${po.id}`);
-      const order = data?.data || data;
-      priorGRN = order?.goodsReceiptNotes?.[0] || null;
-    } catch {
-      // no prior GRN data available
+      setSelectedRow(po);
+      setDifferentBatch({});
+      setGrnInvoiceNumber("");
+      setGrnInvoiceDate(new Date().toISOString().split("T")[0]);
+
+      let priorGRN = null;
+      try {
+        const { data } = await api.get(
+          `${API_ROUTES.PURCHASES_ORDERS}/${po.id}`,
+        );
+        const order = data?.data || data;
+        priorGRN = order?.goodsReceiptNotes?.[0] || null;
+      } catch {
+        // no prior GRN data available
+      }
+
+      setReceiveItems(
+        (po.items || []).map((item) => {
+          const remaining = Math.max(
+            0,
+            (item.quantity || 0) - (item.receivedQuantity || 0),
+          );
+
+          const priorItem = priorGRN?.items?.find(
+            (gi) => gi.purchaseOrderItemId === item.id,
+          );
+
+          // Pre-fill batch/expiry from: 1) prior GRN data, 2) empty
+          const batchNumber = priorItem?.batchNumber || "";
+          const expiryDate = priorItem?.expiryDate
+            ? priorItem.expiryDate.split("T")[0]
+            : "";
+
+          return {
+            ...item,
+            medicineId: item.medicineId,
+            orderedQuantity: item.quantity || 0,
+            prevReceivedQuantity: item.receivedQuantity || 0,
+            pendingQuantity: remaining,
+            receivedQuantity: remaining,
+            batchNumber,
+            expiryDate,
+            purchasePrice: priorItem?.purchasePrice
+              ? safeNumber(priorItem.purchasePrice)
+              : 0,
+            mrp: priorItem?.mrp ? safeNumber(priorItem.mrp) : 0,
+            gstPercentage: priorItem?.gstPercentage
+              ? safeNumber(priorItem.gstPercentage)
+              : 0,
+          };
+        }),
+      );
+      setShowReceiveModal(true);
+    } finally {
+      isOpeningReceiveModalRef.current = false;
     }
-
-    setReceiveItems(
-      (po.items || []).map((item) => {
-        const remaining = Math.max(
-          0,
-          (item.quantity || 0) - (item.receivedQuantity || 0),
-        );
-
-        const priorItem = priorGRN?.items?.find(
-          (gi) => gi.purchaseOrderItemId === item.id,
-        );
-
-        // Pre-fill batch/expiry from: 1) prior GRN data, 2) empty
-        const batchNumber = priorItem?.batchNumber || "";
-        const expiryDate = priorItem?.expiryDate
-          ? priorItem.expiryDate.split("T")[0]
-          : "";
-
-        return {
-          ...item,
-          medicineId: item.medicineId,
-          orderedQuantity: item.quantity || 0,
-          prevReceivedQuantity: item.receivedQuantity || 0,
-          pendingQuantity: remaining,
-          receivedQuantity: remaining,
-          batchNumber,
-          expiryDate,
-          purchasePrice: priorItem?.purchasePrice
-            ? safeNumber(priorItem.purchasePrice)
-            : 0,
-          mrp: priorItem?.mrp ? safeNumber(priorItem.mrp) : 0,
-          gstPercentage: priorItem?.gstPercentage
-            ? safeNumber(priorItem.gstPercentage)
-            : 0,
-        };
-      }),
-    );
-    setShowReceiveModal(true);
   };
 
   const refreshData = async () => {
@@ -255,6 +446,8 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
   };
 
   const updatePaymentStatus = async (invoiceId, status) => {
+    if (isUpdatingPaymentRef.current) return;
+    isUpdatingPaymentRef.current = true;
     try {
       await api.patch(
         `${API_ROUTES.PURCHASES_INVOICES_PAYMENT}/${invoiceId}/payment-status`,
@@ -264,6 +457,8 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
       await refreshData();
     } catch (err) {
       showToast("Failed to update payment status", err);
+    } finally {
+      isUpdatingPaymentRef.current = false;
     }
   };
 
@@ -314,7 +509,15 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
     return () => {
       mounted = false;
     };
-  }, [showToast]);
+  }, [
+    setBranches,
+    setInvoices,
+    setLoading,
+    setOrders,
+    setReturns,
+    setSuppliers,
+    showToast,
+  ]);
 
   useEffect(() => {}, [medicines]);
 
@@ -334,7 +537,7 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
     } finally {
       setLoadingMedicines(false);
     }
-  }, []);
+  }, [setLoadingMedicines, setMedicines]);
 
   useEffect(() => {
     if (drawer || showReturnModal || showReceiveModal) {
@@ -366,7 +569,7 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
   /* ── Receive Goods Modal State ── */
   const [grnInvoiceNumber, setGrnInvoiceNumber] = useState("");
   const [grnInvoiceDate, setGrnInvoiceDate] = useState(
-    new Date().toISOString().split("T")[0],
+    () => new Date().toISOString().split("T")[0],
   );
   /* ── Credit Application State ── */
   const [supplierCredit, setSupplierCredit] = useState({
@@ -560,6 +763,7 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
   };
 
   const handleSavePurchase = async () => {
+    if (saving) return;
     if (!selectedSupplier) {
       showToast("Please select a supplier", "error");
       return;
@@ -733,6 +937,7 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
   }, [drawer, selectedRow]);
 
   const handleApplyCredit = async () => {
+    if (applyingCredit) return;
     if (!selectedCreditNoteId || creditAmountToApply <= 0) {
       showToast("Select a credit note and enter a valid amount", "warning");
       return;
@@ -816,6 +1021,7 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
     navigate,
     location.pathname,
     handleOpenDrawer,
+    setPurchaseItems,
   ]);
 
   /* ── Filtered Data Logic ── */
@@ -834,13 +1040,15 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
       filters.status === "All Status" ||
       statusVal === filterVal ||
       (statusVal === "partiallypaid" && filterVal === "partial");
+    const lowerSearch = filters.search.toLowerCase();
     const matchesSearch =
       (inv.supplierInvoiceNumber || inv.invoiceNumber || inv.id || "")
         .toLowerCase()
-        .includes(filters.search.toLowerCase()) ||
-      supplierName.toLowerCase().includes(filters.search.toLowerCase());
+        .includes(lowerSearch) ||
+      supplierName.toLowerCase().includes(lowerSearch);
     const matchesDate =
-      !filters.date || (inv.date || inv.createdAt || "").includes(filters.date);
+      !filters.date ||
+      (inv.date || inv.createdAt || "").indexOf(filters.date) !== -1;
     return matchesSupplier && matchesStatus && matchesSearch && matchesDate;
   });
 
@@ -858,13 +1066,13 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
       statusVal === filterVal ||
       (statusVal === "partiallyreceived" && filterVal === "partiallypaid");
 
+    const lowerSearch = filters.search.toLowerCase();
     const matchesSearch =
-      (po.id || po.poNumber || "")
-        .toLowerCase()
-        .includes(filters.search.toLowerCase()) ||
-      supplierName.toLowerCase().includes(filters.search.toLowerCase());
+      (po.id || po.poNumber || "").toLowerCase().includes(lowerSearch) ||
+      supplierName.toLowerCase().includes(lowerSearch);
     const matchesDate =
-      !filters.date || (po.date || po.createdAt || "").includes(filters.date);
+      !filters.date ||
+      (po.date || po.createdAt || "").indexOf(filters.date) !== -1;
     return matchesSupplier && matchesStatus && matchesSearch && matchesDate;
   });
 
@@ -880,13 +1088,13 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
     const matchesStatus =
       filters.status === "All Status" || statusVal === filterVal;
 
+    const lowerSearch = filters.search.toLowerCase();
     const matchesSearch =
-      (ret.id || ret.returnNumber || "")
-        .toLowerCase()
-        .includes(filters.search.toLowerCase()) ||
-      supplierName.toLowerCase().includes(filters.search.toLowerCase());
+      (ret.id || ret.returnNumber || "").toLowerCase().includes(lowerSearch) ||
+      supplierName.toLowerCase().includes(lowerSearch);
     const matchesDate =
-      !filters.date || (ret.date || ret.createdAt || "").includes(filters.date);
+      !filters.date ||
+      (ret.date || ret.createdAt || "").indexOf(filters.date) !== -1;
     return matchesSupplier && matchesStatus && matchesSearch && matchesDate;
   });
 
@@ -1030,57 +1238,63 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
 
   const loadReturnBatches = async (invoice) => {
     setLoadingReturnBatches(true);
-    const items = invoice?.items || [];
-    const results = [];
-    for (const item of items) {
-      const medicineId = item.medicineId || item.medicine?.id;
-      if (!medicineId) {
-        results.push({
-          medicineId: null,
-          medicineName: item.medicine?.name || item.name || "Unknown",
-          batches: [],
-          selectedBatchId: "",
-          quantity: 0,
-        });
-        continue;
-      }
-      try {
-        const { data } = await api.get(API_ROUTES.INVENTORY_BATCHES, {
-          params: { medicineId, limit: 50 },
-        });
-        const batches = (
-          data?.data?.batches ||
-          data?.batches ||
-          data?.data ||
-          []
-        ).filter((b) => b.quantity > 0 && b.status === "ACTIVE");
-        results.push({
-          medicineId,
-          medicineName: item.medicine?.name || item.name || "Unknown",
-          batches,
-          selectedBatchId: batches.length === 1 ? batches[0].id : "",
-          quantity: Math.min(
-            item.quantity || 0,
-            batches.length > 0 ? batches[0].quantity : 0,
-          ),
-          maxQuantity: batches.length > 0 ? batches[0].quantity : 0,
-        });
-      } catch {
-        results.push({
-          medicineId,
-          medicineName: item.medicine?.name || item.name || "Unknown",
-          batches: [],
-          selectedBatchId: "",
-          quantity: 0,
-          maxQuantity: 0,
-        });
-      }
+    try {
+      const items = invoice?.items || [];
+      const results = await Promise.all(
+        items.map(async (item) => {
+          const medicineId = item.medicineId || item.medicine?.id;
+          const medicineName = item.medicine?.name || item.name || "Unknown";
+          if (!medicineId) {
+            return {
+              medicineId: null,
+              medicineName,
+              batches: [],
+              selectedBatchId: "",
+              quantity: 0,
+            };
+          }
+          try {
+            const { data } = await api.get(API_ROUTES.INVENTORY_BATCHES, {
+              params: { medicineId, limit: 50 },
+            });
+            const batches = (
+              data?.data?.batches ||
+              data?.batches ||
+              data?.data ||
+              []
+            ).filter((b) => b.quantity > 0 && b.status === "ACTIVE");
+            return {
+              medicineId,
+              medicineName,
+              batches,
+              selectedBatchId: batches.length === 1 ? batches[0].id : "",
+              quantity: Math.min(
+                item.quantity || 0,
+                batches.length > 0 ? batches[0].quantity : 0,
+              ),
+              maxQuantity: batches.length > 0 ? batches[0].quantity : 0,
+            };
+          } catch {
+            return {
+              medicineId,
+              medicineName,
+              batches: [],
+              selectedBatchId: "",
+              quantity: 0,
+              maxQuantity: 0,
+            };
+          }
+        }),
+      );
+      setReturnSelections(results);
+    } finally {
+      setLoadingReturnBatches(false);
     }
-    setReturnSelections(results);
-    setLoadingReturnBatches(false);
   };
 
   const handleProcessReturn = async () => {
+    if (isProcessingReturnRef.current) return;
+    isProcessingReturnRef.current = true;
     try {
       const supplierId = selectedRow?.supplierId || selectedRow?.supplier?.id;
       const purchaseInvoiceId = selectedRow?.id;
@@ -1095,13 +1309,16 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
         return;
       }
 
-      const payloadItems = returnSelections
-        .filter((s) => s.selectedBatchId && s.quantity > 0)
-        .map((s) => ({
-          batchId: s.selectedBatchId,
-          quantity: safeNumber(s.quantity),
-          medicineId: s.medicineId,
-        }));
+      const payloadItems = returnSelections.reduce((acc, s) => {
+        if (s.selectedBatchId && s.quantity > 0) {
+          acc.push({
+            batchId: s.selectedBatchId,
+            quantity: safeNumber(s.quantity),
+            medicineId: s.medicineId,
+          });
+        }
+        return acc;
+      }, []);
 
       if (payloadItems.length === 0) {
         showToast("Select at least one batch and quantity to return", "error");
@@ -1133,13 +1350,16 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
       console.error("DATA:", err.response?.data);
       console.error("PAYLOAD:", {
         purchaseInvoiceId: selectedRow?.id,
-        items: returnSelections
-          .filter((s) => s.selectedBatchId && s.quantity > 0)
-          .map((s) => ({
-            batchId: s.selectedBatchId,
-            quantity: safeNumber(s.quantity),
-            medicineId: s.medicineId,
-          })),
+        items: returnSelections.reduce((acc, s) => {
+          if (s.selectedBatchId && s.quantity > 0) {
+            acc.push({
+              batchId: s.selectedBatchId,
+              quantity: safeNumber(s.quantity),
+              medicineId: s.medicineId,
+            });
+          }
+          return acc;
+        }, []),
         reason: "Return",
         supplierId: selectedRow?.supplierId || selectedRow?.supplier?.id,
       });
@@ -1147,6 +1367,8 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
         err.response?.data?.message || "Failed to process return",
         "error",
       );
+    } finally {
+      isProcessingReturnRef.current = false;
     }
   };
 
@@ -1390,7 +1612,15 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
                   const summary = renderInvoiceItemsSummary(inv);
                   return (
                     <tr
+                      role="button"
+                      tabIndex={0}
                       key={inv.id}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" || e.key === " ") {
+                          e.preventDefault();
+                          e.currentTarget.click();
+                        }
+                      }}
                       onClick={() => handleOpenDrawer("invoice-detail", inv)}
                     >
                       <td>{inv.date || formatDate(inv.createdAt)}</td>
@@ -1428,7 +1658,17 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
                           },
                         )}
                       </td>
-                      <td onClick={(e) => e.stopPropagation()}>
+                      <td
+                        role="button"
+                        tabIndex={0}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter" || e.key === " ") {
+                            e.preventDefault();
+                            e.currentTarget.click();
+                          }
+                        }}
+                        onClick={(e) => e.stopPropagation()}
+                      >
                         <select
                           className="payment-status-dropdown"
                           value={inv.paymentStatus || "PENDING"}
@@ -1511,7 +1751,15 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
             <tbody>
               {filteredOrders.map((po) => (
                 <tr
+                  role="button"
+                  tabIndex={0}
                   key={po.id}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      e.currentTarget.click();
+                    }
+                  }}
                   onClick={() => handleOpenDrawer("invoice-detail", po)}
                 >
                   <td style={{ fontWeight: 700 }}>
@@ -1551,6 +1799,9 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
                           }}
                           onClick={async (e) => {
                             e.stopPropagation();
+                            if (isApprovingPORef.current) return;
+                            isApprovingPORef.current = true;
+
                             try {
                               await api.patch(
                                 `${API_ROUTES.PURCHASES_ORDERS}/${po.id}/status`,
@@ -1569,6 +1820,8 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
                                   "Failed to approve order",
                                 "error",
                               );
+                            } finally {
+                              isApprovingPORef.current = false;
                             }
                           }}
                         >
@@ -1625,7 +1878,15 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
             <tbody>
               {filteredReturns.map((ret) => (
                 <tr
+                  role="button"
+                  tabIndex={0}
                   key={ret.id}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      e.currentTarget.click();
+                    }
+                  }}
                   onClick={() => handleOpenDrawer("invoice-detail", ret)}
                 >
                   <td>{ret.date || formatDate(ret.createdAt)}</td>
@@ -1755,7 +2016,9 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
       {/* ── Side Drawer: New Purchase ── */}
       <AnimatePresence>
         {drawer && (
-          <motion.div
+          <m.div
+            role="button"
+            tabIndex={0}
             className="stock-modal-overlay"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -1767,7 +2030,7 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
               }
             }}
           >
-            <motion.div
+            <m.div
               className="p-drawer"
               initial={{ x: "100%" }}
               animate={{ x: 0 }}
@@ -1866,10 +2129,11 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
                         style={{ marginTop: "16px" }}
                       >
                         <div className="pos-input-group">
-                          <label className="p-label">
+                          <label htmlFor="field_z2wcnf" className="p-label">
                             EXPECTED DELIVERY DATE
                           </label>
                           <input
+                            id="field_z2wcnf"
                             className="pos-input"
                             type="date"
                             value={expectedDeliveryDate}
@@ -1879,8 +2143,11 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
                           />
                         </div>
                         <div className="pos-input-group">
-                          <label className="p-label">PAYMENT MODE</label>
+                          <label htmlFor="field_p43wud" className="p-label">
+                            PAYMENT MODE
+                          </label>
                           <select
+                            id="field_p43wud"
                             className="pos-input"
                             value={paymentMode}
                             onChange={(e) => setPaymentMode(e.target.value)}
@@ -1893,10 +2160,11 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
                           </select>
                         </div>
                         <div className="pos-input-group">
-                          <label className="p-label">
+                          <label htmlFor="field_2dh370" className="p-label">
                             PAYMENT TERMS (DAYS)
                           </label>
                           <input
+                            id="field_2dh370"
                             className="pos-input"
                             type="number"
                             min={0}
@@ -1950,8 +2218,16 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
                               <div className="medicine-suggestions">
                                 {filteredMedicines.map((m) => (
                                   <div
+                                    role="button"
+                                    tabIndex={0}
                                     key={m.id}
                                     className="medicine-suggestion-item"
+                                    onKeyDown={(e) => {
+                                      if (e.key === "Enter" || e.key === " ") {
+                                        e.preventDefault();
+                                        e.currentTarget.click();
+                                      }
+                                    }}
                                     onClick={() => addMedicine(m)}
                                   >
                                     <span>{m.name}</span>
@@ -2124,7 +2400,7 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
                             selectedRow?.inventoryBatches ||
                             selectedRow?.supplierReturnItems ||
                             []
-                          ).map((item, idx) => {
+                          ).map((item) => {
                             const unitPrice = safeNumber(
                               item.purchasePrice ||
                                 item.unitPrice ||
@@ -2136,13 +2412,7 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
                             );
                             const lineTotal = unitPrice * qty;
                             return (
-                              <tr
-                                key={
-                                  item.id ||
-                                  item.medicineId ||
-                                  `drawer-item-${item.name || "med"}-${item.batchNumber || ""}-${idx}`
-                                }
-                              >
+                              <tr key={item.id || item.medicineId}>
                                 <td>
                                   <div style={{ fontWeight: 600 }}>
                                     {item.medicine?.name ||
@@ -2237,8 +2507,11 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
                             className="pos-input-group"
                             style={{ marginBottom: "12px" }}
                           >
-                            <label>Select Credit Note</label>
+                            <label htmlFor="field_rqu9nr">
+                              Select Credit Note
+                            </label>
                             <select
+                              id="field_rqu9nr"
                               className="pos-input"
                               value={selectedCreditNoteId}
                               onChange={(e) => {
@@ -2273,8 +2546,11 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
                               className="pos-input-group"
                               style={{ marginBottom: "12px" }}
                             >
-                              <label>Amount to Apply</label>
+                              <label htmlFor="field_int1v7">
+                                Amount to Apply
+                              </label>
                               <input
+                                id="field_int1v7"
                                 type="number"
                                 className="pos-input"
                                 value={creditAmountToApply}
@@ -2350,8 +2626,8 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
                   </button>
                 )}
               </div>
-            </motion.div>
-          </motion.div>
+            </m.div>
+          </m.div>
         )}
       </AnimatePresence>
 
@@ -2359,7 +2635,7 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
       <AnimatePresence>
         {showReturnModal && selectedRow && (
           <div className="stock-modal-overlay">
-            <motion.div
+            <m.div
               className="stock-modal-content"
               style={{ width: "500px" }}
               initial={{ opacity: 0, scale: 0.9 }}
@@ -2379,8 +2655,9 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
               </div>
               <div className="stock-modal-body">
                 <div className="pos-input-group">
-                  <label>Original Invoice</label>
+                  <label htmlFor="field_jx5ul9">Original Invoice</label>
                   <input
+                    id="field_jx5ul9"
                     required
                     className="pos-input"
                     value={selectedRow?.invoiceNumber || selectedRow?.id || ""}
@@ -2402,7 +2679,7 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
                     ) : (
                       returnSelections.map((sel, idx) => (
                         <div
-                          key={sel.medicineId || `${sel.medicineName}-${idx}`}
+                          key={sel.medicineId}
                           style={{
                             padding: "12px",
                             marginBottom: "12px",
@@ -2537,7 +2814,7 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
                   Submit Return
                 </button>
               </div>
-            </motion.div>
+            </m.div>
           </div>
         )}
       </AnimatePresence>
@@ -2546,7 +2823,7 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
       <AnimatePresence>
         {showReceiveModal && selectedRow && (
           <div className="stock-modal-overlay">
-            <motion.div
+            <m.div
               className="stock-modal-content"
               style={{ width: "1100px", maxWidth: "95vw" }}
               initial={{ opacity: 0, scale: 0.9 }}
@@ -2587,8 +2864,11 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
                   }}
                 >
                   <div className="pos-input-group">
-                    <label className="p-label">SUPPLIER INVOICE NUMBER *</label>
+                    <label htmlFor="field_cy4yvz" className="p-label">
+                      SUPPLIER INVOICE NUMBER *
+                    </label>
                     <input
+                      id="field_cy4yvz"
                       required
                       className="pos-input"
                       placeholder="e.g. INV-24589"
@@ -2597,8 +2877,11 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
                     />
                   </div>
                   <div className="pos-input-group">
-                    <label className="p-label">INVOICE DATE *</label>
+                    <label htmlFor="field_y0ugjw" className="p-label">
+                      INVOICE DATE *
+                    </label>
                     <input
+                      id="field_y0ugjw"
                       required
                       className="pos-input"
                       type="date"
@@ -2630,13 +2913,7 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
                     <tbody>
                       {receiveItems.map((item, idx) => {
                         return (
-                          <tr
-                            key={
-                              item.id ||
-                              item.medicineId ||
-                              `${item.medicine?.name || item.medicineName || item.name || "item"}-${idx}`
-                            }
-                          >
+                          <tr key={item.id || item.medicineId}>
                             <td>
                               {item.medicine?.name ||
                                 item.medicineName ||
@@ -2816,7 +3093,7 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
                   {isReceiving ? "Receiving..." : "Confirm Receipt"}
                 </button>
               </div>
-            </motion.div>
+            </m.div>
           </div>
         )}
       </AnimatePresence>

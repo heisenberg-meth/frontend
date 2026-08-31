@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback } from "react";
+import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import {
   AlertTriangle,
   Trash2,
@@ -12,7 +12,7 @@ import {
   Layers,
   Clock,
 } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
+import { AnimatePresence, m } from "framer-motion";
 import { format } from "date-fns";
 import api from "../api";
 import { normalizeObjectResponse } from "../utils/apiNormalizer";
@@ -111,7 +111,10 @@ export default function BulkDisposal({ showToast }) {
     return { count: items.length, totalUnits, totalValue };
   }, [selectedData]);
 
+  const disposingRef = useRef(false);
   const handleDispose = async () => {
+    if (disposingRef.current) return;
+    disposingRef.current = true;
     setDisposing(true);
     const total = selectedData.length;
     setDisposeProgress({ current: 0, total });
@@ -153,6 +156,7 @@ export default function BulkDisposal({ showToast }) {
         "error",
       );
     } finally {
+      disposingRef.current = false;
       setDisposing(false);
       setDisposeProgress({ current: 0, total: 0 });
     }
@@ -398,13 +402,16 @@ export default function BulkDisposal({ showToast }) {
                     color: "var(--text-dim)",
                   }}
                 >
-                  {result.items
-                    .filter((i) => i.status === "SKIPPED")
-                    .map((item) => (
-                      <li key={item.reason} style={{ marginBottom: 4 }}>
-                        {item.reason || "Unknown reason"}
-                      </li>
-                    ))}
+                  {result.items.reduce((acc, item) => {
+                    if (item.status === "SKIPPED") {
+                      acc.push(
+                        <li key={item.reason} style={{ marginBottom: 4 }}>
+                          {item.reason || "Unknown reason"}
+                        </li>,
+                      );
+                    }
+                    return acc;
+                  }, [])}
                 </ul>
               </div>
             )}
@@ -577,6 +584,12 @@ export default function BulkDisposal({ showToast }) {
                         if (!selected.has(b.batchId))
                           e.currentTarget.style.background = "transparent";
                       }}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" || e.key === " ") {
+                          e.preventDefault();
+                          e.currentTarget.click();
+                        }
+                      }}
                       onClick={() => toggleSelect(b.batchId)}
                     >
                       <td style={{ padding: "10px 16px" }}>
@@ -693,12 +706,20 @@ export default function BulkDisposal({ showToast }) {
       <AnimatePresence>
         {showConfirmModal && (
           <div className="modal-overlay">
-            <motion.div
+            <m.div
+              role="button"
+              tabIndex={0}
               className="urgent-disposal-modal"
               style={{ maxWidth: 520 }}
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  e.currentTarget.click();
+                }
+              }}
               onClick={(e) => e.stopPropagation()}
             >
               <div
@@ -749,6 +770,7 @@ export default function BulkDisposal({ showToast }) {
 
               <div className="form-group" style={{ marginBottom: 16 }}>
                 <label
+                  htmlFor="field_ygyctc"
                   style={{
                     fontSize: 13,
                     fontWeight: 600,
@@ -759,6 +781,7 @@ export default function BulkDisposal({ showToast }) {
                   Reason for Disposal
                 </label>
                 <select
+                  id="field_ygyctc"
                   value={reason}
                   onChange={(e) => setReason(e.target.value)}
                   style={{
@@ -825,7 +848,7 @@ export default function BulkDisposal({ showToast }) {
                   )}
                 </button>
               </div>
-            </motion.div>
+            </m.div>
           </div>
         )}
       </AnimatePresence>

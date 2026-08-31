@@ -584,7 +584,7 @@ export default function MedicineTableSection({
       <div className="medicine-rows-container">
         {lineItems.map((item, idx) => (
           <MedicineRow
-            key={item._id ?? idx}
+            key={item._id}
             item={item}
             idx={idx}
             onUpdate={updateRow}

@@ -42,8 +42,30 @@ function POModal({ supplier, onClose, onSuccess, saving }) {
   };
 
   return (
-    <div className="lsa-modal-overlay" onClick={onClose}>
-      <div className="lsa-modal-box" onClick={(e) => e.stopPropagation()}>
+    <div
+      role="button"
+      tabIndex={0}
+      className="lsa-modal-overlay"
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          e.currentTarget.click();
+        }
+      }}
+      onClick={onClose}
+    >
+      <div
+        role="button"
+        tabIndex={0}
+        className="lsa-modal-box"
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            e.currentTarget.click();
+          }
+        }}
+        onClick={(e) => e.stopPropagation()}
+      >
         <div className="lsa-modal-header">
           <h3 style={{ display: "flex", alignItems: "center", gap: 8 }}>
             <ClipboardList size={17} style={{ color: "var(--primary)" }} />
@@ -107,10 +129,11 @@ function POModal({ supplier, onClose, onSuccess, saving }) {
             ))}
           </div>
           <div className="lsa-modal-field">
-            <label className="lsa-modal-label">
+            <label htmlFor="field_gpm4ga" className="lsa-modal-label">
               Order Quantity (units each)
             </label>
             <input
+              id="field_gpm4ga"
               required
               className="lsa-modal-input"
               type="number"
@@ -121,8 +144,11 @@ function POModal({ supplier, onClose, onSuccess, saving }) {
             />
           </div>
           <div className="lsa-modal-field">
-            <label className="lsa-modal-label">Notes (optional)</label>
+            <label htmlFor="field_jc1v6b" className="lsa-modal-label">
+              Notes (optional)
+            </label>
             <input
+              id="field_jc1v6b"
               required
               className="lsa-modal-input"
               placeholder="Priority delivery required…"
@@ -549,25 +575,34 @@ export default function LowStockAlerts({ showToast }) {
     };
   }, [showToast]);
 
-  const filteredSuppliers = lowStockItems
-    .map((s) => ({
-      ...s,
-      items: s.items.filter((item) => {
-        if (activeTab === "all") return true;
-        if (activeTab === "critical") return item.urgency === "critical";
-        if (activeTab === "low") return item.urgency === "low";
-        if (activeTab === "expiring") return item.daysToStockout <= 3;
-        return true;
-      }),
-    }))
-    .filter((s) => s.items.length > 0);
+  const filteredSuppliers = lowStockItems.reduce((acc, s) => {
+    const filteredItems = s.items.filter((item) => {
+      if (activeTab === "all") return true;
+      if (activeTab === "critical") return item.urgency === "critical";
+      if (activeTab === "low") return item.urgency === "low";
+      if (activeTab === "expiring") return item.daysToStockout <= 3;
+      return true;
+    });
+    if (filteredItems.length > 0) {
+      acc.push({ ...s, items: filteredItems });
+    }
+    return acc;
+  }, []);
 
-  const totalCritical = lowStockItems
-    .flatMap((s) => s.items)
-    .filter((i) => i.urgency === "critical").length;
-  const totalLow = lowStockItems
-    .flatMap((s) => s.items)
-    .filter((i) => i.urgency === "low").length;
+  const totalCritical = lowStockItems.reduce((acc, s) => {
+    let count = acc;
+    for (const i of s.items) {
+      if (i.urgency === "critical") count++;
+    }
+    return count;
+  }, 0);
+  const totalLow = lowStockItems.reduce((acc, s) => {
+    let count = acc;
+    for (const i of s.items) {
+      if (i.urgency === "low") count++;
+    }
+    return count;
+  }, 0);
 
   const handleExport = () => {
     const rows = [

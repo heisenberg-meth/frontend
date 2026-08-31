@@ -28,7 +28,7 @@ import {
   ChevronRight,
   ExternalLink,
 } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
+import { AnimatePresence, m } from "framer-motion";
 import {
   getTeamMembers,
   inviteTeamMember,
@@ -56,7 +56,7 @@ export default function ManageTeam({ user, showToast }) {
   const [showAvatarModal, setShowAvatarModal] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [newCredentials, setNewCredentials] = useState(null);
-  const [selectedMemberId, setSelectedMemberId] = useState(null);
+  const selectedMemberIdRef = useRef(null);
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef(null);
 
@@ -131,7 +131,7 @@ export default function ManageTeam({ user, showToast }) {
   };
 
   const openAvatarEdit = (memberId) => {
-    setSelectedMemberId(memberId);
+    selectedMemberIdRef.current = memberId;
     setShowAvatarModal(true);
   };
 
@@ -141,7 +141,7 @@ export default function ManageTeam({ user, showToast }) {
 
     setUploading(true);
     try {
-      await uploadTeamAvatar(selectedMemberId, file);
+      await uploadTeamAvatar(selectedMemberIdRef.current, file);
       showToast("Clinical profile image synchronized", "success");
       setShowAvatarModal(false);
       fetchTeam();
@@ -190,14 +190,14 @@ export default function ManageTeam({ user, showToast }) {
         </div>
         <div className="header-stats">
           <div className="header-stat-box">
-            <label>TOTAL STAFF</label>
+            <span>TOTAL STAFF</span>
             <div className="val-row">
               <span className="val">{team.length}</span>
               <Users size={20} style={{ color: "var(--info)" }} />
             </div>
           </div>
           <div className="header-stat-box">
-            <label>ACTIVE SESSIONS</label>
+            <span>ACTIVE SESSIONS</span>
             <div className="val-row">
               <span className="val">{Math.ceil(team.length * 0.4)}</span>
               <ShieldCheck size={20} style={{ color: "var(--primary)" }} />
@@ -218,11 +218,11 @@ export default function ManageTeam({ user, showToast }) {
             </div>
             <form className="card-body" onSubmit={handleOnboard}>
               <div className="input-v2">
-                <label>
+                <label htmlFor="field_84a2zs">
                   <User size={12} /> FULL NAME
                 </label>
                 <input
-                  required
+ id="field_84a2zs"                  required
                   placeholder="e.g. Dr. Sarah Chen"
                   value={form.fullName}
                   onChange={(e) =>
@@ -231,11 +231,11 @@ export default function ManageTeam({ user, showToast }) {
                 />
               </div>
               <div className="input-v2">
-                <label>
+                <label htmlFor="field_9kkasv">
                   <Mail size={12} /> PROFESSIONAL EMAIL
                 </label>
                 <input
-                  required
+ id="field_9kkasv"                  required
                   type="email"
                   placeholder="s.chen@viyanmed.com"
                   value={form.email}
@@ -244,11 +244,11 @@ export default function ManageTeam({ user, showToast }) {
               </div>
               <div className="form-row">
                 <div className="input-v2">
-                  <label>
+                  <label htmlFor="field_qvioqd">
                     <Shield size={12} /> ASSIGNED ROLE
                   </label>
                   <select
-                    value={form.role}
+ id="field_qvioqd"                    value={form.role}
                     onChange={(e) => setForm({ ...form, role: e.target.value })}
                   >
                     {roles.map((r) => (
@@ -257,11 +257,11 @@ export default function ManageTeam({ user, showToast }) {
                   </select>
                 </div>
                 <div className="input-v2">
-                  <label>
+                  <label htmlFor="field_ec4fzu">
                     <Clock size={12} /> SHIFT SLOT
                   </label>
                   <select
-                    value={form.shift}
+ id="field_ec4fzu"                    value={form.shift}
                     onChange={(e) =>
                       setForm({ ...form, shift: e.target.value })
                     }
@@ -336,7 +336,7 @@ export default function ManageTeam({ user, showToast }) {
               <tbody>
                 <AnimatePresence>
                   {team.map((m) => (
-                    <motion.tr
+                    <m.tr
                       key={m.id}
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
@@ -344,9 +344,9 @@ export default function ManageTeam({ user, showToast }) {
                     >
                       <td>
                         <div className="member-profile">
-                          <div
+                          <div role="button" tabIndex={0}
                             className="avatar-wrap"
-                            onClick={() => openAvatarEdit(m.id)}
+                            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.currentTarget.click(); } }} onClick={() => openAvatarEdit(m.id)}
                             style={{ position: "relative", overflow: "hidden" }}
                           >
                             <img
@@ -437,7 +437,7 @@ export default function ManageTeam({ user, showToast }) {
                           )}
                         </div>
                       </td>
-                    </motion.tr>
+                    </m.tr>
                   ))}
                 </AnimatePresence>
               </tbody>
@@ -493,7 +493,7 @@ export default function ManageTeam({ user, showToast }) {
           <div className="comp-body">
             <div className="comp-stat">
               <div className="val">98.4%</div>
-              <label>TRAINING COMPLETION</label>
+              <span>TRAINING COMPLETION</span>
             </div>
             <div className="comp-bar-wrap">
               <div className="bar-fill" style={{ width: "98.4%" }} />
@@ -519,7 +519,7 @@ export default function ManageTeam({ user, showToast }) {
       <AnimatePresence>
         {showAvatarModal && (
           <div className="modal-overlay">
-            <motion.div
+            <m.div
               className="modal-content"
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
@@ -540,9 +540,9 @@ export default function ManageTeam({ user, showToast }) {
               </div>
 
               <div className="modal-body-p">
-                <div
+                <div role="button" tabIndex={0}
                   className="upload-zone"
-                  onClick={() => fileInputRef.current?.click()}
+                  onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.currentTarget.click(); } }} onClick={() => fileInputRef.current?.click()}
                 >
                   {uploading ? (
                     <RefreshCw size={32} className="spin" />
@@ -563,13 +563,13 @@ export default function ManageTeam({ user, showToast }) {
                   />
                 </div>
               </div>
-            </motion.div>
+            </m.div>
           </div>
         )}
 
         {showSuccessModal && (
           <div className="modal-overlay">
-            <motion.div
+            <m.div
               className="modal-content"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -596,7 +596,7 @@ export default function ManageTeam({ user, showToast }) {
 
                 <div className="cred-list">
                   <div className="cred-item">
-                    <label>LOGIN GATEWAY</label>
+                    <span>LOGIN GATEWAY</span>
                     <div className="val-box">
                       <span>{newCredentials?.loginUrl}</span>
                       <button
@@ -609,7 +609,7 @@ export default function ManageTeam({ user, showToast }) {
                     </div>
                   </div>
                   <div className="cred-item">
-                    <label>USERNAME</label>
+                    <span>USERNAME</span>
                     <div className="val-box">
                       <span>{newCredentials?.email}</span>
                       <button
@@ -620,7 +620,7 @@ export default function ManageTeam({ user, showToast }) {
                     </div>
                   </div>
                   <div className="cred-item">
-                    <label>ACCESS KEY</label>
+                    <span>ACCESS KEY</span>
                     <div
                       className="val-box secret"
                       style={{
@@ -652,7 +652,7 @@ export default function ManageTeam({ user, showToast }) {
                   I HAVE SECURED THE KEYS
                 </button>
               </div>
-            </motion.div>
+            </m.div>
           </div>
         )}
       </AnimatePresence>

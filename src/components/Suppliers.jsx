@@ -24,7 +24,7 @@ import {
   ToggleRight,
   MoreVertical,
 } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
+import { AnimatePresence, m } from "framer-motion";
 import {
   getSuppliers,
   createSupplier,
@@ -112,7 +112,7 @@ function CustomDropdown({ value, onChange, options, placeholder = "Select" }) {
       {createPortal(
         <AnimatePresence>
           {isOpen && (
-            <motion.div
+            <m.div
               ref={menuRef}
               className="custom-dropdown-menu"
               initial={{
@@ -145,12 +145,19 @@ function CustomDropdown({ value, onChange, options, placeholder = "Select" }) {
                     className={`custom-dropdown-item ${
                       value === optValue ? "selected" : ""
                     }`}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        e.currentTarget.click();
+                      }
+                    }}
                     onClick={() => {
                       onChange(optValue);
                       setIsOpen(false);
                     }}
                     role="option"
                     aria-selected={value === optValue}
+                    tabIndex={0}
                   >
                     <span>{optLabel}</span>
 
@@ -160,7 +167,7 @@ function CustomDropdown({ value, onChange, options, placeholder = "Select" }) {
                   </div>
                 );
               })}
-            </motion.div>
+            </m.div>
           )}
         </AnimatePresence>,
         document.body,
@@ -241,7 +248,7 @@ function SupplierActionMenu({
       {createPortal(
         <AnimatePresence>
           {isOpen && (
-            <motion.div
+            <m.div
               ref={menuRef}
               className="custom-dropdown-menu"
               initial={{
@@ -260,7 +267,15 @@ function SupplierActionMenu({
               style={{ ...menuStyle, position: "fixed" }}
             >
               <div
+                role="button"
+                tabIndex={0}
                 className="custom-dropdown-item"
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    e.currentTarget.click();
+                  }
+                }}
                 onClick={() => {
                   setIsOpen(false);
                   handleView(supplier);
@@ -269,7 +284,15 @@ function SupplierActionMenu({
                 <Eye size={14} style={{ marginRight: "8px" }} /> View Details
               </div>
               <div
+                role="button"
+                tabIndex={0}
                 className="custom-dropdown-item"
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    e.currentTarget.click();
+                  }
+                }}
                 onClick={() => {
                   setIsOpen(false);
                   setEditTarget(supplier);
@@ -279,7 +302,15 @@ function SupplierActionMenu({
                 <Pencil size={14} style={{ marginRight: "8px" }} /> Edit Profile
               </div>
               <div
+                role="button"
+                tabIndex={0}
                 className="custom-dropdown-item"
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    e.currentTarget.click();
+                  }
+                }}
                 onClick={() => {
                   setIsOpen(false);
                   handleToggleStatus(supplier);
@@ -295,7 +326,15 @@ function SupplierActionMenu({
                   : "Activate"}
               </div>
               <div
+                role="button"
+                tabIndex={0}
                 className="custom-dropdown-item"
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    e.currentTarget.click();
+                  }
+                }}
                 onClick={() => {
                   setIsOpen(false);
                   navigate("/purchases", {
@@ -307,7 +346,15 @@ function SupplierActionMenu({
                 PO
               </div>
               <div
+                role="button"
+                tabIndex={0}
                 className="custom-dropdown-item"
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    e.currentTarget.click();
+                  }
+                }}
                 onClick={() => {
                   setIsOpen(false);
                   handleDelete(supplier.id, supplier.name);
@@ -316,7 +363,7 @@ function SupplierActionMenu({
               >
                 <Trash2 size={14} style={{ marginRight: "8px" }} /> Delete
               </div>
-            </motion.div>
+            </m.div>
           )}
         </AnimatePresence>,
         document.body,
@@ -415,7 +462,15 @@ function TagInput({ tags = [], onChange }) {
   return (
     <div style={{ position: "relative" }} ref={wrapRef}>
       <div
+        role="button"
+        tabIndex={0}
         className={`sup-tag-input-wrap ${focused ? "focused" : ""}`}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            e.currentTarget.click();
+          }
+        }}
         onClick={() => wrapRef.current?.querySelector("input")?.focus()}
       >
         {tags.map((tag) => (
@@ -454,6 +509,8 @@ function TagInput({ tags = [], onChange }) {
         <div className="sup-tag-suggestions">
           {suggestions.map((s) => (
             <div
+              role="button"
+              tabIndex={0}
               key={s}
               className="sup-tag-suggestion-item"
               onMouseDown={() => addTag(s)}
@@ -515,7 +572,7 @@ function SupplierModal({ onClose, onSave, editData, showToast, saving }) {
 
   return (
     <div className="modal-overlay">
-      <motion.div
+      <m.div
         className="modal-content sup-modal-wide"
         initial={{ opacity: 0, scale: 0.95, y: 20 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -532,8 +589,9 @@ function SupplierModal({ onClose, onSave, editData, showToast, saving }) {
         <div className="modal-scroll-area">
           <div className="sup-form-grid">
             <div className="form-group full">
-              <label>Supplier Legal Name *</label>
+              <label htmlFor="field_kccb3o">Supplier Legal Name *</label>
               <input
+                id="field_kccb3o"
                 required
                 placeholder="e.g. Cipla Distributors Ltd."
                 value={form.name}
@@ -541,8 +599,9 @@ function SupplierModal({ onClose, onSave, editData, showToast, saving }) {
               />
             </div>
             <div className="form-group">
-              <label>Contact Person *</label>
+              <label htmlFor="field_3tymdv">Contact Person *</label>
               <input
+                id="field_3tymdv"
                 required
                 placeholder="e.g. Ramesh Kumar"
                 value={form.contact}
@@ -550,8 +609,9 @@ function SupplierModal({ onClose, onSave, editData, showToast, saving }) {
               />
             </div>
             <div className="form-group">
-              <label>Phone Number *</label>
+              <label htmlFor="field_im11hx">Phone Number *</label>
               <input
+                id="field_im11hx"
                 required
                 placeholder="+91 XXXXX XXXXX"
                 value={form.phone}
@@ -559,8 +619,9 @@ function SupplierModal({ onClose, onSave, editData, showToast, saving }) {
               />
             </div>
             <div className="form-group">
-              <label>Email Address</label>
+              <label htmlFor="field_71ejw4">Email Address</label>
               <input
+                id="field_71ejw4"
                 type="email"
                 placeholder="contact@supplier.com"
                 value={form.email}
@@ -568,23 +629,25 @@ function SupplierModal({ onClose, onSave, editData, showToast, saving }) {
               />
             </div>
             <div className="form-group">
-              <label>GSTIN Number</label>
+              <label htmlFor="field_cto0qm">GSTIN Number</label>
               <input
+                id="field_cto0qm"
                 placeholder="27AAPFC1234M1ZL"
                 value={form.gst}
                 onChange={(e) => set("gst", e.target.value)}
               />
             </div>
             <div className="form-group full">
-              <label>Medicine Categories</label>
+              <span>Medicine Categories</span>
               <TagInput
                 tags={form.categories || []}
                 onChange={(cats) => set("categories", cats)}
               />
             </div>
             <div className="form-group">
-              <label>Avg. Lead Time</label>
+              <label htmlFor="field_d8qj9b">Avg. Lead Time</label>
               <select
+                id="field_d8qj9b"
                 className="pos-input"
                 value={form.leadTime}
                 onChange={(e) => set("leadTime", e.target.value)}
@@ -599,8 +662,9 @@ function SupplierModal({ onClose, onSave, editData, showToast, saving }) {
               </select>
             </div>
             <div className="form-group">
-              <label>Payment Terms</label>
+              <label htmlFor="field_sx44qa">Payment Terms</label>
               <select
+                id="field_sx44qa"
                 className="pos-input"
                 value={form.paymentTerms}
                 onChange={(e) => set("paymentTerms", e.target.value)}
@@ -613,8 +677,9 @@ function SupplierModal({ onClose, onSave, editData, showToast, saving }) {
               </select>
             </div>
             <div className="form-group">
-              <label>Status</label>
+              <label htmlFor="field_anj6y9">Status</label>
               <select
+                id="field_anj6y9"
                 className="pos-input"
                 value={(form.status || "active").toLowerCase()}
                 onChange={(e) => set("status", e.target.value)}
@@ -626,8 +691,9 @@ function SupplierModal({ onClose, onSave, editData, showToast, saving }) {
               </select>
             </div>
             <div className="form-group full">
-              <label>Address</label>
+              <label htmlFor="field_ogvuge">Address</label>
               <textarea
+                id="field_ogvuge"
                 placeholder="Complete address details…"
                 value={form.address}
                 onChange={(e) => set("address", e.target.value)}
@@ -635,8 +701,9 @@ function SupplierModal({ onClose, onSave, editData, showToast, saving }) {
               />
             </div>
             <div className="form-group full">
-              <label>Operational Notes</label>
+              <label htmlFor="field_07bky4">Operational Notes</label>
               <textarea
+                id="field_07bky4"
                 placeholder="Any additional notes…"
                 value={form.notes}
                 onChange={(e) => set("notes", e.target.value)}
@@ -664,7 +731,7 @@ function SupplierModal({ onClose, onSave, editData, showToast, saving }) {
             )}
           </button>
         </div>
-      </motion.div>
+      </m.div>
     </div>
   );
 }
@@ -753,7 +820,9 @@ export default function Suppliers({ showToast }) {
 
       const matchCategory =
         categoryFilter === "All Categories" ||
-        (s.drugCategories || s.categories || []).includes(categoryFilter);
+        (s.drugCategories || s.categories || []).some(
+          (c) => c === categoryFilter,
+        );
 
       return matchSearch && matchCategory;
     });
@@ -862,6 +931,7 @@ export default function Suppliers({ showToast }) {
     a.download = "suppliers_export.csv";
     a.click();
     showToast("Supplier data exported", "success");
+    setTimeout(() => window.URL.revokeObjectURL(url), 100);
   };
 
   const handleMouseMove = (e) => {
@@ -1115,12 +1185,31 @@ export default function Suppliers({ showToast }) {
           />
         )}
         {viewTarget && (
-          <div className="modal-overlay" onClick={() => setViewTarget(null)}>
-            <motion.div
+          <div
+            role="button"
+            tabIndex={0}
+            className="modal-overlay"
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                e.currentTarget.click();
+              }
+            }}
+            onClick={() => setViewTarget(null)}
+          >
+            <m.div
+              role="button"
+              tabIndex={0}
               className="modal-content sup-view-modal"
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  e.currentTarget.click();
+                }
+              }}
               onClick={(e) => e.stopPropagation()}
               style={{
                 maxHeight: "90vh",
@@ -1162,27 +1251,27 @@ export default function Suppliers({ showToast }) {
               >
                 <div className="grid grid-cols-2 gap-8 mb-10">
                   <div className="detail-item">
-                    <label>Primary Contact</label>
+                    <span>Primary Contact</span>
                     <span>
                       {viewTarget.contactPerson || viewTarget.contact || "—"}
                     </span>
                   </div>
                   <div className="detail-item">
-                    <label>Phone Number</label>
+                    <span>Phone Number</span>
                     <span>{viewTarget.phone || "—"}</span>
                   </div>
                   <div className="detail-item">
-                    <label>Email Address</label>
+                    <span>Email Address</span>
                     <span>{viewTarget.email || "N/A"}</span>
                   </div>
                   <div className="detail-item">
-                    <label>GSTIN Number</label>
+                    <span>GSTIN Number</span>
                     <span className="font-mono text-primary">
                       {viewTarget.gstNumber || viewTarget.gst || "N/A"}
                     </span>
                   </div>
                   <div className="detail-item">
-                    <label>Payment Terms</label>
+                    <span>Payment Terms</span>
                     <span>
                       {viewTarget.paymentTerms ??
                         (viewTarget.paymentTermsDays === 0
@@ -1193,7 +1282,7 @@ export default function Suppliers({ showToast }) {
                     </span>
                   </div>
                   <div className="detail-item">
-                    <label>Lead Time</label>
+                    <span>Lead Time</span>
                     <span>
                       {viewTarget.leadTime ??
                         (viewTarget.leadTimeDays
@@ -1202,7 +1291,7 @@ export default function Suppliers({ showToast }) {
                     </span>
                   </div>
                   <div className="detail-item">
-                    <label>Drug Specialties</label>
+                    <span>Drug Specialties</span>
                     <span>
                       {(
                         viewTarget.drugCategories ||
@@ -1218,7 +1307,7 @@ export default function Suppliers({ showToast }) {
                     </span>
                   </div>
                   <div className="detail-item">
-                    <label>Available Credit</label>
+                    <span>Available Credit</span>
                     <span className="font-bold text-green-500">
                       {creditBalance === null
                         ? "Loading..."
@@ -1226,19 +1315,19 @@ export default function Suppliers({ showToast }) {
                     </span>
                   </div>
                   <div className="detail-item col-span-2">
-                    <label>Address</label>
+                    <span>Address</span>
                     <span style={{ whiteSpace: "pre-wrap" }}>
                       {viewTarget.address || "Not Provided"}
                     </span>
                   </div>
                   <div className="detail-item col-span-2">
-                    <label>Operational Notes</label>
+                    <span>Operational Notes</span>
                     <span style={{ whiteSpace: "pre-wrap" }}>
                       {viewTarget.notes || "No operational notes available."}
                     </span>
                   </div>
                   <div className="detail-item">
-                    <label>Created On</label>
+                    <span>Created On</span>
                     <span>
                       {viewTarget.createdAt
                         ? new Date(viewTarget.createdAt).toLocaleDateString()
@@ -1246,7 +1335,7 @@ export default function Suppliers({ showToast }) {
                     </span>
                   </div>
                   <div className="detail-item">
-                    <label>Last Updated</label>
+                    <span>Last Updated</span>
                     <span>
                       {viewTarget.updatedAt
                         ? new Date(viewTarget.updatedAt).toLocaleDateString()
@@ -1277,7 +1366,7 @@ export default function Suppliers({ showToast }) {
                   <Pencil size={16} /> Edit Profile
                 </button>
               </div>
-            </motion.div>
+            </m.div>
           </div>
         )}
       </AnimatePresence>

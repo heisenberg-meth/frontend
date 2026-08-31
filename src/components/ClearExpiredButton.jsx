@@ -14,9 +14,9 @@
  *   branchId   (str?)  – optional branch filter
  *   className  (str?)  – extra class names on the trigger button
  */
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { Trash2, AlertTriangle, CheckCircle2, X, Loader2 } from "lucide-react";
-import { AnimatePresence, motion } from "framer-motion";
+import { AnimatePresence, m } from "framer-motion";
 import api from "../api";
 
 /* ─── tiny helpers ─────────────────────────────────────────────── */
@@ -33,7 +33,7 @@ export default function ClearExpiredButton({
 
   // Modal states
   const [showConfirm, setShowConfirm] = useState(false);
-  const [clearing, setClearing] = useState(false);
+  const clearingRef = useRef(false);
   const [result, setResult] = useState(null); // { cleared, skipped, failed, remaining }
   const [phase, setPhase] = useState("idle"); // idle | confirm | clearing | done
 
@@ -82,7 +82,7 @@ export default function ClearExpiredButton({
   /* ── Handler: user confirms clear ──────────────────────────── */
   const handleClear = async () => {
     setPhase("clearing");
-    setClearing(true);
+    clearingRef.current = true;
     try {
       const params = branchId ? `?branchId=${branchId}` : "";
       const res = await api.post(`/inventory/expired/clear${params}`);
@@ -107,13 +107,13 @@ export default function ClearExpiredButton({
       showToast?.(msg, "error");
       setPhase("confirm"); // revert to confirm so user can retry
     } finally {
-      setClearing(false);
+      clearingRef.current = false;
     }
   };
 
   /* ── Handler: close / dismiss ───────────────────────────────── */
   const handleClose = () => {
-    if (clearing) return; // prevent close during operation
+    if (clearingRef.current) return; // prevent close during operation
     setShowConfirm(false);
     setPhase("idle");
     setResult(null);
@@ -149,20 +149,28 @@ export default function ClearExpiredButton({
       {/* ── Modal overlay ───────────────────────────────────── */}
       <AnimatePresence>
         {showConfirm && (
-          <motion.div
+          <m.div
+            tabIndex={0}
             className="clear-expired-overlay"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.18 }}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                e.currentTarget.click();
+              }
+            }}
             onClick={(e) => {
-              if (e.target === e.currentTarget && !clearing) handleClose();
+              if (e.target === e.currentTarget && !clearingRef.current)
+                handleClose();
             }}
             aria-modal="true"
             role="dialog"
             aria-labelledby="clear-expired-dialog-title"
           >
-            <motion.div
+            <m.div
               className="clear-expired-modal"
               initial={{ opacity: 0, scale: 0.94, y: 16 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -328,8 +336,8 @@ export default function ClearExpiredButton({
                   </div>
                 </>
               )}
-            </motion.div>
-          </motion.div>
+            </m.div>
+          </m.div>
         )}
       </AnimatePresence>
 

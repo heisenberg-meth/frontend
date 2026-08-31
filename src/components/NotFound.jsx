@@ -1,38 +1,25 @@
-import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { ShieldAlert } from "lucide-react";
-import { motion } from "framer-motion";
+import { m } from "framer-motion";
+import useSWR from "swr";
+
+const fetcher = async (url) => {
+  const res = await fetch(url);
+  if (!res.ok) throw new Error("API failed");
+  return res.json();
+};
 
 export default function NotFound() {
   const navigate = useNavigate();
-  const [reason, setReason] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const {
+    data,
+    error,
+    isLoading: loading,
+  } = useSWR("https://naas.isalman.dev/no", fetcher);
 
-  useEffect(() => {
-    let isMounted = true;
-    const fetchReason = async () => {
-      try {
-        const response = await fetch("https://naas.isalman.dev/no");
-        if (!response.ok) throw new Error("API failed");
-        const data = await response.json();
-        if (isMounted) {
-          setReason(
-            data.reason || "We couldn't find the page you were looking for.",
-          );
-          setLoading(false);
-        }
-      } catch (err) {
-        if (isMounted) {
-          setReason("We couldn't find the page you were looking for.", err);
-          setLoading(false);
-        }
-      }
-    };
-    fetchReason();
-    return () => {
-      isMounted = false;
-    };
-  }, []);
+  const reason = error
+    ? "We couldn't find the page you were looking for."
+    : data?.reason || "We couldn't find the page you were looking for.";
 
   return (
     <div
@@ -49,7 +36,7 @@ export default function NotFound() {
         padding: "20px",
       }}
     >
-      <motion.div
+      <m.div
         initial={{ opacity: 0, scale: 0.9 }}
         animate={{ opacity: 1, scale: 1 }}
         style={{
@@ -127,11 +114,13 @@ export default function NotFound() {
             transition: "opacity 0.2s",
           }}
           onMouseOver={(e) => (e.target.style.opacity = 0.9)}
+          onFocus={(e) => (e.target.style.opacity = 0.9)}
           onMouseOut={(e) => (e.target.style.opacity = 1)}
+          onBlur={(e) => (e.target.style.opacity = 1)}
         >
           Go Home
         </button>
-      </motion.div>
+      </m.div>
     </div>
   );
 }

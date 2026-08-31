@@ -17,7 +17,7 @@ import {
   X,
   ChevronDown,
 } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
+import { AnimatePresence, m } from "framer-motion";
 import {
   searchByBarcode,
   getMedicines,
@@ -537,8 +537,9 @@ export default function BarcodeEcosystem({ showToast }) {
         vibrateOnScan: false,
         savedAt: new Date().toISOString(),
       };
+      localStorage.removeItem("barcode_scanner_settings");
       localStorage.setItem(
-        "barcode_scanner_settings",
+        "barcode_scanner_settings:v1",
         JSON.stringify(settings),
       );
       setTimeout(() => {
@@ -693,9 +694,11 @@ export default function BarcodeEcosystem({ showToast }) {
                   style={{ marginBottom: "20px" }}
                   ref={dropdownRef}
                 >
-                  <label className="p-label">SEARCH MEDICINE</label>
+                  <span className="p-label">SEARCH MEDICINE</span>
                   <div style={{ position: "relative" }}>
                     <div
+                      role="button"
+                      tabIndex={0}
                       style={{
                         display: "flex",
                         alignItems: "center",
@@ -706,6 +709,12 @@ export default function BarcodeEcosystem({ showToast }) {
                         gap: "8px",
                         cursor: "pointer",
                         transition: "border-color 0.2s",
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" || e.key === " ") {
+                          e.preventDefault();
+                          e.currentTarget.click();
+                        }
                       }}
                       onClick={() => {
                         setShowMedDropdown(!showMedDropdown);
@@ -840,7 +849,15 @@ export default function BarcodeEcosystem({ showToast }) {
 
                             return (
                               <div
+                                role="button"
+                                tabIndex={0}
                                 key={m.id}
+                                onKeyDown={(e) => {
+                                  if (e.key === "Enter" || e.key === " ") {
+                                    e.preventDefault();
+                                    e.currentTarget.click();
+                                  }
+                                }}
                                 onClick={() => selectMedicine(m)}
                                 style={{
                                   padding: "10px 14px",
@@ -937,7 +954,7 @@ export default function BarcodeEcosystem({ showToast }) {
                   className="pos-input-group"
                   style={{ marginBottom: "20px" }}
                 >
-                  <label className="p-label">TEMPLATE SELECTOR</label>
+                  <span className="p-label">TEMPLATE SELECTOR</span>
                   <div
                     className="purchases-tabs"
                     style={{ background: "none", border: "none", padding: 0 }}
@@ -964,7 +981,7 @@ export default function BarcodeEcosystem({ showToast }) {
                   className="pos-input-group"
                   style={{ marginBottom: "20px" }}
                 >
-                  <label className="p-label">CONTENT FIELDS</label>
+                  <span className="p-label">CONTENT FIELDS</span>
                   <div className="format-checkboxes">
                     {Object.keys(labelFields).map((k) => (
                       <label key={k} className="checkbox-item">
@@ -993,8 +1010,11 @@ export default function BarcodeEcosystem({ showToast }) {
                   }}
                 >
                   <div className="pos-input-group">
-                    <label className="p-label">LABEL QUANTITY</label>
+                    <label htmlFor="field_682bxu" className="p-label">
+                      LABEL QUANTITY
+                    </label>
                     <input
+                      id="field_682bxu"
                       type="number"
                       min="1"
                       max="100"
@@ -1072,7 +1092,7 @@ export default function BarcodeEcosystem({ showToast }) {
                 <div
                   style={{
                     transform: `scale(${previewScale})`,
-                    transition: "0.2s",
+                    transition: "transform 0.2s",
                   }}
                 >
                   {selectedMedicine ? (
@@ -1262,7 +1282,7 @@ export default function BarcodeEcosystem({ showToast }) {
 
           <AnimatePresence>
             {verificationResult === "verified" && verifiedMedicine && (
-              <motion.div
+              <m.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 className="verify-result-card"
@@ -1354,10 +1374,10 @@ export default function BarcodeEcosystem({ showToast }) {
                     </button>
                   </div>
                 </div>
-              </motion.div>
+              </m.div>
             )}
             {verificationResult === "notfound" && (
-              <motion.div
+              <m.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 className="verify-result-card"
@@ -1375,7 +1395,7 @@ export default function BarcodeEcosystem({ showToast }) {
                     NOT FOUND — Barcode not registered
                   </span>
                 </div>
-              </motion.div>
+              </m.div>
             )}
           </AnimatePresence>
         </>
@@ -1465,16 +1485,21 @@ export default function BarcodeEcosystem({ showToast }) {
               </div>
               <div style={{ display: "flex", gap: "12px", marginTop: "20px" }}>
                 <div className="pos-input-group" style={{ flex: 1 }}>
-                  <label className="p-label">PREFIX TO STRIP</label>
+                  <label htmlFor="field_kbgipa" className="p-label">
+                    PREFIX TO STRIP
+                  </label>
                   <input
+                    id="field_kbgipa"
                     required
                     className="pos-input"
                     placeholder="e.g. GS1"
                   />
                 </div>
                 <div className="pos-input-group" style={{ flex: 1 }}>
-                  <label className="p-label">SUFFIX TO STRIP</label>
-                  <input required className="pos-input" />
+                  <label htmlFor="field_53p36d" className="p-label">
+                    SUFFIX TO STRIP
+                  </label>
+                  <input id="field_53p36d" required className="pos-input" />
                 </div>
               </div>
             </div>
@@ -1560,12 +1585,8 @@ export default function BarcodeEcosystem({ showToast }) {
                   </td>
                 </tr>
               ) : (
-                scanHistory.map((h, i) => (
-                  <tr
-                    key={
-                      h.id || h._id || `scan-hist-${h.barcode || "item"}-${i}`
-                    }
-                  >
+                scanHistory.map((h) => (
+                  <tr key={h.id || h._id}>
                     <td>
                       {h.createdAt
                         ? new Date(h.createdAt).toLocaleString()
@@ -1577,7 +1598,7 @@ export default function BarcodeEcosystem({ showToast }) {
                     <td>{h.medicineName || "—"}</td>
                     <td>
                       <span
-                        className={`p-status ${(h.action || "").includes("BILL") ? "paid" : ""}`}
+                        className={`p-status ${(h.action || "").indexOf("BILL") !== -1 ? "paid" : ""}`}
                         style={{ fontSize: "10px" }}
                       >
                         {(h.action || "SCAN").toUpperCase()}

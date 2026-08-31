@@ -528,16 +528,16 @@ export default function AdminUsers() {
       )}
 
       {selectedUser && (
-        <div
+        <div role="button" tabIndex={0}
           className="admin-modal-overlay"
-          onClick={() => {
+          onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.currentTarget.click(); } }} onClick={() => {
             setSelectedUser(null);
             setDetail(null);
           }}
         >
-          <div
+          <div role="button" tabIndex={0}
             className="admin-modal admin-modal-wide"
-            onClick={(e) => e.stopPropagation()}
+            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.currentTarget.click(); } }} onClick={(e) => e.stopPropagation()}
           >
             {detailLoading ? (
               <div className="admin-empty">Loading details...</div>

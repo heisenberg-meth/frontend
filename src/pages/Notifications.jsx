@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { AnimatePresence, m } from "framer-motion";
 import {
   Bell,
   CheckCircle,
@@ -62,32 +62,38 @@ export default function Notifications({ showToast }) {
   const [deletingIds, setDeletingIds] = useState(new Set());
 
   useEffect(() => {
+    let ignore = false;
     const loadData = async () => {
       setLoading(true);
       try {
         const res = await getNotifications();
-        const data = Array.isArray(res.data?.data)
-          ? res.data.data
-          : Array.isArray(res.data)
-            ? res.data
-            : [];
+        if (!ignore) {
+          const data = Array.isArray(res.data?.data)
+            ? res.data.data
+            : Array.isArray(res.data)
+              ? res.data
+              : [];
 
-        const processedData = data.map((n) => ({
-          ...n,
-          type: n.type || "System",
-          createdAt: n.createdAt || new Date().toISOString(),
-        }));
+          const processedData = data.map((n) => ({
+            ...n,
+            type: n.type || "System",
+            createdAt: n.createdAt || new Date().toISOString(),
+          }));
 
-        setNotifications(processedData);
+          setNotifications(processedData);
+        }
       } catch (err) {
         console.error("Error fetching notifications:", err);
-        showToast?.("Failed to load notifications", "error");
+        if (!ignore) showToast?.("Failed to load notifications", "error");
       } finally {
-        setLoading(false);
+        if (!ignore) setLoading(false);
       }
     };
 
     loadData();
+    return () => {
+      ignore = true;
+    };
   }, [showToast]);
 
   const handleMarkRead = async (id) => {
@@ -174,7 +180,7 @@ export default function Notifications({ showToast }) {
   const unreadCount = notifications.filter((n) => !n.isRead).length;
 
   const renderEmptyState = () => (
-    <motion.div
+    <m.div
       initial={{ opacity: 0, scale: 0.95 }}
       animate={{ opacity: 1, scale: 1 }}
       className="notif-page-empty"
@@ -184,7 +190,7 @@ export default function Notifications({ showToast }) {
       </div>
       <h3>You're all caught up!</h3>
       <p>No notifications available.</p>
-    </motion.div>
+    </m.div>
   );
 
   return (
@@ -241,23 +247,36 @@ export default function Notifications({ showToast }) {
       </div>
 
       <div className="notif-list-container">
-        {loading ? (
+        {loading && (
           <div className="notif-loading">
             <div className="spinner"></div>
             <p>Loading notifications...</p>
           </div>
-        ) : filteredNotifications.length > 0 ? (
+        )}
+
+        <div
+          className="notif-grid"
+          style={{ display: loading ? "none" : "grid" }}
+        >
           <AnimatePresence>
-            <div className="notif-grid">
-              {filteredNotifications.map((notif, index) => (
-                <motion.div
-                  key={notif.id || index}
+            {!loading &&
+              filteredNotifications.map((notif, index) => (
+                <m.div
+                  role="button"
+                  tabIndex={0}
+                  key={notif.id || notif._id}
                   layout
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, scale: 0.95 }}
                   transition={{ delay: index * 0.05 }}
                   className={`notif-card ${!notif.isRead ? "unread" : ""}`}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      e.currentTarget.click();
+                    }
+                  }}
                   onClick={() => !notif.isRead && handleMarkRead(notif.id)}
                 >
                   {!notif.isRead && <div className="unread-dot"></div>}
@@ -308,13 +327,23 @@ export default function Notifications({ showToast }) {
                       <Trash2 size={16} />
                     )}
                   </button>
-                </motion.div>
+                </m.div>
               ))}
-            </div>
           </AnimatePresence>
-        ) : (
-          renderEmptyState()
-        )}
+        </div>
+
+        <AnimatePresence>
+          {!loading && filteredNotifications.length === 0 && (
+            <m.div
+              key="empty"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+            >
+              {renderEmptyState()}
+            </m.div>
+          )}
+        </AnimatePresence>
       </div>
     </div>
   );

@@ -34,7 +34,7 @@ export default function PlanSelection({ onSelectTrial, onSelectPro }) {
       {/* Main Content */}
       <main className="pt-28 pb-12 px-6 max-w-6xl mx-auto flex flex-col items-center">
         {/* Header Section */}
-        <div className="text-center mb-10 animate-in fade-in slide-in-from-top-4 duration-700">
+        <div className="text-center mb-10 animate-in fade-in slide-in-from-top-4 transition-transform duration-700">
           <span className="text-[10px] font-bold text-primary uppercase tracking-[0.3em] mb-3 block">
             Foundation Authorization
           </span>
@@ -50,7 +50,7 @@ export default function PlanSelection({ onSelectTrial, onSelectPro }) {
         {/* Plan Cards Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 w-full max-w-6xl">
           {/* Trial Card */}
-          <div className="bg-(--surface-container)/50 backdrop-blur-sm border border-(--surface) rounded-2xl p-7 flex flex-col transition-all hover:border-primary/40 hover:shadow-2xl hover:shadow-primary/5 group relative overflow-hidden">
+          <div className="bg-(--surface-container)/50 backdrop-blur-sm border border-(--surface) rounded-2xl p-7 flex flex-col transition-shadow hover:border-primary/40 hover:shadow-2xl hover:shadow-primary/5 group relative overflow-hidden">
             <div className="mb-6">
               <div className="flex justify-between items-start mb-4">
                 <div className="p-3 bg-(--surface) rounded-xl border border-(--surface)">
@@ -76,7 +76,7 @@ export default function PlanSelection({ onSelectTrial, onSelectPro }) {
                 "Unlimited Pharmacy SKUs",
                 "Audit Logs",
                 "Community Intelligence",
-              ].map((feature, i) => (
+              ].map((feature) => (
                 <div key={feature} className="flex items-center gap-3">
                   <span className="material-symbols-outlined text-primary text-lg">
                     check_circle
@@ -97,7 +97,7 @@ export default function PlanSelection({ onSelectTrial, onSelectPro }) {
               </div>
               <button
                 onClick={handleTrialClick}
-                className="w-full bg-(--surface) border border-(--surface) text-on-surface py-4 rounded-xl font-bold hover:bg-(--surface) hover:border-primary/50 transition-all active:scale-[0.98] shadow-lg"
+                className="w-full bg-(--surface) border border-(--surface) text-on-surface py-4 rounded-xl font-bold hover:bg-(--surface) hover:border-primary/50 transition-colors active:scale-[0.98] shadow-lg"
               >
                 Start Free Trial
               </button>
@@ -105,7 +105,7 @@ export default function PlanSelection({ onSelectTrial, onSelectPro }) {
           </div>
 
           {/* Basic Card */}
-          <div className="bg-(--surface-container)/50 backdrop-blur-sm border border-(--surface) rounded-2xl p-7 flex flex-col transition-all hover:border-primary/40 hover:shadow-2xl hover:shadow-primary/5 group relative overflow-hidden">
+          <div className="bg-(--surface-container)/50 backdrop-blur-sm border border-(--surface) rounded-2xl p-7 flex flex-col transition-shadow hover:border-primary/40 hover:shadow-2xl hover:shadow-primary/5 group relative overflow-hidden">
             <div className="mb-6">
               <div className="flex justify-between items-start mb-4">
                 <div className="p-3 bg-(--surface) rounded-xl border border-(--surface)">
@@ -131,7 +131,7 @@ export default function PlanSelection({ onSelectTrial, onSelectPro }) {
                 "Basic Analytics",
                 "Up to 3 Users",
                 "Standard Support",
-              ].map((feature, i) => (
+              ].map((feature) => (
                 <div key={feature} className="flex items-center gap-3">
                   <span className="material-symbols-outlined text-primary text-lg">
                     check_circle
@@ -152,7 +152,7 @@ export default function PlanSelection({ onSelectTrial, onSelectPro }) {
               </div>
               <button
                 onClick={handleProClick}
-                className="w-full bg-(--surface) border border-(--surface) text-on-surface py-4 rounded-xl font-bold hover:bg-(--surface) hover:border-primary/50 transition-all active:scale-[0.98] shadow-lg"
+                className="w-full bg-(--surface) border border-(--surface) text-on-surface py-4 rounded-xl font-bold hover:bg-(--surface) hover:border-primary/50 transition-colors active:scale-[0.98] shadow-lg"
               >
                 Get Started
               </button>
@@ -160,7 +160,7 @@ export default function PlanSelection({ onSelectTrial, onSelectPro }) {
           </div>
 
           {/* Pro Card */}
-          <div className="bg-(--surface-container)/80 backdrop-blur-sm border-2 border-primary rounded-2xl p-7 flex flex-col transition-all relative overflow-hidden shadow-2xl shadow-primary/10 group">
+          <div className="bg-(--surface-container)/80 backdrop-blur-sm border-2 border-primary rounded-2xl p-7 flex flex-col transition-shadow relative overflow-hidden shadow-2xl shadow-primary/10 group">
             {/* Premium Glow */}
             <div className="absolute top-0 right-0 w-32 h-32 bg-primary/10 blur-[60px] pointer-events-none"></div>
 
@@ -193,7 +193,7 @@ export default function PlanSelection({ onSelectTrial, onSelectPro }) {
                 "24/7 Priority Support",
                 "Advanced Bulk Import",
                 "Personnel Multi-Tenancy",
-              ].map((feature, i) => (
+              ].map((feature) => (
                 <div key={feature} className="flex items-center gap-3">
                   <span
                     className="material-symbols-outlined text-primary text-lg"
@@ -219,7 +219,7 @@ export default function PlanSelection({ onSelectTrial, onSelectPro }) {
               </div>
               <button
                 onClick={handleProClick}
-                className="w-full bg-primary text-(--bg-dark) py-4 rounded-xl font-extrabold shadow-xl shadow-primary/20 hover:brightness-110 hover:scale-[1.02] transition-all active:scale-[0.98]"
+                className="w-full bg-primary text-(--bg-dark) py-4 rounded-xl font-extrabold shadow-xl shadow-primary/20 hover:brightness-110 hover:scale-[1.02] transition-[filter] active:scale-[0.98]"
               >
                 Activate Pro License
               </button>

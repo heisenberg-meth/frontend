@@ -187,14 +187,14 @@ export default function AdminSupportTickets() {
                 className="admin-card"
                 style={{ marginBottom: 12, padding: 16 }}
               >
-                <div
+                <div role="button" tabIndex={0}
                   style={{
                     display: "flex",
                     justifyContent: "space-between",
                     alignItems: "center",
                     cursor: "pointer",
                   }}
-                  onClick={() =>
+                  onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.currentTarget.click(); } }} onClick={() =>
                     setExpanded(expanded === ticket.id ? null : ticket.id)
                   }
                 >

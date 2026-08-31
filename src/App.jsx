@@ -7,7 +7,7 @@ import { normalizeArrayResponse } from "./utils/apiNormalizer";
 import { API_ROUTES } from "./constants/api.routes.js";
 import { SubscriptionStatus } from "./constants/enums";
 import { Sparkles, ShieldAlert, CheckCircle2 } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
+import { AnimatePresence, m, LazyMotion, domAnimation } from "framer-motion";
 import LogoutModal from "./components/LogoutModal";
 import AppRoutes from "./routes/AppRoutes";
 
@@ -15,7 +15,7 @@ function Paywall({ onActivate }) {
   return (
     <div className="paywall-overlay-v2">
       <div className="paywall-blur-bg" />
-      <motion.div
+      <m.div
         className="paywall-card"
         initial={{ opacity: 0, scale: 0.9 }}
         animate={{ opacity: 1, scale: 1 }}
@@ -50,14 +50,14 @@ function Paywall({ onActivate }) {
         <button className="paywall-support-btn">
           CONTACT FACILITY SUPPORT
         </button>
-      </motion.div>
+      </m.div>
     </div>
   );
 }
 
 function Toast({ message, type }) {
   return (
-    <motion.div
+    <m.div
       className={`toast-v2 ${type}`}
       initial={{ opacity: 0, y: 50 }}
       animate={{ opacity: 1, y: 0 }}
@@ -69,7 +69,7 @@ function Toast({ message, type }) {
         <ShieldAlert size={16} />
       )}
       <span>{message}</span>
-    </motion.div>
+    </m.div>
   );
 }
 
@@ -87,7 +87,7 @@ function AppLoadingScreen() {
         backgroundColor: "var(--bg-dark)",
       }}
     >
-      <motion.div
+      <m.div
         className="auth-loading-spinner"
         animate={{ rotate: 360 }}
         transition={{ repeat: Infinity, duration: 1, ease: "linear" }}
@@ -577,8 +577,10 @@ function AppContent() {
 
 export default function App() {
   return (
-    <AuthProvider>
-      <AppContent />
-    </AuthProvider>
+    <LazyMotion features={domAnimation}>
+      <AuthProvider>
+        <AppContent />
+      </AuthProvider>
+    </LazyMotion>
   );
 }

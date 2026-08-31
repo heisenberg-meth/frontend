@@ -1,4 +1,4 @@
-import { motion } from "framer-motion";
+import { m } from "framer-motion";
 
 export default function LoadingScreen({
   message = "Loading clinical module...",
@@ -17,7 +17,7 @@ export default function LoadingScreen({
         color: "var(--text)",
       }}
     >
-      <motion.div
+      <m.div
         className="auth-loading-spinner"
         animate={{ rotate: 360 }}
         transition={{ repeat: Infinity, duration: 1, ease: "linear" }}

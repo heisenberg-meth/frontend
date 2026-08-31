@@ -9,7 +9,46 @@ import {
   Loader2,
 } from "lucide-react";
 
-import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from "recharts";
+import { lazy, Suspense } from "react";
+
+const LazyRechartsWrapper = lazy(() =>
+  import("recharts").then((m) => ({
+    default: function Chart({ categories, COLORS }) {
+      return (
+        <m.ResponsiveContainer width="100%" height="100%">
+          <m.PieChart>
+            <m.Pie
+              data={categories}
+              cx="50%"
+              cy="50%"
+              innerRadius={60}
+              outerRadius={100}
+              paddingAngle={5}
+              dataKey="value"
+              nameKey="category"
+            >
+              {categories.map((entry, index) => (
+                <m.Cell
+                  key={`cell-${entry.category}`}
+                  fill={COLORS[index % COLORS.length]}
+                />
+              ))}
+            </m.Pie>
+            <m.Tooltip
+              formatter={(value) => `₹${value.toLocaleString()}`}
+              contentStyle={{
+                backgroundColor: "var(--surface)",
+                borderRadius: "8px",
+                border: "1px solid var(--surface-container-highest)",
+                color: "var(--on-surface)",
+              }}
+            />
+          </m.PieChart>
+        </m.ResponsiveContainer>
+      );
+    },
+  })),
+);
 import { getMedicines } from "../../services/inventory.service";
 import { safeNumber } from "../../utils/number.js";
 
@@ -38,10 +77,12 @@ export default function InventoryAnalyticsFull() {
 
   useEffect(() => {
     if (data.summary) return; // already got data from router state
+    let active = true;
 
     const fetchAnalytics = async () => {
       try {
         const res = await getMedicines({ limit: 10000 });
+        if (!active) return;
         const items = Array.isArray(res.data?.data?.items)
           ? res.data.data.items
           : Array.isArray(res.data?.data)
@@ -162,11 +203,14 @@ export default function InventoryAnalyticsFull() {
       } catch (err) {
         console.error(err);
       } finally {
-        setLoading(false);
+        if (active) setLoading(false);
       }
     };
 
     fetchAnalytics();
+    return () => {
+      active = false;
+    };
   }, [data.summary]);
 
   if (loading) {
@@ -384,36 +428,15 @@ export default function InventoryAnalyticsFull() {
               <Layers size={20} /> Category Breakdown
             </h2>
             <div style={{ height: "300px" }}>
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={categories}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={60}
-                    outerRadius={100}
-                    paddingAngle={5}
-                    dataKey="value"
-                    nameKey="category"
-                  >
-                    {categories.map((entry, index) => (
-                      <Cell
-                        key={`cell-${index}`}
-                        fill={COLORS[index % COLORS.length]}
-                      />
-                    ))}
-                  </Pie>
-                  <Tooltip
-                    formatter={(value) => `₹${value.toLocaleString()}`}
-                    contentStyle={{
-                      backgroundColor: "var(--surface)",
-                      borderRadius: "8px",
-                      border: "1px solid var(--surface-container-highest)",
-                      color: "var(--on-surface)",
-                    }}
-                  />
-                </PieChart>
-              </ResponsiveContainer>
+              <Suspense
+                fallback={
+                  <div className="flex justify-center items-center h-full">
+                    <Loader2 className="animate-spin text-primary" />
+                  </div>
+                }
+              >
+                <LazyRechartsWrapper categories={categories} COLORS={COLORS} />
+              </Suspense>
             </div>
           </section>
         </div>

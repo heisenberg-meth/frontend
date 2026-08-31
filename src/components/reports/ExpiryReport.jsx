@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   Loader2,
   AlertTriangle,
@@ -12,7 +12,7 @@ import {
   Download,
   FileText,
 } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
+import { AnimatePresence, m } from "framer-motion";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import api from "../../api.js";
@@ -31,6 +31,9 @@ export default function ExpiryReport({ showToast }) {
   const [actionLoading, setActionLoading] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [selectedDeleteBatch, setSelectedDeleteBatch] = useState(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const isDeletingRef = useRef(false);
+  const actionLoadingRef = useRef(false);
 
   const fetchExpiry = async () => {
     setLoading(true);
@@ -227,7 +230,10 @@ export default function ExpiryReport({ showToast }) {
   };
 
   const confirmDeleteBatch = async () => {
+    if (isDeletingRef.current) return;
     if (!selectedDeleteBatch) return;
+    isDeletingRef.current = true;
+    setIsDeleting(true);
     try {
       await api.post("stock/damage", {
         batchId: selectedDeleteBatch.batchId || selectedDeleteBatch.id,
@@ -240,6 +246,9 @@ export default function ExpiryReport({ showToast }) {
       fetchExpiry();
     } catch (err) {
       showToast(err.response?.data?.error || "Disposal failed", "error");
+    } finally {
+      isDeletingRef.current = false;
+      setIsDeleting(false);
     }
   };
 
@@ -311,7 +320,15 @@ export default function ExpiryReport({ showToast }) {
 
       <div className="reports-kpi-grid" style={{ marginTop: "20px" }}>
         <div
+          role="button"
+          tabIndex={0}
           className="report-kpi-card"
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === " ") {
+              e.preventDefault();
+              e.currentTarget.click();
+            }
+          }}
           onClick={() => setExpiryFilter("Expired")}
           style={{ cursor: "pointer" }}
         >
@@ -321,7 +338,15 @@ export default function ExpiryReport({ showToast }) {
           <div className="stat-value">{expiredCount} items</div>
         </div>
         <div
+          role="button"
+          tabIndex={0}
           className="report-kpi-card"
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === " ") {
+              e.preventDefault();
+              e.currentTarget.click();
+            }
+          }}
           onClick={() => setExpiryFilter("< 7 Days")}
           style={{ cursor: "pointer" }}
         >
@@ -331,7 +356,15 @@ export default function ExpiryReport({ showToast }) {
           <div className="stat-value">{expiring7DaysCount}</div>
         </div>
         <div
+          role="button"
+          tabIndex={0}
           className="report-kpi-card"
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === " ") {
+              e.preventDefault();
+              e.currentTarget.click();
+            }
+          }}
           onClick={() => setExpiryFilter("7-30 Days")}
           style={{ cursor: "pointer" }}
         >
@@ -341,7 +374,15 @@ export default function ExpiryReport({ showToast }) {
           <div className="stat-value">{expiring7To30DaysCount}</div>
         </div>
         <div
+          role="button"
+          tabIndex={0}
           className="report-kpi-card"
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === " ") {
+              e.preventDefault();
+              e.currentTarget.click();
+            }
+          }}
           onClick={() => setExpiryFilter("30-90 Days")}
           style={{ cursor: "pointer" }}
         >
@@ -353,7 +394,15 @@ export default function ExpiryReport({ showToast }) {
       </div>
 
       <div
+        role="button"
+        tabIndex={0}
         className="expiry-urgency-banner"
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            e.currentTarget.click();
+          }
+        }}
         onClick={() => setExpiryFilter("Expired")}
         style={{ cursor: "pointer", marginTop: "20px" }}
       >
@@ -560,7 +609,7 @@ export default function ExpiryReport({ showToast }) {
       <AnimatePresence>
         {showActionModal && (
           <div className="stock-modal-overlay" style={{ zIndex: 1100 }}>
-            <motion.div
+            <m.div
               className="stock-modal-content"
               style={{ width: "420px" }}
               initial={{ opacity: 0, scale: 0.9 }}
@@ -605,8 +654,10 @@ export default function ExpiryReport({ showToast }) {
 
                 {actionType === "Return" && (
                   <div className="pos-input-group">
-                    <label className="p-label">RETURN REASON</label>
-                    <select className="pos-input">
+                    <label htmlFor="field_a3kdb1" className="p-label">
+                      RETURN REASON
+                    </label>
+                    <select id="field_a3kdb1" className="pos-input">
                       <option>Near Expiry Return</option>
                       <option>Damaged Stock</option>
                       <option>Wrong Product Received</option>
@@ -616,8 +667,11 @@ export default function ExpiryReport({ showToast }) {
 
                 {actionType === "Discount" && (
                   <div className="pos-input-group">
-                    <label className="p-label">DISCOUNT PERCENTAGE (%)</label>
+                    <label htmlFor="field_00six4" className="p-label">
+                      DISCOUNT PERCENTAGE (%)
+                    </label>
                     <input
+                      id="field_00six4"
                       required
                       className="pos-input"
                       type="number"
@@ -628,8 +682,11 @@ export default function ExpiryReport({ showToast }) {
                 )}
 
                 <div className="pos-input-group" style={{ marginTop: "16px" }}>
-                  <label className="p-label">NOTES / AUTHORIZATION</label>
+                  <label htmlFor="field_y4jgfc" className="p-label">
+                    NOTES / AUTHORIZATION
+                  </label>
                   <textarea
+                    id="field_y4jgfc"
                     className="pos-input"
                     style={{ minHeight: "80px" }}
                     placeholder={`Details for ${actionType.toLowerCase()} process...`}
@@ -651,6 +708,8 @@ export default function ExpiryReport({ showToast }) {
                   style={{ flex: 2 }}
                   disabled={actionLoading}
                   onClick={async () => {
+                    if (actionLoadingRef.current) return;
+                    actionLoadingRef.current = true;
                     setActionLoading(true);
                     try {
                       if (actionType === "Return") {
@@ -682,6 +741,7 @@ export default function ExpiryReport({ showToast }) {
                         "error",
                       );
                     } finally {
+                      actionLoadingRef.current = false;
                       setActionLoading(false);
                     }
                   }}
@@ -689,13 +749,13 @@ export default function ExpiryReport({ showToast }) {
                   {actionLoading ? "Processing..." : `Confirm ${actionType}`}
                 </button>
               </div>
-            </motion.div>
+            </m.div>
           </div>
         )}
 
         {showDeleteConfirm && (
           <div className="stock-modal-overlay" style={{ zIndex: 1100 }}>
-            <motion.div
+            <m.div
               className="stock-modal-content"
               style={{ width: "380px" }}
               initial={{ opacity: 0, scale: 0.9 }}
@@ -741,11 +801,12 @@ export default function ExpiryReport({ showToast }) {
                   className="pos-btn danger"
                   style={{ flex: 1 }}
                   onClick={confirmDeleteBatch}
+                  disabled={isDeleting}
                 >
-                  Confirm Disposal
+                  {isDeleting ? "Disposing..." : "Confirm Disposal"}
                 </button>
               </div>
-            </motion.div>
+            </m.div>
           </div>
         )}
       </AnimatePresence>

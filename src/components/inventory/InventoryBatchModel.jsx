@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { assignBatchSupplier } from "../../services/inventory.service.js";
 import { Package, X, FileText, CheckCircle2 } from "lucide-react";
-import { motion } from "framer-motion";
+import { m } from "framer-motion";
 import { getSuppliers } from "../../services/suppliers.service.js";
 import {
   createReorder,
@@ -12,7 +12,7 @@ import { Spinner } from "./InventoryCore.jsx";
 
 /* ─── Reorder Modal ─── */
 export function ReorderModal({ medicine, onClose, showToast }) {
-  const [quantity, setQuantity] = useState(
+  const [quantity, setQuantity] = useState(() =>
     Math.max(20, (medicine.reorderLevel ?? medicine.reorderPoint ?? 20) * 3),
   );
   const [submitting, setSubmitting] = useState(false);
@@ -73,13 +73,32 @@ export function ReorderModal({ medicine, onClose, showToast }) {
   };
 
   return (
-    <div className="inv-modal-overlay" onClick={onClose}>
-      <motion.div
+    <div
+      role="button"
+      tabIndex={0}
+      className="inv-modal-overlay"
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          e.currentTarget.click();
+        }
+      }}
+      onClick={onClose}
+    >
+      <m.div
+        role="button"
+        tabIndex={0}
         className="inv-modal-content"
         style={{ width: "480px", maxWidth: "95vw" }}
         initial={{ opacity: 0, scale: 0.95, y: 20 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.95, y: 20 }}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            e.currentTarget.click();
+          }
+        }}
         onClick={(e) => e.stopPropagation()}
       >
         <div className="inv-modal-scroll" style={{ padding: "24px" }}>
@@ -198,8 +217,11 @@ export function ReorderModal({ medicine, onClose, showToast }) {
 
           {/* Quantity Input */}
           <div className="form-group full" style={{ marginBottom: "20px" }}>
-            <label style={{ fontWeight: 700 }}>Order Quantity *</label>
+            <label htmlFor="field_55l9j8" style={{ fontWeight: 700 }}>
+              Order Quantity *
+            </label>
             <input
+              id="field_55l9j8"
               type="number"
               min="1"
               value={quantity}
@@ -207,7 +229,6 @@ export function ReorderModal({ medicine, onClose, showToast }) {
                 setQuantity(Math.max(1, parseInt(e.target.value) || 1))
               }
               style={{ fontSize: "18px", fontWeight: 700, textAlign: "center" }}
-              autoFocus
             />
           </div>
 
@@ -312,7 +333,7 @@ export function ReorderModal({ medicine, onClose, showToast }) {
             )}
           </button>
         </div>
-      </motion.div>
+      </m.div>
     </div>
   );
 }
@@ -449,8 +470,21 @@ export function BatchModal({
   const totalStock = batches.reduce((sum, b) => sum + (b.quantity || 0), 0);
 
   return (
-    <div className="inv-modal-overlay" onClick={onClose}>
-      <motion.div
+    <div
+      role="button"
+      tabIndex={0}
+      className="inv-modal-overlay"
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          e.currentTarget.click();
+        }
+      }}
+      onClick={onClose}
+    >
+      <m.div
+        role="button"
+        tabIndex={0}
         className="inv-modal-content"
         style={{
           width: "600px",
@@ -461,6 +495,12 @@ export function BatchModal({
         initial={{ opacity: 0, scale: 0.95, y: 20 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.95, y: 20 }}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            e.currentTarget.click();
+          }
+        }}
         onClick={(e) => e.stopPropagation()}
       >
         <div className="inv-modal-header" style={{ flexShrink: 0 }}>
@@ -543,6 +583,8 @@ export function BatchModal({
                       <tbody>
                         {batches.map((b) => (
                           <tr
+                            role="button"
+                            tabIndex={0}
                             key={b.id}
                             className={`batch-row ${selectedBatch?.id === b.id ? "selected" : ""}`}
                             style={{
@@ -551,6 +593,12 @@ export function BatchModal({
                                   ? "var(--hover-bg)"
                                   : "transparent",
                               cursor: "pointer",
+                            }}
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter" || e.key === " ") {
+                                e.preventDefault();
+                                e.currentTarget.click();
+                              }
                             }}
                             onClick={() => {
                               setSelectedBatch(b);
@@ -657,8 +705,9 @@ export function BatchModal({
                 style={{ gridTemplateColumns: "1fr" }}
               >
                 <div className="form-group">
-                  <label>Batch Number *</label>
+                  <label htmlFor="field_tsagqh">Batch Number *</label>
                   <input
+                    id="field_tsagqh"
                     required
                     placeholder="e.g. B-20241"
                     value={form.batchNumber || ""}
@@ -671,8 +720,9 @@ export function BatchModal({
                 </div>
 
                 <div className="form-group">
-                  <label>Expiry Date *</label>
+                  <label htmlFor="field_zbkpxk">Expiry Date *</label>
                   <input
+                    id="field_zbkpxk"
                     required
                     type="date"
                     value={form.expiryDate || ""}
@@ -685,8 +735,9 @@ export function BatchModal({
                 </div>
 
                 <div className="form-group">
-                  <label>MRP (₹) *</label>
+                  <label htmlFor="field_z6q08o">MRP (₹) *</label>
                   <input
+                    id="field_z6q08o"
                     required
                     type="number"
                     step="0.01"
@@ -701,8 +752,9 @@ export function BatchModal({
                 </div>
 
                 <div className="form-group">
-                  <label>Selling Price (₹) *</label>
+                  <label htmlFor="field_vgw1mt">Selling Price (₹) *</label>
                   <input
+                    id="field_vgw1mt"
                     required
                     type="number"
                     step="0.01"
@@ -717,8 +769,9 @@ export function BatchModal({
                 </div>
 
                 <div className="form-group">
-                  <label>Purchase Price (₹) *</label>
+                  <label htmlFor="field_7dlhfx">Purchase Price (₹) *</label>
                   <input
+                    id="field_7dlhfx"
                     required
                     type="number"
                     step="0.01"
@@ -733,8 +786,9 @@ export function BatchModal({
                 </div>
 
                 <div className="form-group">
-                  <label>Stock Quantity *</label>
+                  <label htmlFor="field_xowwjm">Stock Quantity *</label>
                   <input
+                    id="field_xowwjm"
                     required
                     type="number"
                     placeholder="0"
@@ -748,8 +802,9 @@ export function BatchModal({
                 </div>
 
                 <div className="form-group">
-                  <label>Rack Location</label>
+                  <label htmlFor="field_72c32p">Rack Location</label>
                   <input
+                    id="field_72c32p"
                     required
                     placeholder="e.g. A-12"
                     value={form.rackLocation || ""}
@@ -759,8 +814,9 @@ export function BatchModal({
 
                 {selectedBatch && (
                   <div className="form-group">
-                    <label>Supplier</label>
+                    <label htmlFor="field_bqruk5">Supplier</label>
                     <select
+                      id="field_bqruk5"
                       value={form.supplierId || ""}
                       onChange={(e) => handleSupplierChange(e.target.value)}
                       disabled={savingSupplier}
@@ -830,7 +886,7 @@ export function BatchModal({
             )}
           </button>
         </div>
-      </motion.div>
+      </m.div>
     </div>
   );
 }

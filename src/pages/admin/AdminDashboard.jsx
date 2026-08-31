@@ -8,19 +8,134 @@ import {
   Clock,
 } from "lucide-react";
 import { safeNumber } from "../../utils/number.js";
-import {
-  LineChart,
-  Line,
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  Tooltip,
-  ResponsiveContainer,
-  CartesianGrid,
-  Area,
-  AreaChart,
-} from "recharts";
+import { lazy, Suspense } from "react";
+
+const LazyAdminCharts = lazy(() =>
+  import("recharts").then((m) => ({
+    default: function Charts({ trends, ChartTooltip }) {
+      return (
+        <div className="admin-charts-grid">
+          <div className="admin-card">
+            <h4 style={{ marginBottom: 12, fontSize: 14 }}>
+              Daily Registrations (30 days)
+            </h4>
+            <m.ResponsiveContainer width="100%" height={200}>
+              <m.AreaChart data={trends.daily}>
+                <m.CartesianGrid strokeDasharray="3 3" stroke="#222" />
+                <m.XAxis
+                  dataKey="date"
+                  tick={{ fontSize: 10, fill: "#666" }}
+                  tickFormatter={(v) => v.slice(5)}
+                />
+                <m.YAxis
+                  tick={{ fontSize: 10, fill: "#666" }}
+                  allowDecimals={false}
+                />
+                <m.Tooltip content={<ChartTooltip />} />
+                <m.Area
+                  type="monotone"
+                  dataKey="registrations"
+                  name="Registrations"
+                  stroke="#22c55e"
+                  fill="#22c55e33"
+                />
+              </m.AreaChart>
+            </m.ResponsiveContainer>
+          </div>
+
+          <div className="admin-card">
+            <h4 style={{ marginBottom: 12, fontSize: 14 }}>Monthly Revenue</h4>
+            <m.ResponsiveContainer width="100%" height={200}>
+              <m.BarChart data={trends.monthlyRevenue}>
+                <m.CartesianGrid strokeDasharray="3 3" stroke="#222" />
+                <m.XAxis
+                  dataKey="month"
+                  tick={{ fontSize: 10, fill: "#666" }}
+                />
+                <m.YAxis
+                  tick={{ fontSize: 10, fill: "#666" }}
+                  tickFormatter={(v) => `₹${v}`}
+                />
+                <m.Tooltip content={<ChartTooltip />} />
+                <m.Bar
+                  dataKey="revenue"
+                  name="Revenue"
+                  fill="#22c55e"
+                  radius={[4, 4, 0, 0]}
+                />
+              </m.BarChart>
+            </m.ResponsiveContainer>
+          </div>
+
+          <div className="admin-card">
+            <h4 style={{ marginBottom: 12, fontSize: 14 }}>
+              Shop & Subscription Growth
+            </h4>
+            <m.ResponsiveContainer width="100%" height={200}>
+              <m.LineChart data={trends.daily}>
+                <m.CartesianGrid strokeDasharray="3 3" stroke="#222" />
+                <m.XAxis
+                  dataKey="date"
+                  tick={{ fontSize: 10, fill: "#666" }}
+                  tickFormatter={(v) => v.slice(5)}
+                />
+                <m.YAxis
+                  tick={{ fontSize: 10, fill: "#666" }}
+                  allowDecimals={false}
+                />
+                <m.Tooltip content={<ChartTooltip />} />
+                <m.Line
+                  type="monotone"
+                  dataKey="totalShops"
+                  name="Shops"
+                  stroke="#3b82f6"
+                  dot={false}
+                  strokeWidth={2}
+                />
+                <m.Line
+                  type="monotone"
+                  dataKey="totalSubscriptions"
+                  name="Subscriptions"
+                  stroke="#22c55e"
+                  dot={false}
+                  strokeWidth={2}
+                />
+              </m.LineChart>
+            </m.ResponsiveContainer>
+          </div>
+
+          <div className="admin-card">
+            <h4 style={{ marginBottom: 12, fontSize: 14 }}>
+              Active Users Trend
+            </h4>
+            <m.ResponsiveContainer width="100%" height={200}>
+              <m.AreaChart data={trends.daily}>
+                <m.CartesianGrid strokeDasharray="3 3" stroke="#222" />
+                <m.XAxis
+                  dataKey="date"
+                  tick={{ fontSize: 10, fill: "#666" }}
+                  tickFormatter={(v) => v.slice(5)}
+                />
+                <m.YAxis
+                  tick={{ fontSize: 10, fill: "#666" }}
+                  allowDecimals={false}
+                />
+                <m.Tooltip content={<ChartTooltip />} />
+                <m.Area
+                  type="monotone"
+                  dataKey="activeUsers"
+                  name="New Users"
+                  stroke="#8b5cf6"
+                  fill="#8b5cf633"
+                />
+              </m.AreaChart>
+            </m.ResponsiveContainer>
+          </div>
+        </div>
+      );
+    },
+  })),
+);
 
 const ChartTooltip = ({ active, payload, label }) => {
   if (active && payload && payload.length) {
@@ -35,7 +150,7 @@ const ChartTooltip = ({ active, payload, label }) => {
         }}
       >
         <p style={{ color: "#888", marginBottom: 4 }}>{label}</p>
-        {payload.map((p, i) => (
+        {payload.map((p) => (
           <p key={p.name} style={{ color: p.color, margin: 0 }}>
             {p.name}: {p.value}
           </p>
@@ -142,121 +257,13 @@ export default function AdminDashboard() {
       </div>
 
       {trends && (
-        <div className="admin-charts-grid">
-          <div className="admin-card">
-            <h4 style={{ marginBottom: 12, fontSize: 14 }}>
-              Daily Registrations (30 days)
-            </h4>
-            <ResponsiveContainer width="100%" height={200}>
-              <AreaChart data={trends.daily}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#222" />
-                <XAxis
-                  dataKey="date"
-                  tick={{ fontSize: 10, fill: "#666" }}
-                  tickFormatter={(v) => v.slice(5)}
-                />
-                <YAxis
-                  tick={{ fontSize: 10, fill: "#666" }}
-                  allowDecimals={false}
-                />
-                <Tooltip content={<ChartTooltip />} />
-                <Area
-                  type="monotone"
-                  dataKey="registrations"
-                  name="Registrations"
-                  stroke="#22c55e"
-                  fill="#22c55e33"
-                />
-              </AreaChart>
-            </ResponsiveContainer>
-          </div>
-
-          <div className="admin-card">
-            <h4 style={{ marginBottom: 12, fontSize: 14 }}>Monthly Revenue</h4>
-            <ResponsiveContainer width="100%" height={200}>
-              <BarChart data={trends.monthlyRevenue}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#222" />
-                <XAxis dataKey="month" tick={{ fontSize: 10, fill: "#666" }} />
-                <YAxis
-                  tick={{ fontSize: 10, fill: "#666" }}
-                  tickFormatter={(v) => `₹${v}`}
-                />
-                <Tooltip content={<ChartTooltip />} />
-                <Bar
-                  dataKey="revenue"
-                  name="Revenue"
-                  fill="#22c55e"
-                  radius={[4, 4, 0, 0]}
-                />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-
-          <div className="admin-card">
-            <h4 style={{ marginBottom: 12, fontSize: 14 }}>
-              Shop & Subscription Growth
-            </h4>
-            <ResponsiveContainer width="100%" height={200}>
-              <LineChart data={trends.daily}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#222" />
-                <XAxis
-                  dataKey="date"
-                  tick={{ fontSize: 10, fill: "#666" }}
-                  tickFormatter={(v) => v.slice(5)}
-                />
-                <YAxis
-                  tick={{ fontSize: 10, fill: "#666" }}
-                  allowDecimals={false}
-                />
-                <Tooltip content={<ChartTooltip />} />
-                <Line
-                  type="monotone"
-                  dataKey="totalShops"
-                  name="Shops"
-                  stroke="#3b82f6"
-                  dot={false}
-                  strokeWidth={2}
-                />
-                <Line
-                  type="monotone"
-                  dataKey="totalSubscriptions"
-                  name="Subscriptions"
-                  stroke="#22c55e"
-                  dot={false}
-                  strokeWidth={2}
-                />
-              </LineChart>
-            </ResponsiveContainer>
-          </div>
-
-          <div className="admin-card">
-            <h4 style={{ marginBottom: 12, fontSize: 14 }}>
-              Active Users Trend
-            </h4>
-            <ResponsiveContainer width="100%" height={200}>
-              <AreaChart data={trends.daily}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#222" />
-                <XAxis
-                  dataKey="date"
-                  tick={{ fontSize: 10, fill: "#666" }}
-                  tickFormatter={(v) => v.slice(5)}
-                />
-                <YAxis
-                  tick={{ fontSize: 10, fill: "#666" }}
-                  allowDecimals={false}
-                />
-                <Tooltip content={<ChartTooltip />} />
-                <Area
-                  type="monotone"
-                  dataKey="activeUsers"
-                  name="New Users"
-                  stroke="#8b5cf6"
-                  fill="#8b5cf633"
-                />
-              </AreaChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
+        <Suspense
+          fallback={
+            <div className="admin-loading-inline">Loading charts...</div>
+          }
+        >
+          <LazyAdminCharts trends={trends} ChartTooltip={ChartTooltip} />
+        </Suspense>
       )}
 
       <div className="admin-dashboard-section">

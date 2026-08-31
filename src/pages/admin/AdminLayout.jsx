@@ -160,13 +160,13 @@ export default function AdminLayout() {
         </div>
 
         <nav className="admin-sidebar-nav">
-          {NAV_ITEMS.filter((item) => item.roles.includes(admin?.role)).map(
-            (item) => {
+          {NAV_ITEMS.reduce((acc, item) => {
+            if (item.roles.includes(admin?.role)) {
               const Icon = item.icon;
               const isActive =
                 location.pathname === item.path ||
                 location.pathname.startsWith(item.path + "/");
-              return (
+              acc.push(
                 <NavLink
                   key={item.path}
                   to={item.path}
@@ -175,10 +175,11 @@ export default function AdminLayout() {
                 >
                   <Icon size={18} />
                   <span>{item.label}</span>
-                </NavLink>
+                </NavLink>,
               );
-            },
-          )}
+            }
+            return acc;
+          }, [])}
         </nav>
 
         <div className="admin-sidebar-footer">
@@ -193,7 +194,18 @@ export default function AdminLayout() {
       </aside>
 
       {sidebarOpen && (
-        <div className="admin-overlay" onClick={() => setSidebarOpen(false)} />
+        <div
+          role="button"
+          tabIndex={0}
+          className="admin-overlay"
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === " ") {
+              e.preventDefault();
+              e.currentTarget.click();
+            }
+          }}
+          onClick={() => setSidebarOpen(false)}
+        />
       )}
 
       <div className="admin-main">

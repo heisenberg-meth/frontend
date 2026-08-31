@@ -376,14 +376,30 @@ export default function AdminSubscriptions() {
 
       {historySub && (
         <div
+          role="button"
+          tabIndex={0}
           className="admin-overlay"
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === " ") {
+              e.preventDefault();
+              e.currentTarget.click();
+            }
+          }}
           onClick={() => {
             setHistorySub(null);
             setHistoryData([]);
           }}
         >
           <div
+            role="button"
+            tabIndex={0}
             className="admin-modal"
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                e.currentTarget.click();
+              }
+            }}
             onClick={(e) => e.stopPropagation()}
             style={{ maxWidth: 600, maxHeight: "80vh", overflow: "auto" }}
           >
@@ -448,14 +464,30 @@ export default function AdminSubscriptions() {
 
       {actionSub && actionType && (
         <div
+          role="button"
+          tabIndex={0}
           className="admin-overlay"
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === " ") {
+              e.preventDefault();
+              e.currentTarget.click();
+            }
+          }}
           onClick={() => {
             setActionSub(null);
             setActionType(null);
           }}
         >
           <div
+            role="button"
+            tabIndex={0}
             className="admin-modal"
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                e.currentTarget.click();
+              }
+            }}
             onClick={(e) => e.stopPropagation()}
             style={{ maxWidth: 420 }}
           >
@@ -484,8 +516,9 @@ export default function AdminSubscriptions() {
             </p>
             {actionType === "upgrade" ? (
               <div className="admin-form-group">
-                <label>New Plan ID</label>
+                <label htmlFor="newPlanId">New Plan ID</label>
                 <input
+                  id="newPlanId"
                   value={actionValue}
                   onChange={(e) => setActionValue(e.target.value)}
                   placeholder="Enter planId..."
@@ -493,7 +526,7 @@ export default function AdminSubscriptions() {
               </div>
             ) : (
               <div className="admin-form-group">
-                <label>
+                <label htmlFor="daysToChange">
                   Days to{" "}
                   {actionType === "extendTrial"
                     ? "add"
@@ -502,6 +535,7 @@ export default function AdminSubscriptions() {
                       : actionType}
                 </label>
                 <input
+                  id="daysToChange"
                   type="number"
                   value={actionValue}
                   onChange={(e) => setActionValue(e.target.value)}

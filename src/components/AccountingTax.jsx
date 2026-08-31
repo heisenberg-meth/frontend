@@ -15,7 +15,7 @@ import {
   Loader2,
   CheckCircle,
 } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
+import { AnimatePresence, m } from "framer-motion";
 import { safeNumber } from "../utils/number.js";
 import {
   getAccountingData,
@@ -546,7 +546,7 @@ export default function AccountingTax({ showToast }) {
             <h3 style={{ marginBottom: "24px" }}>Tax Summary</h3>
             <div className="acc-summary-grid">
               <div className="acc-summary-card">
-                <label>Total Revenue</label>
+                <span>Total Revenue</span>
                 <div className="acc-summary-value">
                   ₹
                   {(expenses.length > 0
@@ -556,13 +556,13 @@ export default function AccountingTax({ showToast }) {
                 </div>
               </div>
               <div className="acc-summary-card">
-                <label>Total Expenses</label>
+                <span>Total Expenses</span>
                 <div className="acc-summary-value">
                   ₹{totalExpenses.toLocaleString("en-IN")}
                 </div>
               </div>
               <div className="acc-summary-card">
-                <label>GST Collected</label>
+                <span>GST Collected</span>
                 <div className="acc-summary-value">
                   ₹
                   {gstData
@@ -571,7 +571,7 @@ export default function AccountingTax({ showToast }) {
                 </div>
               </div>
               <div className="acc-summary-card">
-                <label>Net Profit</label>
+                <span>Net Profit</span>
                 <div
                   className="acc-summary-value"
                   style={{ color: "var(--success)" }}
@@ -591,16 +591,16 @@ export default function AccountingTax({ showToast }) {
 
       <AnimatePresence>
         {showExpenseModal && (
-          <div
+          <div role="button" tabIndex={0}
             className="modal-overlay"
-            onClick={() => setShowExpenseModal(false)}
+            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.currentTarget.click(); } }} onClick={() => setShowExpenseModal(false)}
           >
-            <motion.div
+            <m.div role="button" tabIndex={0}
               className="modal-content"
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
-              onClick={(e) => e.stopPropagation()}
+              onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.currentTarget.click(); } }} onClick={(e) => e.stopPropagation()}
               style={{ maxWidth: 480 }}
             >
               <div className="modal-header">
@@ -614,9 +614,9 @@ export default function AccountingTax({ showToast }) {
               </div>
               <div className="modal-body-p">
                 <div className="form-group">
-                  <label>Category</label>
+                  <label htmlFor="field_gxfb8w">Category</label>
                   <select
-                    className="pos-input"
+ id="field_gxfb8w"                    className="pos-input"
                     value={expenseForm.category}
                     onChange={(e) =>
                       setExpenseForm({
@@ -634,9 +634,9 @@ export default function AccountingTax({ showToast }) {
                   </select>
                 </div>
                 <div className="form-group">
-                  <label>Description</label>
+                  <label htmlFor="field_w5tsrt">Description</label>
                   <input
-                    required
+ id="field_w5tsrt"                    required
                     className="pos-input"
                     value={expenseForm.description}
                     onChange={(e) =>
@@ -649,9 +649,9 @@ export default function AccountingTax({ showToast }) {
                   />
                 </div>
                 <div className="form-group">
-                  <label>Amount (₹)</label>
+                  <label htmlFor="field_q81tdh">Amount (₹)</label>
                   <input
-                    required
+ id="field_q81tdh"                    required
                     className="pos-input"
                     type="number"
                     value={expenseForm.amount}
@@ -662,9 +662,9 @@ export default function AccountingTax({ showToast }) {
                   />
                 </div>
                 <div className="form-group">
-                  <label>Payment Method</label>
+                  <label htmlFor="field_uhywql">Payment Method</label>
                   <select
-                    className="pos-input"
+ id="field_uhywql"                    className="pos-input"
                     value={expenseForm.paymentMethod}
                     onChange={(e) =>
                       setExpenseForm({
@@ -722,7 +722,7 @@ export default function AccountingTax({ showToast }) {
                   )}
                 </button>
               </div>
-            </motion.div>
+            </m.div>
           </div>
         )}
       </AnimatePresence>

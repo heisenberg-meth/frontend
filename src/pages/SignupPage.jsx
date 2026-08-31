@@ -209,7 +209,15 @@ export default function SignupPage() {
 
         <div className="relative z-10 flex items-center justify-between">
           <div
+            role="button"
+            tabIndex={0}
             className="flex items-center gap-3 cursor-pointer"
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                e.currentTarget.click();
+              }
+            }}
             onClick={() => navigate("/")}
           >
             <img
@@ -325,7 +333,7 @@ export default function SignupPage() {
             <button
               type="button"
               onClick={() => navigate("/pricing")}
-              className="text-xs font-bold text-emerald-600 dark:text-emerald-400 hover:underline cursor-pointer px-3 py-1.5 rounded-lg bg-white dark:bg-[#151b2a] border border-slate-200 dark:border-slate-700/80 shadow-2xs hover:border-emerald-500 transition-all"
+              className="text-xs font-bold text-emerald-600 dark:text-emerald-400 hover:underline cursor-pointer px-3 py-1.5 rounded-lg bg-white dark:bg-[#151b2a] border border-slate-200 dark:border-slate-700/80 shadow-2xs hover:border-emerald-500 transition"
             >
               Change Plan
             </button>
@@ -353,13 +361,17 @@ export default function SignupPage() {
           {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1.5">
+              <label
+                htmlFor="fullName"
+                className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1.5"
+              >
                 Full Name
               </label>
               <input
+                id="fullName"
                 required
                 type="text"
-                className="w-full px-4 py-3.5 rounded-xl bg-white dark:bg-[#151b2a] border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500 transition-all shadow-2xs"
+                className="w-full px-4 py-3.5 rounded-xl bg-white dark:bg-[#151b2a] border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500 transition shadow-2xs"
                 placeholder="Dr. Julian Sterling"
                 value={form.fullName}
                 onChange={(e) => updateField("fullName", e.target.value)}
@@ -367,13 +379,17 @@ export default function SignupPage() {
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1.5">
+              <label
+                htmlFor="shopName"
+                className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1.5"
+              >
                 Pharmacy / Shop Name
               </label>
               <input
+                id="shopName"
                 required
                 type="text"
-                className="w-full px-4 py-3.5 rounded-xl bg-white dark:bg-[#151b2a] border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500 transition-all shadow-2xs"
+                className="w-full px-4 py-3.5 rounded-xl bg-white dark:bg-[#151b2a] border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500 transition shadow-2xs"
                 placeholder="e.g. Apex Medical Solutions"
                 value={form.shopName}
                 onChange={(e) => updateField("shopName", e.target.value)}
@@ -381,13 +397,17 @@ export default function SignupPage() {
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1.5">
+              <label
+                htmlFor="email"
+                className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1.5"
+              >
                 Work Email
               </label>
               <input
+                id="email"
                 required
                 type="email"
-                className="w-full px-4 py-3.5 rounded-xl bg-white dark:bg-[#151b2a] border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500 transition-all shadow-2xs"
+                className="w-full px-4 py-3.5 rounded-xl bg-white dark:bg-[#151b2a] border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500 transition shadow-2xs"
                 placeholder="dr.house@viyan.med"
                 value={form.email}
                 onChange={(e) => updateField("email", e.target.value)}
@@ -396,14 +416,18 @@ export default function SignupPage() {
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1.5">
+              <label
+                htmlFor="password"
+                className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1.5"
+              >
                 Password
               </label>
               <div className="relative">
                 <input
+                  id="password"
                   required
                   type={showPassword ? "text" : "password"}
-                  className="w-full px-4 py-3.5 pr-12 rounded-xl bg-white dark:bg-[#151b2a] border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500 transition-all shadow-2xs"
+                  className="w-full px-4 py-3.5 pr-12 rounded-xl bg-white dark:bg-[#151b2a] border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500 transition shadow-2xs"
                   placeholder="Min. 8 chars (1 uppercase, 1 lowercase, 1 num, 1 symbol)"
                   value={form.password}
                   onChange={(e) => updateField("password", e.target.value)}
@@ -420,13 +444,17 @@ export default function SignupPage() {
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1.5">
+              <label
+                htmlFor="confirmPassword"
+                className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1.5"
+              >
                 Confirm Password
               </label>
               <input
+                id="confirmPassword"
                 required
                 type="password"
-                className="w-full px-4 py-3.5 rounded-xl bg-white dark:bg-[#151b2a] border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500 transition-all shadow-2xs"
+                className="w-full px-4 py-3.5 rounded-xl bg-white dark:bg-[#151b2a] border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500 transition shadow-2xs"
                 placeholder="Re-enter password"
                 value={form.confirmPassword}
                 onChange={(e) => updateField("confirmPassword", e.target.value)}
@@ -471,7 +499,7 @@ export default function SignupPage() {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full py-4 px-6 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white dark:bg-emerald-500 dark:hover:bg-emerald-400 dark:text-[#031424] font-black text-base tracking-wide shadow-lg shadow-emerald-600/20 dark:shadow-emerald-500/20 hover:shadow-xl hover:shadow-emerald-600/30 dark:hover:shadow-emerald-500/30 hover:-translate-y-px active:translate-y-px transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 flex items-center justify-center gap-2.5 cursor-pointer"
+                className="w-full py-4 px-6 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white dark:bg-emerald-500 dark:hover:bg-emerald-400 dark:text-[#031424] font-black text-base tracking-wide shadow-lg shadow-emerald-600/20 dark:shadow-emerald-500/20 hover:shadow-xl hover:shadow-emerald-600/30 dark:hover:shadow-emerald-500/30 hover:-translate-y-px active:translate-y-px transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 flex items-center justify-center gap-2.5 cursor-pointer"
               >
                 {loading ? (
                   <>

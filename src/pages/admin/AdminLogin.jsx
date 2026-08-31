@@ -40,8 +40,9 @@ export default function AdminLogin() {
         {error && <div className="admin-login-error">{error}</div>}
 
         <div className="input-group">
-          <label>Email</label>
+          <label htmlFor="email">Email</label>
           <input
+            id="email"
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
@@ -51,9 +52,10 @@ export default function AdminLogin() {
         </div>
 
         <div className="input-group">
-          <label>Password</label>
+          <label htmlFor="password">Password</label>
           <div className="password-wrap">
             <input
+              id="password"
               type={showPw ? "text" : "password"}
               value={password}
               onChange={(e) => setPassword(e.target.value)}

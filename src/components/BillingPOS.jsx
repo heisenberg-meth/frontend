@@ -1,4 +1,12 @@
-import { useState, useMemo, useEffect, useRef, useCallback } from "react";
+import {
+  useState,
+  useReducer,
+  useMemo,
+  useEffect,
+  useRef,
+  useCallback,
+  useEffectEvent,
+} from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../api.js";
 import { API_ROUTES } from "../constants/api.routes.js";
@@ -23,7 +31,7 @@ import {
   Trash2,
   TrendingUp,
 } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
+import { AnimatePresence, m } from "framer-motion";
 import {
   normalizeArrayResponse,
   normalizeObjectResponse,
@@ -210,28 +218,121 @@ export default function BillingPOS({
     () => parentShowToast || (() => {}),
     [parentShowToast],
   );
-  const [patient, setPatient] = useState(() => {
-    try {
-      const saved = localStorage.getItem(`currentBillingPatient_${userKey}`);
-      return saved ? JSON.parse(saved) : { id: null, name: "", phone: "" };
-    } catch {
-      return { id: null, name: "", phone: "" };
-    }
-  });
-  const [lineItems, setLineItems] = useState(() => {
-    try {
-      const saved = localStorage.getItem(`currentBillingItems_${userKey}`);
-      return saved ? JSON.parse(saved) : [];
-    } catch {
-      return [];
-    }
-  });
-  const [search, setSearch] = useState("");
-  const [showDropdown, setShowDropdown] = useState(false);
-  const [discount, setDiscount] = useState("");
+  const [formState, dispatchForm] = useReducer(
+    (state, action) => {
+      switch (action.type) {
+        case "RESET_FORM":
+          return {
+            ...state,
+            editingDraft: null,
+            lineItems: [],
+            patient: { id: null, name: "", phone: "" },
+            discount: 0,
+            paymentMode: "CASH",
+            search: "",
+            medResults: [],
+            showDropdown: false,
+          };
+        case "SET_MULTIPLE":
+          return { ...state, ...action.payload };
+        case "SET_FIELD":
+          return {
+            ...state,
+            [action.field]:
+              typeof action.value === "function"
+                ? action.value(state[action.field])
+                : action.value,
+          };
+        default:
+          return state;
+      }
+    },
+    { userKey },
+    (initialArgs) => {
+      let initialPatient = { id: null, name: "", phone: "" };
+      try {
+        const saved = localStorage.getItem(
+          `currentBillingPatient_${initialArgs.userKey}`,
+        );
+        if (saved) initialPatient = JSON.parse(saved);
+      } catch {
+        /* ignore */
+      }
+
+      let initialLineItems = [];
+      try {
+        const saved = localStorage.getItem(
+          `currentBillingItems_${initialArgs.userKey}`,
+        );
+        if (saved) initialLineItems = JSON.parse(saved);
+      } catch {
+        /* ignore */
+      }
+
+      return {
+        patient: initialPatient,
+        lineItems: initialLineItems,
+        search: "",
+        showDropdown: false,
+        discount: "",
+        paymentMode: "CASH",
+        medResults: [],
+        editingDraft: null,
+      };
+    },
+  );
+
+  const {
+    patient,
+    lineItems,
+    search,
+    showDropdown,
+    discount,
+    paymentMode,
+    medResults,
+    editingDraft,
+  } = formState;
+
+  const setPatient = useCallback(
+    (val) => dispatchForm({ type: "SET_FIELD", field: "patient", value: val }),
+    [],
+  );
+  const setLineItems = useCallback(
+    (val) =>
+      dispatchForm({ type: "SET_FIELD", field: "lineItems", value: val }),
+    [],
+  );
+  const setSearch = useCallback(
+    (val) => dispatchForm({ type: "SET_FIELD", field: "search", value: val }),
+    [],
+  );
+  const setShowDropdown = useCallback(
+    (val) =>
+      dispatchForm({ type: "SET_FIELD", field: "showDropdown", value: val }),
+    [],
+  );
+  const setDiscount = useCallback(
+    (val) => dispatchForm({ type: "SET_FIELD", field: "discount", value: val }),
+    [],
+  );
+  const setPaymentMode = useCallback(
+    (val) =>
+      dispatchForm({ type: "SET_FIELD", field: "paymentMode", value: val }),
+    [],
+  );
+  const setMedResults = useCallback(
+    (val) =>
+      dispatchForm({ type: "SET_FIELD", field: "medResults", value: val }),
+    [],
+  );
+  const setEditingDraft = useCallback(
+    (val) =>
+      dispatchForm({ type: "SET_FIELD", field: "editingDraft", value: val }),
+    [],
+  );
+
   const [showPreview, setShowPreview] = useState(false);
   const [activeInvoice, setActiveInvoice] = useState(null);
-  const [paymentMode, setPaymentMode] = useState("CASH");
   const [, setMedLoading] = useState(false);
   const [isWalkIn, setIsWalkIn] = useState(false);
   const barcodeInputRef = useRef(null);
@@ -239,14 +340,69 @@ export default function BillingPOS({
   const [patientResults, setPatientResults] = useState([]);
   const [showPatientDropdown, setShowPatientDropdown] = useState(false);
   const [newPatientMsg, setNewPatientMsg] = useState("");
-  const [medResults, setMedResults] = useState([]);
   const [bills, setBills] = useState([]);
-  const [returnItems, setReturnItems] = useState([]);
-  const [selectedBill, setSelectedBill] = useState(null);
+  const [billReturnState, dispatchBillReturn] = useReducer(
+    (state, action) => {
+      switch (action.type) {
+        case "INIT_RETURN":
+          return {
+            ...state,
+            selectedBill: action.payload,
+            returnItems: [],
+            returnReason: "Customer Request",
+            returnNotes: "",
+            showReturnBillModal: true,
+          };
+        case "SET_FIELD":
+          return {
+            ...state,
+            [action.field]:
+              typeof action.value === "function"
+                ? action.value(state[action.field])
+                : action.value,
+          };
+        default:
+          return state;
+      }
+    },
+    {
+      returnItems: [],
+      selectedBill: null,
+      showReturnBillModal: false,
+      returnReason: "Customer Request",
+      returnNotes: "",
+    },
+  );
+
+  const {
+    returnItems,
+    selectedBill,
+    showReturnBillModal,
+    returnReason,
+    returnNotes,
+  } = billReturnState;
+
+  const setReturnItems = useCallback(
+    (val) =>
+      dispatchBillReturn({
+        type: "SET_FIELD",
+        field: "returnItems",
+        value: val,
+      }),
+    [],
+  );
+  const setSelectedBill = useCallback(
+    (val) =>
+      dispatchBillReturn({
+        type: "SET_FIELD",
+        field: "selectedBill",
+        value: val,
+      }),
+    [],
+  );
   const [draftSaving, setDraftSaving] = useState(false);
   const [draftSaved, setDraftSaved] = useState(false);
   const [draftError, setDraftError] = useState("");
-  const [editingDraft, setEditingDraft] = useState(null);
   const [, setPrintLoading] = useState(false);
   const [phoneFieldError, setPhoneFieldError] = useState("");
   const [findError, setFindError] = useState("");
@@ -256,7 +412,15 @@ export default function BillingPOS({
   const [returnModalSelectedBill, setReturnModalSelectedBill] = useState(null);
   const [returnModalItems, setReturnModalItems] = useState({});
   const [returnModalReason, setReturnModalReason] = useState("Patient Request");
-  const [showReturnBillModal, setShowReturnBillModal] = useState(false);
+  const setShowReturnBillModal = useCallback(
+    (val) =>
+      dispatchBillReturn({
+        type: "SET_FIELD",
+        field: "showReturnBillModal",
+        value: val,
+      }),
+    [],
+  );
   const [showBillDetailDrawer, setShowBillDetailDrawer] = useState(false);
   const [allBillsFilter, setAllBillsFilter] = useState("All");
   const [billCardFlash, setBillCardFlash] = useState(null);
@@ -266,8 +430,24 @@ export default function BillingPOS({
   const [allBillsLoaded, setAllBillsLoaded] = useState(false);
   const [showNewBillConfirm, setShowNewBillConfirm] = useState(false);
   const [loyaltyProfile, setLoyaltyProfile] = useState(null);
-  const [returnReason, setReturnReason] = useState("Customer Request");
-  const [returnNotes, setReturnNotes] = useState("");
+  const setReturnReason = useCallback(
+    (val) =>
+      dispatchBillReturn({
+        type: "SET_FIELD",
+        field: "returnReason",
+        value: val,
+      }),
+    [],
+  );
+  const setReturnNotes = useCallback(
+    (val) =>
+      dispatchBillReturn({
+        type: "SET_FIELD",
+        field: "returnNotes",
+        value: val,
+      }),
+    [],
+  );
   const [processingReturn, setProcessingReturn] = useState(false);
   useEffect(() => {
     localStorage.setItem(
@@ -509,14 +689,7 @@ export default function BillingPOS({
   };
 
   const resetBillForm = useCallback(() => {
-    setEditingDraft(null);
-    setLineItems([]);
-    setPatient({ id: null, name: "", phone: "" });
-    setDiscount(0);
-    setPaymentMode("CASH");
-    setSearch("");
-    setMedResults([]);
-    setShowDropdown(false);
+    dispatchForm({ type: "RESET_FORM" });
     showToast("Form Reset", "info");
 
     setTimeout(() => barcodeInputRef.current?.focus(), 100);
@@ -631,6 +804,7 @@ export default function BillingPOS({
     discountAmount,
     paymentMode,
     editingDraft,
+    setEditingDraft,
   ]);
 
   const handleResumeDraftClick = useCallback(
@@ -643,18 +817,6 @@ export default function BillingPOS({
           return;
         }
 
-        setPatient({
-          id: invoice.patientId || null,
-          name:
-            invoice.patientName ||
-            invoice.customerName ||
-            (invoice.patientId ? "" : "Walk-in Customer"),
-          phone: invoice.patientPhone || invoice.customerPhone || "",
-        });
-        setIsWalkIn(
-          !invoice.patientId || invoice.patientName === "Walk-in Customer",
-        );
-
         const loadedItems = (invoice.items || []).map((it) => ({
           id: it.medicineId || it.id,
           name: it.medicine?.name || it.medicineName || it.name || "Medicine",
@@ -664,15 +826,32 @@ export default function BillingPOS({
           gst: Number(it.gstPercentage || it.gst || 0),
           mrp: Number(it.unitPrice || it.mrp || 0),
         }));
-        setLineItems(loadedItems);
-        setDiscount(Number(invoice.discountPercentage || 0));
-        setPaymentMode(invoice.paymentMethod || "CASH");
-        setEditingDraft({
-          id: invoice.id,
-          invoiceNumber: invoice.invoiceNumber || invoice.id,
-          createdAt:
-            invoice.createdAt || bill.createdAt || new Date().toISOString(),
+
+        dispatchForm({
+          type: "SET_MULTIPLE",
+          payload: {
+            patient: {
+              id: invoice.patientId || null,
+              name:
+                invoice.patientName ||
+                invoice.customerName ||
+                (invoice.patientId ? "" : "Walk-in Customer"),
+              phone: invoice.patientPhone || invoice.customerPhone || "",
+            },
+            lineItems: loadedItems,
+            discount: Number(invoice.discountPercentage || 0),
+            paymentMode: invoice.paymentMethod || "CASH",
+            editingDraft: {
+              id: invoice.id,
+              invoiceNumber: invoice.invoiceNumber || invoice.id,
+              createdAt:
+                invoice.createdAt || bill.createdAt || new Date().toISOString(),
+            },
+          },
         });
+        setIsWalkIn(
+          !invoice.patientId || invoice.patientName === "Walk-in Customer",
+        );
         setShowAllBillsModal(false);
         showToast(
           `Resumed draft — ${invoice.invoiceNumber || invoice.id}`,
@@ -717,7 +896,7 @@ export default function BillingPOS({
         );
       }
     },
-    [showToast, editingDraft, selectedBill, resetBillForm],
+    [editingDraft, selectedBill, showToast, resetBillForm, setSelectedBill],
   );
 
   const handleNewBillClick = useCallback(() => {
@@ -987,51 +1166,50 @@ export default function BillingPOS({
 
       const tbody = printDocument.createElement("tbody");
 
-      resolveInvoiceItems(invData)
-        .map(normalizeInvoiceItem)
-        .forEach((item) => {
-          const iPrice = safeNumber(item.price);
-          const iQty = safeNumber(item.qty);
-          const iGst = safeNumber(item.gst || item.gstPercentage);
-          const iDiscP = safeNumber(item.discPercent || item.discountPercent);
+      resolveInvoiceItems(invData).forEach((rawItem) => {
+        const item = normalizeInvoiceItem(rawItem);
+        const iPrice = safeNumber(item.price);
+        const iQty = safeNumber(item.qty);
+        const iGst = safeNumber(item.gst || item.gstPercentage);
+        const iDiscP = safeNumber(item.discPercent || item.discountPercent);
 
-          const lineGross = iPrice * iQty;
-          const lineDisc = lineGross * (iDiscP / 100);
-          const taxable = lineGross - lineDisc;
-          const lineTax = taxable * (iGst / 100);
-          const lineTotal = taxable + lineTax;
+        const lineGross = iPrice * iQty;
+        const lineDisc = lineGross * (iDiscP / 100);
+        const taxable = lineGross - lineDisc;
+        const lineTax = taxable * (iGst / 100);
+        const lineTotal = taxable + lineTax;
 
-          const row = printDocument.createElement("tr");
+        const row = printDocument.createElement("tr");
 
-          row.appendChild(createRowValue(item.name));
-          row.appendChild(
-            createRowValue(iQty, {
-              textAlign: "center",
-            }),
-          );
-          row.appendChild(
-            createRowValue(`₹${iPrice.toFixed(2)}`, {
-              textAlign: "center",
-            }),
-          );
-          row.appendChild(
-            createRowValue(`${iGst}%`, {
-              textAlign: "center",
-            }),
-          );
-          row.appendChild(
-            createRowValue(`₹${lineTax.toFixed(2)}`, {
-              textAlign: "right",
-            }),
-          );
-          row.appendChild(
-            createRowValue(`₹${lineTotal.toFixed(2)}`, {
-              textAlign: "right",
-            }),
-          );
+        row.appendChild(createRowValue(item.name));
+        row.appendChild(
+          createRowValue(iQty, {
+            textAlign: "center",
+          }),
+        );
+        row.appendChild(
+          createRowValue(`₹${iPrice.toFixed(2)}`, {
+            textAlign: "center",
+          }),
+        );
+        row.appendChild(
+          createRowValue(`${iGst}%`, {
+            textAlign: "center",
+          }),
+        );
+        row.appendChild(
+          createRowValue(`₹${lineTax.toFixed(2)}`, {
+            textAlign: "right",
+          }),
+        );
+        row.appendChild(
+          createRowValue(`₹${lineTotal.toFixed(2)}`, {
+            textAlign: "right",
+          }),
+        );
 
-          tbody.appendChild(row);
-        });
+        tbody.appendChild(row);
+      });
 
       table.append(thead, tbody);
       printDocument.body.appendChild(table);
@@ -1213,8 +1391,10 @@ export default function BillingPOS({
     const formattedPhone = `91${cleaned}`;
 
     const itemsList = resolveInvoiceItems(bill)
-      .map(normalizeInvoiceItem)
-      .map((i) => `• ${i.name} x${i.qty} = ₹${(i.price * i.qty).toFixed(2)}`)
+      .map((rawItem) => {
+        const i = normalizeInvoiceItem(rawItem);
+        return `• ${i.name} x${i.qty} = ₹${(i.price * i.qty).toFixed(2)}`;
+      })
       .join("\n");
     const msg = `*VIYAN MEDASSIST*\nInvoice: ${bill.id}\nDate: ${new Date().toLocaleDateString("en-IN")}\nPatient: ${bill.patient}\n\n*Medicines:*\n${itemsList}\n\n*TOTAL: ₹${safeNumber(bill.total).toFixed(2)}*\n\nThank you for visiting Viyan MedAssist!`;
 
@@ -1229,11 +1409,7 @@ export default function BillingPOS({
       showToast("Draft invoices cannot be returned.", "error");
       return;
     }
-    setSelectedBill(bill);
-    setReturnItems([]);
-    setReturnReason("Customer Request");
-    setReturnNotes("");
-    setShowReturnBillModal(true);
+    dispatchBillReturn({ type: "INIT_RETURN", payload: bill });
   };
 
   const confirmReturn = async () => {
@@ -1243,22 +1419,23 @@ export default function BillingPOS({
 
     try {
       const invoiceId = selectedBill.id;
-      const itemsList =
-        resolveInvoiceItems(selectedBill).map(normalizeInvoiceItem);
-      const returnPayload = itemsList
-        .map((item, idx) => ({
-          idx,
-          item,
-          qty: safeNumber(returnItems[idx]) || 0,
-        }))
-        .filter(({ qty }) => qty > 0)
-        .map(({ item, qty }) => ({
-          invoiceItemId: item.invoiceItemId || item.id,
-          medicineId: item.medicineId || null,
-          batchId: item.batchId || null,
-          quantity: qty,
-          reason: returnReason || "Customer Request",
-        }));
+      const returnPayload = resolveInvoiceItems(selectedBill).reduce(
+        (acc, rawItem, idx) => {
+          const item = normalizeInvoiceItem(rawItem);
+          const qty = safeNumber(returnItems[idx]) || 0;
+          if (qty > 0) {
+            acc.push({
+              invoiceItemId: item.invoiceItemId || item.id,
+              medicineId: item.medicineId || null,
+              batchId: item.batchId || null,
+              quantity: qty,
+              reason: returnReason || "Customer Request",
+            });
+          }
+          return acc;
+        },
+        [],
+      );
 
       if (returnPayload.length === 0) {
         showToast("No items selected for return", "error");
@@ -1352,55 +1529,44 @@ export default function BillingPOS({
     return () => clearTimeout(timerId);
   }, []);
 
+  const handleKeyDown = useEffectEvent((e) => {
+    if (e.key === "F2") {
+      e.preventDefault();
+      if (lineItems.length > 0) handleSaveDraft();
+      return;
+    }
+    if (e.key === "F4") {
+      e.preventDefault();
+      if (lineItems.length > 0 || activeInvoice) handlePrint();
+      return;
+    }
+    if (e.key === "F8") {
+      e.preventDefault();
+      const genBtn = document.getElementById("generate-invoice-btn");
+      if (genBtn && !genBtn.disabled) genBtn.click();
+      return;
+    }
+    if ((e.ctrlKey || e.metaKey) && e.key === "f") {
+      e.preventDefault();
+      barcodeInputRef.current?.focus();
+      return;
+    }
+    if (e.key === "Escape") {
+      e.preventDefault();
+      if (showNewBillConfirm) setShowNewBillConfirm(false);
+      else if (showPreview) setShowPreview(false);
+      else if (showReturnBillModal) setShowReturnBillModal(false);
+      else if (showBillDetailDrawer) setShowBillDetailDrawer(false);
+      else if (showAllBillsModal) setShowAllBillsModal(false);
+      else if (showReturnModal) setShowReturnModal(false);
+      else resetBillForm();
+    }
+  });
+
   useEffect(() => {
-    const handleKeyDown = (e) => {
-      if (e.key === "F2") {
-        e.preventDefault();
-        if (lineItems.length > 0) handleSaveDraft();
-        return;
-      }
-      if (e.key === "F4") {
-        e.preventDefault();
-        if (lineItems.length > 0 || activeInvoice) handlePrint();
-        return;
-      }
-      if (e.key === "F8") {
-        e.preventDefault();
-        const genBtn = document.getElementById("generate-invoice-btn");
-        if (genBtn && !genBtn.disabled) genBtn.click();
-        return;
-      }
-      if ((e.ctrlKey || e.metaKey) && e.key === "f") {
-        e.preventDefault();
-        barcodeInputRef.current?.focus();
-        return;
-      }
-      if (e.key === "Escape") {
-        e.preventDefault();
-        if (showNewBillConfirm) setShowNewBillConfirm(false);
-        else if (showPreview) setShowPreview(false);
-        else if (showReturnBillModal) setShowReturnBillModal(false);
-        else if (showBillDetailDrawer) setShowBillDetailDrawer(false);
-        else if (showAllBillsModal) setShowAllBillsModal(false);
-        else if (showReturnModal) setShowReturnModal(false);
-        else resetBillForm();
-      }
-    };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [
-    showReturnBillModal,
-    showBillDetailDrawer,
-    showAllBillsModal,
-    showPreview,
-    showReturnModal,
-    showNewBillConfirm,
-    lineItems,
-    activeInvoice,
-    handleSaveDraft,
-    handlePrint,
-    resetBillForm,
-  ]);
+  }, []);
 
   return (
     <div className="pos-container">
@@ -1521,7 +1687,15 @@ export default function BillingPOS({
             <div className="pos-card-title">
               <span>PATIENT DETAILS</span>
               <div
+                role="button"
+                tabIndex={0}
                 className="walk-in-toggle"
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    e.currentTarget.click();
+                  }
+                }}
                 onClick={(e) => {
                   e.stopPropagation();
                   setIsWalkIn((prev) => !prev);
@@ -1540,7 +1714,7 @@ export default function BillingPOS({
                       : "var(--overlay-10)",
                     borderRadius: "20px",
                     position: "relative",
-                    transition: "0.3s",
+                    transition: "background-color 0.3s, background 0.3s",
                   }}
                 >
                   <div
@@ -1552,7 +1726,7 @@ export default function BillingPOS({
                       height: "16px",
                       background: "white",
                       borderRadius: "50%",
-                      transition: "0.3s",
+                      transition: "left 0.3s",
                     }}
                   />
                 </div>
@@ -1561,7 +1735,7 @@ export default function BillingPOS({
             </div>
             <div className="patient-row">
               <div className="pos-input-group">
-                <label>PATIENT NAME</label>
+                <label htmlFor="patient-name-input">PATIENT NAME</label>
                 <input
                   required
                   id="patient-name-input"
@@ -1574,7 +1748,7 @@ export default function BillingPOS({
                 />
               </div>
               <div className="pos-input-group">
-                <label>PHONE NUMBER</label>
+                <label htmlFor="patient-phone-input">PHONE NUMBER</label>
                 <input
                   required
                   id="patient-phone-input"
@@ -1610,7 +1784,7 @@ export default function BillingPOS({
 
             <AnimatePresence>
               {showPatientDropdown && patientResults.length > 0 && (
-                <motion.div
+                <m.div
                   className="patient-search-dropdown"
                   initial={{ opacity: 0, y: -5 }}
                   animate={{ opacity: 1, y: 0 }}
@@ -1618,12 +1792,20 @@ export default function BillingPOS({
                 >
                   {patientResults.map((p, pIdx) => (
                     <div
+                      role="button"
+                      tabIndex={0}
                       key={
                         p.id ||
                         p._id ||
                         `pat-${p.fullName || p.name || "p"}-${p.phone || ""}-${pIdx}`
                       }
                       className="patient-result-row"
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" || e.key === " ") {
+                          e.preventDefault();
+                          e.currentTarget.click();
+                        }
+                      }}
                       onClick={() => selectPatient(p)}
                     >
                       <span className="patient-result-name">
@@ -1637,7 +1819,7 @@ export default function BillingPOS({
                       )}
                     </div>
                   ))}
-                </motion.div>
+                </m.div>
               )}
             </AnimatePresence>
 
@@ -1666,7 +1848,15 @@ export default function BillingPOS({
 
           <div className="pos-card">
             <div
+              role="button"
+              tabIndex={0}
               className="search-wrapper"
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  e.currentTarget.click();
+                }
+              }}
               onClick={(e) => e.stopPropagation()}
             >
               <Barcode className="barcode-icon" size={24} />
@@ -1703,11 +1893,19 @@ export default function BillingPOS({
               )}
               <AnimatePresence>
                 {showDropdown && medResults.length > 0 && (
-                  <motion.div
+                  <m.div
+                    role="button"
+                    tabIndex={0}
                     className="autocomplete-dropdown"
                     initial={{ opacity: 0, y: -10 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -10 }}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        e.currentTarget.click();
+                      }
+                    }}
                     onClick={(e) => e.stopPropagation()}
                   >
                     {medResults.map((res) => {
@@ -1715,6 +1913,8 @@ export default function BillingPOS({
                       const isOOS = availQty <= 0 || res.isOutOfStock;
                       return (
                         <div
+                          role="button"
+                          tabIndex={0}
                           key={res.id}
                           className={`result-row${isOOS ? " oos" : ""}`}
                           style={
@@ -1726,6 +1926,12 @@ export default function BillingPOS({
                                 }
                               : {}
                           }
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter" || e.key === " ") {
+                              e.preventDefault();
+                              e.currentTarget.click();
+                            }
+                          }}
                           onClick={(e) => {
                             e.stopPropagation();
                             if (!isOOS) addToLineItems(res);
@@ -1783,7 +1989,7 @@ export default function BillingPOS({
                         </div>
                       );
                     })}
-                  </motion.div>
+                  </m.div>
                 )}
               </AnimatePresence>
             </div>
@@ -2202,7 +2408,15 @@ export default function BillingPOS({
                 style={{ display: "flex", gap: "12px", alignItems: "center" }}
               >
                 <span
+                  role="button"
+                  tabIndex={0}
                   className="view-all-link"
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      e.currentTarget.click();
+                    }
+                  }}
                   onClick={() => {
                     if (
                       window.confirm(
@@ -2217,7 +2431,15 @@ export default function BillingPOS({
                   Clear All
                 </span>
                 <span
+                  role="button"
+                  tabIndex={0}
                   className="view-all-link"
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      e.currentTarget.click();
+                    }
+                  }}
                   onClick={() => setShowAllBillsModal(true)}
                 >
                   View All →
@@ -2236,12 +2458,20 @@ export default function BillingPOS({
             >
               <AnimatePresence>
                 {visibleBills.map((bill) => (
-                  <motion.div
+                  <m.div
+                    role="button"
+                    tabIndex={0}
                     key={bill.id}
                     className={`bill-card-compact ${billCardFlash === bill.id ? "bill-card-flash" : ""} ${bill.status === "DRAFT" ? "bill-card-draft" : ""} ${bill.status === "RETURNED" ? "bill-card-returned" : ""}`}
                     initial={{ opacity: 0, y: -20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.3, ease: "easeOut" }}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        e.currentTarget.click();
+                      }
+                    }}
                     onClick={() => openBillDetail(bill)}
                   >
                     <div className="bill-card-header">
@@ -2369,7 +2599,7 @@ export default function BillingPOS({
                         </>
                       )}
                     </div>
-                  </motion.div>
+                  </m.div>
                 ))}
               </AnimatePresence>
             </div>
@@ -2522,14 +2752,30 @@ export default function BillingPOS({
       <AnimatePresence>
         {showNewBillConfirm && (
           <div
+            role="button"
+            tabIndex={0}
             className="stock-modal-overlay"
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                e.currentTarget.click();
+              }
+            }}
             onClick={() => setShowNewBillConfirm(false)}
           >
-            <motion.div
+            <m.div
+              role="button"
+              tabIndex={0}
               className="stock-modal-content confirm-modal"
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.9 }}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  e.currentTarget.click();
+                }
+              }}
               onClick={(e) => e.stopPropagation()}
             >
               <div
@@ -2614,7 +2860,7 @@ export default function BillingPOS({
                   </button>
                 </div>
               </div>
-            </motion.div>
+            </m.div>
           </div>
         )}
       </AnimatePresence>
@@ -2622,14 +2868,30 @@ export default function BillingPOS({
       <AnimatePresence>
         {showAllBillsModal && (
           <div
+            role="button"
+            tabIndex={0}
             className="stock-modal-overlay"
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                e.currentTarget.click();
+              }
+            }}
             onClick={() => setShowAllBillsModal(false)}
           >
-            <motion.div
+            <m.div
+              role="button"
+              tabIndex={0}
               className="stock-modal-content all-bills-modal"
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  e.currentTarget.click();
+                }
+              }}
               onClick={(e) => e.stopPropagation()}
             >
               <div className="stock-modal-header">
@@ -2688,119 +2950,123 @@ export default function BillingPOS({
                       </tr>
                     </thead>
                     <tbody>
-                      {(bills || [])
-                        .filter((b) => {
-                          if (allBillsFilter === "All") return true;
-                          if (allBillsFilter === "PAID")
-                            return (
-                              b.status === "PAID" || b.status === "FINALIZED"
-                            );
-                          if (allBillsFilter === "DRAFT")
-                            return b.status === "DRAFT";
-                          if (allBillsFilter === "RETURNED")
-                            return (
-                              b.status === "RETURNED" ||
-                              b.status === "REFUNDED" ||
-                              b.status === "PARTIALLY_REFUNDED"
-                            );
-                          return b.status === allBillsFilter;
-                        })
-                        .map((bill) => (
-                          <tr key={bill.id}>
-                            <td style={{ fontWeight: 600 }}>
-                              {resolveInvoiceField(
-                                bill,
-                                "invoiceNumber",
-                                bill.id,
-                              )}
-                            </td>
-                            <td>{bill.time}</td>
-                            <td>{bill.patient}</td>
-                            <td>{bill.phone}</td>
-                            <td>{bill.items.length}</td>
-                            <td style={{ fontWeight: 700 }}>
-                              ₹{safeNumber(bill.total).toFixed(2)}
-                            </td>
-                            <td>
-                              <span
-                                className={`status-badge ${bill.status === "DRAFT" ? "badge-draft" : bill.status === "RETURNED" ? "badge-returned" : "badge-paid"}`}
-                              >
-                                {bill.status}
-                              </span>
-                            </td>
-                            <td>
-                              <div className="all-bills-actions">
-                                {bill.status === "DRAFT" ? (
-                                  <>
-                                    <button
-                                      className="all-bills-action-btn"
-                                      onClick={() =>
-                                        handleResumeDraftClick(bill)
-                                      }
-                                      title="Resume Draft"
-                                      style={{
-                                        color: "var(--color-primary, #14b8a6)",
-                                      }}
-                                    >
-                                      <Play size={14} fill="currentColor" />
-                                    </button>
-                                    <button
-                                      className="all-bills-action-btn"
-                                      onClick={() =>
-                                        handleDeleteDraftConfirm(bill)
-                                      }
-                                      title="Delete Draft"
-                                      style={{
-                                        color: "var(--color-error, #ef4444)",
-                                      }}
-                                    >
-                                      <Trash2 size={14} />
-                                    </button>
-                                  </>
-                                ) : (
-                                  <>
-                                    <button
-                                      className="all-bills-action-btn"
-                                      onClick={() => {
-                                        openBillDetail(bill);
-                                        setShowAllBillsModal(false);
-                                      }}
-                                      title="View"
-                                    >
-                                      <Eye size={14} />
-                                    </button>
-                                    <button
-                                      className="all-bills-action-btn"
-                                      onClick={() => handleBillPrint(bill)}
-                                      title="Print"
-                                    >
-                                      <Printer size={14} />
-                                    </button>
-                                    <button
-                                      className="all-bills-action-btn"
-                                      onClick={() => handleBillWhatsApp(bill)}
-                                      title="WhatsApp"
-                                    >
-                                      <MessageCircle size={14} />
-                                    </button>
-                                    <button
-                                      className="all-bills-action-btn"
-                                      onClick={() => handleBillReturn(bill)}
-                                      title="Return"
-                                    >
-                                      <RefreshCw size={14} />
-                                    </button>
-                                  </>
+                      {(bills || []).reduce((acc, bill) => {
+                        let keep;
+                        if (allBillsFilter === "All") keep = true;
+                        else if (allBillsFilter === "PAID")
+                          keep =
+                            bill.status === "PAID" ||
+                            bill.status === "FINALIZED";
+                        else if (allBillsFilter === "DRAFT")
+                          keep = bill.status === "DRAFT";
+                        else if (allBillsFilter === "RETURNED")
+                          keep =
+                            bill.status === "RETURNED" ||
+                            bill.status === "REFUNDED" ||
+                            bill.status === "PARTIALLY_REFUNDED";
+                        else keep = bill.status === allBillsFilter;
+
+                        if (keep) {
+                          acc.push(
+                            <tr key={bill.id}>
+                              <td style={{ fontWeight: 600 }}>
+                                {resolveInvoiceField(
+                                  bill,
+                                  "invoiceNumber",
+                                  bill.id,
                                 )}
-                              </div>
-                            </td>
-                          </tr>
-                        ))}
+                              </td>
+                              <td>{bill.time}</td>
+                              <td>{bill.patient}</td>
+                              <td>{bill.phone}</td>
+                              <td>{bill.items.length}</td>
+                              <td style={{ fontWeight: 700 }}>
+                                ₹{safeNumber(bill.total).toFixed(2)}
+                              </td>
+                              <td>
+                                <span
+                                  className={`status-badge ${bill.status === "DRAFT" ? "badge-draft" : bill.status === "RETURNED" ? "badge-returned" : "badge-paid"}`}
+                                >
+                                  {bill.status}
+                                </span>
+                              </td>
+                              <td>
+                                <div className="all-bills-actions">
+                                  {bill.status === "DRAFT" ? (
+                                    <>
+                                      <button
+                                        className="all-bills-action-btn"
+                                        onClick={() =>
+                                          handleResumeDraftClick(bill)
+                                        }
+                                        title="Resume Draft"
+                                        style={{
+                                          color:
+                                            "var(--color-primary, #14b8a6)",
+                                        }}
+                                      >
+                                        <Play size={14} fill="currentColor" />
+                                      </button>
+                                      <button
+                                        className="all-bills-action-btn"
+                                        onClick={() =>
+                                          handleDeleteDraftConfirm(bill)
+                                        }
+                                        title="Delete Draft"
+                                        style={{
+                                          color: "var(--color-error, #ef4444)",
+                                        }}
+                                      >
+                                        <Trash2 size={14} />
+                                      </button>
+                                    </>
+                                  ) : (
+                                    <>
+                                      <button
+                                        className="all-bills-action-btn"
+                                        onClick={() => {
+                                          openBillDetail(bill);
+                                          setShowAllBillsModal(false);
+                                        }}
+                                        title="View"
+                                      >
+                                        <Eye size={14} />
+                                      </button>
+                                      <button
+                                        className="all-bills-action-btn"
+                                        onClick={() => handleBillPrint(bill)}
+                                        title="Print"
+                                      >
+                                        <Printer size={14} />
+                                      </button>
+                                      <button
+                                        className="all-bills-action-btn"
+                                        onClick={() => handleBillWhatsApp(bill)}
+                                        title="WhatsApp"
+                                      >
+                                        <MessageCircle size={14} />
+                                      </button>
+                                      <button
+                                        className="all-bills-action-btn"
+                                        onClick={() => handleBillReturn(bill)}
+                                        title="Return"
+                                      >
+                                        <RefreshCw size={14} />
+                                      </button>
+                                    </>
+                                  )}
+                                </div>
+                              </td>
+                            </tr>,
+                          );
+                        }
+                        return acc;
+                      }, [])}
                     </tbody>
                   </table>
                 </div>
               </div>
-            </motion.div>
+            </m.div>
           </div>
         )}
       </AnimatePresence>
@@ -2808,19 +3074,35 @@ export default function BillingPOS({
       <AnimatePresence>
         {showBillDetailDrawer && selectedBill && (
           <>
-            <motion.div
+            <m.div
+              role="button"
+              tabIndex={0}
               className="drawer-backdrop"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  e.currentTarget.click();
+                }
+              }}
               onClick={() => setShowBillDetailDrawer(false)}
             />
-            <motion.div
+            <m.div
+              role="button"
+              tabIndex={0}
               className="bill-detail-drawer"
               initial={{ x: "100%" }}
               animate={{ x: 0 }}
               exit={{ x: "100%" }}
               transition={{ type: "tween", duration: 0.3 }}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  e.currentTarget.click();
+                }
+              }}
               onClick={(e) => e.stopPropagation()}
             >
               <div className="drawer-header">
@@ -2893,16 +3175,10 @@ export default function BillingPOS({
                     </tr>
                   </thead>
                   <tbody>
-                    {(selectedBill.itemsList || [])
-                      .map(normalizeInvoiceItem)
-                      .map((item, idx) => (
-                        <tr
-                          key={
-                            item.id ||
-                            item.medicineId ||
-                            `${item.name}-${item.batchNumber || ""}-${idx}`
-                          }
-                        >
+                    {(selectedBill.itemsList || []).map((rawItem) => {
+                      const item = normalizeInvoiceItem(rawItem);
+                      return (
+                        <tr key={item.id || item.medicineId}>
                           <td>{item.name}</td>
                           <td>{safeNumber(item.qty)}</td>
                           <td>₹{safeNumber(item.price).toFixed(2)}</td>
@@ -2913,7 +3189,8 @@ export default function BillingPOS({
                             ).toFixed(2)}
                           </td>
                         </tr>
-                      ))}
+                      );
+                    })}
                   </tbody>
                 </table>
                 <div className="drawer-summary">
@@ -3038,7 +3315,7 @@ export default function BillingPOS({
                   </>
                 )}
               </div>
-            </motion.div>
+            </m.div>
           </>
         )}
       </AnimatePresence>
@@ -3046,14 +3323,30 @@ export default function BillingPOS({
       <AnimatePresence>
         {showReturnBillModal && selectedBill && (
           <div
+            role="button"
+            tabIndex={0}
             className="stock-modal-overlay"
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                e.currentTarget.click();
+              }
+            }}
             onClick={() => setShowReturnBillModal(false)}
           >
-            <motion.div
+            <m.div
+              role="button"
+              tabIndex={0}
               className="stock-modal-content return-modal"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: 20 }}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  e.currentTarget.click();
+                }
+              }}
               onClick={(e) => e.stopPropagation()}
             >
               <div className="stock-modal-header">
@@ -3083,16 +3376,10 @@ export default function BillingPOS({
                     </tr>
                   </thead>
                   <tbody>
-                    {resolveInvoiceItems(selectedBill)
-                      .map(normalizeInvoiceItem)
-                      .map((item, idx) => (
-                        <tr
-                          key={
-                            item.id ||
-                            item.medicineId ||
-                            `${item.name}-${item.batchNumber || ""}-${idx}`
-                          }
-                        >
+                    {resolveInvoiceItems(selectedBill).map((rawItem, idx) => {
+                      const item = normalizeInvoiceItem(rawItem);
+                      return (
+                        <tr key={item.id || item.medicineId}>
                           <td>{item.name}</td>
                           <td>{item.qty}</td>
                           <td>
@@ -3126,12 +3413,14 @@ export default function BillingPOS({
                             ).toFixed(2)}
                           </td>
                         </tr>
-                      ))}
+                      );
+                    })}
                   </tbody>
                 </table>
                 <div className="pos-input-group" style={{ marginTop: "16px" }}>
-                  <label>Return Reason</label>
+                  <label htmlFor="field_022a5f">Return Reason</label>
                   <select
+                    id="field_022a5f"
                     className="pos-input"
                     value={returnReason}
                     onChange={(e) => setReturnReason(e.target.value)}
@@ -3143,8 +3432,9 @@ export default function BillingPOS({
                   </select>
                 </div>
                 <div className="pos-input-group" style={{ marginTop: "12px" }}>
-                  <label>Notes</label>
+                  <label htmlFor="field_ix7uzk">Notes</label>
                   <textarea
+                    id="field_ix7uzk"
                     className="pos-input return-notes"
                     value={returnNotes}
                     onChange={(e) => setReturnNotes(e.target.value)}
@@ -3187,7 +3477,7 @@ export default function BillingPOS({
                   {processingReturn ? "Processing..." : "Process Return"}
                 </button>
               </div>
-            </motion.div>
+            </m.div>
           </div>
         )}
       </AnimatePresence>
@@ -3195,15 +3485,31 @@ export default function BillingPOS({
       <AnimatePresence>
         {showReturnModal && (
           <div
+            role="button"
+            tabIndex={0}
             className="stock-modal-overlay"
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                e.currentTarget.click();
+              }
+            }}
             onClick={() => setShowReturnModal(false)}
           >
-            <motion.div
+            <m.div
+              role="button"
+              tabIndex={0}
               className="stock-modal-content"
               style={{ width: "580px" }}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: 20 }}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  e.currentTarget.click();
+                }
+              }}
               onClick={(e) => e.stopPropagation()}
             >
               <div className="stock-modal-header">
@@ -3222,9 +3528,10 @@ export default function BillingPOS({
                   className="pos-input-group"
                   style={{ marginBottom: "24px" }}
                 >
-                  <label>Find Bill</label>
+                  <label htmlFor="field_i9e1os">Find Bill</label>
                   <div style={{ display: "flex", gap: "8px" }}>
                     <input
+                      id="field_i9e1os"
                       required
                       className="pos-input"
                       style={{ flex: 1 }}
@@ -3236,64 +3543,77 @@ export default function BillingPOS({
                 </div>
                 {!returnModalSelectedBill ? (
                   <div>
-                    {(bills || [])
-                      .filter((b) =>
-                        ["FINALIZED", "PAID", "RETURNED"].includes(b.status),
+                    {(bills || []).reduce((acc, bill) => {
+                      if (acc.length >= 5) return acc;
+                      if (
+                        !["FINALIZED", "PAID", "RETURNED"].includes(bill.status)
                       )
-                      .filter((b) => {
-                        const q = returnSearchQuery.toLowerCase();
-                        if (!q) return false;
-                        const inv = resolveInvoiceField(
-                          b,
-                          "invoiceNumber",
-                          b.id,
-                        ).toLowerCase();
-                        const name = resolveInvoiceField(
-                          b,
-                          "patientName",
-                          "",
-                        ).toLowerCase();
-                        return inv.includes(q) || name.includes(q);
-                      })
-                      .slice(0, 5)
-                      .map((bill) => (
-                        <div
-                          key={bill.id}
-                          className="patient-result-row"
-                          style={{
-                            cursor: "pointer",
-                            padding: "10px",
-                            borderRadius: "8px",
-                            marginBottom: "4px",
-                          }}
-                          onClick={() => {
-                            setReturnModalSelectedBill(bill);
-                            setReturnModalItems({});
-                            setReturnModalReason("Patient Request");
-                          }}
-                        >
-                          <span className="patient-result-name">
-                            {resolveInvoiceField(
-                              bill,
-                              "invoiceNumber",
-                              bill.id,
-                            )}
-                          </span>
-                          <span className="patient-result-phone">
-                            {resolveInvoiceField(
-                              bill,
-                              "patientName",
-                              "Walk-in Customer",
-                            )}
-                          </span>
-                          <span className="result-meta">
-                            ₹
-                            {safeNumber(
-                              resolveInvoiceField(bill, "total", 0),
-                            ).toFixed(2)}
-                          </span>
-                        </div>
-                      ))}
+                        return acc;
+
+                      const q = returnSearchQuery.toLowerCase();
+                      if (!q) return acc;
+
+                      const inv = resolveInvoiceField(
+                        bill,
+                        "invoiceNumber",
+                        bill.id,
+                      ).toLowerCase();
+                      const name = resolveInvoiceField(
+                        bill,
+                        "patientName",
+                        "",
+                      ).toLowerCase();
+
+                      if (inv.includes(q) || name.includes(q)) {
+                        acc.push(
+                          <div
+                            role="button"
+                            tabIndex={0}
+                            key={bill.id}
+                            className="patient-result-row"
+                            style={{
+                              cursor: "pointer",
+                              padding: "10px",
+                              borderRadius: "8px",
+                              marginBottom: "4px",
+                            }}
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter" || e.key === " ") {
+                                e.preventDefault();
+                                e.currentTarget.click();
+                              }
+                            }}
+                            onClick={() => {
+                              setReturnModalSelectedBill(bill);
+                              setReturnModalItems({});
+                              setReturnModalReason("Patient Request");
+                            }}
+                          >
+                            <span className="patient-result-name">
+                              {resolveInvoiceField(
+                                bill,
+                                "invoiceNumber",
+                                bill.id,
+                              )}
+                            </span>
+                            <span className="patient-result-phone">
+                              {resolveInvoiceField(
+                                bill,
+                                "patientName",
+                                "Walk-in Customer",
+                              )}
+                            </span>
+                            <span className="result-meta">
+                              ₹
+                              {safeNumber(
+                                resolveInvoiceField(bill, "total", 0),
+                              ).toFixed(2)}
+                            </span>
+                          </div>,
+                        );
+                      }
+                      return acc;
+                    }, [])}
                     {returnSearchQuery &&
                       bills.filter((b) => {
                         const q = returnSearchQuery.toLowerCase();
@@ -3364,67 +3684,67 @@ export default function BillingPOS({
                         padding: "16px",
                       }}
                     >
-                      {resolveInvoiceItems(returnModalSelectedBill)
-                        .map(normalizeInvoiceItem)
-                        .map((item, idx) => (
-                          <div
-                            key={
-                              item.id ||
-                              item.medicineId ||
-                              `${item.name}-${item.batchNumber || ""}-${idx}`
-                            }
-                            style={{
-                              display: "flex",
-                              alignItems: "center",
-                              gap: "12px",
-                              marginBottom: "12px",
-                            }}
-                          >
-                            <input
-                              required
-                              type="checkbox"
-                              checked={returnModalItems[idx]?.checked ?? true}
-                              onChange={(e) =>
-                                setReturnModalItems((prev) => ({
-                                  ...prev,
-                                  [idx]: {
-                                    ...prev[idx],
-                                    checked: e.target.checked,
-                                  },
-                                }))
-                              }
-                            />
-                            <div style={{ flex: 1 }}>{item.name}</div>
-                            <input
-                              required
-                              className="p-cost-input"
-                              style={{ width: "50px" }}
-                              type="number"
-                              min={0}
-                              max={item.qty}
-                              value={returnModalItems[idx]?.qty ?? 0}
-                              onChange={(e) =>
-                                setReturnModalItems((prev) => ({
-                                  ...prev,
-                                  [idx]: {
-                                    ...prev[idx],
-                                    qty: Math.min(
-                                      item.qty,
-                                      Math.max(0, safeNumber(e.target.value)),
-                                    ),
-                                  },
-                                }))
-                              }
-                            />
-                          </div>
-                        ))}
+                      {resolveInvoiceItems(returnModalSelectedBill).map(
+                        (rawItem, idx) => {
+                          const item = normalizeInvoiceItem(rawItem);
+                          return (
+                            <div
+                              key={item.id || item.medicineId}
+                              style={{
+                                display: "flex",
+                                alignItems: "center",
+                                gap: "12px",
+                                marginBottom: "12px",
+                              }}
+                            >
+                              <input
+                                required
+                                type="checkbox"
+                                checked={returnModalItems[idx]?.checked ?? true}
+                                onChange={(e) =>
+                                  setReturnModalItems((prev) => ({
+                                    ...prev,
+                                    [idx]: {
+                                      ...prev[idx],
+                                      checked: e.target.checked,
+                                    },
+                                  }))
+                                }
+                              />
+                              <div style={{ flex: 1 }}>{item.name}</div>
+                              <input
+                                required
+                                className="p-cost-input"
+                                style={{ width: "50px" }}
+                                type="number"
+                                min={0}
+                                max={item.qty}
+                                value={returnModalItems[idx]?.qty ?? 0}
+                                onChange={(e) =>
+                                  setReturnModalItems((prev) => ({
+                                    ...prev,
+                                    [idx]: {
+                                      ...prev[idx],
+                                      qty: Math.min(
+                                        item.qty,
+                                        Math.max(0, safeNumber(e.target.value)),
+                                      ),
+                                    },
+                                  }))
+                                }
+                              />
+                            </div>
+                          );
+                        },
+                      )}
                     </div>
                     <div
                       className="pos-input-group"
                       style={{ marginTop: "24px" }}
                     >
-                      <label>Return Reason</label>
+                      <label htmlFor="field_n7vwud">Return Reason</label>
                       <select
+                        id="field_n7vwud"
                         className="pos-input"
                         value={returnModalReason}
                         onChange={(e) => setReturnModalReason(e.target.value)}
@@ -3457,23 +3777,24 @@ export default function BillingPOS({
                       border: "none",
                     }}
                     onClick={async () => {
-                      const items = resolveInvoiceItems(
+                      const returnPayload = resolveInvoiceItems(
                         returnModalSelectedBill,
-                      ).map(normalizeInvoiceItem);
-                      const returnPayload = items
-                        .map((item, idx) => ({
-                          item,
-                          qty: safeNumber(returnModalItems[idx]?.qty) || 0,
-                          checked: returnModalItems[idx]?.checked !== false,
-                        }))
-                        .filter(({ qty, checked }) => checked && qty > 0)
-                        .map(({ item, qty }) => ({
-                          invoiceItemId: item.invoiceItemId || item.id,
-                          medicineId: item.medicineId || null,
-                          batchId: item.batchId || null,
-                          quantity: qty,
-                          reason: returnModalReason,
-                        }));
+                      ).reduce((acc, rawItem, idx) => {
+                        const item = normalizeInvoiceItem(rawItem);
+                        const qty = safeNumber(returnModalItems[idx]?.qty) || 0;
+                        const checked =
+                          returnModalItems[idx]?.checked !== false;
+                        if (checked && qty > 0) {
+                          acc.push({
+                            invoiceItemId: item.invoiceItemId || item.id,
+                            medicineId: item.medicineId || null,
+                            batchId: item.batchId || null,
+                            quantity: qty,
+                            reason: returnModalReason,
+                          });
+                        }
+                        return acc;
+                      }, []);
 
                       if (returnPayload.length === 0) {
                         showToast("No items selected for return", "error");
@@ -3523,7 +3844,7 @@ export default function BillingPOS({
                   </button>
                 )}
               </div>
-            </motion.div>
+            </m.div>
           </div>
         )}
       </AnimatePresence>

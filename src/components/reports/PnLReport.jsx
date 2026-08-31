@@ -7,7 +7,7 @@ import {
   X,
   UploadCloud,
 } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
+import { AnimatePresence, m } from "framer-motion";
 import api from "../../api.js";
 import { API_ROUTES } from "../../constants/api.routes.js";
 import { safeNumber } from "../../utils/number.js";
@@ -148,7 +148,7 @@ export default function PnLReport({ from, to, showToast }) {
   function renderExpenseModal() {
     return (
       <div className="stock-modal-overlay" style={{ zIndex: 1100 }}>
-        <motion.div
+        <m.div
           className="stock-modal-content"
           style={{ width: "420px" }}
           initial={{ opacity: 0, y: 20 }}
@@ -169,9 +169,9 @@ export default function PnLReport({ from, to, showToast }) {
           <div className="stock-modal-body" style={{ textAlign: "left" }}>
             <div className="p-form-grid" style={{ gridTemplateColumns: "1fr" }}>
               <div className="pos-input-group">
-                <label className="p-label">CATEGORY</label>
+                <label htmlFor="field_79zo1g" className="p-label">CATEGORY</label>
                 <select
-                  className="pos-input"
+ id="field_79zo1g"                  className="pos-input"
                   value={expenseCategory}
                   onChange={(e) => setExpenseCategory(e.target.value)}
                 >
@@ -184,9 +184,9 @@ export default function PnLReport({ from, to, showToast }) {
                 </select>
               </div>
               <div className="pos-input-group">
-                <label className="p-label">AMOUNT ₹</label>
+                <label htmlFor="field_hv99o8" className="p-label">AMOUNT ₹</label>
                 <input
-                  required
+ id="field_hv99o8"                  required
                   className="pos-input"
                   type="number"
                   placeholder="0.00"
@@ -195,9 +195,9 @@ export default function PnLReport({ from, to, showToast }) {
                 />
               </div>
               <div className="pos-input-group">
-                <label className="p-label">DESCRIPTION</label>
+                <label htmlFor="field_brtih5" className="p-label">DESCRIPTION</label>
                 <textarea
-                  className="pos-input"
+ id="field_brtih5"                  className="pos-input"
                   style={{ minHeight: "80px" }}
                   placeholder="Notes about this expense..."
                   value={expenseDescription}
@@ -319,7 +319,7 @@ export default function PnLReport({ from, to, showToast }) {
               {expenseSaving ? "Saving..." : "Save Expense"}
             </button>
           </div>
-        </motion.div>
+        </m.div>
       </div>
     );
   }

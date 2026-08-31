@@ -1,4 +1,11 @@
-import { useState, useEffect, useMemo, useCallback } from "react";
+import {
+  useState,
+  useEffect,
+  useMemo,
+  useCallback,
+  useReducer,
+  useRef,
+} from "react";
 import {
   AlertTriangle,
   Bell,
@@ -25,7 +32,7 @@ import {
   Archive,
   Truck,
 } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
+import { AnimatePresence, m } from "framer-motion";
 import ExcelJS from "exceljs";
 import { saveAs } from "file-saver";
 import api from "../api";
@@ -58,40 +65,349 @@ function computeStatus(days, qty) {
 }
 
 export default function ExpiryBatchIntelligence({ showToast }) {
-  const [batches, setBatches] = useState([]);
-  const [suggestions, setSuggestions] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState("timeline");
-  const [filter, setFilter] = useState("ALL");
-  const [searchQuery, setSearchQuery] = useState("");
-  const [showBanner, setShowBanner] = useState(true);
-  const [showConfigModal, setShowConfigModal] = useState(false);
-  const [showActionModal, setShowActionModal] = useState(false);
-  const [actionType, setActionType] = useState(null);
-  const [selectedItem, setSelectedItem] = useState(null);
-  const [processing, setProcessing] = useState(false);
-  const [reminders, setReminders] = useState([]);
-  const [fifoEnabled, setFifoEnabled] = useState(true);
-  const [expandedMed, setExpandedMed] = useState(null);
-  const [expiryMetrics, setExpiryMetrics] = useState(null);
-  // Bulk disposal state
-  const [selectedBatchIds, setSelectedBatchIds] = useState(new Set());
-  const [showDisposeModal, setShowDisposeModal] = useState(false);
-  const [disposing, setDisposing] = useState(false);
-  // Clear-expired reload key: increment to trigger a fresh data fetch
-  const [clearReloadKey, setClearReloadKey] = useState(0);
+  const [intelligenceState, dispatchIntelligence] = useReducer(
+    (state, action) => {
+      if (action.type === "SET_FIELD") {
+        return {
+          ...state,
+          [action.field]:
+            typeof action.value === "function"
+              ? action.value(state[action.field])
+              : action.value,
+        };
+      }
+      return state;
+    },
+    {
+      batches: [],
+      suggestions: [],
+      loading: true,
+      activeTab: "timeline",
+      filter: "ALL",
+      searchQuery: "",
+      showBanner: true,
+      showConfigModal: false,
+      showActionModal: false,
+      actionType: null,
+      selectedItem: null,
+      processing: false,
+      reminders: [],
+      fifoEnabled: true,
+      expandedMed: null,
+      expiryMetrics: null,
+      selectedBatchIds: new Set(),
+      showDisposeModal: false,
+      disposing: false,
+      clearReloadKey: 0,
+      showBulkSupplierModal: false,
+      bulkSupplierId: "",
+      suppliers: [],
+      bulkAssigning: false,
+      bulkReturning: false,
+      backfilling: false,
+      showImportModal: false,
+      importFile: null,
+      importing: false,
+      importResult: null,
+    },
+  );
 
-  // Bulk supplier assignment state
-  const [showBulkSupplierModal, setShowBulkSupplierModal] = useState(false);
-  const [bulkSupplierId, setBulkSupplierId] = useState("");
-  const [suppliers, setSuppliers] = useState([]);
-  const [bulkAssigning, setBulkAssigning] = useState(false);
-  const [bulkReturning, setBulkReturning] = useState(false);
-  const [backfilling, setBackfilling] = useState(false);
-  const [showImportModal, setShowImportModal] = useState(false);
-  const [importFile, setImportFile] = useState(null);
-  const [importing, setImporting] = useState(false);
-  const [importResult, setImportResult] = useState(null);
+  const {
+    batches,
+    suggestions,
+    loading,
+    activeTab,
+    filter,
+    searchQuery,
+    showBanner,
+    showConfigModal,
+    showActionModal,
+    actionType,
+    selectedItem,
+    processing,
+    reminders,
+    fifoEnabled,
+    expandedMed,
+    expiryMetrics,
+    selectedBatchIds,
+    showDisposeModal,
+    disposing,
+    clearReloadKey,
+    showBulkSupplierModal,
+    bulkSupplierId,
+    suppliers,
+    bulkAssigning,
+    bulkReturning,
+    backfilling,
+    showImportModal,
+    importFile,
+    importing,
+    importResult,
+  } = intelligenceState;
+
+  const isExportingRef = useRef(false);
+  const isSavingEditRef = useRef(false);
+  const isDeletingBatchRef = useRef(false);
+  const isSavingConfigRef = useRef(false);
+
+  const setBatches = useCallback(
+    (val) =>
+      dispatchIntelligence({ type: "SET_FIELD", field: "batches", value: val }),
+    [],
+  );
+  const setSuggestions = useCallback(
+    (val) =>
+      dispatchIntelligence({
+        type: "SET_FIELD",
+        field: "suggestions",
+        value: val,
+      }),
+    [],
+  );
+  const setLoading = useCallback(
+    (val) =>
+      dispatchIntelligence({ type: "SET_FIELD", field: "loading", value: val }),
+    [],
+  );
+  const setActiveTab = useCallback(
+    (val) =>
+      dispatchIntelligence({
+        type: "SET_FIELD",
+        field: "activeTab",
+        value: val,
+      }),
+    [],
+  );
+  const setFilter = useCallback(
+    (val) =>
+      dispatchIntelligence({ type: "SET_FIELD", field: "filter", value: val }),
+    [],
+  );
+  const setSearchQuery = useCallback(
+    (val) =>
+      dispatchIntelligence({
+        type: "SET_FIELD",
+        field: "searchQuery",
+        value: val,
+      }),
+    [],
+  );
+  const setShowBanner = useCallback(
+    (val) =>
+      dispatchIntelligence({
+        type: "SET_FIELD",
+        field: "showBanner",
+        value: val,
+      }),
+    [],
+  );
+  const setShowConfigModal = useCallback(
+    (val) =>
+      dispatchIntelligence({
+        type: "SET_FIELD",
+        field: "showConfigModal",
+        value: val,
+      }),
+    [],
+  );
+  const setShowActionModal = useCallback(
+    (val) =>
+      dispatchIntelligence({
+        type: "SET_FIELD",
+        field: "showActionModal",
+        value: val,
+      }),
+    [],
+  );
+  const setActionType = useCallback(
+    (val) =>
+      dispatchIntelligence({
+        type: "SET_FIELD",
+        field: "actionType",
+        value: val,
+      }),
+    [],
+  );
+  const setSelectedItem = useCallback(
+    (val) =>
+      dispatchIntelligence({
+        type: "SET_FIELD",
+        field: "selectedItem",
+        value: val,
+      }),
+    [],
+  );
+  const setProcessing = useCallback(
+    (val) =>
+      dispatchIntelligence({
+        type: "SET_FIELD",
+        field: "processing",
+        value: val,
+      }),
+    [],
+  );
+  const setReminders = useCallback(
+    (val) =>
+      dispatchIntelligence({
+        type: "SET_FIELD",
+        field: "reminders",
+        value: val,
+      }),
+    [],
+  );
+  const setFifoEnabled = useCallback(
+    (val) =>
+      dispatchIntelligence({
+        type: "SET_FIELD",
+        field: "fifoEnabled",
+        value: val,
+      }),
+    [],
+  );
+  const setExpandedMed = useCallback(
+    (val) =>
+      dispatchIntelligence({
+        type: "SET_FIELD",
+        field: "expandedMed",
+        value: val,
+      }),
+    [],
+  );
+  const setExpiryMetrics = useCallback(
+    (val) =>
+      dispatchIntelligence({
+        type: "SET_FIELD",
+        field: "expiryMetrics",
+        value: val,
+      }),
+    [],
+  );
+  const setSelectedBatchIds = useCallback(
+    (val) =>
+      dispatchIntelligence({
+        type: "SET_FIELD",
+        field: "selectedBatchIds",
+        value: val,
+      }),
+    [],
+  );
+  const setShowDisposeModal = useCallback(
+    (val) =>
+      dispatchIntelligence({
+        type: "SET_FIELD",
+        field: "showDisposeModal",
+        value: val,
+      }),
+    [],
+  );
+  const setDisposing = useCallback(
+    (val) =>
+      dispatchIntelligence({
+        type: "SET_FIELD",
+        field: "disposing",
+        value: val,
+      }),
+    [],
+  );
+  const setClearReloadKey = useCallback(
+    (val) =>
+      dispatchIntelligence({
+        type: "SET_FIELD",
+        field: "clearReloadKey",
+        value: val,
+      }),
+    [],
+  );
+  const setShowBulkSupplierModal = useCallback(
+    (val) =>
+      dispatchIntelligence({
+        type: "SET_FIELD",
+        field: "showBulkSupplierModal",
+        value: val,
+      }),
+    [],
+  );
+  const setBulkSupplierId = useCallback(
+    (val) =>
+      dispatchIntelligence({
+        type: "SET_FIELD",
+        field: "bulkSupplierId",
+        value: val,
+      }),
+    [],
+  );
+  const setSuppliers = useCallback(
+    (val) =>
+      dispatchIntelligence({
+        type: "SET_FIELD",
+        field: "suppliers",
+        value: val,
+      }),
+    [],
+  );
+  const setBulkAssigning = useCallback(
+    (val) =>
+      dispatchIntelligence({
+        type: "SET_FIELD",
+        field: "bulkAssigning",
+        value: val,
+      }),
+    [],
+  );
+  const setBulkReturning = useCallback(
+    (val) =>
+      dispatchIntelligence({
+        type: "SET_FIELD",
+        field: "bulkReturning",
+        value: val,
+      }),
+    [],
+  );
+  const setBackfilling = useCallback(
+    (val) =>
+      dispatchIntelligence({
+        type: "SET_FIELD",
+        field: "backfilling",
+        value: val,
+      }),
+    [],
+  );
+  const setShowImportModal = useCallback(
+    (val) =>
+      dispatchIntelligence({
+        type: "SET_FIELD",
+        field: "showImportModal",
+        value: val,
+      }),
+    [],
+  );
+  const setImportFile = useCallback(
+    (val) =>
+      dispatchIntelligence({
+        type: "SET_FIELD",
+        field: "importFile",
+        value: val,
+      }),
+    [],
+  );
+  const setImporting = useCallback(
+    (val) =>
+      dispatchIntelligence({
+        type: "SET_FIELD",
+        field: "importing",
+        value: val,
+      }),
+    [],
+  );
+  const setImportResult = useCallback(
+    (val) =>
+      dispatchIntelligence({
+        type: "SET_FIELD",
+        field: "importResult",
+        value: val,
+      }),
+    [],
+  );
 
   useEffect(() => {
     getSuppliers({ limit: 500 })
@@ -100,9 +416,10 @@ export default function ExpiryBatchIntelligence({ showToast }) {
         setSuppliers(Array.isArray(data) ? data : []);
       })
       .catch(() => {});
-  }, []);
+  }, [setSuppliers]);
 
   useEffect(() => {
+    let active = true;
     const fetchData = async () => {
       try {
         setLoading(true);
@@ -111,17 +428,17 @@ export default function ExpiryBatchIntelligence({ showToast }) {
           api.get("/intelligence/recommendations").catch(() => null),
           api.get("/inventory/expiry-metrics").catch(() => null),
         ]);
+        if (!active) return;
 
         const rawBatches = Array.isArray(batchRes.data?.data)
           ? batchRes.data.data
           : Array.isArray(batchRes.data)
             ? batchRes.data
             : [];
-        const mapped = rawBatches
-          .filter((b) => b.quantity > 0)
-          .map((b) => {
+        const mapped = rawBatches.reduce((acc, b) => {
+          if (b.quantity > 0) {
             const days = getDays(b.expiryDate);
-            return {
+            acc.push({
               id: b.id, // real UUID for API calls and React keys
               batchNumber: b.batchNumber || "N/A",
               batchId: b.id, // kept for backwards compatibility in the component
@@ -147,8 +464,10 @@ export default function ExpiryBatchIntelligence({ showToast }) {
               returnEligible:
                 days < 0 && (b.supplier || b.supplierId) ? "YES" : "NO",
               returnStatus: "PENDING",
-            };
-          });
+            });
+          }
+          return acc;
+        }, []);
         setBatches(mapped);
 
         // Store unified expiry metrics from backend
@@ -178,11 +497,20 @@ export default function ExpiryBatchIntelligence({ showToast }) {
       } catch (error) {
         console.error("Failed to load expiry intelligence:", error);
       } finally {
-        setLoading(false);
+        if (active) setLoading(false);
       }
     };
     fetchData();
-  }, [clearReloadKey]); // re-fetch when clearReloadKey increments (after a clear-expired operation)
+    return () => {
+      active = false;
+    };
+  }, [
+    clearReloadKey,
+    setBatches,
+    setExpiryMetrics,
+    setLoading,
+    setSuggestions,
+  ]);
 
   const [alertSettings, setAlertSettings] = useState({
     warning: 30,
@@ -192,14 +520,104 @@ export default function ExpiryBatchIntelligence({ showToast }) {
   });
   const [frequency, setFrequency] = useState("Daily Digest");
   const [showFifoConfirm, setShowFifoConfirm] = useState(false);
-  const [returnQty, setReturnQty] = useState(1);
-  const [returnReason, setReturnReason] = useState("Near Expiry Stock");
-  const [discountPct, setDiscountPct] = useState(15);
-  const [discountDuration, setDiscountDuration] = useState(7);
-  const [disposalMethod, setDisposalMethod] = useState(
-    "Standard Medical Waste",
+  const [actionModalState, dispatchActionModal] = useReducer(
+    (state, action) => {
+      switch (action.type) {
+        case "INIT_ACTION":
+          return {
+            ...state,
+            returnQty: action.payload?.qty || 1,
+            returnReason: "Near Expiry Stock",
+            discountPct: 15,
+            discountDuration: 7,
+            disposalMethod: "Standard Medical Waste",
+            disposalNotes: "",
+          };
+        case "SET_FIELD":
+          return {
+            ...state,
+            [action.field]:
+              typeof action.value === "function"
+                ? action.value(state[action.field])
+                : action.value,
+          };
+        default:
+          return state;
+      }
+    },
+    {
+      returnQty: 1,
+      returnReason: "Near Expiry Stock",
+      discountPct: 15,
+      discountDuration: 7,
+      disposalMethod: "Standard Medical Waste",
+      disposalNotes: "",
+    },
   );
-  const [disposalNotes, setDisposalNotes] = useState("");
+
+  const {
+    returnQty,
+    returnReason,
+    discountPct,
+    discountDuration,
+    disposalMethod,
+    disposalNotes,
+  } = actionModalState;
+
+  const setReturnQty = useCallback(
+    (val) =>
+      dispatchActionModal({
+        type: "SET_FIELD",
+        field: "returnQty",
+        value: val,
+      }),
+    [],
+  );
+  const setReturnReason = useCallback(
+    (val) =>
+      dispatchActionModal({
+        type: "SET_FIELD",
+        field: "returnReason",
+        value: val,
+      }),
+    [],
+  );
+  const setDiscountPct = useCallback(
+    (val) =>
+      dispatchActionModal({
+        type: "SET_FIELD",
+        field: "discountPct",
+        value: val,
+      }),
+    [],
+  );
+  const setDiscountDuration = useCallback(
+    (val) =>
+      dispatchActionModal({
+        type: "SET_FIELD",
+        field: "discountDuration",
+        value: val,
+      }),
+    [],
+  );
+  const setDisposalMethod = useCallback(
+    (val) =>
+      dispatchActionModal({
+        type: "SET_FIELD",
+        field: "disposalMethod",
+        value: val,
+      }),
+    [],
+  );
+  const setDisposalNotes = useCallback(
+    (val) =>
+      dispatchActionModal({
+        type: "SET_FIELD",
+        field: "disposalNotes",
+        value: val,
+      }),
+    [],
+  );
   const [invSearch, setInvSearch] = useState("");
   const [invFilter, setInvFilter] = useState("ALL");
   const [showInvFilterDropdown, setShowInvFilterDropdown] = useState(false);
@@ -491,6 +909,8 @@ export default function ExpiryBatchIntelligence({ showToast }) {
   ).length;
 
   const exportExpiryReport = async () => {
+    if (isExportingRef.current) return;
+    isExportingRef.current = true;
     try {
       const workbook = new ExcelJS.Workbook();
       const worksheet = workbook.addWorksheet("Expiry Report");
@@ -544,18 +964,15 @@ export default function ExpiryBatchIntelligence({ showToast }) {
     } catch (error) {
       console.error("Failed to export expiry report", error);
       showToast("Export failed", "error");
+    } finally {
+      isExportingRef.current = false;
     }
   };
 
   const handleAction = (type, item) => {
     setSelectedItem(item);
     setActionType(type);
-    setReturnQty(item?.qty || 1);
-    setReturnReason("Near Expiry Stock");
-    setDiscountPct(15);
-    setDiscountDuration(7);
-    setDisposalMethod("Standard Medical Waste");
-    setDisposalNotes("");
+    dispatchActionModal({ type: "INIT_ACTION", payload: item });
     setProcessing(false);
     setShowActionModal(true);
   };
@@ -567,6 +984,7 @@ export default function ExpiryBatchIntelligence({ showToast }) {
   };
 
   const confirmAction = async () => {
+    if (processing) return;
     setProcessing(true);
     try {
       if (actionType === "RETURN") {
@@ -624,20 +1042,23 @@ export default function ExpiryBatchIntelligence({ showToast }) {
     [filteredBatches],
   );
 
-  const toggleBatch = useCallback((batchId) => {
-    setSelectedBatchIds((prev) => {
-      const next = new Set(prev);
-      next.has(batchId) ? next.delete(batchId) : next.add(batchId);
-      return next;
-    });
-  }, []);
+  const toggleBatch = useCallback(
+    (batchId) => {
+      setSelectedBatchIds((prev) => {
+        const next = new Set(prev);
+        next.has(batchId) ? next.delete(batchId) : next.add(batchId);
+        return next;
+      });
+    },
+    [setSelectedBatchIds],
+  );
 
   const toggleSelectAll = useCallback(() => {
     setSelectedBatchIds((prev) => {
       if (prev.size === expiredBatches.length) return new Set();
       return new Set(expiredBatches.map((b) => b.batchId));
     });
-  }, [expiredBatches]);
+  }, [expiredBatches, setSelectedBatchIds]);
 
   const selectedExpiredBatches = useMemo(
     () => expiredBatches.filter((b) => selectedBatchIds.has(b.batchId)),
@@ -650,8 +1071,11 @@ export default function ExpiryBatchIntelligence({ showToast }) {
     return { count: selectedExpiredBatches.length, units, loss };
   }, [selectedExpiredBatches]);
 
+  const disposingRef = useRef(false);
   const handleBulkDispose = async () => {
+    if (disposingRef.current) return;
     if (!selectedBatchIds.size) return;
+    disposingRef.current = true;
     setDisposing(true);
     try {
       const batchIds = [...selectedBatchIds];
@@ -683,12 +1107,16 @@ export default function ExpiryBatchIntelligence({ showToast }) {
         "Disposal failed";
       showToast(msg, "error");
     } finally {
+      disposingRef.current = false;
       setDisposing(false);
     }
   };
 
+  const bulkAssigningRef = useRef(false);
   const handleBulkAssignSupplier = async () => {
+    if (bulkAssigningRef.current) return;
     if (!selectedBatchIds.size || !bulkSupplierId) return;
+    bulkAssigningRef.current = true;
     setBulkAssigning(true);
     try {
       const batchIds = [...selectedBatchIds];
@@ -717,11 +1145,14 @@ export default function ExpiryBatchIntelligence({ showToast }) {
         "Assignment failed";
       showToast(msg, "error");
     } finally {
+      bulkAssigningRef.current = false;
       setBulkAssigning(false);
     }
   };
 
+  const bulkReturningRef = useRef(false);
   const handleBulkReturnToSupplier = async () => {
+    if (bulkReturningRef.current) return;
     if (!selectedBatchIds.size) return;
 
     const selectedBatches = batches.filter((b) =>
@@ -742,22 +1173,27 @@ export default function ExpiryBatchIntelligence({ showToast }) {
       grouped[b.supplierId].push(b);
     }
 
+    bulkReturningRef.current = true;
     setBulkReturning(true);
     try {
-      let totalReturns = 0;
-      for (const [supplierId, items] of Object.entries(grouped)) {
-        await api.post("/supplier-returns", {
-          supplierId,
-          items: items.map((b) => ({
-            medicineId: b.medicineId,
-            batchId: b.batchId,
-            quantity: b.qty || 1,
-            reason: "EXPIRED",
-          })),
-          reason: "Bulk expired stock return to supplier",
-        });
-        totalReturns += items.length;
-      }
+      await Promise.all(
+        Object.entries(grouped).map(async ([supplierId, items]) => {
+          await api.post("/supplier-returns", {
+            supplierId,
+            items: items.map((b) => ({
+              medicineId: b.medicineId,
+              batchId: b.batchId,
+              quantity: b.qty || 1,
+              reason: "EXPIRED",
+            })),
+            reason: "Bulk expired stock return to supplier",
+          });
+        }),
+      );
+      const totalReturns = Object.values(grouped).reduce(
+        (acc, items) => acc + items.length,
+        0,
+      );
       showToast(
         `${totalReturns} batches returned across ${Object.keys(grouped).length} supplier(s)`,
         "success",
@@ -774,11 +1210,15 @@ export default function ExpiryBatchIntelligence({ showToast }) {
         "Return failed";
       showToast(msg, "error");
     } finally {
+      bulkReturningRef.current = false;
       setBulkReturning(false);
     }
   };
 
   const handleExportNoSupplier = async () => {
+    if (isExportingRef.current) return;
+    isExportingRef.current = true;
+
     try {
       const res = await exportBatchesWithoutSupplier();
       const { batches, suppliers } = res.data?.data || {};
@@ -823,11 +1263,16 @@ export default function ExpiryBatchIntelligence({ showToast }) {
       );
     } catch (err) {
       showToast("Export failed: " + (err.message || "Unknown error"), "error");
+    } finally {
+      isExportingRef.current = false;
     }
   };
 
+  const importingRef = useRef(false);
   const handleImportCsv = async () => {
+    if (importingRef.current) return;
     if (!importFile) return;
+    importingRef.current = true;
     setImporting(true);
     setImportResult(null);
     try {
@@ -871,11 +1316,15 @@ export default function ExpiryBatchIntelligence({ showToast }) {
     } catch (err) {
       showToast("Import failed: " + (err.message || "Unknown error"), "error");
     } finally {
+      importingRef.current = false;
       setImporting(false);
     }
   };
 
+  const backfillingRef = useRef(false);
   const handleBackfillSuppliers = async () => {
+    if (backfillingRef.current) return;
+    backfillingRef.current = true;
     setBackfilling(true);
     try {
       const res = await backfillBatchSupplier();
@@ -892,6 +1341,7 @@ export default function ExpiryBatchIntelligence({ showToast }) {
         "Backfill failed";
       showToast(msg, "error");
     } finally {
+      backfillingRef.current = false;
       setBackfilling(false);
     }
   };
@@ -912,6 +1362,8 @@ export default function ExpiryBatchIntelligence({ showToast }) {
   };
 
   const saveEditBatch = async () => {
+    if (isSavingEditRef.current) return;
+    isSavingEditRef.current = true;
     try {
       await api.put(`/inventory/batches/${editBatch.batchId}`, {
         batchNumber: editBatch.batch,
@@ -934,6 +1386,8 @@ export default function ExpiryBatchIntelligence({ showToast }) {
         err.response?.data?.message || "Failed to update batch",
         "error",
       );
+    } finally {
+      isSavingEditRef.current = false;
     }
   };
 
@@ -943,7 +1397,10 @@ export default function ExpiryBatchIntelligence({ showToast }) {
   };
 
   const confirmDeleteBatch = async () => {
+    if (isDeletingBatchRef.current) return;
+    isDeletingBatchRef.current = true;
     if (!selectedBatchForDelete) return;
+
     try {
       await api.delete(`/inventory/batches/${selectedBatchForDelete.batchId}`);
       setBatches((prev) =>
@@ -957,6 +1414,8 @@ export default function ExpiryBatchIntelligence({ showToast }) {
         err.response?.data?.message || "Failed to delete batch",
         "error",
       );
+    } finally {
+      isDeletingBatchRef.current = false;
     }
   };
 
@@ -1082,8 +1541,16 @@ export default function ExpiryBatchIntelligence({ showToast }) {
           const isExpiredCard = s.key === "EXPIRED";
           return (
             <div
+              role="button"
+              tabIndex={0}
               key={s.key}
               className="pos-stat-card"
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  e.currentTarget.click();
+                }
+              }}
               onClick={() => setFilter(s.key)}
               style={{
                 borderLeft:
@@ -1106,7 +1573,15 @@ export default function ExpiryBatchIntelligence({ showToast }) {
               <div className="stat-value">{s.val}</div>
               {isExpiredCard && (
                 <div
+                  role="button"
+                  tabIndex={0}
                   style={{ marginTop: 8 }}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      e.currentTarget.click();
+                    }
+                  }}
                   onClick={(e) => e.stopPropagation()}
                 >
                   <ClearExpiredButton
@@ -1152,6 +1627,8 @@ export default function ExpiryBatchIntelligence({ showToast }) {
               </div>
               <div className="timeline-bar">
                 <div
+                  role="button"
+                  tabIndex={0}
                   className="timeline-segment expired"
                   style={{
                     flex: Math.max(
@@ -1159,12 +1636,20 @@ export default function ExpiryBatchIntelligence({ showToast }) {
                       5,
                     ),
                   }}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      e.currentTarget.click();
+                    }
+                  }}
                   onClick={() => setFilter("EXPIRED")}
                   title={`EXPIRED: ${timelineCounts.expired}`}
                 >
                   <span>EXPIRED {timelineCounts.expired}</span>
                 </div>
                 <div
+                  role="button"
+                  tabIndex={0}
                   className="timeline-segment urg-7"
                   style={{
                     flex: Math.max(
@@ -1172,12 +1657,20 @@ export default function ExpiryBatchIntelligence({ showToast }) {
                       5,
                     ),
                   }}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      e.currentTarget.click();
+                    }
+                  }}
                   onClick={() => setFilter("< 7 DAYS")}
                   title={`< 7 DAYS: ${timelineCounts.urg7}`}
                 >
                   <span>&lt; 7D {timelineCounts.urg7}</span>
                 </div>
                 <div
+                  role="button"
+                  tabIndex={0}
                   className="timeline-segment urg-30"
                   style={{
                     flex: Math.max(
@@ -1185,12 +1678,20 @@ export default function ExpiryBatchIntelligence({ showToast }) {
                       5,
                     ),
                   }}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      e.currentTarget.click();
+                    }
+                  }}
                   onClick={() => setFilter("7-30 DAYS")}
                   title={`7-30 DAYS: ${timelineCounts.urg30}`}
                 >
                   <span>7-30D {timelineCounts.urg30}</span>
                 </div>
                 <div
+                  role="button"
+                  tabIndex={0}
                   className="timeline-segment urg-90"
                   style={{
                     flex: Math.max(
@@ -1198,18 +1699,32 @@ export default function ExpiryBatchIntelligence({ showToast }) {
                       5,
                     ),
                   }}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      e.currentTarget.click();
+                    }
+                  }}
                   onClick={() => setFilter("30-90 DAYS")}
                   title={`30-90 DAYS: ${timelineCounts.urg90}`}
                 >
                   <span>30-90D {timelineCounts.urg90}</span>
                 </div>
                 <div
+                  role="button"
+                  tabIndex={0}
                   className="timeline-segment safe"
                   style={{
                     flex: Math.max(
                       (timelineCounts.safe / timelineCounts.total) * 100,
                       5,
                     ),
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      e.currentTarget.click();
+                    }
                   }}
                   onClick={() => setFilter("SAFE")}
                   title={`SAFE: ${timelineCounts.safe}`}
@@ -1568,10 +2083,18 @@ export default function ExpiryBatchIntelligence({ showToast }) {
                 {showInvFilterDropdown && (
                   <>
                     <div
+                      role="button"
+                      tabIndex={0}
                       style={{
                         position: "fixed",
                         inset: 0,
                         zIndex: 99,
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" || e.key === " ") {
+                          e.preventDefault();
+                          e.currentTarget.click();
+                        }
                       }}
                       onClick={() => setShowInvFilterDropdown(false)}
                     />
@@ -1614,7 +2137,7 @@ export default function ExpiryBatchIntelligence({ showToast }) {
                             border: "none",
                             borderRadius: "8px",
                             cursor: "pointer",
-                            transition: "0.15s",
+                            transition: "background 0.15s, color 0.15s",
                           }}
                         >
                           {opt.label}
@@ -1779,7 +2302,15 @@ export default function ExpiryBatchIntelligence({ showToast }) {
               </p>
             </div>
             <div
+              role="button"
+              tabIndex={0}
               className={`toggle-switch ${fifoEnabled ? "on" : ""}`}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  e.currentTarget.click();
+                }
+              }}
               onClick={() => {
                 if (fifoEnabled) {
                   setShowFifoConfirm(true);
@@ -1807,7 +2338,7 @@ export default function ExpiryBatchIntelligence({ showToast }) {
                   position: "absolute",
                   top: "3px",
                   left: fifoEnabled ? "29px" : "3px",
-                  transition: "0.2s",
+                  transition: "left 0.2s",
                 }}
               />
             </div>
@@ -1833,7 +2364,15 @@ export default function ExpiryBatchIntelligence({ showToast }) {
                 return (
                   <div key={med} className="fifo-medicine-card">
                     <div
+                      role="button"
+                      tabIndex={0}
                       className="fifo-card-header"
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" || e.key === " ") {
+                          e.preventDefault();
+                          e.currentTarget.click();
+                        }
+                      }}
                       onClick={() =>
                         setExpandedMed(expandedMed === med ? null : med)
                       }
@@ -1879,7 +2418,7 @@ export default function ExpiryBatchIntelligence({ showToast }) {
                     </div>
                     <AnimatePresence>
                       {expandedMed === med && (
-                        <motion.div
+                        <m.div
                           layout
                           initial={{ opacity: 0 }}
                           animate={{ opacity: 1 }}
@@ -1980,7 +2519,7 @@ export default function ExpiryBatchIntelligence({ showToast }) {
                               })}
                             </tbody>
                           </table>
-                        </motion.div>
+                        </m.div>
                       )}
                     </AnimatePresence>
                   </div>
@@ -1992,132 +2531,139 @@ export default function ExpiryBatchIntelligence({ showToast }) {
       )}
 
       {/* ───────────────────── SUGGESTIONS TAB ───────────────────── */}
-      {activeTab === "suggestions" && (
-        <div className="suggestion-grid">
-          {suggestions.length === 0 ? (
-            <div className="empty-state">No recommendations available</div>
-          ) : (
-            suggestions.map((s) => (
-              <motion.div
-                key={s.id || s.batchId || `${s.med}-${s.batch}-${s.days}`}
-                className={`suggestion-card ${s.urgency}`}
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 0.2 }}
-              >
-                <div
-                  style={{ display: "flex", justifyContent: "space-between" }}
-                >
-                  <div>
+      {activeTab === "suggestions" &&
+        (() => {
+          const remindersSet = new Set(reminders);
+          return (
+            <div className="suggestion-grid">
+              {suggestions.length === 0 ? (
+                <div className="empty-state">No recommendations available</div>
+              ) : (
+                suggestions.map((s) => (
+                  <m.div
+                    key={s.id || s.batchId || `${s.med}-${s.batch}-${s.days}`}
+                    className={`suggestion-card ${s.urgency}`}
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ duration: 0.2 }}
+                  >
                     <div
                       style={{
-                        fontFamily: "Outfit",
-                        fontWeight: 600,
-                        fontSize: "15px",
+                        display: "flex",
+                        justifyContent: "space-between",
                       }}
                     >
-                      ⚠ {s.med}
+                      <div>
+                        <div
+                          style={{
+                            fontFamily: "Outfit",
+                            fontWeight: 600,
+                            fontSize: "15px",
+                          }}
+                        >
+                          ⚠ {s.med}
+                        </div>
+                        <div className="result-meta">
+                          Batch {s.batch} · <b>{s.days} days left</b>
+                        </div>
+                      </div>
+                      <Info size={18} className="result-meta" />
                     </div>
-                    <div className="result-meta">
-                      Batch {s.batch} · <b>{s.days} days left</b>
+                    <div style={{ fontSize: "14px", fontWeight: 600 }}>
+                      {s.qty} units remaining · ₹{s.val}
                     </div>
-                  </div>
-                  <Info size={18} className="result-meta" />
-                </div>
-                <div style={{ fontSize: "14px", fontWeight: 600 }}>
-                  {s.qty} units remaining · ₹{s.val}
-                </div>
 
-                <div
-                  style={{
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: "8px",
-                  }}
-                >
-                  <div
-                    style={{
-                      fontSize: "11px",
-                      fontWeight: 800,
-                      color: "var(--text-muted)",
-                    }}
-                  >
-                    SUGGESTED ACTIONS:
-                  </div>
-                  <div style={{ fontSize: "13px" }}>
-                    ① Offer 10% discount to move stock
-                  </div>
-                  <div style={{ fontSize: "13px" }}>
-                    ② Return {s.qty} units to {s.supplier}
-                  </div>
-                </div>
+                    <div
+                      style={{
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: "8px",
+                      }}
+                    >
+                      <div
+                        style={{
+                          fontSize: "11px",
+                          fontWeight: 800,
+                          color: "var(--text-muted)",
+                        }}
+                      >
+                        SUGGESTED ACTIONS:
+                      </div>
+                      <div style={{ fontSize: "13px" }}>
+                        ① Offer 10% discount to move stock
+                      </div>
+                      <div style={{ fontSize: "13px" }}>
+                        ② Return {s.qty} units to {s.supplier}
+                      </div>
+                    </div>
 
-                <div className="sug-actions">
-                  <button
-                    className="pos-btn outline"
-                    style={{
-                      padding: "6px 12px",
-                      fontSize: "11px",
-                      border: "none",
-                      background: "rgba(59, 130, 246, 0.1)",
-                      color: "var(--info)",
-                    }}
-                    onClick={() => handleAction("DISCOUNT", s)}
-                  >
-                    Apply Discount
-                  </button>
-                  <button
-                    className="pos-btn outline"
-                    style={{
-                      padding: "6px 12px",
-                      fontSize: "11px",
-                      border: "none",
-                      background: "rgba(245, 166, 35, 0.1)",
-                      color: "var(--warning)",
-                    }}
-                    onClick={() => handleAction("RETURN", s)}
-                  >
-                    Return
-                  </button>
-                  <button
-                    className="pos-btn outline"
-                    style={{
-                      padding: "6px 12px",
-                      fontSize: "11px",
-                      border: "none",
-                      background: reminders.includes(s.med)
-                        ? "rgba(16, 185, 129, 0.1)"
-                        : "var(--primary-glow)",
-                      color: reminders.includes(s.med)
-                        ? "var(--success)"
-                        : "var(--primary)",
-                    }}
-                    onClick={() => handleRemindPos(s)}
-                    disabled={reminders.includes(s.med)}
-                  >
-                    {reminders.includes(s.med)
-                      ? "✓ Reminder Added"
-                      : "Remind POS"}
-                  </button>
-                  <button
-                    className="micro-btn"
-                    style={{ marginLeft: "auto" }}
-                    onClick={() => handleAction("DISPOSE", s)}
-                  >
-                    <Trash2 size={14} />
-                  </button>
-                </div>
-              </motion.div>
-            ))
-          )}
-        </div>
-      )}
+                    <div className="sug-actions">
+                      <button
+                        className="pos-btn outline"
+                        style={{
+                          padding: "6px 12px",
+                          fontSize: "11px",
+                          border: "none",
+                          background: "rgba(59, 130, 246, 0.1)",
+                          color: "var(--info)",
+                        }}
+                        onClick={() => handleAction("DISCOUNT", s)}
+                      >
+                        Apply Discount
+                      </button>
+                      <button
+                        className="pos-btn outline"
+                        style={{
+                          padding: "6px 12px",
+                          fontSize: "11px",
+                          border: "none",
+                          background: "rgba(245, 166, 35, 0.1)",
+                          color: "var(--warning)",
+                        }}
+                        onClick={() => handleAction("RETURN", s)}
+                      >
+                        Return
+                      </button>
+                      <button
+                        className="pos-btn outline"
+                        style={{
+                          padding: "6px 12px",
+                          fontSize: "11px",
+                          border: "none",
+                          background: remindersSet.has(s.med)
+                            ? "rgba(16, 185, 129, 0.1)"
+                            : "var(--primary-glow)",
+                          color: remindersSet.has(s.med)
+                            ? "var(--success)"
+                            : "var(--primary)",
+                        }}
+                        onClick={() => handleRemindPos(s)}
+                        disabled={remindersSet.has(s.med)}
+                      >
+                        {remindersSet.has(s.med)
+                          ? "✓ Reminder Added"
+                          : "Remind POS"}
+                      </button>
+                      <button
+                        className="micro-btn"
+                        style={{ marginLeft: "auto" }}
+                        onClick={() => handleAction("DISPOSE", s)}
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    </div>
+                  </m.div>
+                ))
+              )}
+            </div>
+          );
+        })()}
 
       {/* ───────────────────── CONFIG MODAL ───────────────────── */}
       <AnimatePresence>
         {showConfigModal && (
           <div className="stock-modal-overlay">
-            <motion.div
+            <m.div
               className="stock-modal-content"
               style={{ width: "480px" }}
               initial={{ opacity: 0, y: 20 }}
@@ -2224,6 +2770,8 @@ export default function ExpiryBatchIntelligence({ showToast }) {
                   className="pos-btn teal"
                   style={{ flex: 2 }}
                   onClick={async () => {
+                    if (isSavingConfigRef.current) return;
+                    isSavingConfigRef.current = true;
                     try {
                       await api.put("/settings/inventory", {
                         expiryWarningDays: alertSettings.warning,
@@ -2237,20 +2785,22 @@ export default function ExpiryBatchIntelligence({ showToast }) {
                           "Failed to save settings",
                         "error",
                       );
+                    } finally {
+                      isSavingConfigRef.current = false;
                     }
                   }}
                 >
                   Save Settings
                 </button>
               </div>
-            </motion.div>
+            </m.div>
           </div>
         )}
 
         {/* ───────────────────── ACTION MODAL ───────────────────── */}
         {showActionModal && (
           <div className="stock-modal-overlay">
-            <motion.div
+            <m.div
               className="stock-modal-content"
               style={{ width: "450px" }}
               initial={{ opacity: 0, scale: 0.95 }}
@@ -2309,6 +2859,7 @@ export default function ExpiryBatchIntelligence({ showToast }) {
                 {actionType === "RETURN" && (
                   <div className="form-group">
                     <label
+                      htmlFor="field_sv4c5k"
                       style={{
                         fontSize: "13px",
                         fontWeight: 600,
@@ -2319,6 +2870,7 @@ export default function ExpiryBatchIntelligence({ showToast }) {
                       Reason for Return
                     </label>
                     <select
+                      id="field_sv4c5k"
                       className="pos-input"
                       style={{ width: "100%", marginBottom: "16px" }}
                       value={returnReason}
@@ -2330,6 +2882,7 @@ export default function ExpiryBatchIntelligence({ showToast }) {
                       <option>Incorrect Supply</option>
                     </select>
                     <label
+                      htmlFor="field_7r6e1a"
                       style={{
                         fontSize: "13px",
                         fontWeight: 600,
@@ -2340,6 +2893,7 @@ export default function ExpiryBatchIntelligence({ showToast }) {
                       Quantity to Return
                     </label>
                     <input
+                      id="field_7r6e1a"
                       required
                       className="pos-input"
                       type="number"
@@ -2357,6 +2911,7 @@ export default function ExpiryBatchIntelligence({ showToast }) {
                 {actionType === "DISCOUNT" && (
                   <div className="form-group">
                     <label
+                      htmlFor="field_2dxje8"
                       style={{
                         fontSize: "13px",
                         fontWeight: 600,
@@ -2367,6 +2922,7 @@ export default function ExpiryBatchIntelligence({ showToast }) {
                       Discount Percentage (%)
                     </label>
                     <input
+                      id="field_2dxje8"
                       required
                       className="pos-input"
                       type="number"
@@ -2394,6 +2950,7 @@ export default function ExpiryBatchIntelligence({ showToast }) {
                       / unit
                     </div>
                     <label
+                      htmlFor="field_18bait"
                       style={{
                         fontSize: "13px",
                         fontWeight: 600,
@@ -2404,6 +2961,7 @@ export default function ExpiryBatchIntelligence({ showToast }) {
                       Offer Duration (Days)
                     </label>
                     <input
+                      id="field_18bait"
                       required
                       className="pos-input"
                       type="number"
@@ -2433,6 +2991,7 @@ export default function ExpiryBatchIntelligence({ showToast }) {
                       from active inventory and log it as waste.
                     </div>
                     <label
+                      htmlFor="field_i1c5mw"
                       style={{
                         fontSize: "13px",
                         fontWeight: 600,
@@ -2443,6 +3002,7 @@ export default function ExpiryBatchIntelligence({ showToast }) {
                       Disposal Method
                     </label>
                     <select
+                      id="field_i1c5mw"
                       className="pos-input"
                       style={{ width: "100%", marginBottom: "16px" }}
                       value={disposalMethod}
@@ -2454,6 +3014,7 @@ export default function ExpiryBatchIntelligence({ showToast }) {
                       <option>Return to Manufacturer for Disposal</option>
                     </select>
                     <label
+                      htmlFor="field_h0rcw8"
                       style={{
                         fontSize: "13px",
                         fontWeight: 600,
@@ -2464,6 +3025,7 @@ export default function ExpiryBatchIntelligence({ showToast }) {
                       Notes
                     </label>
                     <textarea
+                      id="field_h0rcw8"
                       className="pos-input"
                       style={{ width: "100%", height: "80px", padding: "10px" }}
                       placeholder="Add disposal authorization notes..."
@@ -2493,14 +3055,14 @@ export default function ExpiryBatchIntelligence({ showToast }) {
                     : `Confirm ${actionType?.charAt(0) + actionType?.slice(1).toLowerCase()}`}
                 </button>
               </div>
-            </motion.div>
+            </m.div>
           </div>
         )}
 
         {/* ───────────────────── VIEW BATCH MODAL ───────────────────── */}
         {showViewBatchModal && viewBatch && (
           <div className="stock-modal-overlay">
-            <motion.div
+            <m.div
               className="stock-modal-content"
               style={{ width: "500px" }}
               initial={{ opacity: 0, y: 20 }}
@@ -2560,14 +3122,14 @@ export default function ExpiryBatchIntelligence({ showToast }) {
                   Close
                 </button>
               </div>
-            </motion.div>
+            </m.div>
           </div>
         )}
 
         {/* ───────────────────── EDIT BATCH MODAL ───────────────────── */}
         {showEditBatchModal && editBatch && (
           <div className="stock-modal-overlay">
-            <motion.div
+            <m.div
               className="stock-modal-content"
               style={{ width: "500px" }}
               initial={{ opacity: 0, y: 20 }}
@@ -2592,8 +3154,11 @@ export default function ExpiryBatchIntelligence({ showToast }) {
                   style={{ gridTemplateColumns: "1fr 1fr" }}
                 >
                   <div className="pos-input-group">
-                    <label className="p-label">Medicine</label>
+                    <label htmlFor="field_w2qz7p" className="p-label">
+                      Medicine
+                    </label>
                     <input
+                      id="field_w2qz7p"
                       required
                       className="pos-input"
                       value={editBatch.med}
@@ -2603,8 +3168,11 @@ export default function ExpiryBatchIntelligence({ showToast }) {
                     />
                   </div>
                   <div className="pos-input-group">
-                    <label className="p-label">Supplier</label>
+                    <label htmlFor="field_ccyug8" className="p-label">
+                      Supplier
+                    </label>
                     <input
+                      id="field_ccyug8"
                       required
                       className="pos-input"
                       value={editBatch.supplier || editBatch.brand}
@@ -2618,8 +3186,11 @@ export default function ExpiryBatchIntelligence({ showToast }) {
                     />
                   </div>
                   <div className="pos-input-group">
-                    <label className="p-label">MFG Date</label>
+                    <label htmlFor="field_h9sddh" className="p-label">
+                      MFG Date
+                    </label>
                     <input
+                      id="field_h9sddh"
                       required
                       className="pos-input"
                       type="date"
@@ -2630,8 +3201,11 @@ export default function ExpiryBatchIntelligence({ showToast }) {
                     />
                   </div>
                   <div className="pos-input-group">
-                    <label className="p-label">Expiry Date</label>
+                    <label htmlFor="field_trzr77" className="p-label">
+                      Expiry Date
+                    </label>
                     <input
+                      id="field_trzr77"
                       required
                       className="pos-input"
                       type="date"
@@ -2642,8 +3216,11 @@ export default function ExpiryBatchIntelligence({ showToast }) {
                     />
                   </div>
                   <div className="pos-input-group">
-                    <label className="p-label">Quantity</label>
+                    <label htmlFor="field_u4wwgc" className="p-label">
+                      Quantity
+                    </label>
                     <input
+                      id="field_u4wwgc"
                       required
                       className="pos-input"
                       type="number"
@@ -2657,8 +3234,11 @@ export default function ExpiryBatchIntelligence({ showToast }) {
                     />
                   </div>
                   <div className="pos-input-group">
-                    <label className="p-label">Value (₹)</label>
+                    <label htmlFor="field_j7owos" className="p-label">
+                      Value (₹)
+                    </label>
                     <input
+                      id="field_j7owos"
                       required
                       className="pos-input"
                       type="number"
@@ -2689,14 +3269,14 @@ export default function ExpiryBatchIntelligence({ showToast }) {
                   <Save size={14} /> Save Changes
                 </button>
               </div>
-            </motion.div>
+            </m.div>
           </div>
         )}
 
         {/* ───────────────────── ADD BATCH MODAL ───────────────────── */}
         {showAddBatchModal && (
           <div className="stock-modal-overlay">
-            <motion.div
+            <m.div
               className="stock-modal-content"
               style={{ width: "500px" }}
               initial={{ opacity: 0, y: 20 }}
@@ -2721,8 +3301,11 @@ export default function ExpiryBatchIntelligence({ showToast }) {
                   style={{ gridTemplateColumns: "1fr 1fr" }}
                 >
                   <div className="pos-input-group">
-                    <label className="p-label">MEDICINE NAME*</label>
+                    <label htmlFor="field_t474xf" className="p-label">
+                      MEDICINE NAME*
+                    </label>
                     <input
+                      id="field_t474xf"
                       required
                       className="pos-input"
                       placeholder="e.g. Amoxicillin 500mg"
@@ -2733,8 +3316,11 @@ export default function ExpiryBatchIntelligence({ showToast }) {
                     />
                   </div>
                   <div className="pos-input-group">
-                    <label className="p-label">SUPPLIER</label>
+                    <label htmlFor="field_paqjgf" className="p-label">
+                      SUPPLIER
+                    </label>
                     <input
+                      id="field_paqjgf"
                       required
                       className="pos-input"
                       placeholder="e.g. Cipla"
@@ -2745,8 +3331,11 @@ export default function ExpiryBatchIntelligence({ showToast }) {
                     />
                   </div>
                   <div className="pos-input-group">
-                    <label className="p-label">MFG DATE</label>
+                    <label htmlFor="field_wwhkj2" className="p-label">
+                      MFG DATE
+                    </label>
                     <input
+                      id="field_wwhkj2"
                       required
                       className="pos-input"
                       type="date"
@@ -2757,8 +3346,11 @@ export default function ExpiryBatchIntelligence({ showToast }) {
                     />
                   </div>
                   <div className="pos-input-group">
-                    <label className="p-label">EXPIRY DATE</label>
+                    <label htmlFor="field_h7j6y1" className="p-label">
+                      EXPIRY DATE
+                    </label>
                     <input
+                      id="field_h7j6y1"
                       required
                       className="pos-input"
                       type="date"
@@ -2769,8 +3361,11 @@ export default function ExpiryBatchIntelligence({ showToast }) {
                     />
                   </div>
                   <div className="pos-input-group">
-                    <label className="p-label">QUANTITY*</label>
+                    <label htmlFor="field_bh3et1" className="p-label">
+                      QUANTITY*
+                    </label>
                     <input
+                      id="field_bh3et1"
                       required
                       className="pos-input"
                       type="number"
@@ -2782,8 +3377,11 @@ export default function ExpiryBatchIntelligence({ showToast }) {
                     />
                   </div>
                   <div className="pos-input-group">
-                    <label className="p-label">VALUE (₹)</label>
+                    <label htmlFor="field_spgb88" className="p-label">
+                      VALUE (₹)
+                    </label>
                     <input
+                      id="field_spgb88"
                       required
                       className="pos-input"
                       type="number"
@@ -2812,14 +3410,14 @@ export default function ExpiryBatchIntelligence({ showToast }) {
                   <Plus size={14} /> Add Batch
                 </button>
               </div>
-            </motion.div>
+            </m.div>
           </div>
         )}
 
         {/* ───────────────────── FIFO CONFIRM MODAL ───────────────────── */}
         {showFifoConfirm && (
           <div className="stock-modal-overlay">
-            <motion.div
+            <m.div
               className="stock-modal-content"
               style={{ width: "420px" }}
               initial={{ opacity: 0, scale: 0.95 }}
@@ -2875,14 +3473,14 @@ export default function ExpiryBatchIntelligence({ showToast }) {
                   Disable Anyway
                 </button>
               </div>
-            </motion.div>
+            </m.div>
           </div>
         )}
 
         {/* ───────────────────── DELETE CONFIRM MODAL ───────────────────── */}
         {showDeleteModal && selectedBatchForDelete && (
           <div className="stock-modal-overlay">
-            <motion.div
+            <m.div
               className="stock-modal-content"
               style={{ width: "420px" }}
               initial={{ opacity: 0, scale: 0.95 }}
@@ -2953,7 +3551,7 @@ export default function ExpiryBatchIntelligence({ showToast }) {
                   <Trash2 size={14} /> Delete Batch
                 </button>
               </div>
-            </motion.div>
+            </m.div>
           </div>
         )}
       </AnimatePresence>
@@ -2962,16 +3560,32 @@ export default function ExpiryBatchIntelligence({ showToast }) {
       <AnimatePresence>
         {showDisposeModal && (
           <div
+            role="button"
+            tabIndex={0}
             className="stock-modal-overlay"
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                e.currentTarget.click();
+              }
+            }}
             onClick={() => !disposing && setShowDisposeModal(false)}
             style={{ zIndex: 1100 }}
           >
-            <motion.div
+            <m.div
+              role="button"
+              tabIndex={0}
               className="stock-modal-content"
               style={{ maxWidth: 480, width: "95vw" }}
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  e.currentTarget.click();
+                }
+              }}
               onClick={(e) => e.stopPropagation()}
             >
               <div className="stock-modal-header">
@@ -3130,7 +3744,7 @@ export default function ExpiryBatchIntelligence({ showToast }) {
                   )}
                 </button>
               </div>
-            </motion.div>
+            </m.div>
           </div>
         )}
       </AnimatePresence>
@@ -3139,16 +3753,32 @@ export default function ExpiryBatchIntelligence({ showToast }) {
       <AnimatePresence>
         {showBulkSupplierModal && (
           <div
+            role="button"
+            tabIndex={0}
             className="stock-modal-overlay"
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                e.currentTarget.click();
+              }
+            }}
             onClick={() => !bulkAssigning && setShowBulkSupplierModal(false)}
             style={{ zIndex: 1100 }}
           >
-            <motion.div
+            <m.div
+              role="button"
+              tabIndex={0}
               className="stock-modal-content"
               style={{ maxWidth: 480, width: "95vw" }}
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  e.currentTarget.click();
+                }
+              }}
               onClick={(e) => e.stopPropagation()}
             >
               <div className="stock-modal-header">
@@ -3190,6 +3820,7 @@ export default function ExpiryBatchIntelligence({ showToast }) {
 
                 <div style={{ marginBottom: "16px" }}>
                   <label
+                    htmlFor="field_2dvz13"
                     style={{
                       display: "block",
                       fontSize: 13,
@@ -3200,6 +3831,7 @@ export default function ExpiryBatchIntelligence({ showToast }) {
                     Supplier *
                   </label>
                   <select
+                    id="field_2dvz13"
                     value={bulkSupplierId}
                     onChange={(e) => setBulkSupplierId(e.target.value)}
                     style={{
@@ -3252,7 +3884,7 @@ export default function ExpiryBatchIntelligence({ showToast }) {
                   )}
                 </button>
               </div>
-            </motion.div>
+            </m.div>
           </div>
         )}
       </AnimatePresence>
@@ -3261,16 +3893,32 @@ export default function ExpiryBatchIntelligence({ showToast }) {
       <AnimatePresence>
         {showImportModal && (
           <div
+            role="button"
+            tabIndex={0}
             className="stock-modal-overlay"
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                e.currentTarget.click();
+              }
+            }}
             onClick={() => !importing && setShowImportModal(false)}
             style={{ zIndex: 1100 }}
           >
-            <motion.div
+            <m.div
+              role="button"
+              tabIndex={0}
               className="stock-modal-content"
               style={{ maxWidth: 520, width: "95vw" }}
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  e.currentTarget.click();
+                }
+              }}
               onClick={(e) => e.stopPropagation()}
             >
               <div className="stock-modal-header">
@@ -3374,7 +4022,7 @@ export default function ExpiryBatchIntelligence({ showToast }) {
                   </button>
                 )}
               </div>
-            </motion.div>
+            </m.div>
           </div>
         )}
       </AnimatePresence>

@@ -155,17 +155,17 @@ function ShopModal({
   };
 
   return (
-    <div
+    <div role="button" tabIndex={0}
       className="sys-modal-overlay"
       ref={overlayRef}
-      onClick={(e) => {
+      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.currentTarget.click(); } }} onClick={(e) => {
         if (e.target === overlayRef.current) onClose();
       }}
     >
-      <div
+      <div role="button" tabIndex={0}
         className="sys-modal sys-modal-wide"
         style={{ textAlign: "left" }}
-        onClick={(e) => e.stopPropagation()}
+        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.currentTarget.click(); } }} onClick={(e) => e.stopPropagation()}
       >
         <>
           <h2 style={{ marginBottom: 24 }}>Edit Shop & Invoice Details</h2>
@@ -173,33 +173,33 @@ function ShopModal({
           <div className="modal-section-label">Shop Information</div>
 
           <div className="sys-form-group">
-            <label className="sys-label">Shop Name</label>
+            <label htmlFor="field_90jjmb" className="sys-label">Shop Name</label>
             <input
-              className="sys-input"
+ id="field_90jjmb"              className="sys-input"
               value={form.shopName}
               onChange={(e) => handleChange("shopName", e.target.value)}
             />
           </div>
           <div className="sys-form-group">
-            <label className="sys-label">Phone</label>
+            <label htmlFor="field_ieqpr3" className="sys-label">Phone</label>
             <input
-              className="sys-input"
+ id="field_ieqpr3"              className="sys-input"
               value={form.phone}
               onChange={(e) => handleChange("phone", e.target.value)}
             />
           </div>
           <div className="sys-form-group">
-            <label className="sys-label">Email</label>
+            <label htmlFor="field_cpbgvo" className="sys-label">Email</label>
             <input
-              className="sys-input"
+ id="field_cpbgvo"              className="sys-input"
               value={form.email}
               onChange={(e) => handleChange("email", e.target.value)}
             />
           </div>
           <div className="sys-form-group">
-            <label className="sys-label">Address</label>
+            <label htmlFor="field_8be5xd" className="sys-label">Address</label>
             <textarea
-              className="sys-input sys-textarea"
+ id="field_8be5xd"              className="sys-input sys-textarea"
               rows="3"
               value={form.address}
               onChange={(e) => handleChange("address", e.target.value)}
@@ -209,26 +209,26 @@ function ShopModal({
           <div className="modal-section-label">Invoice Configuration</div>
 
           <div className="sys-form-group">
-            <label className="sys-label">Invoice Prefix</label>
+            <label htmlFor="field_vr4xbg" className="sys-label">Invoice Prefix</label>
             <input
-              className="sys-input"
+ id="field_vr4xbg"              className="sys-input"
               value={form.invoicePrefix}
               onChange={(e) => handleChange("invoicePrefix", e.target.value)}
             />
           </div>
           <div className="sys-form-group">
-            <label className="sys-label">Footer Text</label>
+            <label htmlFor="field_770brf" className="sys-label">Footer Text</label>
             <textarea
-              className="sys-input sys-textarea"
+ id="field_770brf"              className="sys-input sys-textarea"
               rows="2"
               value={form.footerText}
               onChange={(e) => handleChange("footerText", e.target.value)}
             />
           </div>
           <div className="sys-form-group">
-            <label className="sys-label">Logo URL</label>
+            <label htmlFor="field_1n33rj" className="sys-label">Logo URL</label>
             <input
-              className="sys-input"
+ id="field_1n33rj"              className="sys-input"
               value={form.logoUrl}
               onChange={(e) => handleChange("logoUrl", e.target.value)}
             />
@@ -237,18 +237,18 @@ function ShopModal({
           <div className="modal-toggles">
             <div className="sys-toggle-row">
               <span className="sys-toggle-label">Show Logo</span>
-              <div
+              <div role="button" tabIndex={0}
                 className={`sys-toggle ${form.showLogo ? "on" : ""}`}
-                onClick={() => handleChange("showLogo", !form.showLogo)}
+                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.currentTarget.click(); } }} onClick={() => handleChange("showLogo", !form.showLogo)}
               >
                 <div className="sys-toggle-thumb" />
               </div>
             </div>
             <div className="sys-toggle-row">
               <span className="sys-toggle-label">Show Doctor Name</span>
-              <div
+              <div role="button" tabIndex={0}
                 className={`sys-toggle ${form.showDoctorName ? "on" : ""}`}
-                onClick={() =>
+                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.currentTarget.click(); } }} onClick={() =>
                   handleChange("showDoctorName", !form.showDoctorName)
                 }
               >
@@ -257,27 +257,27 @@ function ShopModal({
             </div>
             <div className="sys-toggle-row">
               <span className="sys-toggle-label">QR Code</span>
-              <div
+              <div role="button" tabIndex={0}
                 className={`sys-toggle ${form.showQRCode ? "on" : ""}`}
-                onClick={() => handleChange("showQRCode", !form.showQRCode)}
+                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.currentTarget.click(); } }} onClick={() => handleChange("showQRCode", !form.showQRCode)}
               >
                 <div className="sys-toggle-thumb" />
               </div>
             </div>
             <div className="sys-toggle-row">
               <span className="sys-toggle-label">HSN Code</span>
-              <div
+              <div role="button" tabIndex={0}
                 className={`sys-toggle ${form.showHSNCode ? "on" : ""}`}
-                onClick={() => handleChange("showHSNCode", !form.showHSNCode)}
+                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.currentTarget.click(); } }} onClick={() => handleChange("showHSNCode", !form.showHSNCode)}
               >
                 <div className="sys-toggle-thumb" />
               </div>
             </div>
             <div className="sys-toggle-row">
               <span className="sys-toggle-label">Expiry Date</span>
-              <div
+              <div role="button" tabIndex={0}
                 className={`sys-toggle ${form.showExpiryDate ? "on" : ""}`}
-                onClick={() =>
+                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.currentTarget.click(); } }} onClick={() =>
                   handleChange("showExpiryDate", !form.showExpiryDate)
                 }
               >
@@ -286,9 +286,9 @@ function ShopModal({
             </div>
             <div className="sys-toggle-row">
               <span className="sys-toggle-label">GST Breakdown</span>
-              <div
+              <div role="button" tabIndex={0}
                 className={`sys-toggle ${form.showGSTBreakdown ? "on" : ""}`}
-                onClick={() =>
+                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.currentTarget.click(); } }} onClick={() =>
                   handleChange("showGSTBreakdown", !form.showGSTBreakdown)
                 }
               >

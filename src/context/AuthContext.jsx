@@ -119,19 +119,22 @@ export function AuthProvider({ children }) {
   }, [clearAuthState]);
 
   useEffect(() => {
+    let ignore = false;
     if (restoreAttemptedRef.current) return;
     restoreAttemptedRef.current = true;
 
     const restoreSession = async () => {
       if (!getStoredUser()) {
-        setLoading(false);
-        restoredRef.current = true;
-        setRestored(true);
+        if (!ignore) {
+          setLoading(false);
+          restoredRef.current = true;
+          setRestored(true);
+        }
         return;
       }
 
       const newToken = await refreshToken();
-      if (!newToken) {
+      if (!ignore && !newToken) {
         clearAuthState();
         setLoading(false);
         restoredRef.current = true;
@@ -140,12 +143,17 @@ export function AuthProvider({ children }) {
       }
 
       await refreshUser();
-      setLoading(false);
-      restoredRef.current = true;
-      setRestored(true);
+      if (!ignore) {
+        setLoading(false);
+        restoredRef.current = true;
+        setRestored(true);
+      }
     };
 
     restoreSession();
+    return () => {
+      ignore = true;
+    };
   }, [clearAuthState, refreshToken, refreshUser]);
 
   useEffect(() => {

@@ -11,6 +11,7 @@ export default function PurchaseReport({ from, to }) {
   const [data, setData] = useState(null);
 
   useEffect(() => {
+    let ignore = false;
     const fetchPurchases = async () => {
       setLoading(true);
       setErrorState(null);
@@ -21,26 +22,33 @@ export default function PurchaseReport({ from, to }) {
             params: { from, to },
           },
         );
-        if (res.data && res.data.success) {
-          setData(res.data.data);
-        } else {
-          setErrorState("Invalid API response format");
+        if (!ignore) {
+          if (res.data && res.data.success) {
+            setData(res.data.data);
+          } else {
+            setErrorState("Invalid API response format");
+          }
         }
       } catch (err) {
         console.error("Purchase fetch error:", err);
-        setErrorState(
-          err.response?.data?.error ||
-            err.message ||
-            "Failed to load purchase report",
-        );
+        if (!ignore) {
+          setErrorState(
+            err.response?.data?.error ||
+              err.message ||
+              "Failed to load purchase report",
+          );
+        }
       } finally {
-        setLoading(false);
+        if (!ignore) setLoading(false);
       }
     };
 
     if (from && to) {
       fetchPurchases();
     }
+    return () => {
+      ignore = true;
+    };
   }, [from, to]);
 
   if (loading) {
@@ -216,8 +224,16 @@ export default function PurchaseReport({ from, to }) {
           <div style={{ marginTop: "32px" }}>
             {supplierSpend.map((s) => (
               <div
+                role="button"
+                tabIndex={0}
                 key={s.name}
                 className="med-revenue-row"
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    e.currentTarget.click();
+                  }
+                }}
                 onClick={() => navigate("/suppliers")}
               >
                 <span className="med-name-label">{s.name}</span>

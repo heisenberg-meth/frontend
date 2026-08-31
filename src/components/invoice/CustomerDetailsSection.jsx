@@ -121,11 +121,11 @@ export default function CustomerDetailsSection({
       <div className="billing-grid">
         {/* Customer Name (col span 3) */}
         <div className="form-field billing-col-3">
-          <label>Customer Name</label>
+          <label htmlFor="field_u82jqx">Customer Name</label>
           <div className="relative">
             <User className="form-field-icon" size={14} />
             <input
-              required
+ id="field_u82jqx"              required
               type="text"
               disabled={isWalkIn}
               value={isWalkIn ? "Walk-in Customer" : patient.name}
@@ -140,11 +140,11 @@ export default function CustomerDetailsSection({
 
         {/* Phone Number (col span 3) */}
         <div className="form-field billing-col-3 relative">
-          <label>Phone Number</label>
+          <label htmlFor="field_5hkfkd">Phone Number</label>
           <div className="relative">
             <Phone className="form-field-icon" size={14} />
             <input
-              required
+ id="field_5hkfkd"              required
               type="text"
               disabled={isWalkIn}
               value={isWalkIn ? "" : patient.phone}
@@ -184,11 +184,11 @@ export default function CustomerDetailsSection({
 
         {/* Doctor Name (col span 3) */}
         <div className="form-field billing-col-3">
-          <label>Doctor Name</label>
+          <label htmlFor="field_9glqt0">Doctor Name</label>
           <div className="relative">
             <Stethoscope className="form-field-icon" size={14} />
             <input
-              required
+ id="field_9glqt0"              required
               type="text"
               value={doctorName}
               onChange={(e) => setDoctorName(e.target.value)}
@@ -200,11 +200,11 @@ export default function CustomerDetailsSection({
 
         {/* Prescription No (col span 3) */}
         <div className="form-field billing-col-3">
-          <label>Prescription No</label>
+          <label htmlFor="field_xwa2ge">Prescription No</label>
           <div className="relative">
             <FileText className="form-field-icon" size={14} />
             <input
-              required
+ id="field_xwa2ge"              required
               type="text"
               value={prescriptionNo}
               onChange={(e) => setPrescriptionNo(e.target.value)}
@@ -216,11 +216,11 @@ export default function CustomerDetailsSection({
 
         {/* Address (col span 5) */}
         <div className="form-field billing-col-5">
-          <label>Address</label>
+          <label htmlFor="field_oie7ea">Address</label>
           <div className="relative">
             <MapPin className="form-field-icon" size={14} />
             <input
-              required
+ id="field_oie7ea"              required
               type="text"
               disabled={isWalkIn}
               value={isWalkIn ? "" : address}
@@ -233,11 +233,11 @@ export default function CustomerDetailsSection({
 
         {/* GST Number (col span 2) */}
         <div className="form-field billing-col-2">
-          <label>GST Number</label>
+          <label htmlFor="field_umklzr">GST Number</label>
           <div className="relative">
             <Shield className="form-field-icon" size={14} />
             <input
-              required
+ id="field_umklzr"              required
               type="text"
               disabled={isWalkIn}
               value={isWalkIn ? "" : gstNumber}
@@ -250,11 +250,11 @@ export default function CustomerDetailsSection({
 
         {/* Payment Terms (col span 2) */}
         <div className="form-field billing-col-2">
-          <label>Payment Terms</label>
+          <label htmlFor="field_ct10u6">Payment Terms</label>
           <div className="relative">
             <CreditCard className="form-field-icon" size={13} />
             <select
-              value={paymentTerms}
+ id="field_ct10u6"              value={paymentTerms}
               onChange={(e) => setPaymentTerms(e.target.value)}
               className="form-input form-input-has-icon cursor-pointer"
             >
@@ -269,11 +269,11 @@ export default function CustomerDetailsSection({
 
         {/* Due Date (col span 3) */}
         <div className="form-field billing-col-3">
-          <label>Due Date</label>
+          <label htmlFor="field_gkuctl">Due Date</label>
           <div className="relative">
             <Calendar className="form-field-icon" size={13} />
             <input
-              required
+ id="field_gkuctl"              required
               type="date"
               value={dueDate}
               onChange={(e) => setDueDate(e.target.value)}

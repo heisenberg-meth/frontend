@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import {
   User,
   Mail,
@@ -20,7 +20,7 @@ import {
   Zap,
   Loader2,
 } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
+import { AnimatePresence, m } from "framer-motion";
 import api from "../api";
 import {
   changePassword,
@@ -73,7 +73,10 @@ export default function Profile({
   const toggleModal = (modal) =>
     setActiveModals((prev) => ({ ...prev, [modal]: !prev[modal] }));
 
+  const syncingRef = useRef(false);
   const handleSync = async () => {
+    if (syncingRef.current) return;
+    syncingRef.current = true;
     setSyncing(true);
     try {
       await api.put("/auth/me", {
@@ -87,11 +90,14 @@ export default function Profile({
     } catch (err) {
       showToast(err.response?.data?.error || "Failed to sync profile", "error");
     } finally {
+      syncingRef.current = false;
       setSyncing(false);
     }
   };
 
+  const passwordSavingRef = useRef(false);
   const handlePasswordChange = async () => {
+    if (passwordSavingRef.current) return;
     if (!passwordData.currentPassword || !passwordData.newPassword) {
       showToast("All password fields are required", "error");
       return;
@@ -109,6 +115,7 @@ export default function Profile({
       );
       return;
     }
+    passwordSavingRef.current = true;
     setPasswordSaving(true);
     try {
       await changePassword({
@@ -128,11 +135,13 @@ export default function Profile({
         "error",
       );
     } finally {
+      passwordSavingRef.current = false;
       setPasswordSaving(false);
     }
   };
 
   const loadSessions = async () => {
+    if (sessionsLoading) return;
     setSessionsLoading(true);
     try {
       const res = await getActiveSessions();
@@ -145,7 +154,12 @@ export default function Profile({
     }
   };
 
+  const isTerminatingRef = useRef(false);
+  const isUploadingRef = useRef(false);
   const handleTerminateSession = async (sessionId) => {
+    if (isTerminatingRef.current) return;
+    isTerminatingRef.current = true;
+
     try {
       await terminateSession(sessionId);
       showToast("Session terminated", "success");
@@ -155,6 +169,8 @@ export default function Profile({
         err.response?.data?.error || "Failed to terminate session",
         "error",
       );
+    } finally {
+      isTerminatingRef.current = false;
     }
   };
 
@@ -195,7 +211,15 @@ export default function Profile({
                   alt="Profile"
                 />
                 <div
+                  role="button"
+                  tabIndex={0}
                   className="avatar-overlay"
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      e.currentTarget.click();
+                    }
+                  }}
                   onClick={() => toggleModal("photo")}
                 >
                   <Camera size={24} />
@@ -241,10 +265,11 @@ export default function Profile({
             </div>
             <div className="form-grid-2">
               <div className="input-v2">
-                <label>
+                <label htmlFor="field_o99mva">
                   <User size={12} /> Full Professional Name
                 </label>
                 <input
+                  id="field_o99mva"
                   required
                   type="text"
                   value={formData.fullName || ""}
@@ -255,10 +280,11 @@ export default function Profile({
                 />
               </div>
               <div className="input-v2">
-                <label>
+                <label htmlFor="field_upj2jg">
                   <Store size={12} /> Pharmacy / Node Name
                 </label>
                 <input
+                  id="field_upj2jg"
                   required
                   type="text"
                   value={formData.shopName || ""}
@@ -269,11 +295,12 @@ export default function Profile({
                 />
               </div>
               <div className="input-v2">
-                <label>
+                <label htmlFor="field_zy4rwy">
                   <Mail size={12} /> Registered Email
                 </label>
                 <div className="input-with-action">
                   <input
+                    id="field_zy4rwy"
                     required
                     type="text"
                     value={formData.email || ""}
@@ -291,10 +318,11 @@ export default function Profile({
                 </div>
               </div>
               <div className="input-v2">
-                <label>
+                <label htmlFor="field_zagjgf">
                   <Phone size={12} /> Phone Number
                 </label>
                 <input
+                  id="field_zagjgf"
                   required
                   type="text"
                   value={formData.phone || ""}
@@ -305,10 +333,11 @@ export default function Profile({
                 />
               </div>
               <div className="input-v2">
-                <label>
+                <label htmlFor="field_howjed">
                   <BadgeCheck size={12} /> Employee ID
                 </label>
                 <input
+                  id="field_howjed"
                   required
                   type="text"
                   value={formData.employeeId}
@@ -316,10 +345,11 @@ export default function Profile({
                 />
               </div>
               <div className="input-v2">
-                <label>
+                <label htmlFor="field_vc1y7f">
                   <ShieldCheck size={12} /> Professional Role
                 </label>
                 <input
+                  id="field_vc1y7f"
                   required
                   type="text"
                   value={
@@ -399,14 +429,19 @@ export default function Profile({
                     hidden
                     accept="image/*"
                     onChange={async (e) => {
+                      if (isUploadingRef.current) return;
                       const file = e.target.files[0];
                       if (!file) return;
+                      isUploadingRef.current = true;
+
                       try {
                         await handleAvatarUpload(file);
                         showToast("Avatar updated successfully", "success");
                         toggleModal("photo");
                       } catch (err) {
                         showToast("Failed to upload avatar", err);
+                      } finally {
+                        isUploadingRef.current = false;
                       }
                     }}
                   />
@@ -429,9 +464,10 @@ export default function Profile({
           >
             <div className="password-modal-content">
               <div className="input-v2">
-                <label>Current Password</label>
+                <label htmlFor="field_1w48xx">Current Password</label>
                 <div className="input-with-action">
                   <input
+                    id="field_1w48xx"
                     required
                     type={showPassword ? "text" : "password"}
                     placeholder="Enter current password"
@@ -452,8 +488,9 @@ export default function Profile({
                 </div>
               </div>
               <div className="input-v2">
-                <label>New Password</label>
+                <label htmlFor="field_yoq0fe">New Password</label>
                 <input
+                  id="field_yoq0fe"
                   required
                   type="password"
                   placeholder="Enter new password"
@@ -492,8 +529,9 @@ export default function Profile({
                 </div>
               </div>
               <div className="input-v2">
-                <label>Confirm New Password</label>
+                <label htmlFor="field_0in1ep">Confirm New Password</label>
                 <input
+                  id="field_0in1ep"
                   required
                   type="password"
                   placeholder="Repeat new password"
@@ -584,9 +622,9 @@ export default function Profile({
               <button
                 className="logout-all-btn"
                 onClick={() => {
-                  sessions
-                    .filter((s) => !s.isCurrent)
-                    .forEach((s) => handleTerminateSession(s.id));
+                  for (const s of sessions) {
+                    if (!s.isCurrent) handleTerminateSession(s.id);
+                  }
                 }}
               >
                 <LogOut size={16} /> TERMINATE ALL OTHER SESSIONS
@@ -602,7 +640,7 @@ export default function Profile({
 function Modal({ title, children, onClose }) {
   return (
     <div className="modal-overlay-v2">
-      <motion.div
+      <m.div
         className="modal-content-glass"
         initial={{ opacity: 0, scale: 0.95, y: 20 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -615,7 +653,7 @@ function Modal({ title, children, onClose }) {
           </button>
         </div>
         <div className="modal-body-v2">{children}</div>
-      </motion.div>
+      </m.div>
     </div>
   );
 }

@@ -1,5 +1,5 @@
-import { useState, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { useState, useEffect, useEffectEvent } from "react";
+import { AnimatePresence, m } from "framer-motion";
 import {
   LogOut,
   X,
@@ -21,14 +21,18 @@ export default function LogoutModal({
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [logoutSuccess, setLogoutSuccess] = useState(false);
 
+  const onEscape = useEffectEvent(() => {
+    if (!isLoggingOut) onClose();
+  });
+
   useEffect(() => {
     if (!isOpen) return;
     const handler = (e) => {
-      if (e.key === "Escape" && !isLoggingOut) onClose();
+      if (e.key === "Escape") onEscape();
     };
     document.addEventListener("keydown", handler);
     return () => document.removeEventListener("keydown", handler);
-  }, [isOpen, isLoggingOut, onClose]);
+  }, [isOpen]);
 
   const handleClose = () => {
     if (isLoggingOut) return;
@@ -67,15 +71,15 @@ export default function LogoutModal({
   return (
     <AnimatePresence>
       {isOpen && (
-        <motion.div
+        <m.div role="button" tabIndex={0}
           className="logout-overlay"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.25 }}
-          onClick={handleOverlayClick}
+          onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.currentTarget.click(); } }} onClick={handleOverlayClick}
         >
-          <motion.div
+          <m.div
             className="logout-modal"
             initial={{ opacity: 0, scale: 0.88, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -87,7 +91,7 @@ export default function LogoutModal({
           >
             {/* ── Success State ── */}
             {logoutSuccess ? (
-              <motion.div
+              <m.div
                 className="logout-success-state"
                 initial={{ opacity: 0, scale: 0.8 }}
                 animate={{ opacity: 1, scale: 1 }}
@@ -97,7 +101,7 @@ export default function LogoutModal({
                 </div>
                 <h3>Session Ended</h3>
                 <p>Redirecting to authentication...</p>
-              </motion.div>
+              </m.div>
             ) : (
               <>
                 {/* ── Header ── */}
@@ -215,8 +219,8 @@ export default function LogoutModal({
                 </div>
               </>
             )}
-          </motion.div>
-        </motion.div>
+          </m.div>
+        </m.div>
       )}
     </AnimatePresence>
   );

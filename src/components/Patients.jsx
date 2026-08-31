@@ -16,7 +16,7 @@ import {
   Loader2,
   Upload,
 } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
+import { AnimatePresence, m } from "framer-motion";
 import { safeNumber } from "../utils/number.js";
 
 function Spinner({ size = 14 }) {
@@ -147,10 +147,10 @@ export default function Patients({ showToast }) {
       ) : (
         <div className="patient-grid-v2">
           {filteredPatients.map((p) => (
-            <motion.div
+            <m.div role="button" tabIndex={0}
               key={p.id}
               className="patient-card-v2"
-              onClick={() => handleOpenPatient(p)}
+              onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.currentTarget.click(); } }} onClick={() => handleOpenPatient(p)}
               whileHover={{ y: -4 }}
             >
               <div className="p-card-top">
@@ -182,7 +182,7 @@ export default function Patients({ showToast }) {
                   </div>
                 </div>
               </div>
-            </motion.div>
+            </m.div>
           ))}
         </div>
       )}
@@ -191,14 +191,14 @@ export default function Patients({ showToast }) {
       <AnimatePresence>
         {showDrawer && selectedPatient && (
           <>
-            <motion.div
+            <m.div role="button" tabIndex={0}
               className="drawer-overlay"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              onClick={() => setShowDrawer(false)}
+              onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.currentTarget.click(); } }} onClick={() => setShowDrawer(false)}
             />
-            <motion.div
+            <m.div
               className="patient-drawer"
               initial={{ x: "100%" }}
               animate={{ x: 0 }}
@@ -367,7 +367,7 @@ export default function Patients({ showToast }) {
                   </div>
                 )}
               </div>
-            </motion.div>
+            </m.div>
           </>
         )}
       </AnimatePresence>

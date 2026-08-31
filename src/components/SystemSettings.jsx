@@ -33,16 +33,16 @@ export default function SystemSettings({
   const [currentView, setCurrentView] = useState("settings");
   const [saving, setSaving] = useState(false);
   const [settingsData, setSettingsData] = useState(null);
-  const [reorderQty, setReorderQty] = useState(50);
-  const [autoEscalation, setAutoEscalation] = useState(true);
-  const [immutableAudit, setImmutableAudit] = useState(false);
-  const [oosNotif, setOosNotif] = useState(true);
-  const [fifoEnf, setFifoEnf] = useState(true);
+  const reorderQtyRef = useRef(50);
+  const autoEscalationRef = useRef(true);
+  const immutableAuditRef = useRef(false);
+  const oosNotifRef = useRef(true);
+  const fifoEnfRef = useRef(true);
   const [notifEmail, setNotifEmail] = useState(true);
-  const [notifInApp, setNotifInApp] = useState(true);
-  const [notifSms, setNotifSms] = useState(false);
+  const notifInAppRef = useRef(true);
+  const notifSmsRef = useRef(false);
   const [notifWa, setNotifWa] = useState(false);
-  const [alertEmail, setAlertEmail] = useState("");
+  const alertEmailRef = useRef("");
   const [notifHistory, setNotifHistory] = useState([]);
   const [queueMetrics, setQueueMetrics] = useState(null);
   const [isOpsLoading, setIsOpsLoading] = useState(false);
@@ -59,27 +59,27 @@ export default function SystemSettings({
 
         if (s.inventory) {
           if (s.inventory.autoReorderEnabled !== undefined)
-            setAutoEscalation(s.inventory.autoReorderEnabled);
+            autoEscalationRef.current = s.inventory.autoReorderEnabled;
           if (s.inventory.immutableAudit !== undefined)
-            setImmutableAudit(s.inventory.immutableAudit);
+            immutableAuditRef.current = s.inventory.immutableAudit;
           if (s.inventory.outOfStockNotification !== undefined)
-            setOosNotif(s.inventory.outOfStockNotification);
+            oosNotifRef.current = s.inventory.outOfStockNotification;
           if (s.inventory.fifoEnabled !== undefined)
-            setFifoEnf(s.inventory.fifoEnabled);
+            fifoEnfRef.current = s.inventory.fifoEnabled;
           if (s.inventory.reorderQuantityMultiplier)
-            setReorderQty(s.inventory.reorderQuantityMultiplier * 10);
+            reorderQtyRef.current = s.inventory.reorderQuantityMultiplier * 10;
         }
         if (s.notifications) {
           if (s.notifications.emailEnabled !== undefined)
             setNotifEmail(s.notifications.emailEnabled);
           if (s.notifications.inAppEnabled !== undefined)
-            setNotifInApp(s.notifications.inAppEnabled);
+            notifInAppRef.current = s.notifications.inAppEnabled;
           if (s.notifications.smsEnabled !== undefined)
-            setNotifSms(s.notifications.smsEnabled);
+            notifSmsRef.current = s.notifications.smsEnabled;
           if (s.notifications.whatsappEnabled !== undefined)
             setNotifWa(s.notifications.whatsappEnabled);
           if (s.notifications.alertEmail)
-            setAlertEmail(s.notifications.alertEmail);
+            alertEmailRef.current = s.notifications.alertEmail;
         }
       }
     } catch (err) {
@@ -167,18 +167,20 @@ export default function SystemSettings({
         api.put(API_ROUTES.SETTINGS_INVENTORY, {
           lowStockThreshold: lowStock,
           expiryAlertDays: expiryDays,
-          autoReorderEnabled: autoEscalation,
-          immutableAudit: immutableAudit,
-          outOfStockNotification: oosNotif,
-          fifoEnabled: fifoEnf,
-          reorderQuantityMultiplier: Math.round(reorderQty / 10),
+          autoReorderEnabled: autoEscalationRef.current,
+          immutableAudit: immutableAuditRef.current,
+          outOfStockNotification: oosNotifRef.current,
+          fifoEnabled: fifoEnfRef.current,
+          reorderQuantityMultiplier: Math.round(reorderQtyRef.current / 10),
         }),
         api.put(API_ROUTES.SETTINGS_NOTIFICATIONS, {
           emailEnabled: notifEmail,
-          inAppEnabled: notifInApp,
-          smsEnabled: notifSms,
+          inAppEnabled: notifInAppRef.current,
+          smsEnabled: notifSmsRef.current,
           whatsappEnabled: notifWa,
-          alertEmail: alertEmail ? alertEmail.trim() : null,
+          alertEmail: alertEmailRef.current
+            ? alertEmailRef.current.trim()
+            : null,
         }),
       ]);
       showToast("Global facility configuration synchronized", "success");
@@ -331,9 +333,9 @@ export default function SystemSettings({
                 {subscription?.status || "PENDING"}
               </div>
             </div>
-            <div
+            <div role="button" tabIndex={0}
               className="enterprise-grad-card"
-              onClick={() => setCurrentView("subscription")}
+              onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.currentTarget.click(); } }} onClick={() => setCurrentView("subscription")}
             >
               {subscription?.isTrial && (
                 <>
@@ -411,18 +413,18 @@ export default function SystemSettings({
             </h3>
             <div className="sys-toggle-row">
               <span className="sys-toggle-label">Email</span>
-              <div
+              <div role="button" tabIndex={0}
                 className={`sys-toggle ${notifEmail ? "on" : ""}`}
-                onClick={() => setNotifEmail(!notifEmail)}
+                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.currentTarget.click(); } }} onClick={() => setNotifEmail(!notifEmail)}
               >
                 <div className="sys-toggle-thumb" />
               </div>
             </div>
             <div className="sys-toggle-row">
               <span className="sys-toggle-label">WhatsApp</span>
-              <div
+              <div role="button" tabIndex={0}
                 className={`sys-toggle ${notifWa ? "on" : ""}`}
-                onClick={() => setNotifWa(!notifWa)}
+                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.currentTarget.click(); } }} onClick={() => setNotifWa(!notifWa)}
               >
                 <div className="sys-toggle-thumb" />
               </div>

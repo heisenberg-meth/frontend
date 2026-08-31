@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { createPortal } from "react-dom";
 import { Calendar, ChevronDown, X } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
+import { AnimatePresence, m } from "framer-motion";
 import SalesReport from "./reports/SalesReport";
 import PurchaseReport from "./reports/PurchaseReport";
 import PnLReport from "./reports/PnLReport";
@@ -196,7 +196,7 @@ export default function ReportsHub({ showToast }) {
         <AnimatePresence>
           {showDateRangeModal && (
             <div className="stock-modal-overlay" style={{ zIndex: 1100 }}>
-              <motion.div
+              <m.div
                 className="stock-modal-content"
                 style={{ width: "420px" }}
                 initial={{ opacity: 0, y: 20 }}
@@ -224,9 +224,9 @@ export default function ReportsHub({ showToast }) {
                     style={{ gridTemplateColumns: "1fr" }}
                   >
                     <div className="pos-input-group">
-                      <label className="p-label">FROM DATE</label>
+                      <label htmlFor="field_fo8dwa" className="p-label">FROM DATE</label>
                       <input
-                        required
+ id="field_fo8dwa"                        required
                         className="pos-input"
                         type="date"
                         value={dateRange.from}
@@ -239,9 +239,9 @@ export default function ReportsHub({ showToast }) {
                       />
                     </div>
                     <div className="pos-input-group">
-                      <label className="p-label">TO DATE</label>
+                      <label htmlFor="field_3rjf8l" className="p-label">TO DATE</label>
                       <input
-                        required
+ id="field_3rjf8l"                        required
                         className="pos-input"
                         type="date"
                         value={dateRange.to}
@@ -299,7 +299,7 @@ export default function ReportsHub({ showToast }) {
                     Apply Filter
                   </button>
                 </div>
-              </motion.div>
+              </m.div>
             </div>
           )}
         </AnimatePresence>,

@@ -28,9 +28,11 @@ const getDays = (d) => {
 const fmt = (n) =>
   `₹${safeNumber(n).toLocaleString("en-IN", { maximumFractionDigits: 0 })}`;
 
+const EMPTY_MEDICINES = [];
+
 /* ─── MAIN DASHBOARD ─── */
 export default function Dashboard({
-  medicines = [],
+  medicines = EMPTY_MEDICINES,
   expiryDays = 30,
   lowStock = 10,
   lastSync = new Date(),
@@ -286,9 +288,9 @@ export default function Dashboard({
 
       {/* 4. STAT CARDS ROW (6 cards) */}
       <div className="hub-stats-row-v2">
-        <div
+        <div role="button" tabIndex={0}
           className="stat-card-v2"
-          onClick={() => navigate("/stock")}
+          onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.currentTarget.click(); } }} onClick={() => navigate("/stock")}
           onMouseMove={handleMouseMove}
         >
           <div className="stat-v2-header">
@@ -300,9 +302,9 @@ export default function Dashboard({
           <div className="stat-v2-val teal text-primary">{stats.total}</div>
         </div>
 
-        <div
+        <div role="button" tabIndex={0}
           className="stat-card-v2"
-          onClick={() => navigate("/lowstock")}
+          onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.currentTarget.click(); } }} onClick={() => navigate("/lowstock")}
           onMouseMove={handleMouseMove}
         >
           <div className="stat-v2-header">
@@ -319,9 +321,9 @@ export default function Dashboard({
           </div>
         </div>
 
-        <div
+        <div role="button" tabIndex={0}
           className="stat-card-v2"
-          onClick={() => navigate("/expiry")}
+          onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.currentTarget.click(); } }} onClick={() => navigate("/expiry")}
           onMouseMove={handleMouseMove}
         >
           <div className="stat-v2-header">
@@ -335,9 +337,9 @@ export default function Dashboard({
           </div>
         </div>
 
-        <div
+        <div role="button" tabIndex={0}
           className="stat-card-v2"
-          onClick={() => navigate("/billing")}
+          onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.currentTarget.click(); } }} onClick={() => navigate("/billing")}
           onMouseMove={handleMouseMove}
         >
           <div className="stat-v2-header">
@@ -351,9 +353,9 @@ export default function Dashboard({
           </div>
         </div>
 
-        <div
+        <div role="button" tabIndex={0}
           className="stat-card-v2"
-          onClick={() => navigate("/billing")}
+          onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.currentTarget.click(); } }} onClick={() => navigate("/billing")}
           onMouseMove={handleMouseMove}
         >
           <div className="stat-v2-header">
@@ -365,9 +367,9 @@ export default function Dashboard({
           <div className="stat-v2-val blue text-blue-400">{billsToday}</div>
         </div>
 
-        <div
+        <div role="button" tabIndex={0}
           className="stat-card-v2"
-          onClick={() => navigate("/purchases")}
+          onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.currentTarget.click(); } }} onClick={() => navigate("/purchases")}
           onMouseMove={handleMouseMove}
         >
           <div className="stat-v2-header">
@@ -412,10 +414,10 @@ export default function Dashboard({
               <div className="mini-table-body flex flex-col gap-1">
                 {needsReorderList.length > 0 ? (
                   needsReorderList.map((item) => (
-                    <div
+                    <div role="button" tabIndex={0}
                       key={item.id}
                       className="mini-table-row"
-                      onClick={() => navigate("/stock")}
+                      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.currentTarget.click(); } }} onClick={() => navigate("/stock")}
                     >
                       <span className="row-med">{item.name}</span>
                       <span className="row-stock text-yellow-500 font-bold">

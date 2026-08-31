@@ -898,11 +898,7 @@ export default function LegalPages({ initialSection, showBackButton = true }) {
       )}
 
       <div className="legal-layout">
-        <nav
-          className="legal-sidebar"
-          role="navigation"
-          aria-label="Legal documents"
-        >
+        <nav className="legal-sidebar" aria-label="Legal documents">
           <div className="legal-sidebar-title">Legal & Compliance</div>
           {SECTIONS.map(({ id, label, icon: Icon }) => (
             <button

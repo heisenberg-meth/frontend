@@ -23,6 +23,7 @@ export default function SalesReport({ from, to, showToast }) {
   const [data, setData] = useState(null);
 
   useEffect(() => {
+    let ignore = false;
     const fetchSales = async () => {
       setLoading(true);
       setErrorState(null);
@@ -30,26 +31,33 @@ export default function SalesReport({ from, to, showToast }) {
         const res = await api.get(API_ROUTES.REPORTS_SALES || "reports/sales", {
           params: { from, to },
         });
-        if (res.data && res.data.success) {
-          setData(res.data.data);
-        } else {
-          setErrorState("Invalid API response format");
+        if (!ignore) {
+          if (res.data && res.data.success) {
+            setData(res.data.data);
+          } else {
+            setErrorState("Invalid API response format");
+          }
         }
       } catch (err) {
         console.error("Sales fetch error:", err);
-        setErrorState(
-          err.response?.data?.error ||
-            err.message ||
-            "Failed to load sales report",
-        );
+        if (!ignore) {
+          setErrorState(
+            err.response?.data?.error ||
+              err.message ||
+              "Failed to load sales report",
+          );
+        }
       } finally {
-        setLoading(false);
+        if (!ignore) setLoading(false);
       }
     };
 
     if (from && to) {
       fetchSales();
     }
+    return () => {
+      ignore = true;
+    };
   }, [from, to]);
 
   const exportCSV = () => {
@@ -393,8 +401,16 @@ export default function SalesReport({ from, to, showToast }) {
           <div style={{ marginTop: "20px" }}>
             {topMedicines.map((m) => (
               <div
+                role="button"
+                tabIndex={0}
                 key={m.revenue}
                 className="med-revenue-row"
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    e.currentTarget.click();
+                  }
+                }}
                 onClick={() =>
                   showToast(`Opening detail for ${m.medicineName}`, "info")
                 }

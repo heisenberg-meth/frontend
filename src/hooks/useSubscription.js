@@ -1,11 +1,10 @@
-import { useMemo } from "react";
 import { useAuth } from "./useAuth";
 import { SubscriptionStatus } from "../constants/enums";
 
 export function useSubscription() {
   const { subscription, refreshSubscription } = useAuth();
 
-  const isLocked = useMemo(() => {
+  const isLocked = (() => {
     if (!subscription) return false;
     const status = subscription.status;
     return (
@@ -13,19 +12,13 @@ export function useSubscription() {
       status === SubscriptionStatus.CANCELLED ||
       status === SubscriptionStatus.PENDING
     );
-  }, [subscription]);
+  })();
 
-  const isTrial = useMemo(() => {
-    return subscription?.status === SubscriptionStatus.TRIAL;
-  }, [subscription]);
+  const isTrial = subscription?.status === SubscriptionStatus.TRIAL;
 
-  const isActive = useMemo(() => {
-    return subscription?.status === SubscriptionStatus.ACTIVE;
-  }, [subscription]);
+  const isActive = subscription?.status === SubscriptionStatus.ACTIVE;
 
-  const daysRemaining = useMemo(() => {
-    return subscription?.daysRemaining ?? 0;
-  }, [subscription]);
+  const daysRemaining = subscription?.daysRemaining ?? 0;
 
   return {
     subscription,

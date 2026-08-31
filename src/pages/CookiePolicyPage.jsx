@@ -130,9 +130,9 @@ export default function CookiePolicyPage() {
       {/* Simplified Nav */}
       <nav className="lp-nav lp-nav--scrolled">
         <div className="lp-nav-inner">
-          <div
+          <div role="button" tabIndex={0}
             className="lp-logo"
-            onClick={() => {
+            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.currentTarget.click(); } }} onClick={() => {
               navigate("/");
             }}
           >

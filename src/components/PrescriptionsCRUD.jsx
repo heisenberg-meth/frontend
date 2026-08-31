@@ -24,7 +24,7 @@ import {
   X,
   Stethoscope,
 } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
+import { AnimatePresence, m } from "framer-motion";
 import api from "../api";
 import { API_ROUTES } from "../constants/api.routes.js";
 import {
@@ -204,13 +204,13 @@ function PrescriptionModal({ onClose, onSave, editData, showToast, saving }) {
   };
 
   return (
-    <div className="rx-modal-overlay" onClick={onClose}>
-      <motion.div
+    <div role="button" tabIndex={0} className="rx-modal-overlay" onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.currentTarget.click(); } }} onClick={onClose}>
+      <m.div role="button" tabIndex={0}
         className="rx-modal-content"
         initial={{ opacity: 0, scale: 0.95, y: 20 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.95, y: 20 }}
-        onClick={(e) => e.stopPropagation()}
+        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.currentTarget.click(); } }} onClick={(e) => e.stopPropagation()}
       >
         <div className="rx-modal-header">
           <div className="header-title-group">
@@ -238,27 +238,27 @@ function PrescriptionModal({ onClose, onSave, editData, showToast, saving }) {
           <div className="rx-section-title">Patient Information</div>
           <div className="rx-form-grid">
             <div className="form-group full">
-              <label>Patient Name *</label>
+              <label htmlFor="field_70vw0h">Patient Name *</label>
               <input
-                required
+ id="field_70vw0h"                required
                 placeholder="e.g. Rahul Sharma"
                 value={form.patientName}
                 onChange={(e) => set("patientName", e.target.value)}
               />
             </div>
             <div className="form-group">
-              <label>Phone Number</label>
+              <label htmlFor="field_odo97c">Phone Number</label>
               <input
-                required
+ id="field_odo97c"                required
                 placeholder="+91 XXXXX XXXXX"
                 value={form.patientPhone}
                 onChange={(e) => set("patientPhone", e.target.value)}
               />
             </div>
             <div className="form-group">
-              <label>Age</label>
+              <label htmlFor="field_8dgnw7">Age</label>
               <input
-                required
+ id="field_8dgnw7"                required
                 type="number"
                 placeholder="42"
                 value={form.patientAge}
@@ -266,9 +266,9 @@ function PrescriptionModal({ onClose, onSave, editData, showToast, saving }) {
               />
             </div>
             <div className="form-group">
-              <label>Gender</label>
+              <label htmlFor="field_gjmdbv">Gender</label>
               <select
-                value={form.patientGender}
+ id="field_gjmdbv"                value={form.patientGender}
                 onChange={(e) => set("patientGender", e.target.value)}
               >
                 <option>Male</option>
@@ -277,9 +277,9 @@ function PrescriptionModal({ onClose, onSave, editData, showToast, saving }) {
               </select>
             </div>
             <div className="form-group">
-              <label>Priority</label>
+              <label htmlFor="field_n4ve14">Priority</label>
               <select
-                value={form.priority}
+ id="field_n4ve14"                value={form.priority}
                 onChange={(e) => set("priority", e.target.value)}
               >
                 {PRIORITY_OPTIONS.map((p) => (
@@ -293,27 +293,27 @@ function PrescriptionModal({ onClose, onSave, editData, showToast, saving }) {
           <div className="rx-section-title">Doctor Information</div>
           <div className="rx-form-grid">
             <div className="form-group full">
-              <label>Doctor Name *</label>
+              <label htmlFor="field_afav0f">Doctor Name *</label>
               <input
-                required
+ id="field_afav0f"                required
                 placeholder="e.g. Dr. Priya Mehta"
                 value={form.doctorName}
                 onChange={(e) => set("doctorName", e.target.value)}
               />
             </div>
             <div className="form-group">
-              <label>Registration Number</label>
+              <label htmlFor="field_j0abnt">Registration Number</label>
               <input
-                required
+ id="field_j0abnt"                required
                 placeholder="e.g. MMC-12345"
                 value={form.doctorRegNo}
                 onChange={(e) => set("doctorRegNo", e.target.value)}
               />
             </div>
             <div className="form-group">
-              <label>Specialty</label>
+              <label htmlFor="field_a2hsdh">Specialty</label>
               <input
-                required
+ id="field_a2hsdh"                required
                 placeholder="e.g. General Physician"
                 value={form.doctorSpecialty}
                 onChange={(e) => set("doctorSpecialty", e.target.value)}
@@ -338,9 +338,9 @@ function PrescriptionModal({ onClose, onSave, editData, showToast, saving }) {
               </div>
               <div className="rx-form-grid">
                 <div className="form-group full">
-                  <label>Medicine Name *</label>
+                  <label htmlFor="field_5li47c">Medicine Name *</label>
                   <input
-                    required
+ id="field_5li47c"                    required
                     placeholder="e.g. Amoxicillin 500mg"
                     value={med.name}
                     onChange={(e) =>
@@ -349,9 +349,9 @@ function PrescriptionModal({ onClose, onSave, editData, showToast, saving }) {
                   />
                 </div>
                 <div className="form-group">
-                  <label>Dosage</label>
+                  <label htmlFor="field_85rvcu">Dosage</label>
                   <select
-                    value={med.dosage}
+ id="field_85rvcu"                    value={med.dosage}
                     onChange={(e) =>
                       updateMedication(idx, "dosage", e.target.value)
                     }
@@ -362,10 +362,10 @@ function PrescriptionModal({ onClose, onSave, editData, showToast, saving }) {
                   </select>
                 </div>
                 <div className="form-group">
-                  <label>Duration</label>
+                  <label htmlFor="field_osikg9">Duration</label>
                   <div style={{ display: "flex", gap: 8 }}>
                     <input
-                      required
+ id="field_osikg9"                      required
                       type="number"
                       placeholder="7"
                       value={med.duration}
@@ -388,9 +388,9 @@ function PrescriptionModal({ onClose, onSave, editData, showToast, saving }) {
                   </div>
                 </div>
                 <div className="form-group full">
-                  <label>Instructions</label>
+                  <label htmlFor="field_l1b6i2">Instructions</label>
                   <input
-                    required
+ id="field_l1b6i2"                    required
                     placeholder="e.g. After meals"
                     value={med.instructions}
                     onChange={(e) =>
@@ -409,18 +409,18 @@ function PrescriptionModal({ onClose, onSave, editData, showToast, saving }) {
           <div className="rx-section-title">Additional Information</div>
           <div className="rx-form-grid">
             <div className="form-group full">
-              <label>Diagnosis</label>
+              <label htmlFor="field_r09biv">Diagnosis</label>
               <input
-                required
+ id="field_r09biv"                required
                 placeholder="e.g. Upper Respiratory Tract Infection"
                 value={form.diagnosis}
                 onChange={(e) => set("diagnosis", e.target.value)}
               />
             </div>
             <div className="form-group full">
-              <label>Notes</label>
+              <label htmlFor="field_v6ksp3">Notes</label>
               <textarea
-                placeholder="Additional instructions, allergies, etc."
+ id="field_v6ksp3"                placeholder="Additional instructions, allergies, etc."
                 value={form.notes}
                 onChange={(e) => set("notes", e.target.value)}
                 rows={3}
@@ -449,7 +449,7 @@ function PrescriptionModal({ onClose, onSave, editData, showToast, saving }) {
             )}
           </button>
         </div>
-      </motion.div>
+      </m.div>
     </div>
   );
 }
@@ -468,13 +468,13 @@ function PrescriptionViewModal({
   const meds = rx.medications || rx.meds || [];
 
   return (
-    <div className="rx-modal-overlay" onClick={onClose}>
-      <motion.div
+    <div role="button" tabIndex={0} className="rx-modal-overlay" onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.currentTarget.click(); } }} onClick={onClose}>
+      <m.div role="button" tabIndex={0}
         className="rx-modal-content rx-view-modal"
         initial={{ opacity: 0, scale: 0.95, y: 20 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.95, y: 20 }}
-        onClick={(e) => e.stopPropagation()}
+        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.currentTarget.click(); } }} onClick={(e) => e.stopPropagation()}
       >
         <div className="rx-view-header">
           <div className="rx-view-icon">
@@ -504,15 +504,15 @@ function PrescriptionViewModal({
           <h4>Patient Details</h4>
           <div className="rx-view-grid">
             <div className="rx-detail">
-              <label>Name</label>
+              <span>Name</span>
               <span>{rx.patientName || rx.patient || "—"}</span>
             </div>
             <div className="rx-detail">
-              <label>Phone</label>
+              <span>Phone</span>
               <span>{rx.patientPhone || rx.phone || "—"}</span>
             </div>
             <div className="rx-detail">
-              <label>Age / Gender</label>
+              <span>Age / Gender</span>
               <span>
                 {rx.patientAge ? `${rx.patientAge}y` : "—"} /{" "}
                 {rx.patientGender || rx.gender || "—"}
@@ -525,15 +525,15 @@ function PrescriptionViewModal({
           <h4>Doctor Details</h4>
           <div className="rx-view-grid">
             <div className="rx-detail">
-              <label>Name</label>
+              <span>Name</span>
               <span>{rx.doctorName || rx.doctor || "—"}</span>
             </div>
             <div className="rx-detail">
-              <label>Reg No</label>
+              <span>Reg No</span>
               <span className="mono">{rx.doctorRegNo || "—"}</span>
             </div>
             <div className="rx-detail">
-              <label>Specialty</label>
+              <span>Specialty</span>
               <span>{rx.doctorSpecialty || "—"}</span>
             </div>
           </div>
@@ -627,7 +627,7 @@ function PrescriptionViewModal({
             </>
           )}
         </div>
-      </motion.div>
+      </m.div>
     </div>
   );
 }
@@ -636,13 +636,13 @@ function PrescriptionViewModal({
 function EditNotesModal({ rx, onClose, onSave, saving }) {
   const [notes, setNotes] = useState(rx.notes || "");
   return (
-    <div className="rx-modal-overlay" onClick={onClose}>
-      <motion.div
+    <div role="button" tabIndex={0} className="rx-modal-overlay" onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.currentTarget.click(); } }} onClick={onClose}>
+      <m.div role="button" tabIndex={0}
         className="rx-modal-content rx-notes-modal"
         initial={{ opacity: 0, scale: 0.95, y: 20 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.95, y: 20 }}
-        onClick={(e) => e.stopPropagation()}
+        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.currentTarget.click(); } }} onClick={(e) => e.stopPropagation()}
       >
         <div className="rx-modal-header">
           <div className="header-title-group">
@@ -655,9 +655,9 @@ function EditNotesModal({ rx, onClose, onSave, saving }) {
         </div>
         <div className="rx-modal-scroll">
           <div className="form-group full">
-            <label>Notes</label>
+            <label htmlFor="field_qgppk0">Notes</label>
             <textarea
-              value={notes}
+ id="field_qgppk0"              value={notes}
               onChange={(e) => setNotes(e.target.value)}
               rows={6}
               placeholder="Update prescription notes..."
@@ -684,7 +684,7 @@ function EditNotesModal({ rx, onClose, onSave, saving }) {
             )}
           </button>
         </div>
-      </motion.div>
+      </m.div>
     </div>
   );
 }
@@ -887,6 +887,7 @@ export default function PrescriptionsCRUD({ showToast }) {
     a.download = `prescriptions_${new Date().toISOString().split("T")[0]}.csv`;
     a.click();
     showToast("Prescriptions exported", "success");
+    setTimeout(() => window.URL.revokeObjectURL(url), 100);
   };
 
   return (

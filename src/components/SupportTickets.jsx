@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import {
   Plus,
   MessageSquare,
@@ -6,7 +6,7 @@ import {
   AlertTriangle,
   Send,
 } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
+import { AnimatePresence, m } from "framer-motion";
 import api from "../api";
 
 const CATEGORIES = [
@@ -109,11 +109,14 @@ export default function SupportTickets({ user, showToast }) {
     };
   }, [refresh]);
 
+  const isSubmittingTicketRef = useRef(false);
   const createTicket = async () => {
+    if (isSubmittingTicketRef.current) return;
     if (!form.title.trim() || !form.description.trim()) {
       showToast("Title and description are required", "error");
       return;
     }
+    isSubmittingTicketRef.current = true;
     setSubmitting(true);
     try {
       await api.post("/support", form);
@@ -132,6 +135,7 @@ export default function SupportTickets({ user, showToast }) {
         "error",
       );
     } finally {
+      isSubmittingTicketRef.current = false;
       setSubmitting(false);
     }
   };
@@ -146,8 +150,11 @@ export default function SupportTickets({ user, showToast }) {
     }
   };
 
+  const isReplyingRef = useRef(false);
   const sendReply = async () => {
+    if (isReplyingRef.current) return;
     if (!replyText.trim()) return;
+    isReplyingRef.current = true;
     try {
       const url = `/support/${selectedTicket.id}/replies`;
       await api.post(url, { message: replyText });
@@ -155,10 +162,15 @@ export default function SupportTickets({ user, showToast }) {
       loadTicketDetails(selectedTicket.id);
     } catch (err) {
       showToast(err.response?.data?.error || "Failed to send reply", "error");
+    } finally {
+      isReplyingRef.current = false;
     }
   };
 
+  const isClosingRef = useRef(false);
   const closeTicket = async (ticketId) => {
+    if (isClosingRef.current) return;
+    isClosingRef.current = true;
     try {
       await api.put(`/support/${ticketId}/close`);
       showToast("Ticket closed", "success");
@@ -166,10 +178,15 @@ export default function SupportTickets({ user, showToast }) {
       refresh();
     } catch (err) {
       showToast(err.response?.data?.error || "Failed to close", "error");
+    } finally {
+      isClosingRef.current = false;
     }
   };
 
+  const isReopeningRef = useRef(false);
   const reopenTicket = async (ticketId, reason) => {
+    if (isReopeningRef.current) return;
+    isReopeningRef.current = true;
     try {
       await api.put(`/support/${ticketId}/reopen`, { reason });
       showToast("Ticket reopened", "success");
@@ -177,6 +194,8 @@ export default function SupportTickets({ user, showToast }) {
       refresh();
     } catch (err) {
       showToast(err.response?.data?.error || "Failed to reopen", "error");
+    } finally {
+      isReopeningRef.current = false;
     }
   };
 
@@ -296,12 +315,20 @@ export default function SupportTickets({ user, showToast }) {
       ) : (
         <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
           {tickets.map((ticket) => (
-            <motion.div
+            <m.div
+              role="button"
+              tabIndex={0}
               key={ticket.id}
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               className="sub-current-card"
               style={{ cursor: "pointer", padding: 16 }}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  e.currentTarget.click();
+                }
+              }}
               onClick={() => loadTicketDetails(ticket.id)}
             >
               <div
@@ -378,7 +405,7 @@ export default function SupportTickets({ user, showToast }) {
                   </div>
                 </div>
               </div>
-            </motion.div>
+            </m.div>
           ))}
         </div>
       )}
@@ -386,7 +413,7 @@ export default function SupportTickets({ user, showToast }) {
       <AnimatePresence>
         {showCreate && (
           <div className="modal-overlay-v2">
-            <motion.div
+            <m.div
               className="modal-content-glass"
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
@@ -403,8 +430,9 @@ export default function SupportTickets({ user, showToast }) {
               </div>
               <div className="modal-body-v2">
                 <div className="input-v2">
-                  <label>Title</label>
+                  <label htmlFor="field_4zhc6f">Title</label>
                   <input
+                    id="field_4zhc6f"
                     type="text"
                     value={form.title}
                     onChange={(e) =>
@@ -414,8 +442,9 @@ export default function SupportTickets({ user, showToast }) {
                   />
                 </div>
                 <div className="input-v2">
-                  <label>Description</label>
+                  <label htmlFor="field_6ez9tb">Description</label>
                   <textarea
+                    id="field_6ez9tb"
                     value={form.description}
                     onChange={(e) =>
                       setForm({ ...form, description: e.target.value })
@@ -434,8 +463,9 @@ export default function SupportTickets({ user, showToast }) {
                 </div>
                 <div style={{ display: "flex", gap: 12 }}>
                   <div className="input-v2" style={{ flex: 1 }}>
-                    <label>Category</label>
+                    <label htmlFor="field_hfds17">Category</label>
                     <select
+                      id="field_hfds17"
                       value={form.category}
                       onChange={(e) =>
                         setForm({ ...form, category: e.target.value })
@@ -450,8 +480,9 @@ export default function SupportTickets({ user, showToast }) {
                     </select>
                   </div>
                   <div className="input-v2" style={{ flex: 1 }}>
-                    <label>Priority</label>
+                    <label htmlFor="field_tapocp">Priority</label>
                     <select
+                      id="field_tapocp"
                       value={form.priority}
                       onChange={(e) =>
                         setForm({ ...form, priority: e.target.value })
@@ -475,7 +506,7 @@ export default function SupportTickets({ user, showToast }) {
                   {submitting ? "Creating..." : "Create Ticket"}
                 </button>
               </div>
-            </motion.div>
+            </m.div>
           </div>
         )}
       </AnimatePresence>
@@ -483,7 +514,7 @@ export default function SupportTickets({ user, showToast }) {
       <AnimatePresence>
         {selectedTicket && (
           <div className="modal-overlay-v2">
-            <motion.div
+            <m.div
               className="modal-content-glass"
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
@@ -677,7 +708,7 @@ export default function SupportTickets({ user, showToast }) {
                   )}
                 </div>
               </div>
-            </motion.div>
+            </m.div>
           </div>
         )}
       </AnimatePresence>

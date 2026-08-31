@@ -169,16 +169,21 @@ export default function AdminExpiry() {
       <div className="admin-card">
         <h3>Reminder Settings</h3>
         <div className="admin-form-group">
-          <label>Channel</label>
-          <select value={channel} onChange={(e) => setChannel(e.target.value)}>
+          <label htmlFor="channel">Channel</label>
+          <select
+            id="channel"
+            value={channel}
+            onChange={(e) => setChannel(e.target.value)}
+          >
             <option value="EMAIL">Email</option>
             <option value="SMS">SMS</option>
             <option value="WHATSAPP">WhatsApp</option>
           </select>
         </div>
         <div className="admin-form-group">
-          <label>Message Template</label>
+          <label htmlFor="messageTemplate">Message Template</label>
           <textarea
+            id="messageTemplate"
             value={message}
             onChange={(e) => setMessage(e.target.value)}
             rows={4}

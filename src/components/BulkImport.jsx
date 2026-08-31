@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useReducer, useRef } from "react";
 import { useDropzone } from "react-dropzone";
 import { useNavigate } from "react-router-dom";
 import {
@@ -12,7 +12,7 @@ import {
   X,
   FileSpreadsheet,
 } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
+import { AnimatePresence, m } from "framer-motion";
 import ExcelJS from "exceljs";
 import Papa from "papaparse";
 import api from "../api";
@@ -21,42 +21,176 @@ import { safeNumber } from "../utils/number.js";
 
 export default function BulkImport({ fetchData, showToast }) {
   const navigate = useNavigate();
-  const [file, setFile] = useState(null);
-  const [headers, setHeaders] = useState([]);
-  const [mapping, setMapping] = useState({
-    nameColumn: "med_name",
-    qtyColumn: "stock_qty",
-    expiryColumn: "expiry_dt",
-    priceColumn: "price_inr",
-    categoryColumn: "category",
-    batchColumn: "batch_no",
-    barcodeColumn: "barcode",
-    manufacturerColumn: "manufacturer",
-    genericNameColumn: "generic_name",
-    strengthColumn: "strength",
-    dosageFormColumn: "dosage_form",
-    hsnCodeColumn: "hsn_code",
-    gstPercentageColumn: "gst_percent",
-  });
-  const [importProgress, setImportProgress] = useState(0);
-  const [importStatus, setImportStatus] = useState("idle");
-  const [importType, setImportType] = useState("New Medicines");
-  const [selectedSupplier, setSelectedSupplier] = useState("None");
-  const [duplicateStrategy, setDuplicateStrategy] = useState("Skip");
-  const [barcodeOptions, setBarcodeOptions] = useState({
-    autoGen: true,
-    overwrite: false,
-    validate: true,
-  });
+  const [importState, dispatchImport] = useReducer(
+    (state, action) => {
+      if (action.type === "RESET_IMPORT") {
+        return {
+          ...state,
+          file: null,
+          headers: [],
+          importProgress: 0,
+          importStatus: "idle",
+          dataPreview: [],
+          duplicateResults: {
+            new: 0,
+            duplicates: 0,
+            conflicts: 0,
+            rows: [],
+            errors: [],
+          },
+          parsedRows: [],
+          commitResult: null,
+        };
+      }
+      if (action.type === "SET_FIELD") {
+        return {
+          ...state,
+          [action.field]:
+            typeof action.value === "function"
+              ? action.value(state[action.field])
+              : action.value,
+        };
+      }
+      return state;
+    },
+    {
+      file: null,
+      headers: [],
+      mapping: {
+        nameColumn: "med_name",
+        qtyColumn: "stock_qty",
+        expiryColumn: "expiry_dt",
+        priceColumn: "price_inr",
+        categoryColumn: "category",
+        batchColumn: "batch_no",
+        barcodeColumn: "barcode",
+        manufacturerColumn: "manufacturer",
+        genericNameColumn: "generic_name",
+        strengthColumn: "strength",
+        dosageFormColumn: "dosage_form",
+        hsnCodeColumn: "hsn_code",
+        gstPercentageColumn: "gst_percent",
+      },
+      importProgress: 0,
+      importStatus: "idle",
+      importType: "New Medicines",
+      selectedSupplier: "None",
+      duplicateStrategy: "Skip",
+      barcodeOptions: { autoGen: true, overwrite: false, validate: true },
+      dataPreview: [],
+      duplicateResults: {
+        new: 0,
+        duplicates: 0,
+        conflicts: 0,
+        rows: [],
+        errors: [],
+      },
+      parsedRows: [],
+      commitResult: null,
+    },
+  );
 
-  const [dataPreview, setDataPreview] = useState([]);
-  const [duplicateResults, setDuplicateResults] = useState({
-    new: 0,
-    duplicates: 0,
-    conflicts: 0,
-    rows: [],
-    errors: [],
-  });
+  const {
+    file,
+    headers,
+    mapping,
+    importProgress,
+    importStatus,
+    importType,
+    selectedSupplier,
+    duplicateStrategy,
+    barcodeOptions,
+    dataPreview,
+    duplicateResults,
+    parsedRows,
+    commitResult,
+  } = importState;
+
+  const setFile = useCallback(
+    (val) => dispatchImport({ type: "SET_FIELD", field: "file", value: val }),
+    [],
+  );
+  const setHeaders = useCallback(
+    (val) =>
+      dispatchImport({ type: "SET_FIELD", field: "headers", value: val }),
+    [],
+  );
+  const setMapping = useCallback(
+    (val) =>
+      dispatchImport({ type: "SET_FIELD", field: "mapping", value: val }),
+    [],
+  );
+  const setImportProgress = useCallback(
+    (val) =>
+      dispatchImport({
+        type: "SET_FIELD",
+        field: "importProgress",
+        value: val,
+      }),
+    [],
+  );
+  const setImportStatus = useCallback(
+    (val) =>
+      dispatchImport({ type: "SET_FIELD", field: "importStatus", value: val }),
+    [],
+  );
+  const setImportType = useCallback(
+    (val) =>
+      dispatchImport({ type: "SET_FIELD", field: "importType", value: val }),
+    [],
+  );
+  const setSelectedSupplier = useCallback(
+    (val) =>
+      dispatchImport({
+        type: "SET_FIELD",
+        field: "selectedSupplier",
+        value: val,
+      }),
+    [],
+  );
+  const setDuplicateStrategy = useCallback(
+    (val) =>
+      dispatchImport({
+        type: "SET_FIELD",
+        field: "duplicateStrategy",
+        value: val,
+      }),
+    [],
+  );
+  const setBarcodeOptions = useCallback(
+    (val) =>
+      dispatchImport({
+        type: "SET_FIELD",
+        field: "barcodeOptions",
+        value: val,
+      }),
+    [],
+  );
+  const setDataPreview = useCallback(
+    (val) =>
+      dispatchImport({ type: "SET_FIELD", field: "dataPreview", value: val }),
+    [],
+  );
+  const setDuplicateResults = useCallback(
+    (val) =>
+      dispatchImport({
+        type: "SET_FIELD",
+        field: "duplicateResults",
+        value: val,
+      }),
+    [],
+  );
+  const setParsedRows = useCallback(
+    (val) =>
+      dispatchImport({ type: "SET_FIELD", field: "parsedRows", value: val }),
+    [],
+  );
+  const setCommitResult = useCallback(
+    (val) =>
+      dispatchImport({ type: "SET_FIELD", field: "commitResult", value: val }),
+    [],
+  );
+
   const [showHistoryDrawer, setShowHistoryDrawer] = useState(false);
   const [importHistory, setImportHistory] = useState([]);
   const [historyLoading, setHistoryLoading] = useState(false);
@@ -71,20 +205,105 @@ export default function BulkImport({ fetchData, showToast }) {
       }
     };
   }, []);
-  const [showSaveMappingModal, setShowSaveMappingModal] = useState(false);
-  const [showLoadMappingModal, setShowLoadMappingModal] = useState(false);
-  const [savedTemplates, setSavedTemplates] = useState(() => {
+  const initialTemplates = (() => {
     try {
-      const stored = localStorage.getItem("bulkImportTemplates");
+      localStorage.removeItem("bulkImportTemplates");
+      const stored = localStorage.getItem("bulkImportTemplates:v1");
       return stored ? JSON.parse(stored) : [];
     } catch (err) {
       console.error(err);
       return [];
     }
-  });
-  const [templateName, setTemplateName] = useState("");
-  const [templateDesc, setTemplateDesc] = useState("");
-  const [templateDefault, setTemplateDefault] = useState(false);
+  })();
+
+  const [templateState, dispatchTemplate] = useReducer(
+    (state, action) => {
+      switch (action.type) {
+        case "SAVE_TEMPLATE":
+          return {
+            ...state,
+            savedTemplates: action.payload,
+            showSaveMappingModal: false,
+            templateName: "",
+            templateDesc: "",
+            templateDefault: false,
+          };
+        case "SET_FIELD":
+          return {
+            ...state,
+            [action.field]:
+              typeof action.value === "function"
+                ? action.value(state[action.field])
+                : action.value,
+          };
+        default:
+          return state;
+      }
+    },
+    {
+      savedTemplates: initialTemplates,
+      showSaveMappingModal: false,
+      showLoadMappingModal: false,
+      templateName: "",
+      templateDesc: "",
+      templateDefault: false,
+    },
+  );
+
+  const {
+    savedTemplates,
+    showSaveMappingModal,
+    showLoadMappingModal,
+    templateName,
+    templateDesc,
+    templateDefault,
+  } = templateState;
+
+  const setShowSaveMappingModal = useCallback(
+    (val) =>
+      dispatchTemplate({
+        type: "SET_FIELD",
+        field: "showSaveMappingModal",
+        value: val,
+      }),
+    [],
+  );
+  const setShowLoadMappingModal = useCallback(
+    (val) =>
+      dispatchTemplate({
+        type: "SET_FIELD",
+        field: "showLoadMappingModal",
+        value: val,
+      }),
+    [],
+  );
+  const setTemplateName = useCallback(
+    (val) =>
+      dispatchTemplate({
+        type: "SET_FIELD",
+        field: "templateName",
+        value: val,
+      }),
+    [],
+  );
+  const setTemplateDesc = useCallback(
+    (val) =>
+      dispatchTemplate({
+        type: "SET_FIELD",
+        field: "templateDesc",
+        value: val,
+      }),
+    [],
+  );
+  const setTemplateDefault = useCallback(
+    (val) =>
+      dispatchTemplate({
+        type: "SET_FIELD",
+        field: "templateDefault",
+        value: val,
+      }),
+    [],
+  );
   const [supplierForm, setSupplierForm] = useState({
     name: "",
     contact: "",
@@ -94,8 +313,6 @@ export default function BulkImport({ fetchData, showToast }) {
     leadTime: "",
     paymentTerms: "Net 30",
   });
-  const [parsedRows, setParsedRows] = useState([]);
-  const [commitResult, setCommitResult] = useState(null);
 
   const autoMapHeaders = useCallback(
     (fileHeaders) => {
@@ -342,7 +559,7 @@ export default function BulkImport({ fetchData, showToast }) {
 
       setMapping((prev) => ({ ...prev, ...newMapping }));
     },
-    [showToast],
+    [setMapping, showToast],
   );
 
   const normalizeDate = (dateStr) => {
@@ -433,10 +650,12 @@ export default function BulkImport({ fetchData, showToast }) {
         setHistoryLoading(true);
         try {
           const res = await api.get("/import/history");
-          if (active && res.data?.success) {
+          if (!active) return;
+          if (res.data?.success) {
             setImportHistory(res.data.data);
           }
         } catch (err) {
+          if (!active) return;
           console.error(err);
           showToast(err.message || "Failed to fetch import history", "error");
         } finally {
@@ -451,8 +670,10 @@ export default function BulkImport({ fetchData, showToast }) {
   }, [showHistoryDrawer, showToast]);
 
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const isAnalyzingRef = useRef(false);
 
   const handleAnalyzeImport = useCallback(async () => {
+    if (isAnalyzingRef.current) return;
     if (!file) {
       showToast("Upload a file first", "error");
       return;
@@ -462,6 +683,7 @@ export default function BulkImport({ fetchData, showToast }) {
       return;
     }
 
+    isAnalyzingRef.current = true;
     setIsAnalyzing(true);
     const medicines = getMappedMedicines();
     try {
@@ -479,22 +701,21 @@ export default function BulkImport({ fetchData, showToast }) {
       }
     } catch (err) {
       console.error(err);
-      const errMsg =
-        err.response?.data?.message ||
-        err.message ||
-        "Failed to analyze import data";
-      showToast(errMsg, "error");
+      showToast(err.message || "Failed to analyze import data", "error");
     } finally {
+      isAnalyzingRef.current = false;
       setIsAnalyzing(false);
     }
   }, [
     file,
+    mapping.nameColumn,
+    mapping.qtyColumn,
     getMappedMedicines,
+    showToast,
     selectedSupplier,
     duplicateStrategy,
     barcodeOptions,
-    mapping,
-    showToast,
+    setDuplicateResults,
   ]);
 
   const onDrop = useCallback(
@@ -599,7 +820,14 @@ export default function BulkImport({ fetchData, showToast }) {
         showToast("Failed to parse file", "error");
       }
     },
-    [showToast, autoMapHeaders],
+    [
+      setFile,
+      setHeaders,
+      setParsedRows,
+      setDataPreview,
+      autoMapHeaders,
+      showToast,
+    ],
   );
 
   const { getRootProps, getInputProps, isDragActive, open } = useDropzone({
@@ -668,13 +896,9 @@ export default function BulkImport({ fetchData, showToast }) {
       date: new Date().toLocaleDateString(),
     };
     const updated = [...savedTemplates, newTemplate];
-    setSavedTemplates(updated);
-    localStorage.setItem("bulkImportTemplates", JSON.stringify(updated));
+    dispatchTemplate({ type: "SAVE_TEMPLATE", payload: updated });
+    localStorage.setItem("bulkImportTemplates:v1", JSON.stringify(updated));
     showToast("Template saved", "success");
-    setShowSaveMappingModal(false);
-    setTemplateName("");
-    setTemplateDesc("");
-    setTemplateDefault(false);
   };
 
   const loadTemplate = (template) => {
@@ -683,11 +907,16 @@ export default function BulkImport({ fetchData, showToast }) {
     setShowLoadMappingModal(false);
   };
 
+  const isSavingSupplierRef = useRef(false);
+
   const saveSupplier = async () => {
+    if (isSavingSupplierRef.current) return;
     if (!supplierForm.name.trim()) {
       showToast("Supplier name required", "error");
       return;
     }
+    isSavingSupplierRef.current = true;
+
     try {
       const payload = {
         name: supplierForm.name.trim(),
@@ -730,14 +959,16 @@ export default function BulkImport({ fetchData, showToast }) {
         showToast("Supplier Added", "success");
       }
     } catch (err) {
-      showToast(
-        err.response?.data?.message || "Failed to add Supplier",
-        "error",
-      );
+      console.error(err);
+      showToast(err.response?.data?.error || "Failed to add supplier", "error");
+    } finally {
+      isSavingSupplierRef.current = false;
     }
   };
 
+  const importProcessingRef = useRef(false);
   const handleStartImport = async () => {
+    if (importProcessingRef.current) return;
     if (!file) {
       showToast("Upload a file first", "error");
       return;
@@ -747,6 +978,7 @@ export default function BulkImport({ fetchData, showToast }) {
       return;
     }
 
+    importProcessingRef.current = true;
     setImportStatus("processing");
     setImportProgress(15);
 
@@ -788,6 +1020,8 @@ export default function BulkImport({ fetchData, showToast }) {
         error.message ||
         "Failed to commit import";
       showToast(errMsg, "error");
+    } finally {
+      importProcessingRef.current = false;
     }
   };
 
@@ -850,7 +1084,7 @@ export default function BulkImport({ fetchData, showToast }) {
       </div>
 
       {importStatus === "complete" ? (
-        <motion.div
+        <m.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           className="import-results-card"
@@ -956,7 +1190,7 @@ export default function BulkImport({ fetchData, showToast }) {
               Import Another
             </button>
           </div>
-        </motion.div>
+        </m.div>
       ) : importStatus === "processing" ? (
         <div className="import-progress-card">
           <h3>Processing Import...</h3>
@@ -1083,7 +1317,7 @@ export default function BulkImport({ fetchData, showToast }) {
                 <h3>Import Configuration</h3>
 
                 <div className="config-row">
-                  <label className="p-label">IMPORT TYPE</label>
+                  <span className="p-label">IMPORT TYPE</span>
                   <div className="pill-selector">
                     {[
                       "New Medicines",
@@ -1102,9 +1336,12 @@ export default function BulkImport({ fetchData, showToast }) {
                 </div>
 
                 <div className="config-row">
-                  <label className="p-label">TAG THIS IMPORT TO SUPPLIER</label>
+                  <label htmlFor="field_84m1br" className="p-label">
+                    TAG THIS IMPORT TO SUPPLIER
+                  </label>
                   <div className="supplier-select-wrap">
                     <select
+                      id="field_84m1br"
                       className="pos-input"
                       value={selectedSupplier}
                       onChange={(e) => {
@@ -1143,7 +1380,7 @@ export default function BulkImport({ fetchData, showToast }) {
                 </div>
 
                 <div className="config-row">
-                  <label className="p-label">IF DUPLICATE FOUND</label>
+                  <span className="p-label">IF DUPLICATE FOUND</span>
                   <div className="radio-group-vertical">
                     {[
                       {
@@ -1164,8 +1401,16 @@ export default function BulkImport({ fetchData, showToast }) {
                       },
                     ].map((opt) => (
                       <div
+                        role="button"
+                        tabIndex={0}
                         key={opt.id}
                         className="radio-item"
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter" || e.key === " ") {
+                            e.preventDefault();
+                            e.currentTarget.click();
+                          }
+                        }}
                         onClick={() => setDuplicateStrategy(opt.id)}
                       >
                         <div
@@ -1181,7 +1426,7 @@ export default function BulkImport({ fetchData, showToast }) {
                 </div>
 
                 <div className="config-row">
-                  <label className="p-label">BARCODE SETTINGS</label>
+                  <span className="p-label">BARCODE SETTINGS</span>
                   <div className="checkbox-list">
                     <label className="check-item">
                       <input
@@ -1246,8 +1491,9 @@ export default function BulkImport({ fetchData, showToast }) {
                 <h3>Field Mapping</h3>
                 {fields.map((f) => (
                   <div key={f.key} className="map-row-v2">
-                    <label>{f.label}</label>
+                    <label htmlFor="field_r6n3xw">{f.label}</label>
                     <select
+                      id="field_r6n3xw"
                       className="pos-input"
                       value={mapping[f.key]}
                       onChange={(e) =>
@@ -1291,7 +1537,7 @@ export default function BulkImport({ fetchData, showToast }) {
 
           <AnimatePresence>
             {file && (
-              <motion.div
+              <m.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 className="duplicate-panel-card"
@@ -1313,15 +1559,15 @@ export default function BulkImport({ fetchData, showToast }) {
                 <div className="det-summary-grid">
                   <div className="det-stat success">
                     <div className="num">{duplicateResults.new}</div>
-                    <label>New Records</label>
+                    <span>New Records</span>
                   </div>
                   <div className="det-stat warning">
                     <div className="num">{duplicateResults.duplicates}</div>
-                    <label>Duplicates Found</label>
+                    <span>Duplicates Found</span>
                   </div>
                   <div className="det-stat danger">
                     <div className="num">{duplicateResults.conflicts}</div>
-                    <label>Conflicts</label>
+                    <span>Conflicts</span>
                   </div>
                 </div>
 
@@ -1506,7 +1752,7 @@ export default function BulkImport({ fetchData, showToast }) {
                       </div>
                     </div>
                   )}
-              </motion.div>
+              </m.div>
             )}
           </AnimatePresence>
 
@@ -1589,10 +1835,18 @@ export default function BulkImport({ fetchData, showToast }) {
         {showHistoryDrawer && (
           <>
             <div
+              role="button"
+              tabIndex={0}
               className="drawer-overlay"
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  e.currentTarget.click();
+                }
+              }}
               onClick={() => setShowHistoryDrawer(false)}
             />
-            <motion.div
+            <m.div
               initial={{ x: "100%" }}
               animate={{ x: 0 }}
               exit={{ x: "100%" }}
@@ -1609,7 +1863,7 @@ export default function BulkImport({ fetchData, showToast }) {
               </div>
 
               <div className="drawer-quick-stats">
-                <label>Total imported</label>
+                <span>Total imported</span>
                 <div className="val">1,248 medicines</div>
                 <div className="sub">Last import: 2 hours ago</div>
               </div>
@@ -1679,7 +1933,7 @@ export default function BulkImport({ fetchData, showToast }) {
                   Load More History...
                 </button>
               </div>
-            </motion.div>
+            </m.div>
           </>
         )}
       </AnimatePresence>
@@ -1702,8 +1956,11 @@ export default function BulkImport({ fetchData, showToast }) {
             <div className="modal-body">
               <div className="p-form-grid">
                 <div className="pos-input-group">
-                  <label className="p-label">SUPPLIER NAME*</label>
+                  <label htmlFor="field_iggj8m" className="p-label">
+                    SUPPLIER NAME*
+                  </label>
                   <input
+                    id="field_iggj8m"
                     required
                     className="pos-input"
                     placeholder="e.g. Cipla Ltd"
@@ -1714,8 +1971,11 @@ export default function BulkImport({ fetchData, showToast }) {
                   />
                 </div>
                 <div className="pos-input-group">
-                  <label className="p-label">CONTACT PERSON</label>
+                  <label htmlFor="field_rj59f5" className="p-label">
+                    CONTACT PERSON
+                  </label>
                   <input
+                    id="field_rj59f5"
                     required
                     className="pos-input"
                     placeholder="Name"
@@ -1729,8 +1989,11 @@ export default function BulkImport({ fetchData, showToast }) {
                   />
                 </div>
                 <div className="pos-input-group">
-                  <label className="p-label">PHONE</label>
+                  <label htmlFor="field_kx3d43" className="p-label">
+                    PHONE
+                  </label>
                   <input
+                    id="field_kx3d43"
                     required
                     className="pos-input"
                     placeholder="+91..."
@@ -1744,8 +2007,11 @@ export default function BulkImport({ fetchData, showToast }) {
                   />
                 </div>
                 <div className="pos-input-group">
-                  <label className="p-label">EMAIL</label>
+                  <label htmlFor="field_pq7nvt" className="p-label">
+                    EMAIL
+                  </label>
                   <input
+                    id="field_pq7nvt"
                     required
                     className="pos-input"
                     placeholder="supplier@mail.com"
@@ -1759,8 +2025,11 @@ export default function BulkImport({ fetchData, showToast }) {
                   />
                 </div>
                 <div className="pos-input-group">
-                  <label className="p-label">GST NUMBER</label>
+                  <label htmlFor="field_xkpgsj" className="p-label">
+                    GST NUMBER
+                  </label>
                   <input
+                    id="field_xkpgsj"
                     required
                     className="pos-input"
                     placeholder="29AAB..."
@@ -1771,8 +2040,11 @@ export default function BulkImport({ fetchData, showToast }) {
                   />
                 </div>
                 <div className="pos-input-group">
-                  <label className="p-label">LEAD TIME (DAYS)</label>
+                  <label htmlFor="field_6384ac" className="p-label">
+                    LEAD TIME (DAYS)
+                  </label>
                   <input
+                    id="field_6384ac"
                     required
                     className="pos-input"
                     type="number"
@@ -1788,8 +2060,11 @@ export default function BulkImport({ fetchData, showToast }) {
                 </div>
               </div>
               <div className="pos-input-group">
-                <label className="p-label">PAYMENT TERMS</label>
+                <label htmlFor="field_0dkque" className="p-label">
+                  PAYMENT TERMS
+                </label>
                 <select
+                  id="field_0dkque"
                   className="pos-input"
                   value={supplierForm.paymentTerms}
                   onChange={(e) =>
@@ -1840,8 +2115,11 @@ export default function BulkImport({ fetchData, showToast }) {
             </div>
             <div className="modal-body">
               <div className="pos-input-group">
-                <label className="p-label">TEMPLATE NAME</label>
+                <label htmlFor="field_himsdq" className="p-label">
+                  TEMPLATE NAME
+                </label>
                 <input
+                  id="field_himsdq"
                   required
                   className="pos-input"
                   placeholder="e.g. Cipla Invoice Format"
@@ -1850,8 +2128,11 @@ export default function BulkImport({ fetchData, showToast }) {
                 />
               </div>
               <div className="pos-input-group full">
-                <label className="p-label">DESCRIPTION</label>
+                <label htmlFor="field_vvjc94" className="p-label">
+                  DESCRIPTION
+                </label>
                 <textarea
+                  id="field_vvjc94"
                   className="pos-input"
                   placeholder="Optional notes..."
                   style={{ height: 80 }}

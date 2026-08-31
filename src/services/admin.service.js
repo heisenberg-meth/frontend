@@ -3,7 +3,7 @@ import { getBaseUrl, getCsrfToken, cyrb128 } from "../api";
 import { API_ROUTES } from "../constants/api.routes";
 
 const REFRESH_KEY = "viyan_admin_refresh";
-const ADMIN_KEY = "viyan_admin_user";
+const ADMIN_KEY = "viyan_admin_user:v1";
 
 const adminHttp = axios.create({
   baseURL: getBaseUrl(),
@@ -113,6 +113,7 @@ export const adminApi = {
 
   getStoredAdmin() {
     try {
+      localStorage.removeItem("viyan_admin_user");
       const raw = localStorage.getItem(ADMIN_KEY);
       return raw ? JSON.parse(raw) : null;
     } catch {

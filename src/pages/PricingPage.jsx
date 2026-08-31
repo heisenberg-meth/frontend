@@ -97,14 +97,14 @@ export default function PricingPage() {
           {user ? (
             <button
               onClick={() => navigate("/dashboard")}
-              className="text-sm px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-200 hover:border-emerald-500 dark:hover:border-emerald-400 hover:text-emerald-500 dark:hover:text-emerald-400 transition-all cursor-pointer font-semibold bg-white dark:bg-[#151b2a]"
+              className="text-sm px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-200 hover:border-emerald-500 dark:hover:border-emerald-400 hover:text-emerald-500 dark:hover:text-emerald-400 transition cursor-pointer font-semibold bg-white dark:bg-[#151b2a]"
             >
               Dashboard
             </button>
           ) : (
             <button
               onClick={() => navigate("/login")}
-              className="text-sm px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-200 hover:border-emerald-500 dark:hover:border-emerald-400 hover:text-emerald-500 dark:hover:text-emerald-400 transition-all cursor-pointer font-semibold bg-white dark:bg-[#151b2a]"
+              className="text-sm px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-200 hover:border-emerald-500 dark:hover:border-emerald-400 hover:text-emerald-500 dark:hover:text-emerald-400 transition cursor-pointer font-semibold bg-white dark:bg-[#151b2a]"
             >
               Log In
             </button>
@@ -139,7 +139,7 @@ export default function PricingPage() {
             return (
               <div
                 key={plan.id}
-                className={`relative flex flex-col justify-between bg-white dark:bg-[#151b2a] border rounded-3xl p-8 md:p-10 transition-all duration-300 hover:-translate-y-1.5 hover:shadow-2xl group ${
+                className={`relative flex flex-col justify-between bg-white dark:bg-[#151b2a] border rounded-3xl p-8 md:p-10 transition duration-300 hover:-translate-y-1.5 hover:shadow-2xl group ${
                   plan.highlight
                     ? "border-emerald-500 shadow-[0_10px_30px_rgba(16,185,129,0.08)] dark:shadow-[0_10px_30px_rgba(79,219,200,0.05)]"
                     : "border-slate-200 dark:border-slate-800/80 shadow-[0_4px_20px_rgba(0,0,0,0.02)]"
@@ -221,7 +221,7 @@ export default function PricingPage() {
                 {/* Button */}
                 <button
                   onClick={() => handleSelectPlan(plan.id)}
-                  className={`w-full py-4 px-6 rounded-2xl font-bold text-sm transition-all duration-300 cursor-pointer shadow-md ${
+                  className={`w-full py-4 px-6 rounded-2xl font-bold text-sm transition duration-300 cursor-pointer shadow-md ${
                     plan.highlight
                       ? "bg-emerald-500 text-white hover:bg-emerald-600 hover:shadow-[0_8px_24px_rgba(16,185,129,0.25)] hover:scale-[1.01]"
                       : "bg-slate-50 dark:bg-slate-800/40 text-slate-700 dark:text-slate-200 hover:bg-emerald-500 hover:text-white dark:hover:bg-emerald-500 dark:hover:text-white border border-slate-200 dark:border-slate-700/60"

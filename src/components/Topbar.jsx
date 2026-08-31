@@ -1,5 +1,12 @@
 import { useNavigate } from "react-router-dom";
-import { useState, useEffect, useCallback, useMemo, useRef } from "react";
+import {
+  useState,
+  useEffect,
+  useCallback,
+  useMemo,
+  useEffectEvent,
+  useTransition,
+} from "react";
 import {
   Search,
   Bell,
@@ -22,7 +29,7 @@ import {
   Command,
   CreditCard,
 } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
+import { AnimatePresence, m } from "framer-motion";
 import { getAvatarUrl } from "../utils/image.js";
 import { safeNumber } from "../utils/number.js";
 import {
@@ -167,7 +174,8 @@ export default function Topbar({
   const [showSearchOverlay, setShowSearchOverlay] = useState(false);
   const [activeCategory, setActiveCategory] = useState("All");
   const [recentSearches, setRecentSearches] = useState(() => {
-    const saved = localStorage.getItem("viyan-recent-searches");
+    localStorage.removeItem("viyan-recent-searches");
+    const saved = localStorage.getItem("viyan-recent-searches:v1");
     if (saved) {
       try {
         return JSON.parse(saved);
@@ -178,10 +186,9 @@ export default function Topbar({
     return [];
   });
   const [selectedIndex, setSelectedIndex] = useState(-1);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isPending, startTransition] = useTransition();
   const [notifications, setNotifications] = useState([]);
   const [, setNotificationsLoading] = useState(false);
-  const searchTimeoutRef = useRef(null);
 
   useEffect(() => {
     const loadNotifications = async () => {
@@ -210,26 +217,19 @@ export default function Topbar({
   }, [setNotificationsLoading]);
 
   const handleSearchChange = (value) => {
-    setSearchQuery(value);
-    setSelectedIndex(-1);
-
-    if (value.trim()) {
-      setIsLoading(true);
-      clearTimeout(searchTimeoutRef.current);
-      searchTimeoutRef.current = setTimeout(() => {
-        setIsLoading(false);
-      }, 250);
-    } else {
-      setIsLoading(false);
-    }
+    startTransition(() => {
+      setSearchQuery(value);
+      setSelectedIndex(-1);
+    });
   };
 
   const handleCloseSearch = useCallback(() => {
     setShowSearchOverlay(false);
-    setSearchQuery("");
-    setActiveCategory("All");
-    setSelectedIndex(-1);
-    setIsLoading(false);
+    startTransition(() => {
+      setSearchQuery("");
+      setActiveCategory("All");
+      setSelectedIndex(-1);
+    });
   }, []);
   const addRecentSearch = useCallback(
     (query) => {
@@ -240,7 +240,7 @@ export default function Topbar({
         ...recentSearches.filter((s) => s !== clean),
       ].slice(0, 5);
       setRecentSearches(updated);
-      localStorage.setItem("viyan-recent-searches", JSON.stringify(updated));
+      localStorage.setItem("viyan-recent-searches:v1", JSON.stringify(updated));
     },
     [recentSearches],
   );
@@ -249,7 +249,7 @@ export default function Topbar({
     e.stopPropagation();
     const updated = recentSearches.filter((s) => s !== item);
     setRecentSearches(updated);
-    localStorage.setItem("viyan-recent-searches", JSON.stringify(updated));
+    localStorage.setItem("viyan-recent-searches:v1", JSON.stringify(updated));
   };
 
   const handleItemClick = useCallback(
@@ -401,37 +401,38 @@ export default function Topbar({
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [handleCloseSearch]);
 
-  useEffect(() => {
-    const handleKeys = (e) => {
-      if (!showSearchOverlay) return;
-      if (e.key === "ArrowDown") {
-        e.preventDefault();
-        setSelectedIndex((prev) =>
-          prev < filteredResults.length - 1 ? prev + 1 : 0,
-        );
-      } else if (e.key === "ArrowUp") {
-        e.preventDefault();
-        setSelectedIndex((prev) =>
-          prev > 0 ? prev - 1 : filteredResults.length - 1,
-        );
-      } else if (e.key === "Enter") {
-        e.preventDefault();
-        if (selectedIndex >= 0 && selectedIndex < filteredResults.length) {
-          handleItemClick(filteredResults[selectedIndex]);
-        }
+  const handleKeys = useEffectEvent((e) => {
+    if (!showSearchOverlay) return;
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      setSelectedIndex((prev) =>
+        prev < filteredResults.length - 1 ? prev + 1 : 0,
+      );
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      setSelectedIndex((prev) =>
+        prev > 0 ? prev - 1 : filteredResults.length - 1,
+      );
+    } else if (e.key === "Enter") {
+      e.preventDefault();
+      if (selectedIndex >= 0 && selectedIndex < filteredResults.length) {
+        handleItemClick(filteredResults[selectedIndex]);
       }
-    };
+    }
+  });
+
+  useEffect(() => {
     window.addEventListener("keydown", handleKeys);
     return () => window.removeEventListener("keydown", handleKeys);
-  }, [showSearchOverlay, selectedIndex, handleItemClick, filteredResults]);
+  }, []);
 
   return (
     <>
       <header className="top-app-bar">
         <div className="search-container">
-          <div
+          <div role="button" tabIndex={0}
             className="search-box"
-            onClick={() => setShowSearchOverlay(true)}
+            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.currentTarget.click(); } }} onClick={() => setShowSearchOverlay(true)}
           >
             <Search size={18} className="search-icon" />
             <input
@@ -447,7 +448,7 @@ export default function Topbar({
           <div className="action-icons">
             <AnimatePresence>
               {subscription && subscription.status === "EXPIRED" && (
-                <motion.div
+                <m.div
                   className="trial-badge expired"
                   initial={{ opacity: 0, x: 20 }}
                   animate={{ opacity: 1, x: 0 }}
@@ -457,12 +458,12 @@ export default function Topbar({
                 >
                   <Clock size={14} />
                   <span>Subscription Expired | Upgrade Required</span>
-                </motion.div>
+                </m.div>
               )}
               {subscription &&
                 (subscription.status === "ACTIVE" ||
                   subscription.status === "TRIAL") && (
-                  <motion.div
+                  <m.div
                     className="trial-badge"
                     initial={{ opacity: 0, x: 20 }}
                     animate={{ opacity: 1, x: 0 }}
@@ -481,7 +482,7 @@ export default function Topbar({
                       {subscription.daysRemaining}{" "}
                       {subscription.daysRemaining === 1 ? "Day" : "Days"} Left
                     </span>
-                  </motion.div>
+                  </m.div>
                 )}
             </AnimatePresence>
 
@@ -507,7 +508,7 @@ export default function Topbar({
 
               <AnimatePresence>
                 {showNotifications && (
-                  <motion.div
+                  <m.div
                     initial={{ opacity: 0, y: 10, scale: 0.95 }}
                     animate={{ opacity: 1, y: 0, scale: 1 }}
                     exit={{ opacity: 0, y: 10, scale: 0.95 }}
@@ -532,10 +533,10 @@ export default function Topbar({
                     <div className="notif-list">
                       {notifications.length > 0 ? (
                         notifications.slice(0, 5).map((item) => (
-                          <div
+                          <div role="button" tabIndex={0}
                             key={item.id}
                             className={`notif-item ${!item.isRead ? "unread" : ""}`}
-                            onClick={() => {
+                            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.currentTarget.click(); } }} onClick={() => {
                               navigate("/notifications");
                               setShowNotifications(false);
                             }}
@@ -574,7 +575,7 @@ export default function Topbar({
                     >
                       View all notifications →
                     </button>
-                  </motion.div>
+                  </m.div>
                 )}
               </AnimatePresence>
             </div>
@@ -586,9 +587,9 @@ export default function Topbar({
             className="profile-section-wrap"
             style={{ position: "relative" }}
           >
-            <div
+            <div role="button" tabIndex={0}
               className={`user-profile clickable ${showProfileMenu ? "active" : ""}`}
-              onClick={() => setShowProfileMenu(!showProfileMenu)}
+              onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.currentTarget.click(); } }} onClick={() => setShowProfileMenu(!showProfileMenu)}
             >
               <div className="user-info">
                 <p className="user-display-name">
@@ -623,7 +624,7 @@ export default function Topbar({
 
             <AnimatePresence>
               {showProfileMenu && (
-                <motion.div
+                <m.div
                   initial={{ opacity: 0, y: 10, scale: 0.95 }}
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   exit={{ opacity: 0, y: 10, scale: 0.95 }}
@@ -672,7 +673,7 @@ export default function Topbar({
                     <LogOut size={16} />
                     <span>Log Out</span>
                   </button>
-                </motion.div>
+                </m.div>
               )}
             </AnimatePresence>
           </div>
@@ -681,20 +682,20 @@ export default function Topbar({
 
       <AnimatePresence>
         {showSearchOverlay && (
-          <motion.div
+          <m.div role="button" tabIndex={0}
             className="global-search-overlay"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            onClick={handleCloseSearch}
+            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.currentTarget.click(); } }} onClick={handleCloseSearch}
           >
-            <motion.div
+            <m.div role="button" tabIndex={0}
               className="search-overlay-content"
               initial={{ scale: 0.95, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.95, opacity: 0 }}
               transition={{ duration: 0.18, ease: "easeOut" }}
-              onClick={(e) => e.stopPropagation()}
+              onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.currentTarget.click(); } }} onClick={(e) => e.stopPropagation()}
             >
               {/* Search Header */}
               <div className="search-input-wrap">
@@ -746,7 +747,7 @@ export default function Topbar({
 
               {/* Main Content Area */}
               <div className="search-results-area">
-                {isLoading ? (
+                {isPending ? (
                   /* Skeleton Loader State */
                   <div className="skeleton-loader-container">
                     {[1, 2, 3, 4].map((n) => (
@@ -764,10 +765,10 @@ export default function Topbar({
                     /* Search Results Flat with Highlights */
                     <div className="search-results-list">
                       {filteredResults.map((item, idx) => (
-                        <div
+                        <div role="button" tabIndex={0}
                           key={item.id}
                           className={`search-result-item ${selectedIndex === idx ? "selected" : ""}`}
-                          onClick={() => handleItemClick(item)}
+                          onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.currentTarget.click(); } }} onClick={() => handleItemClick(item)}
                           onMouseEnter={() => setSelectedIndex(idx)}
                         >
                           <div className="item-icon-box">
@@ -803,20 +804,20 @@ export default function Topbar({
                       <h4>Recent Searches</h4>
                       {recentSearches.length > 0 ? (
                         <div className="recent-searches-list">
-                          {recentSearches.map((item, idx) => {
+                          {recentSearches.map((item) => {
                             const label =
                               typeof item === "string"
                                 ? item
                                 : item?.text || item?.name || item?.query || "";
                             const key =
                               typeof item === "string"
-                                ? `recent-search-${item}-${idx}`
-                                : item?.id || `recent-search-${label}-${idx}`;
+                                ? `recent-search-${item}`
+                                : item?.id || `recent-search-${label}`;
                             return (
-                              <div
+                              <div role="button" tabIndex={0}
                                 key={key}
                                 className="recent-search-item"
-                                onClick={() => handleSearchChange(label)}
+                                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.currentTarget.click(); } }} onClick={() => handleSearchChange(label)}
                               >
                                 <Clock size={14} />
                                 <span className="recent-text">{label}</span>
@@ -866,10 +867,10 @@ export default function Topbar({
                             icon: <Activity size={16} />,
                           },
                         ].map((action) => (
-                          <div
+                          <div role="button" tabIndex={0}
                             key={action.title}
                             className="quick-action-card"
-                            onClick={() => handleQuickAction(action.path)}
+                            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.currentTarget.click(); } }} onClick={() => handleQuickAction(action.path)}
                           >
                             <div className="action-icon-wrap">
                               {action.icon}
@@ -907,8 +908,8 @@ export default function Topbar({
                   <span>Command Palette</span>
                 </div>
               </div>
-            </motion.div>
-          </motion.div>
+            </m.div>
+          </m.div>
         )}
       </AnimatePresence>
     </>

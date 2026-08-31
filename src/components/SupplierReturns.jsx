@@ -704,6 +704,10 @@ export default function SupplierReturns({ showToast }) {
                                     pdfRes.data,
                                   );
                                   window.open(blobUrl, "_blank");
+                                  setTimeout(
+                                    () => window.URL.revokeObjectURL(blobUrl),
+                                    1000,
+                                  );
                                 }
                                 notify("PDF generated", "success");
                               } catch (err) {
@@ -776,16 +780,12 @@ export default function SupplierReturns({ showToast }) {
               <div className="supplier-groups">
                 {expiredBySupplier.map((group, idx) => (
                   <div
-                    key={
-                      group.supplier?.id ||
-                      group.supplier?.supplierCode ||
-                      `sup-group-${idx}`
-                    }
+                    key={group.supplier?.id || group.supplier?.supplierCode}
                     className="supplier-group-card"
                   >
-                    <div
+                    <div role="button" tabIndex={0}
                       className="supplier-group-header"
-                      onClick={() =>
+                      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.currentTarget.click(); } }} onClick={() =>
                         setExpandedGroup(expandedGroup === idx ? null : idx)
                       }
                     >
@@ -880,10 +880,10 @@ export default function SupplierReturns({ showToast }) {
       </div>
 
       {selectedReturn && (
-        <div className="modal-overlay" onClick={() => setSelectedReturn(null)}>
-          <div
+        <div role="button" tabIndex={0} className="modal-overlay" onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.currentTarget.click(); } }} onClick={() => setSelectedReturn(null)}>
+          <div role="button" tabIndex={0}
             className="modal-content wide-modal"
-            onClick={(e) => e.stopPropagation()}
+            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.currentTarget.click(); } }} onClick={(e) => e.stopPropagation()}
           >
             <div className="modal-header">
               <h2>{selectedReturn.returnNumber}</h2>
@@ -898,28 +898,28 @@ export default function SupplierReturns({ showToast }) {
             <div className="modal-body">
               <div className="detail-grid">
                 <div className="detail-item">
-                  <label>Supplier</label>
+                  <span>Supplier</span>
                   <span>{selectedReturn.supplier?.name || "—"}</span>
                 </div>
                 <div className="detail-item">
-                  <label>Created By</label>
+                  <span>Created By</span>
                   <span>{selectedReturn.creator?.fullName || "—"}</span>
                 </div>
                 <div className="detail-item">
-                  <label>Created At</label>
+                  <span>Created At</span>
                   <span>
                     {new Date(selectedReturn.createdAt).toLocaleString()}
                   </span>
                 </div>
                 <div className="detail-item">
-                  <label>Amount</label>
+                  <span>Amount</span>
                   <span>
                     ₹{safeNumber(selectedReturn.returnAmount || 0).toFixed(2)}
                   </span>
                 </div>
                 {selectedReturn.approvedAt && (
                   <div className="detail-item">
-                    <label>Approved At</label>
+                    <span>Approved At</span>
                     <span>
                       {new Date(selectedReturn.approvedAt).toLocaleString()}
                     </span>
@@ -927,7 +927,7 @@ export default function SupplierReturns({ showToast }) {
                 )}
                 {selectedReturn.pickedUpAt && (
                   <div className="detail-item">
-                    <label>Picked Up At</label>
+                    <span>Picked Up At</span>
                     <span>
                       {new Date(selectedReturn.pickedUpAt).toLocaleString()}
                     </span>
@@ -936,7 +936,7 @@ export default function SupplierReturns({ showToast }) {
               </div>
               {selectedReturn.notes && (
                 <div className="detail-item">
-                  <label>Notes</label>
+                  <span>Notes</span>
                   <p>{selectedReturn.notes}</p>
                 </div>
               )}
@@ -1041,13 +1041,13 @@ export default function SupplierReturns({ showToast }) {
       )}
 
       {showCreateModal && (
-        <div
+        <div role="button" tabIndex={0}
           className="modal-overlay"
-          onClick={() => setShowCreateModal(false)}
+          onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.currentTarget.click(); } }} onClick={() => setShowCreateModal(false)}
         >
-          <div
+          <div role="button" tabIndex={0}
             className="modal-content wide-modal"
-            onClick={(e) => e.stopPropagation()}
+            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.currentTarget.click(); } }} onClick={(e) => e.stopPropagation()}
           >
             <div className="modal-header">
               <h2>Create Supplier Return</h2>
@@ -1067,9 +1067,9 @@ export default function SupplierReturns({ showToast }) {
               ) : (
                 <>
                   <div className="form-group">
-                    <label>Select Supplier</label>
+                    <label htmlFor="field_n1ux62">Select Supplier</label>
                     <select
-                      value={createData.supplierId}
+ id="field_n1ux62"                      value={createData.supplierId}
                       onChange={(e) => {
                         const sid = e.target.value;
                         setCreateData((prev) => ({
@@ -1090,9 +1090,9 @@ export default function SupplierReturns({ showToast }) {
                   </div>
 
                   <div className="form-group">
-                    <label>Select Reason</label>
+                    <label htmlFor="field_5ypmdo">Select Reason</label>
                     <select
-                      value={createData.reason}
+ id="field_5ypmdo"                      value={createData.reason}
                       onChange={(e) => {
                         const reason = e.target.value;
                         setCreateData((prev) => ({
@@ -1198,11 +1198,19 @@ export default function SupplierReturns({ showToast }) {
                                           }
                                           min={1}
                                           onChange={(e) => {
-                                            const val = Math.min(
-                                              Number(e.target.value),
-                                              item.availableQuantity ||
-                                                item.quantity,
-                                            );
+                                            const raw = e.target.value;
+                                            const parsed = raw
+                                              ? Number(raw)
+                                              : "";
+                                            const val =
+                                              parsed === "" ||
+                                              Number.isNaN(parsed)
+                                                ? ""
+                                                : Math.min(
+                                                    parsed,
+                                                    item.availableQuantity ||
+                                                      item.quantity,
+                                                  );
                                             setCreateData((prev) => ({
                                               ...prev,
                                               items: prev.items.map((i) =>
@@ -1235,9 +1243,9 @@ export default function SupplierReturns({ showToast }) {
                       )}
 
                       <div className="form-group">
-                        <label>Notes</label>
+                        <label htmlFor="field_tgcbmt">Notes</label>
                         <textarea
-                          value={createData.notes}
+ id="field_tgcbmt"                          value={createData.notes}
                           onChange={(e) =>
                             setCreateData((prev) => ({
                               ...prev,
