@@ -96,25 +96,18 @@ export function AuthProvider({ children }) {
         },
       );
 
-      const payload = res.data?.data || res.data;
-      const newToken = payload?.token || payload?.accessToken;
-
-      if (!newToken) {
-        throw new Error("Token refresh failed: Invalid response from server.");
+      if (res.status !== 200) {
+        throw new Error("Token refresh failed.");
       }
 
-      localStorage.setItem("viyan_token", newToken);
-
-      // Backend may have rotated the CSRF cookie during refresh —
-      // flush the cache so the next write request fetches a fresh one.
       invalidateCsrfToken();
 
-      return newToken;
+      return true;
     } catch (error) {
       console.error("[AUTH] Token refresh failed:", error.message || error);
       clearAuthState();
       invalidateCsrfToken();
-      return null;
+      return false;
     }
   }, [clearAuthState]);
 
@@ -191,14 +184,7 @@ export function AuthProvider({ children }) {
         subscriptionExpired,
         redirectTo,
         deviceToken,
-        token,
-        accessToken,
       } = payload;
-
-      const receivedToken = token || accessToken;
-      if (receivedToken) {
-        localStorage.setItem("viyan_token", receivedToken);
-      }
 
       // Backend issued a new CSRF cookie on login — flush the stale cached token
       invalidateCsrfToken();
@@ -233,10 +219,6 @@ export function AuthProvider({ children }) {
 
       if (payload.deviceToken) {
         localStorage.setItem("viyan_device_token", payload.deviceToken);
-      }
-
-      if (payload.token) {
-        localStorage.setItem("viyan_token", payload.token);
       }
 
       await refreshUser();

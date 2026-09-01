@@ -165,11 +165,6 @@ api.interceptors.request.use(
       }
     }
 
-    const token = localStorage.getItem("viyan_token");
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
-
     const idempotentMethods = ["POST", "PUT", "PATCH", "DELETE"];
     const excludeIdempotencyRoutes = [
       "auth/login",
@@ -241,11 +236,8 @@ api.interceptors.response.use(
       if (isRefreshing) {
         return new Promise((resolve, reject) => {
           failedQueue.push({ resolve, reject });
-        }).then((token) => {
+        }).then(() => {
           originalRequest._retry = true;
-          if (token) {
-            originalRequest.headers.Authorization = `Bearer ${token}`;
-          }
           return api(originalRequest);
         });
       }
@@ -255,7 +247,7 @@ api.interceptors.response.use(
       refreshAttempts++;
 
       try {
-        const refreshRes = await axios.post(
+        await axios.post(
           `${getBaseUrl()}/auth/refresh`,
           {},
           {
@@ -269,27 +261,16 @@ api.interceptors.response.use(
           },
         );
 
-        const newToken = refreshRes.data?.data?.token;
-        if (newToken) {
-          localStorage.setItem("viyan_token", newToken);
-        }
-
         refreshAttempts = 0;
         isRefreshing = false;
-        processQueue(null, newToken);
+        processQueue(null);
 
-        // Update the original request with the new token and retry
-        if (newToken) {
-          originalRequest.headers.Authorization = `Bearer ${newToken}`;
-        }
+        // Backend rotates the accessToken/refresh_token HttpOnly cookies.
+        // The browser sends them automatically on the retry.
+        invalidateCsrfToken();
+
         return api(originalRequest);
       } catch (refreshError) {
-        if (import.meta.env.DEV) {
-          console.error("[AUTH] Refresh failed:", {
-            status: refreshError.response?.status,
-            data: refreshError.response?.data,
-          });
-        }
         isRefreshing = false;
         processQueue(refreshError, null);
         csrfToken = null;
@@ -297,6 +278,7 @@ api.interceptors.response.use(
         clearAllAuth();
         dispatchSessionExpired("Session expired. Please log in again.");
         window.location.href = "/login";
+
         return Promise.reject(refreshError);
       }
     }
