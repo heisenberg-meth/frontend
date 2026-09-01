@@ -76,7 +76,6 @@ export default function InventoryAnalyticsFull() {
   ];
 
   useEffect(() => {
-    if (data.summary) return; // already got data from router state
     let active = true;
 
     const fetchAnalytics = async () => {
