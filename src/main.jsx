@@ -29,7 +29,7 @@ import "./styles/Patients.css";
 import "./styles/Profile.css";
 import "./styles/admin.css";
 import App from "./App.jsx";
-import { safeNumber } from './utils/number.js';
+import { safeNumber } from "./utils/number.js";
 import { MotionConfig } from "framer-motion";
 
 // Global logging and self-healing auto-reload when Vite/React chunk loading fails (e.g., after deployment or asset hash change)

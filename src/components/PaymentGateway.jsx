@@ -5,113 +5,132 @@ import { loadRazorpay } from "../utils/razorpay";
 import { safeNumber } from "../utils/number.js";
 import { useAuth } from "../hooks/useAuth";
 function PaymentGatewaySection1({
-  setMethod
+  setMethod,
+  amount,
+  method,
+  paymentError,
+  handlePay,
 }) {
-  return <main className="pt-24 pb-12 px-6 max-w-7xl mx-auto">
-        <div className="flex flex-col md:flex-row gap-8">
-          <div className="w-full md:w-5/12 lg:w-4/12">
-            <div className="bg-(--surface) rounded-xl border border-(--surface) p-6 sticky top-24 shadow-2xl">
-              <h3 className="text-2xl font-bold mb-6 text-on-surface">
-                Order Summary
-              </h3>
-              <div className="flex items-center justify-between py-4 border-b border-(--surface)">
-                <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 rounded bg-primary/10 flex items-center justify-center">
-                    <span className="material-symbols-outlined text-primary">
-                      medical_services
-                    </span>
-                  </div>
-                  <div>
-                    <p className="font-bold text-on-surface">Subscription</p>
-                    <p className="text-xs text-on-surface-variant">
-                      {sessionStorage.getItem("selectedPlanId") === "starter" ? "Starter Plan (Monthly)" : "Professional Plan (Monthly)"}
-                    </p>
-                  </div>
-                </div>
-                <p className="font-bold text-primary">₹{amount}</p>
-              </div>
-              <div className="mt-6 space-y-3">
-                <div className="flex justify-between text-sm text-on-surface-variant">
-                  <span>Subtotal</span>
-                  <span>₹{amount}.00</span>
-                </div>
-                <div className="pt-4 border-t border-(--surface) flex justify-between items-center">
-                  <span className="text-lg font-bold text-on-surface">
-                    Total
-                  </span>
-                  <span className="text-3xl font-extrabold text-primary">
-                    ₹{amount}
+  return (
+    <main className="pt-24 pb-12 px-6 max-w-7xl mx-auto">
+      <div className="flex flex-col md:flex-row gap-8">
+        <div className="w-full md:w-5/12 lg:w-4/12">
+          <div className="bg-(--surface) rounded-xl border border-(--surface) p-6 sticky top-24 shadow-2xl">
+            <h3 className="text-2xl font-bold mb-6 text-on-surface">
+              Order Summary
+            </h3>
+            <div className="flex items-center justify-between py-4 border-b border-(--surface)">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded bg-primary/10 flex items-center justify-center">
+                  <span className="material-symbols-outlined text-primary">
+                    medical_services
                   </span>
                 </div>
+                <div>
+                  <p className="font-bold text-on-surface">Subscription</p>
+                  <p className="text-xs text-on-surface-variant">
+                    {sessionStorage.getItem("selectedPlanId") === "starter"
+                      ? "Starter Plan (Monthly)"
+                      : "Professional Plan (Monthly)"}
+                  </p>
+                </div>
               </div>
+              <p className="font-bold text-primary">₹{amount}</p>
             </div>
-          </div>
-
-          <div className="w-full md:w-7/12 lg:w-8/12">
-            <div className="bg-(--surface) rounded-xl border border-(--surface) p-8 shadow-2xl">
-              <h2 className="text-3xl font-bold mb-8 text-on-surface">
-                Complete Payment
-              </h2>
-              <div className="grid grid-cols-3 gap-4 mb-8">
-                <button onClick={() => setMethod("card")} className={`flex flex-col items-center justify-center p-4 rounded-xl border-2 transition ${method === "card" ? "border-primary bg-primary/10 text-primary" : "border-(--surface) bg-(--bg-dark) text-on-surface-variant"}`}>
-                  <span className="material-symbols-outlined text-3xl mb-1">
-                    credit_card
-                  </span>
-                  <span className="text-xs font-bold uppercase tracking-wider">
-                    Card
-                  </span>
-                </button>
-                <button onClick={() => setMethod("upi")} className={`flex flex-col items-center justify-center p-4 rounded-xl border-2 transition ${method === "upi" ? "border-primary bg-primary/10 text-primary" : "border-(--surface) bg-(--bg-dark) text-on-surface-variant"}`}>
-                  <span className="material-symbols-outlined text-3xl mb-1">
-                    account_balance
-                  </span>
-                  <span className="text-xs font-bold uppercase tracking-wider">
-                    UPI
-                  </span>
-                </button>
-                <button onClick={() => setMethod("qr")} className={`flex flex-col items-center justify-center p-4 rounded-xl border-2 transition ${method === "qr" ? "border-primary bg-primary/10 text-primary" : "border-(--surface) bg-(--bg-dark) text-on-surface-variant"}`}>
-                  <span className="material-symbols-outlined text-3xl mb-1">
-                    qr_code_2
-                  </span>
-                  <span className="text-xs font-bold uppercase tracking-wider">
-                    QR Code
-                  </span>
-                </button>
+            <div className="mt-6 space-y-3">
+              <div className="flex justify-between text-sm text-on-surface-variant">
+                <span>Subtotal</span>
+                <span>₹{amount}.00</span>
               </div>
-
-              <div className="p-6 bg-(--surface) rounded-xl border border-primary/20 text-center">
-                <p className="text-on-surface-variant text-sm mb-6 italic">
-                  Razorpay secure checkout will launch to handle your{" "}
-                  {method.toUpperCase()} payment safely.
-                </p>
-                {paymentError && <div style={{
-              background: "rgba(239,68,68,0.1)",
-              border: "1px solid #EF4444",
-              borderRadius: "8px",
-              padding: "12px 16px",
-              marginBottom: "12px",
-              color: "#EF4444",
-              fontSize: "13px"
-            }}>
-                    {paymentError}
-                  </div>}
-                <button onClick={handlePay} disabled={status === "processing"} className="w-full bg-primary hover:brightness-110 text-(--bg-dark) font-extrabold py-5 rounded-xl shadow-lg flex items-center justify-center gap-3 active:scale-[0.98] transition disabled:opacity-50">
-                  {status === "processing" ? "Initializing..." : `Pay ₹${amount} Now`}
-                </button>
+              <div className="pt-4 border-t border-(--surface) flex justify-between items-center">
+                <span className="text-lg font-bold text-on-surface">Total</span>
+                <span className="text-3xl font-extrabold text-primary">
+                  ₹{amount}
+                </span>
               </div>
             </div>
           </div>
         </div>
-      </main>;
+
+        <div className="w-full md:w-7/12 lg:w-8/12">
+          <div className="bg-(--surface) rounded-xl border border-(--surface) p-8 shadow-2xl">
+            <h2 className="text-3xl font-bold mb-8 text-on-surface">
+              Complete Payment
+            </h2>
+            <div className="grid grid-cols-3 gap-4 mb-8">
+              <button
+                onClick={() => setMethod("card")}
+                className={`flex flex-col items-center justify-center p-4 rounded-xl border-2 transition ${method === "card" ? "border-primary bg-primary/10 text-primary" : "border-(--surface) bg-(--bg-dark) text-on-surface-variant"}`}
+              >
+                <span className="material-symbols-outlined text-3xl mb-1">
+                  credit_card
+                </span>
+                <span className="text-xs font-bold uppercase tracking-wider">
+                  Card
+                </span>
+              </button>
+              <button
+                onClick={() => setMethod("upi")}
+                className={`flex flex-col items-center justify-center p-4 rounded-xl border-2 transition ${method === "upi" ? "border-primary bg-primary/10 text-primary" : "border-(--surface) bg-(--bg-dark) text-on-surface-variant"}`}
+              >
+                <span className="material-symbols-outlined text-3xl mb-1">
+                  account_balance
+                </span>
+                <span className="text-xs font-bold uppercase tracking-wider">
+                  UPI
+                </span>
+              </button>
+              <button
+                onClick={() => setMethod("qr")}
+                className={`flex flex-col items-center justify-center p-4 rounded-xl border-2 transition ${method === "qr" ? "border-primary bg-primary/10 text-primary" : "border-(--surface) bg-(--bg-dark) text-on-surface-variant"}`}
+              >
+                <span className="material-symbols-outlined text-3xl mb-1">
+                  qr_code_2
+                </span>
+                <span className="text-xs font-bold uppercase tracking-wider">
+                  QR Code
+                </span>
+              </button>
+            </div>
+
+            <div className="p-6 bg-(--surface) rounded-xl border border-primary/20 text-center">
+              <p className="text-on-surface-variant text-sm mb-6 italic">
+                Razorpay secure checkout will launch to handle your{" "}
+                {method.toUpperCase()} payment safely.
+              </p>
+              {paymentError && (
+                <div
+                  style={{
+                    background: "rgba(239,68,68,0.1)",
+                    border: "1px solid #EF4444",
+                    borderRadius: "8px",
+                    padding: "12px 16px",
+                    marginBottom: "12px",
+                    color: "#EF4444",
+                    fontSize: "13px",
+                  }}
+                >
+                  {paymentError}
+                </div>
+              )}
+              <button
+                onClick={handlePay}
+                disabled={status === "processing"}
+                className="w-full bg-primary hover:brightness-110 text-(--bg-dark) font-extrabold py-5 rounded-xl shadow-lg flex items-center justify-center gap-3 active:scale-[0.98] transition disabled:opacity-50"
+              >
+                {status === "processing"
+                  ? "Initializing..."
+                  : `Pay ₹${amount} Now`}
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  );
 }
-export default function PaymentGateway({
-  user,
-  onPaymentComplete,
-  amount
-}) {
-  const {
-    refreshUser
-  } = useAuth();
+export default function PaymentGateway({ user, onPaymentComplete, amount }) {
+  const { refreshUser } = useAuth();
   const [status, setStatus] = useState("checkout");
   const [method, setMethod] = useState("card");
   const [paymentError, setPaymentError] = useState(null);
@@ -156,22 +175,29 @@ export default function PaymentGateway({
         }
         razorpayRef.current = null;
       }
-      const selectedPlanId = sessionStorage.getItem("selectedPlanId") || "starter";
-      const planName = selectedPlanId === "starter" ? "Starter Plan" : "MedAssist Basic";
+      const selectedPlanId =
+        sessionStorage.getItem("selectedPlanId") || "starter";
+      const planName =
+        selectedPlanId === "starter" ? "Starter Plan" : "MedAssist Basic";
       const planId = selectedPlanId;
       const orderRes = await api.post(API_ROUTES.PAYMENTS_CREATE_ORDER, {
         amount: safeNumber(amount) || 599,
         planName,
         planId,
         billingCycle: "monthly",
-        _ts: Date.now()
+        _ts: Date.now(),
       });
       const resData = orderRes.data?.data || orderRes.data;
       const key = resData.key || orderRes.data?.key;
       const order = resData.order || resData;
       if (!order || !order.id) throw new Error("Invalid order received");
       const finalKey = key || import.meta.env.VITE_RAZORPAY_KEY_ID || "";
-      if (!finalKey || finalKey === "undefined" || finalKey.trim() === "" || !order.id) {
+      if (
+        !finalKey ||
+        finalKey === "undefined" ||
+        finalKey.trim() === "" ||
+        !order.id
+      ) {
         setPaymentError("Payment setup incomplete: missing key or order_id");
         setStatus("checkout");
         isProcessingRef.current = false;
@@ -189,7 +215,7 @@ export default function PaymentGateway({
         name: "Viyan MedAssist",
         description: "Professional License",
         order_id: order.id,
-        handler: async response => {
+        handler: async (response) => {
           try {
             setStatus("processing");
             authorizedRef.current = true;
@@ -199,7 +225,9 @@ export default function PaymentGateway({
             pollRef.current = setInterval(async () => {
               attempts++;
               try {
-                const res = await api.get(`${API_ROUTES.PAYMENTS_STATUS}?orderId=${order.id}`);
+                const res = await api.get(
+                  `${API_ROUTES.PAYMENTS_STATUS}?orderId=${order.id}`,
+                );
                 if (res.data?.paymentStatus === "SUCCESS") {
                   clearInterval(pollRef.current);
                   setStatus("success");
@@ -209,16 +237,23 @@ export default function PaymentGateway({
                   } catch (e) {
                     console.error("Failed to refresh user auth state", e);
                   }
-                } else if (res.data?.paymentStatus === "FAILED" || attempts > 15) {
+                } else if (
+                  res.data?.paymentStatus === "FAILED" ||
+                  attempts > 15
+                ) {
                   clearInterval(pollRef.current);
-                  setPaymentError("Payment verification timed out. If money was deducted, it will be refunded or manually activated.");
+                  setPaymentError(
+                    "Payment verification timed out. If money was deducted, it will be refunded or manually activated.",
+                  );
                   setStatus("checkout");
                   isProcessingRef.current = false;
                 }
               } catch (e) {
                 if (attempts > 15) {
                   clearInterval(pollRef.current);
-                  setPaymentError("Payment verification timed out. If money was deducted, it will be refunded or manually activated.");
+                  setPaymentError(
+                    "Payment verification timed out. If money was deducted, it will be refunded or manually activated.",
+                  );
                   setStatus("checkout");
                   isProcessingRef.current = false;
                 }
@@ -227,13 +262,15 @@ export default function PaymentGateway({
             }, 2000);
           } catch (err) {
             console.error("Payment Verification Error:", err);
-            setPaymentError("Payment received but verification failed. Our team has been notified. Please do not make another payment.");
+            setPaymentError(
+              "Payment received but verification failed. Our team has been notified. Please do not make another payment.",
+            );
             setStatus("checkout");
             isProcessingRef.current = false;
           }
         },
         theme: {
-          color: "#4fdbc8"
+          color: "#4fdbc8",
         },
         modal: {
           ondismiss: function () {
@@ -244,8 +281,8 @@ export default function PaymentGateway({
                 clearInterval(pollRef.current);
               }
             }
-          }
-        }
+          },
+        },
       };
       if (Object.keys(prefill).length > 0) {
         options.prefill = prefill;
@@ -260,7 +297,9 @@ export default function PaymentGateway({
       const rzp = new window.Razorpay(options);
       rzp["on"]("payment.failed", function (failResponse) {
         console.error("Razorpay Payment Failed:", failResponse);
-        setPaymentError(`Payment failed: ${failResponse.error?.description || "Unknown error"}`);
+        setPaymentError(
+          `Payment failed: ${failResponse.error?.description || "Unknown error"}`,
+        );
         setStatus("checkout");
         isProcessingRef.current = false;
       });
@@ -269,18 +308,27 @@ export default function PaymentGateway({
     } catch (error) {
       retryCountRef.current += 1;
       setStatus("checkout");
-      const errorMessage = typeof error.response?.data?.error === "string" ? error.response.data.error : error.response?.data?.error?.message || error.message || "Initialization failed";
+      const errorMessage =
+        typeof error.response?.data?.error === "string"
+          ? error.response.data.error
+          : error.response?.data?.error?.message ||
+            error.message ||
+            "Initialization failed";
       setPaymentError(errorMessage);
       isProcessingRef.current = false;
     }
   }, [user, amount, status, refreshUser]);
   if (status === "success") {
-    return <div className="dark bg-(--bg-dark) min-h-screen flex items-center justify-center p-6 font-['Manrope']">
+    return (
+      <div className="dark bg-(--bg-dark) min-h-screen flex items-center justify-center p-6 font-['Manrope']">
         <div className="bg-(--surface) border border-(--surface) rounded-2xl p-12 max-w-md w-full text-center shadow-2xl animate-in">
           <div className="w-20 h-20 bg-primary/20 rounded-full flex items-center justify-center mx-auto mb-8">
-            <span className="material-symbols-outlined text-primary text-5xl" style={{
-            fontVariationSettings: "'FILL' 1"
-          }}>
+            <span
+              className="material-symbols-outlined text-primary text-5xl"
+              style={{
+                fontVariationSettings: "'FILL' 1",
+              }}
+            >
               check_circle
             </span>
           </div>
@@ -290,17 +338,26 @@ export default function PaymentGateway({
           <p className="text-on-surface-variant mb-10">
             Your facility has been upgraded successfully.
           </p>
-          <button onClick={onPaymentComplete} className="w-full bg-primary text-(--bg-dark) py-4 rounded-xl font-extrabold shadow-lg hover:brightness-110 transition flex items-center justify-center gap-3">
+          <button
+            onClick={onPaymentComplete}
+            className="w-full bg-primary text-(--bg-dark) py-4 rounded-xl font-extrabold shadow-lg hover:brightness-110 transition flex items-center justify-center gap-3"
+          >
             <span>Enter Dashboard</span>
             <span className="material-symbols-outlined">arrow_forward</span>
           </button>
         </div>
-      </div>;
+      </div>
+    );
   }
-  return <div className="dark bg-(--bg-dark) h-screen text-on-surface font-['Manrope'] antialiased overflow-y-auto">
+  return (
+    <div className="dark bg-(--bg-dark) h-screen text-on-surface font-['Manrope'] antialiased overflow-y-auto">
       <header className="fixed top-0 w-full z-50 flex justify-between items-center px-6 py-3 bg-(--bg-dark)/90 backdrop-blur-md border-b border-(--surface) shadow-xl">
         <div className="flex items-center gap-3">
-          <img src="/viyan_logo.webp" alt="Viyan MedAssist" className="h-10 w-auto" />
+          <img
+            src="/viyan_logo.webp"
+            alt="Viyan MedAssist"
+            className="h-10 w-auto"
+          />
         </div>
         <div className="flex items-center gap-4">
           <div className="h-2 w-2 rounded-full bg-primary animate-pulse"></div>
@@ -310,6 +367,13 @@ export default function PaymentGateway({
         </div>
       </header>
 
-      <PaymentGatewaySection1 setMethod={setMethod} />
-    </div>;
+      <PaymentGatewaySection1
+        setMethod={setMethod}
+        amount={amount}
+        method={method}
+        paymentError={paymentError}
+        handlePay={handlePay}
+      />
+    </div>
+  );
 }

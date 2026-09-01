@@ -1,7 +1,16 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { adminApi } from "../../services/admin.service";
 import { downloadCsv } from "../../utils/exportCsv";
-import { Clock, RefreshCw, Search, XCircle, Plus, Minus, Download, History } from "lucide-react";
+import {
+  Clock,
+  RefreshCw,
+  Search,
+  XCircle,
+  Plus,
+  Minus,
+  Download,
+  History,
+} from "lucide-react";
 import toast from "react-hot-toast";
 import { safeNumber } from "../../utils/number.js";
 const statusColors = {
@@ -9,338 +18,556 @@ const statusColors = {
   TRIAL: "#3b82f6",
   GRACE_PERIOD: "#f59e0b",
   EXPIRED: "#ef4444",
-  CANCELLED: "#666"
+  CANCELLED: "#666",
 };
 function AdminSubscriptionsSection1({
+  search,
   setSearch,
+  handleSearch,
+  statusFilter,
   setStatusFilter,
   setPage,
-  subscriptions
+  subscriptions,
 }) {
-  return <div style={{
-    display: "flex",
-    gap: 12,
-    marginBottom: 20,
-    alignItems: "center",
-    flexWrap: "wrap"
-  }}>
-        <form onSubmit={handleSearch} style={{
-      display: "flex",
-      gap: 8,
-      flex: 1,
-      maxWidth: 400
-    }}>
-          <><label htmlFor="field_diq4ev" className="sr-only">Search by shop or email...</label><input type="text" value={search} onChange={e => setSearch(e.target.value)} placeholder="Search by shop or email..." style={{
+  return (
+    <div
+      style={{
+        display: "flex",
+        gap: 12,
+        marginBottom: 20,
+        alignItems: "center",
+        flexWrap: "wrap",
+      }}
+    >
+      <form
+        onSubmit={handleSearch}
+        style={{
+          display: "flex",
+          gap: 8,
           flex: 1,
+          maxWidth: 400,
+        }}
+      >
+        <>
+          <label htmlFor="field_diq4ev" className="sr-only">
+            Search by shop or email...
+          </label>
+          <input
+            type="text"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search by shop or email..."
+            style={{
+              flex: 1,
+              padding: "8px 12px",
+              border: "1px solid #333",
+              borderRadius: 6,
+              background: "#1a1a1a",
+              color: "#fff",
+            }}
+            id="field_diq4ev"
+          />
+        </>
+        <button
+          type="submit"
+          className="admin-btn admin-btn-primary"
+          style={{
+            padding: "8px 14px",
+          }}
+        >
+          <Search size={16} />
+        </button>
+      </form>
+      <select
+        value={statusFilter}
+        onChange={(e) => {
+          setStatusFilter(e.target.value);
+          setPage(1);
+        }}
+        style={{
           padding: "8px 12px",
           border: "1px solid #333",
           borderRadius: 6,
           background: "#1a1a1a",
-          color: "#fff"
-        }} id="field_diq4ev" /></>
-          <button type="submit" className="admin-btn admin-btn-primary" style={{
-        padding: "8px 14px"
-      }}>
-            <Search size={16} />
-          </button>
-        </form>
-        <select value={statusFilter} onChange={e => {
-      setStatusFilter(e.target.value);
-      setPage(1);
-    }} style={{
-      padding: "8px 12px",
-      border: "1px solid #333",
-      borderRadius: 6,
-      background: "#1a1a1a",
-      color: "#fff"
-    }}>
-          <option value="">All Status</option>
-          <option value="ACTIVE">Active</option>
-          <option value="TRIAL">Trial</option>
-          <option value="GRACE_PERIOD">Grace Period</option>
-          <option value="EXPIRED">Expired</option>
-        </select>
-        <button onClick={() => downloadCsv(subscriptions.map(s => ({
-      Shop: s.tenant?.name || "",
-      Email: s.tenant?.email || "",
-      Plan: s.plan?.name || "",
-      Price: s.plan?.price || 0,
-      Status: s.status,
-      Start: s.startDate ? new Date(s.startDate).toLocaleDateString() : "",
-      Expiry: s.endDate ? new Date(s.endDate).toLocaleDateString() : ""
-    })), "subscriptions-export")} className="admin-btn" style={{
-      background: "#222",
-      color: "#fff",
-      padding: "8px 14px",
-      fontSize: 12
-    }}>
-          <Download size={14} /> CSV
-        </button>
-      </div>;
+          color: "#fff",
+        }}
+      >
+        <option value="">All Status</option>
+        <option value="ACTIVE">Active</option>
+        <option value="TRIAL">Trial</option>
+        <option value="GRACE_PERIOD">Grace Period</option>
+        <option value="EXPIRED">Expired</option>
+      </select>
+      <button
+        onClick={() =>
+          downloadCsv(
+            subscriptions.map((s) => ({
+              Shop: s.tenant?.name || "",
+              Email: s.tenant?.email || "",
+              Plan: s.plan?.name || "",
+              Price: s.plan?.price || 0,
+              Status: s.status,
+              Start: s.startDate
+                ? new Date(s.startDate).toLocaleDateString()
+                : "",
+              Expiry: s.endDate ? new Date(s.endDate).toLocaleDateString() : "",
+            })),
+            "subscriptions-export",
+          )
+        }
+        className="admin-btn"
+        style={{
+          background: "#222",
+          color: "#fff",
+          padding: "8px 14px",
+          fontSize: 12,
+        }}
+      >
+        <Download size={14} /> CSV
+      </button>
+    </div>
+  );
 }
 function AdminSubscriptionsSection2({
+  loading,
+  subscriptions,
   openAction,
-  s,
   openHistory,
   doAction,
   setPage,
-  page
+  page,
+  totalPages,
 }) {
-  return loading ? <div className="admin-loading-inline">Loading...</div> : <>
-          <div className="admin-table-container">
-            <table className="admin-table">
+  return loading ? (
+    <div className="admin-loading-inline">Loading...</div>
+  ) : (
+    <>
+      <div className="admin-table-container">
+        <table className="admin-table">
+          <thead>
+            <tr>
+              <th>Shop</th>
+              <th>Email</th>
+              <th>Plan</th>
+              <th>Price</th>
+              <th>Status</th>
+              <th>Start</th>
+              <th>Expiry</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {subscriptions.length === 0 ? (
+              <tr>
+                <td colSpan={8} className="admin-empty">
+                  No subscriptions found
+                </td>
+              </tr>
+            ) : (
+              subscriptions.map((s) => (
+                <tr key={s.id}>
+                  <td>
+                    <strong>{s.tenant?.name || "N/A"}</strong>
+                  </td>
+                  <td>{s.tenant?.email || "—"}</td>
+                  <td>{s.plan?.name || "—"}</td>
+                  <td>₹{safeNumber(s.plan?.price || 0).toLocaleString()}</td>
+                  <td>
+                    <span
+                      className="admin-badge"
+                      style={{
+                        background: statusColors[s.status] || "#666",
+                      }}
+                    >
+                      {s.status}
+                    </span>
+                  </td>
+                  <td>
+                    {s.startDate
+                      ? new Date(s.startDate).toLocaleDateString()
+                      : "—"}
+                  </td>
+                  <td>
+                    {s.endDate ? new Date(s.endDate).toLocaleDateString() : "—"}
+                  </td>
+                  <td>
+                    <div
+                      style={{
+                        display: "flex",
+                        gap: 4,
+                      }}
+                    >
+                      {s.status === "TRIAL" && (
+                        <>
+                          <button
+                            className="admin-icon-btn"
+                            style={{
+                              color: "#22c55e",
+                            }}
+                            title="Extend Trial"
+                            onClick={() => openAction(s, "extendTrial")}
+                          >
+                            <Plus size={14} />
+                          </button>
+                          <button
+                            className="admin-icon-btn"
+                            style={{
+                              color: "#f59e0b",
+                            }}
+                            title="Reduce Trial"
+                            onClick={() => openAction(s, "reduceTrial")}
+                          >
+                            <Minus size={14} />
+                          </button>
+                        </>
+                      )}
+                      {s.status !== "TRIAL" && (
+                        <button
+                          className="admin-icon-btn"
+                          style={{
+                            color: "#22c55e",
+                          }}
+                          title="Renew"
+                          onClick={() => openAction(s, "renew")}
+                        >
+                          <RefreshCw size={14} />
+                        </button>
+                      )}
+                      <button
+                        className="admin-icon-btn"
+                        style={{
+                          color: "#8b5cf6",
+                        }}
+                        title="History"
+                        onClick={() => openHistory(s)}
+                      >
+                        <History size={14} />
+                      </button>
+                      {s.status !== "EXPIRED" && s.status !== "CANCELLED" && (
+                        <button
+                          className="admin-icon-btn"
+                          style={{
+                            color: "#ef4444",
+                          }}
+                          title="Cancel"
+                          onClick={() => {
+                            if (confirm("Cancel this subscription?"))
+                              doAction(adminApi.cancelSubscription, s.id);
+                          }}
+                        >
+                          <XCircle size={14} />
+                        </button>
+                      )}
+                    </div>
+                  </td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
+
+      {totalPages > 1 && (
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "center",
+            gap: 8,
+            marginTop: 16,
+          }}
+        >
+          <button
+            onClick={() => setPage(page - 1)}
+            disabled={page <= 1}
+            className="admin-btn"
+            style={{
+              background: "#222",
+              color: "#fff",
+            }}
+          >
+            Prev
+          </button>
+          <span
+            style={{
+              color: "#888",
+              padding: "8px 12px",
+            }}
+          >
+            Page {page} of {totalPages}
+          </span>
+          <button
+            onClick={() => setPage(page + 1)}
+            disabled={page >= totalPages}
+            className="admin-btn"
+            style={{
+              background: "#222",
+              color: "#fff",
+            }}
+          >
+            Next
+          </button>
+        </div>
+      )}
+    </>
+  );
+}
+function AdminSubscriptionsSection3({
+  historySub,
+  historyData,
+  setHistorySub,
+  setHistoryData,
+}) {
+  return (
+    historySub && (
+      <div
+        role="button"
+        tabIndex={0}
+        className="admin-overlay"
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            e.currentTarget.click();
+          }
+        }}
+        onClick={() => {
+          setHistorySub(null);
+          setHistoryData([]);
+        }}
+      >
+        <div
+          className="admin-modal"
+          onClick={(e) => e.stopPropagation()}
+          style={{
+            maxWidth: 600,
+            maxHeight: "80vh",
+            overflow: "auto",
+          }}
+          role="presentation"
+        >
+          <h3>Subscription History — {historySub.tenant?.name}</h3>
+          {historyData.length === 0 ? (
+            <p
+              style={{
+                color: "#888",
+                fontSize: 13,
+              }}
+            >
+              No history found
+            </p>
+          ) : (
+            <table
+              className="admin-table"
+              style={{
+                fontSize: 12,
+              }}
+            >
               <thead>
                 <tr>
-                  <th>Shop</th>
-                  <th>Email</th>
-                  <th>Plan</th>
-                  <th>Price</th>
-                  <th>Status</th>
-                  <th>Start</th>
-                  <th>Expiry</th>
-                  <th>Actions</th>
+                  <th>Action</th>
+                  <th>Old Status</th>
+                  <th>New Status</th>
+                  <th>Old Expiry</th>
+                  <th>New Expiry</th>
+                  <th>Date</th>
                 </tr>
               </thead>
               <tbody>
-                {subscriptions.length === 0 ? <tr>
-                    <td colSpan={8} className="admin-empty">
-                      No subscriptions found
+                {historyData.map((h) => (
+                  <tr key={h.id}>
+                    <td>{h.action}</td>
+                    <td>{h.oldStatus || "—"}</td>
+                    <td>{h.newStatus || "—"}</td>
+                    <td>
+                      {h.oldExpiry
+                        ? new Date(h.oldExpiry).toLocaleDateString()
+                        : "—"}
                     </td>
-                  </tr> : subscriptions.map(s => <tr key={s.id}>
-                      <td>
-                        <strong>{s.tenant?.name || "N/A"}</strong>
-                      </td>
-                      <td>{s.tenant?.email || "—"}</td>
-                      <td>{s.plan?.name || "—"}</td>
-                      <td>
-                        ₹{safeNumber(s.plan?.price || 0).toLocaleString()}
-                      </td>
-                      <td>
-                        <span className="admin-badge" style={{
-                background: statusColors[s.status] || "#666"
-              }}>
-                          {s.status}
-                        </span>
-                      </td>
-                      <td>
-                        {s.startDate ? new Date(s.startDate).toLocaleDateString() : "—"}
-                      </td>
-                      <td>
-                        {s.endDate ? new Date(s.endDate).toLocaleDateString() : "—"}
-                      </td>
-                      <td>
-                        <div style={{
-                display: "flex",
-                gap: 4
-              }}>
-                          {s.status === "TRIAL" && <>
-                              <button className="admin-icon-btn" style={{
-                    color: "#22c55e"
-                  }} title="Extend Trial" onClick={() => openAction(s, "extendTrial")}>
-                                <Plus size={14} />
-                              </button>
-                              <button className="admin-icon-btn" style={{
-                    color: "#f59e0b"
-                  }} title="Reduce Trial" onClick={() => openAction(s, "reduceTrial")}>
-                                <Minus size={14} />
-                              </button>
-                            </>}
-                          {s.status !== "TRIAL" && <button className="admin-icon-btn" style={{
-                  color: "#22c55e"
-                }} title="Renew" onClick={() => openAction(s, "renew")}>
-                              <RefreshCw size={14} />
-                            </button>}
-                          <button className="admin-icon-btn" style={{
-                  color: "#8b5cf6"
-                }} title="History" onClick={() => openHistory(s)}>
-                            <History size={14} />
-                          </button>
-                          {s.status !== "EXPIRED" && s.status !== "CANCELLED" && <button className="admin-icon-btn" style={{
-                  color: "#ef4444"
-                }} title="Cancel" onClick={() => {
-                  if (confirm("Cancel this subscription?")) doAction(adminApi.cancelSubscription, s.id);
-                }}>
-                                <XCircle size={14} />
-                              </button>}
-                        </div>
-                      </td>
-                    </tr>)}
+                    <td>
+                      {h.newExpiry
+                        ? new Date(h.newExpiry).toLocaleDateString()
+                        : "—"}
+                    </td>
+                    <td>{new Date(h.createdAt).toLocaleString()}</td>
+                  </tr>
+                ))}
               </tbody>
             </table>
+          )}
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "flex-end",
+              marginTop: 12,
+            }}
+          >
+            <button
+              className="admin-btn"
+              style={{
+                background: "#333",
+                color: "#fff",
+              }}
+              onClick={() => {
+                setHistorySub(null);
+                setHistoryData([]);
+              }}
+            >
+              Close
+            </button>
           </div>
-
-          {totalPages > 1 && <div style={{
-      display: "flex",
-      justifyContent: "center",
-      gap: 8,
-      marginTop: 16
-    }}>
-              <button onClick={() => setPage(page - 1)} disabled={page <= 1} className="admin-btn" style={{
-        background: "#222",
-        color: "#fff"
-      }}>
-                Prev
-              </button>
-              <span style={{
-        color: "#888",
-        padding: "8px 12px"
-      }}>
-                Page {page} of {totalPages}
-              </span>
-              <button onClick={() => setPage(page + 1)} disabled={page >= totalPages} className="admin-btn" style={{
-        background: "#222",
-        color: "#fff"
-      }}>
-                Next
-              </button>
-            </div>}
-        </>;
-}
-function AdminSubscriptionsSection3({
-  e,
-  setHistorySub,
-  setHistoryData
-}) {
-  return historySub && <div role="button" tabIndex={0} className="admin-overlay" onKeyDown={e => {
-    if (e.key === "Enter" || e.key === " ") {
-      e.preventDefault();
-      e.currentTarget.click();
-    }
-  }} onClick={() => {
-    setHistorySub(null);
-    setHistoryData([]);
-  }}>
-          <div className="admin-modal" onClick={e => e.stopPropagation()} style={{
-      maxWidth: 600,
-      maxHeight: "80vh",
-      overflow: "auto"
-    }} role="presentation">
-            <h3>Subscription History — {historySub.tenant?.name}</h3>
-            {historyData.length === 0 ? <p style={{
-        color: "#888",
-        fontSize: 13
-      }}>No history found</p> : <table className="admin-table" style={{
-        fontSize: 12
-      }}>
-                <thead>
-                  <tr>
-                    <th>Action</th>
-                    <th>Old Status</th>
-                    <th>New Status</th>
-                    <th>Old Expiry</th>
-                    <th>New Expiry</th>
-                    <th>Date</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {historyData.map(h => <tr key={h.id}>
-                      <td>{h.action}</td>
-                      <td>{h.oldStatus || "—"}</td>
-                      <td>{h.newStatus || "—"}</td>
-                      <td>
-                        {h.oldExpiry ? new Date(h.oldExpiry).toLocaleDateString() : "—"}
-                      </td>
-                      <td>
-                        {h.newExpiry ? new Date(h.newExpiry).toLocaleDateString() : "—"}
-                      </td>
-                      <td>{new Date(h.createdAt).toLocaleString()}</td>
-                    </tr>)}
-                </tbody>
-              </table>}
-            <div style={{
-        display: "flex",
-        justifyContent: "flex-end",
-        marginTop: 12
-      }}>
-              <button className="admin-btn" style={{
-          background: "#333",
-          color: "#fff"
-        }} onClick={() => {
-          setHistorySub(null);
-          setHistoryData([]);
-        }}>
-                Close
-              </button>
-            </div>
-          </div>
-        </div>;
+        </div>
+      </div>
+    )
+  );
 }
 function AdminSubscriptionsSection4({
-  e,
+  actionSub,
+  actionType,
+  actionValue,
   setActionSub,
   setActionType,
   setActionValue,
-  d
+  executeAction,
 }) {
-  return actionSub && actionType && <div role="button" tabIndex={0} className="admin-overlay" onKeyDown={e => {
-    if (e.key === "Enter" || e.key === " ") {
-      e.preventDefault();
-      e.currentTarget.click();
-    }
-  }} onClick={() => {
-    setActionSub(null);
-    setActionType(null);
-  }}>
-          <div className="admin-modal" onClick={e => e.stopPropagation()} style={{
-      maxWidth: 420
-    }} role="presentation">
-            <h3>
-              {actionType === "renew" ? "Renew" : actionType === "extend" ? "Extend" : actionType === "extendTrial" ? "Extend Trial" : actionType === "reduceTrial" ? "Reduce Trial" : "Change Plan"}{" "}
-              — {actionSub.tenant?.name}
-            </h3>
-            <p style={{
-        color: "#888",
-        fontSize: 13,
-        marginBottom: 12
-      }}>
-              Current plan: {actionSub.plan?.name} | Expires:{" "}
-              {actionSub.trialExpiresAt ? new Date(actionSub.trialExpiresAt).toLocaleDateString() : actionSub.endDate ? new Date(actionSub.endDate).toLocaleDateString() : "N/A"}
-              {actionSub.status === "TRIAL" && actionSub.trialDays && <> | Trial days: {actionSub.trialDays}</>}
-            </p>
-            {actionType === "upgrade" ? <div className="admin-form-group">
-                <label htmlFor="newPlanId">New Plan ID</label>
-                <input id="newPlanId" value={actionValue} onChange={e => setActionValue(e.target.value)} placeholder="Enter planId..." />
-              </div> : <div className="admin-form-group">
-                <label htmlFor="daysToChange">
-                  Days to{" "}
-                  {actionType === "extendTrial" ? "add" : actionType === "reduceTrial" ? "remove" : actionType}
-                </label>
-                <input id="daysToChange" type="number" value={actionValue} onChange={e => setActionValue(e.target.value)} min={1} />
-                {actionType === "extendTrial" && <div style={{
-          display: "flex",
-          gap: 4,
-          marginTop: 8
-        }}>
-                    {[7, 15, 30].map(d => <button key={d} className="admin-btn" style={{
-            background: "#333",
-            color: "#fff",
-            fontSize: 12,
-            padding: "4px 8px"
-          }} onClick={() => setActionValue(String(d))}>
-                        +{d}
-                      </button>)}
-                  </div>}
-              </div>}
-            <div style={{
-        display: "flex",
-        gap: 8,
-        justifyContent: "flex-end"
-      }}>
-              <button className="admin-btn" style={{
-          background: "#333",
-          color: "#fff"
-        }} onClick={() => {
+  return (
+    actionSub &&
+    actionType && (
+      <div
+        role="button"
+        tabIndex={0}
+        className="admin-overlay"
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            e.currentTarget.click();
+          }
+        }}
+        onClick={() => {
           setActionSub(null);
           setActionType(null);
-        }}>
-                Cancel
-              </button>
-              <button className="admin-btn admin-btn-primary" onClick={executeAction}>
-                Confirm
-              </button>
+        }}
+      >
+        <div
+          className="admin-modal"
+          onClick={(e) => e.stopPropagation()}
+          style={{
+            maxWidth: 420,
+          }}
+          role="presentation"
+        >
+          <h3>
+            {actionType === "renew"
+              ? "Renew"
+              : actionType === "extend"
+                ? "Extend"
+                : actionType === "extendTrial"
+                  ? "Extend Trial"
+                  : actionType === "reduceTrial"
+                    ? "Reduce Trial"
+                    : "Change Plan"}{" "}
+            — {actionSub.tenant?.name}
+          </h3>
+          <p
+            style={{
+              color: "#888",
+              fontSize: 13,
+              marginBottom: 12,
+            }}
+          >
+            Current plan: {actionSub.plan?.name} | Expires:{" "}
+            {actionSub.trialExpiresAt
+              ? new Date(actionSub.trialExpiresAt).toLocaleDateString()
+              : actionSub.endDate
+                ? new Date(actionSub.endDate).toLocaleDateString()
+                : "N/A"}
+            {actionSub.status === "TRIAL" && actionSub.trialDays && (
+              <> | Trial days: {actionSub.trialDays}</>
+            )}
+          </p>
+          {actionType === "upgrade" ? (
+            <div className="admin-form-group">
+              <label htmlFor="newPlanId">New Plan ID</label>
+              <input
+                id="newPlanId"
+                value={actionValue}
+                onChange={(e) => setActionValue(e.target.value)}
+                placeholder="Enter planId..."
+              />
             </div>
+          ) : (
+            <div className="admin-form-group">
+              <label htmlFor="daysToChange">
+                Days to{" "}
+                {actionType === "extendTrial"
+                  ? "add"
+                  : actionType === "reduceTrial"
+                    ? "remove"
+                    : actionType}
+              </label>
+              <input
+                id="daysToChange"
+                type="number"
+                value={actionValue}
+                onChange={(e) => setActionValue(e.target.value)}
+                min={1}
+              />
+              {actionType === "extendTrial" && (
+                <div
+                  style={{
+                    display: "flex",
+                    gap: 4,
+                    marginTop: 8,
+                  }}
+                >
+                  {[7, 15, 30].map((d) => (
+                    <button
+                      key={d}
+                      className="admin-btn"
+                      style={{
+                        background: "#333",
+                        color: "#fff",
+                        fontSize: 12,
+                        padding: "4px 8px",
+                      }}
+                      onClick={() => setActionValue(String(d))}
+                    >
+                      +{d}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+          <div
+            style={{
+              display: "flex",
+              gap: 8,
+              justifyContent: "flex-end",
+            }}
+          >
+            <button
+              className="admin-btn"
+              style={{
+                background: "#333",
+                color: "#fff",
+              }}
+              onClick={() => {
+                setActionSub(null);
+                setActionType(null);
+              }}
+            >
+              Cancel
+            </button>
+            <button
+              className="admin-btn admin-btn-primary"
+              onClick={executeAction}
+            >
+              Confirm
+            </button>
           </div>
-        </div>;
+        </div>
+      </div>
+    )
+  );
 }
 export default function AdminSubscriptions() {
   const [subscriptions, setSubscriptions] = useState([]);
@@ -366,7 +593,7 @@ export default function AdminSubscriptions() {
         status: statusFilter || undefined,
         search: searchRef.current || undefined,
         page,
-        limit: 15
+        limit: 15,
       });
       if (res.success) {
         setSubscriptions(res.data.subscriptions);
@@ -381,7 +608,7 @@ export default function AdminSubscriptions() {
   useEffect(() => {
     Promise.resolve().then(() => fetchSubscriptions());
   }, [fetchSubscriptions]);
-  const handleSearch = e => {
+  const handleSearch = (e) => {
     e.preventDefault();
     setPage(1);
     fetchSubscriptions();
@@ -404,21 +631,32 @@ export default function AdminSubscriptions() {
   };
   const executeAction = () => {
     if (!actionSub || !actionType) return;
-    if (actionType === "extend") doAction(adminApi.extendSubscription, actionSub.id, {
-      days: safeNumber(actionValue) || 30
-    });else if (actionType === "renew") doAction(adminApi.renewSubscription, actionSub.id, {
-      days: safeNumber(actionValue) || 365
-    });else if (actionType === "extendTrial") doAction(adminApi.extendTrial, actionSub.id, {
-      days: safeNumber(actionValue) || 7
-    });else if (actionType === "reduceTrial") doAction(adminApi.reduceTrial, actionSub.id, {
-      days: safeNumber(actionValue) || 7
-    });else if (actionType === "cancel") doAction(adminApi.cancelSubscription, actionSub.id);else if (actionType === "upgrade") doAction(adminApi.updateSubscription, actionSub.id, {
-      planId: actionValue
-    });
+    if (actionType === "extend")
+      doAction(adminApi.extendSubscription, actionSub.id, {
+        days: safeNumber(actionValue) || 30,
+      });
+    else if (actionType === "renew")
+      doAction(adminApi.renewSubscription, actionSub.id, {
+        days: safeNumber(actionValue) || 365,
+      });
+    else if (actionType === "extendTrial")
+      doAction(adminApi.extendTrial, actionSub.id, {
+        days: safeNumber(actionValue) || 7,
+      });
+    else if (actionType === "reduceTrial")
+      doAction(adminApi.reduceTrial, actionSub.id, {
+        days: safeNumber(actionValue) || 7,
+      });
+    else if (actionType === "cancel")
+      doAction(adminApi.cancelSubscription, actionSub.id);
+    else if (actionType === "upgrade")
+      doAction(adminApi.updateSubscription, actionSub.id, {
+        planId: actionValue,
+      });
     setActionSub(null);
     setActionType(null);
   };
-  const openHistory = async sub => {
+  const openHistory = async (sub) => {
     setHistorySub(sub);
     try {
       const res = await adminApi.getSubscriptionHistory(sub.id);
@@ -430,17 +668,49 @@ export default function AdminSubscriptions() {
     }
   };
   const totalPages = Math.ceil(total / 15);
-  return <div className="admin-page">
+  return (
+    <div className="admin-page">
       <h2>
         <Clock size={20} /> Subscriptions
       </h2>
 
-      <AdminSubscriptionsSection1 setSearch={setSearch} setStatusFilter={setStatusFilter} setPage={setPage} subscriptions={subscriptions} />
+      <AdminSubscriptionsSection1
+        search={search}
+        setSearch={setSearch}
+        handleSearch={handleSearch}
+        statusFilter={statusFilter}
+        setStatusFilter={setStatusFilter}
+        setPage={setPage}
+        subscriptions={subscriptions}
+      />
 
-      <AdminSubscriptionsSection2 openAction={openAction} s={s} openHistory={openHistory} doAction={doAction} setPage={setPage} page={page} />
+      <AdminSubscriptionsSection2
+        loading={loading}
+        subscriptions={subscriptions}
+        openAction={openAction}
+        openHistory={openHistory}
+        doAction={doAction}
+        setPage={setPage}
+        page={page}
+        totalPages={totalPages}
+      />
 
-      <AdminSubscriptionsSection3 e={e} setHistorySub={setHistorySub} setHistoryData={setHistoryData} />
+      <AdminSubscriptionsSection3
+        historySub={historySub}
+        historyData={historyData}
+        setHistorySub={setHistorySub}
+        setHistoryData={setHistoryData}
+      />
 
-      <AdminSubscriptionsSection4 e={e} setActionSub={setActionSub} setActionType={setActionType} setActionValue={setActionValue} d={d} />
-    </div>;
+      <AdminSubscriptionsSection4
+        actionSub={actionSub}
+        actionType={actionType}
+        actionValue={actionValue}
+        setActionSub={setActionSub}
+        setActionType={setActionType}
+        setActionValue={setActionValue}
+        executeAction={executeAction}
+      />
+    </div>
+  );
 }

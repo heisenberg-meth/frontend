@@ -20,182 +20,230 @@ import { AnimatePresence, m } from "framer-motion";
 import api from "../api";
 
 /* ─── tiny helpers ─────────────────────────────────────────────── */
-const sleep = ms => new Promise(r => setTimeout(r, ms));
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 function ClearExpiredButtonSection1({
-  e,
+  showConfirm,
+  phase,
+  count,
+  handleClear,
+  result,
   clearingRef,
-  handleClose
+  handleClose,
 }) {
-  return <AnimatePresence>
-        {showConfirm && <m.div tabIndex={0} className="clear-expired-overlay" initial={{
-      opacity: 0
-    }} animate={{
-      opacity: 1
-    }} exit={{
-      opacity: 0
-    }} transition={{
-      duration: 0.18
-    }} onKeyDown={e => {
-      if (e.key === "Enter" || e.key === " ") {
-        e.preventDefault();
-        e.currentTarget.click();
-      }
-    }} onClick={e => {
-      if (e.target === e.currentTarget && !clearingRef.current) handleClose();
-    }} aria-modal="true" role="dialog" aria-labelledby="clear-expired-dialog-title">
-            <m.div className="clear-expired-modal" initial={{
-        opacity: 0,
-        scale: 0.94,
-        y: 16
-      }} animate={{
-        opacity: 1,
-        scale: 1,
-        y: 0
-      }} exit={{
-        opacity: 0,
-        scale: 0.94,
-        y: 16
-      }} transition={{
-        duration: 0.22,
-        ease: "easeOut"
-      }}>
-              {/* ── CONFIRM phase ─────────────────────────── */}
-              {phase === "confirm" && <>
-                  <div className="cem-header">
-                    <div className="cem-icon-wrap danger">
-                      <AlertTriangle size={22} />
-                    </div>
-                    <div>
-                      <h2 id="clear-expired-dialog-title" className="cem-title">
-                        Clear Expired Inventory
-                      </h2>
-                      <p className="cem-subtitle">
-                        This action cannot be undone.
-                      </p>
-                    </div>
-                    <button className="cem-close-btn" onClick={handleClose} aria-label="Close dialog">
-                      <X size={18} />
-                    </button>
+  return (
+    <AnimatePresence>
+      {showConfirm && (
+        <m.div
+          tabIndex={0}
+          className="clear-expired-overlay"
+          initial={{
+            opacity: 0,
+          }}
+          animate={{
+            opacity: 1,
+          }}
+          exit={{
+            opacity: 0,
+          }}
+          transition={{
+            duration: 0.18,
+          }}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === " ") {
+              e.preventDefault();
+              e.currentTarget.click();
+            }
+          }}
+          onClick={(e) => {
+            if (e.target === e.currentTarget && !clearingRef.current)
+              handleClose();
+          }}
+          aria-modal="true"
+          role="dialog"
+          aria-labelledby="clear-expired-dialog-title"
+        >
+          <m.div
+            className="clear-expired-modal"
+            initial={{
+              opacity: 0,
+              scale: 0.94,
+              y: 16,
+            }}
+            animate={{
+              opacity: 1,
+              scale: 1,
+              y: 0,
+            }}
+            exit={{
+              opacity: 0,
+              scale: 0.94,
+              y: 16,
+            }}
+            transition={{
+              duration: 0.22,
+              ease: "easeOut",
+            }}
+          >
+            {/* ── CONFIRM phase ─────────────────────────── */}
+            {phase === "confirm" && (
+              <>
+                <div className="cem-header">
+                  <div className="cem-icon-wrap danger">
+                    <AlertTriangle size={22} />
                   </div>
-
-                  <div className="cem-body">
-                    <div className="cem-info-banner">
-                      <span className="cem-count">{count}</span>
-                      <span className="cem-count-label">
-                        disposed expired batch
-                        {count !== 1 ? "es" : ""} will be removed from active
-                        inventory.
-                      </span>
-                    </div>
-
-                    <ul className="cem-assurance-list">
-                      <li>
-                        <CheckCircle2 size={14} className="cem-check" />
-                        Disposal history, audit logs &amp; reports remain
-                        intact.
-                      </li>
-                      <li>
-                        <CheckCircle2 size={14} className="cem-check" />
-                        Only fully disposed batches are affected.
-                      </li>
-                      <li>
-                        <CheckCircle2 size={14} className="cem-check" />
-                        Active, low-stock &amp; expiring batches are not
-                        touched.
-                      </li>
-                    </ul>
-
-                    <p className="cem-confirm-question">
-                      Do you want to continue?
+                  <div>
+                    <h2 id="clear-expired-dialog-title" className="cem-title">
+                      Clear Expired Inventory
+                    </h2>
+                    <p className="cem-subtitle">
+                      This action cannot be undone.
                     </p>
                   </div>
+                  <button
+                    className="cem-close-btn"
+                    onClick={handleClose}
+                    aria-label="Close dialog"
+                  >
+                    <X size={18} />
+                  </button>
+                </div>
 
-                  <div className="cem-footer">
-                    <button id="clear-expired-cancel-btn" className="cem-btn secondary" onClick={handleClose}>
-                      Cancel
-                    </button>
-                    <button id="clear-expired-confirm-btn" className="cem-btn primary danger" onClick={handleClear}>
-                      <Trash2 size={14} />
-                      Clear&nbsp;{count}&nbsp;Batch{count !== 1 ? "es" : ""}
-                    </button>
+                <div className="cem-body">
+                  <div className="cem-info-banner">
+                    <span className="cem-count">{count}</span>
+                    <span className="cem-count-label">
+                      disposed expired batch
+                      {count !== 1 ? "es" : ""} will be removed from active
+                      inventory.
+                    </span>
                   </div>
-                </>}
 
-              {/* ── CLEARING phase ────────────────────────── */}
-              {phase === "clearing" && <div className="cem-progress-container">
-                  <div className="cem-progress-icon">
-                    <Loader2 size={36} className="cem-spinner" />
-                  </div>
-                  <h2 className="cem-progress-title">Clearing batches…</h2>
-                  <p className="cem-progress-subtitle">
-                    Archiving {count} disposed expired batch
-                    {count !== 1 ? "es" : ""}. Please wait.
+                  <ul className="cem-assurance-list">
+                    <li>
+                      <CheckCircle2 size={14} className="cem-check" />
+                      Disposal history, audit logs &amp; reports remain intact.
+                    </li>
+                    <li>
+                      <CheckCircle2 size={14} className="cem-check" />
+                      Only fully disposed batches are affected.
+                    </li>
+                    <li>
+                      <CheckCircle2 size={14} className="cem-check" />
+                      Active, low-stock &amp; expiring batches are not touched.
+                    </li>
+                  </ul>
+
+                  <p className="cem-confirm-question">
+                    Do you want to continue?
                   </p>
-                  <div className="cem-progress-bar-track">
-                    <div className="cem-progress-bar-fill animate" />
-                  </div>
-                  <p className="cem-progress-note">Do not close this window.</p>
-                </div>}
+                </div>
 
-              {/* ── DONE phase ───────────────────────────── */}
-              {phase === "done" && result && <>
-                  <div className="cem-header">
-                    <div className="cem-icon-wrap success">
-                      <CheckCircle2 size={22} />
-                    </div>
-                    <div>
-                      <h2 className="cem-title success">
-                        Cleared Successfully
-                      </h2>
-                      <p className="cem-subtitle">Inventory refreshed.</p>
-                    </div>
-                    <button className="cem-close-btn" onClick={handleClose} aria-label="Close dialog">
-                      <X size={18} />
-                    </button>
-                  </div>
+                <div className="cem-footer">
+                  <button
+                    id="clear-expired-cancel-btn"
+                    className="cem-btn secondary"
+                    onClick={handleClose}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    id="clear-expired-confirm-btn"
+                    className="cem-btn primary danger"
+                    onClick={handleClear}
+                  >
+                    <Trash2 size={14} />
+                    Clear&nbsp;{count}&nbsp;Batch{count !== 1 ? "es" : ""}
+                  </button>
+                </div>
+              </>
+            )}
 
-                  <div className="cem-body">
-                    <div className="cem-result-grid">
-                      <div className="cem-result-item success">
-                        <span className="cem-result-val">
-                          {result.cleared ?? 0}
-                        </span>
-                        <span className="cem-result-label">
-                          Batches Removed
-                        </span>
+            {/* ── CLEARING phase ────────────────────────── */}
+            {phase === "clearing" && (
+              <div className="cem-progress-container">
+                <div className="cem-progress-icon">
+                  <Loader2 size={36} className="cem-spinner" />
+                </div>
+                <h2 className="cem-progress-title">Clearing batches…</h2>
+                <p className="cem-progress-subtitle">
+                  Archiving {count} disposed expired batch
+                  {count !== 1 ? "es" : ""}. Please wait.
+                </p>
+                <div className="cem-progress-bar-track">
+                  <div className="cem-progress-bar-fill animate" />
+                </div>
+                <p className="cem-progress-note">Do not close this window.</p>
+              </div>
+            )}
+
+            {/* ── DONE phase ───────────────────────────── */}
+            {phase === "done" && result && (
+              <>
+                <div className="cem-header">
+                  <div className="cem-icon-wrap success">
+                    <CheckCircle2 size={22} />
+                  </div>
+                  <div>
+                    <h2 className="cem-title success">Cleared Successfully</h2>
+                    <p className="cem-subtitle">Inventory refreshed.</p>
+                  </div>
+                  <button
+                    className="cem-close-btn"
+                    onClick={handleClose}
+                    aria-label="Close dialog"
+                  >
+                    <X size={18} />
+                  </button>
+                </div>
+
+                <div className="cem-body">
+                  <div className="cem-result-grid">
+                    <div className="cem-result-item success">
+                      <span className="cem-result-val">
+                        {result.cleared ?? 0}
+                      </span>
+                      <span className="cem-result-label">Batches Removed</span>
+                    </div>
+                    {(result.skipped ?? 0) > 0 && (
+                      <div className="cem-result-item warn">
+                        <span className="cem-result-val">{result.skipped}</span>
+                        <span className="cem-result-label">Skipped</span>
                       </div>
-                      {(result.skipped ?? 0) > 0 && <div className="cem-result-item warn">
-                          <span className="cem-result-val">
-                            {result.skipped}
-                          </span>
-                          <span className="cem-result-label">Skipped</span>
-                        </div>}
-                      <div className="cem-result-item neutral">
-                        <span className="cem-result-val">
-                          {result.remaining ?? 0}
-                        </span>
-                        <span className="cem-result-label">Remaining</span>
-                      </div>
+                    )}
+                    <div className="cem-result-item neutral">
+                      <span className="cem-result-val">
+                        {result.remaining ?? 0}
+                      </span>
+                      <span className="cem-result-label">Remaining</span>
                     </div>
-
-                    <p className="cem-done-note">
-                      Disposal history, audit logs and reports remain fully
-                      accessible.
-                    </p>
                   </div>
 
-                  <div className="cem-footer">
-                    <button id="clear-expired-done-btn" className="cem-btn primary success" onClick={handleClose}>
-                      Done
-                    </button>
-                  </div>
-                </>}
-            </m.div>
-          </m.div>}
-      </AnimatePresence>;
+                  <p className="cem-done-note">
+                    Disposal history, audit logs and reports remain fully
+                    accessible.
+                  </p>
+                </div>
+
+                <div className="cem-footer">
+                  <button
+                    id="clear-expired-done-btn"
+                    className="cem-btn primary success"
+                    onClick={handleClose}
+                  >
+                    Done
+                  </button>
+                </div>
+              </>
+            )}
+          </m.div>
+        </m.div>
+      )}
+    </AnimatePresence>
+  );
 }
 function ClearExpiredButtonSection2() {
-  return <style>{`
+  return (
+    <style>{`
         /* ── Trigger Button ───────────────────────────────────── */
         .clear-expired-trigger-btn {
           display: inline-flex;
@@ -521,13 +569,14 @@ function ClearExpiredButtonSection2() {
           margin: 0;
           text-align: center;
         }
-      `}</style>;
+      `}</style>
+  );
 }
 export default function ClearExpiredButton({
   showToast,
   onCleared,
   branchId,
-  className = ""
+  className = "",
 }) {
   const [count, setCount] = useState(null); // null = not loaded yet
   const [loadingCount, setLoadingCount] = useState(false);
@@ -599,7 +648,10 @@ export default function ClearExpiredButton({
       // Notify parent
       onCleared?.();
     } catch (err) {
-      const msg = err?.response?.data?.error?.message || err?.message || "Failed to clear expired batches.";
+      const msg =
+        err?.response?.data?.error?.message ||
+        err?.message ||
+        "Failed to clear expired batches.";
       showToast?.(msg, "error");
       setPhase("confirm"); // revert to confirm so user can retry
     } finally {
@@ -617,18 +669,43 @@ export default function ClearExpiredButton({
 
   /* ── Render ─────────────────────────────────────────────────── */
   const disabled = !count || loadingCount;
-  return <>
+  return (
+    <>
       {/* ── Trigger button ──────────────────────────────────── */}
-      <button id="clear-expired-btn" className={`clear-expired-trigger-btn ${disabled ? "disabled" : ""} ${className}`} onClick={handleOpenConfirm} disabled={disabled} title={disabled ? "No disposed expired batches to clear" : `Clear ${count} disposed expired batches from active inventory`} aria-label={`Clear expired batches${count ? ` (${count} available)` : ""}`}>
+      <button
+        id="clear-expired-btn"
+        className={`clear-expired-trigger-btn ${disabled ? "disabled" : ""} ${className}`}
+        onClick={handleOpenConfirm}
+        disabled={disabled}
+        title={
+          disabled
+            ? "No disposed expired batches to clear"
+            : `Clear ${count} disposed expired batches from active inventory`
+        }
+        aria-label={`Clear expired batches${count ? ` (${count} available)` : ""}`}
+      >
         <Trash2 size={14} />
         <span>Clear Expired</span>
-        {loadingCount ? <span className="clear-expired-badge loading">…</span> : count > 0 ? <span className="clear-expired-badge">{count}</span> : null}
+        {loadingCount ? (
+          <span className="clear-expired-badge loading">…</span>
+        ) : count > 0 ? (
+          <span className="clear-expired-badge">{count}</span>
+        ) : null}
       </button>
 
       {/* ── Modal overlay ───────────────────────────────────── */}
-      <ClearExpiredButtonSection1 e={e} clearingRef={clearingRef} handleClose={handleClose} />
+      <ClearExpiredButtonSection1
+        showConfirm={showConfirm}
+        phase={phase}
+        count={count}
+        handleClear={handleClear}
+        result={result}
+        clearingRef={clearingRef}
+        handleClose={handleClose}
+      />
 
       {/* ── Scoped styles ───────────────────────────────────────── */}
       <ClearExpiredButtonSection2 />
-    </>;
+    </>
+  );
 }

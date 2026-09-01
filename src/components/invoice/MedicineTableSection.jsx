@@ -1,6 +1,13 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { createPortal } from "react-dom";
-import { Trash2, Plus, Loader2, ClipboardList, AlertCircle, CheckCircle2 } from "lucide-react";
+import {
+  Trash2,
+  Plus,
+  Loader2,
+  ClipboardList,
+  AlertCircle,
+  CheckCircle2,
+} from "lucide-react";
 import api from "../../api.js";
 import { API_ROUTES } from "../../constants/api.routes.js";
 import { normalizeArrayResponse } from "../../utils/apiNormalizer";
@@ -27,7 +34,7 @@ const makeBlankRow = () => ({
   discount: 0,
   stock: 0,
   expiryDate: "",
-  isNew: true
+  isNew: true,
 });
 
 // ─── Per-row autocomplete hook ───────────────────────────────────────────────
@@ -37,7 +44,7 @@ function useAutocomplete() {
   const [loading, setLoading] = useState(false);
   const [open, setOpen] = useState(false);
   const timerRef = useRef(null);
-  const search = useCallback(q => {
+  const search = useCallback((q) => {
     setQuery(q);
     clearTimeout(timerRef.current);
     if (q.trim().length < 2) {
@@ -50,8 +57,8 @@ function useAutocomplete() {
       try {
         const res = await api.get(API_ROUTES.INVENTORY_MEDICINES_AUTOCOMPLETE, {
           params: {
-            q: q.trim()
-          }
+            q: q.trim(),
+          },
         });
         const list = normalizeArrayResponse(res);
         setResults(Array.isArray(list) ? list : []);
@@ -79,7 +86,7 @@ function useAutocomplete() {
     open,
     setOpen,
     search,
-    clear
+    clear,
   };
 }
 
@@ -90,7 +97,7 @@ function MedicineRow({
   onUpdate,
   onRemove,
   showToast,
-  theme = "light"
+  theme = "light",
 }) {
   const ac = useAutocomplete();
   const inputRef = useRef(null);
@@ -107,7 +114,7 @@ function MedicineRow({
       top: rect.bottom + 4,
       left: rect.left,
       width: Math.max(rect.width, 320),
-      zIndex: 99999
+      zIndex: 99999,
     });
   }, []);
 
@@ -127,9 +134,11 @@ function MedicineRow({
 
   // Close dropdown on outside click
   useEffect(() => {
-    const handler = e => {
-      const clickedInsideInput = inputRef.current && inputRef.current.contains(e.target);
-      const clickedInsideDropdown = dropdownRef.current && dropdownRef.current.contains(e.target);
+    const handler = (e) => {
+      const clickedInsideInput =
+        inputRef.current && inputRef.current.contains(e.target);
+      const clickedInsideDropdown =
+        dropdownRef.current && dropdownRef.current.contains(e.target);
       if (!clickedInsideInput && !clickedInsideDropdown) {
         ac.setOpen(false);
       }
@@ -139,47 +148,56 @@ function MedicineRow({
   }, [ac]);
 
   // Fetch batches when a medicine is chosen
-  const fetchBatches = useCallback(async medicineId => {
-    onUpdate(idx, "batchesLoading", true);
-    try {
-      const res = await api.get(`${API_ROUTES.INVENTORY_BATCHES}`, {
-        params: {
-          medicineId
-        }
-      });
-      const raw = normalizeArrayResponse(res);
-      // Filter out expired batches
-      const today = new Date();
-      const valid = (Array.isArray(raw) ? raw : []).filter(b => {
-        if (!b.expiryDate) return true;
-        return new Date(b.expiryDate) > today;
-      });
-      onUpdate(idx, "batches", valid);
-      // Auto-select first available batch
-      if (valid.length > 0) {
-        const first = valid[0];
-        onUpdate(idx, "_batchSelect", {
-          batchId: first.id || first._id || first.batchId,
-          batchNumber: first.batchNumber || first.batch_number || "",
-          expiryDate: first.expiryDate || "",
-          stock: first.quantity ?? first.stock ?? first.availableQty ?? 0
+  const fetchBatches = useCallback(
+    async (medicineId) => {
+      onUpdate(idx, "batchesLoading", true);
+      try {
+        const res = await api.get(`${API_ROUTES.INVENTORY_BATCHES}`, {
+          params: {
+            medicineId,
+          },
         });
+        const raw = normalizeArrayResponse(res);
+        // Filter out expired batches
+        const today = new Date();
+        const valid = (Array.isArray(raw) ? raw : []).filter((b) => {
+          if (!b.expiryDate) return true;
+          return new Date(b.expiryDate) > today;
+        });
+        onUpdate(idx, "batches", valid);
+        // Auto-select first available batch
+        if (valid.length > 0) {
+          const first = valid[0];
+          onUpdate(idx, "_batchSelect", {
+            batchId: first.id || first._id || first.batchId,
+            batchNumber: first.batchNumber || first.batch_number || "",
+            expiryDate: first.expiryDate || "",
+            stock: first.quantity ?? first.stock ?? first.availableQty ?? 0,
+          });
+        }
+      } catch (err) {
+        console.error("[Batches] fetch error:", err);
+        showToast("Could not load batches for this medicine", "error");
+        onUpdate(idx, "batches", []);
+      } finally {
+        onUpdate(idx, "batchesLoading", false);
       }
-    } catch (err) {
-      console.error("[Batches] fetch error:", err);
-      showToast("Could not load batches for this medicine", "error");
-      onUpdate(idx, "batches", []);
-    } finally {
-      onUpdate(idx, "batchesLoading", false);
-    }
-  }, [idx, onUpdate, showToast]);
+    },
+    [idx, onUpdate, showToast],
+  );
 
   // Handle medicine selection from autocomplete
-  const selectMedicine = med => {
+  const selectMedicine = (med) => {
     ac.clear();
-    const price = safeNumber(med.price ?? med.mrp ?? med.salePrice ?? med.unitPrice ?? 0);
-    const gstVal = safeNumber(med.gst ?? med.gstPercentage ?? med.gstRate ?? med.taxRate ?? 0);
-    const stockVal = safeNumber(med.stock ?? med.quantity ?? med.availableStock ?? 0);
+    const price = safeNumber(
+      med.price ?? med.mrp ?? med.salePrice ?? med.unitPrice ?? 0,
+    );
+    const gstVal = safeNumber(
+      med.gst ?? med.gstPercentage ?? med.gstRate ?? med.taxRate ?? 0,
+    );
+    const stockVal = safeNumber(
+      med.stock ?? med.quantity ?? med.availableStock ?? 0,
+    );
     if (stockVal === 0) {
       showToast(`${med.name} is out of stock`, "warning");
     }
@@ -197,7 +215,7 @@ function MedicineRow({
       batches: [],
       isNew: false,
       qty: 1,
-      discount: 0
+      discount: 0,
     });
 
     // Fetch additional batches for this medicine
@@ -206,26 +224,31 @@ function MedicineRow({
   };
 
   // Handle batch select change
-  const handleBatchChange = e => {
+  const handleBatchChange = (e) => {
     const batchId = e.target.value;
-    const found = (item.batches || []).find(b => String(b.id || b._id || b.batchId) === String(batchId));
+    const found = (item.batches || []).find(
+      (b) => String(b.id || b._id || b.batchId) === String(batchId),
+    );
     if (found) {
       onUpdate(idx, "_batchSelect", {
         batchId: found.id || found._id || found.batchId,
         batchNumber: found.batchNumber || found.batch_number || "",
         expiryDate: found.expiryDate || "",
-        stock: found.quantity ?? found.stock ?? found.availableQty ?? item.stock,
+        stock:
+          found.quantity ?? found.stock ?? found.availableQty ?? item.stock,
         // Optionally override price from batch
-        ...(found.mrp ? {
-          price: safeNumber(found.mrp),
-          mrp: safeNumber(found.mrp)
-        } : {})
+        ...(found.mrp
+          ? {
+              price: safeNumber(found.mrp),
+              mrp: safeNumber(found.mrp),
+            }
+          : {}),
       });
     }
   };
 
   // Keyboard navigation for dropdown
-  const handleKeyDown = e => {
+  const handleKeyDown = (e) => {
     if (e.key === "Escape") {
       ac.setOpen(false);
       return;
@@ -233,7 +256,9 @@ function MedicineRow({
     if (!ac.open || ac.results.length === 0) return;
     const items = dropdownRef.current?.querySelectorAll("button[data-acitem]");
     if (!items || items.length === 0) return;
-    const focused = dropdownRef.current.querySelector("button[data-acitem]:focus");
+    const focused = dropdownRef.current.querySelector(
+      "button[data-acitem]:focus",
+    );
     const focusedIdx = focused ? Array.from(items).indexOf(focused) : -1;
     if (e.key === "ArrowDown") {
       e.preventDefault();
@@ -248,114 +273,225 @@ function MedicineRow({
       focused.click();
     }
   };
-  const rowAmount = (item.mrp || 0) * (item.qty || 1) * (1 - (item.discount || 0) / 100);
+  const rowAmount =
+    (item.mrp || 0) * (item.qty || 1) * (1 - (item.discount || 0) / 100);
   const isSelected = !item.isNew && !!item.id;
-  return <div className="med-row" ref={containerRef}>
+  return (
+    <div className="med-row" ref={containerRef}>
       {/* ── Medicine Search ── */}
       <div className="med-cell med-cell-name">
         <div className="med-search-wrap">
-          <><label htmlFor="field_cowy9b" className="sr-only">Search medicine...</label><input required ref={inputRef} type="text" className={`form-input ${isSelected ? "form-input-selected" : ""}`} placeholder="Search medicine..." value={isSelected ? item.name : ac.query} onChange={e => {
-            if (isSelected) {
-              // Clear selection to allow re-search
-              onUpdate(idx, "_clearMedicine", null);
-              ac.search(e.target.value);
-            } else {
-              ac.search(e.target.value);
-            }
-          }} onFocus={() => {
-            if (!isSelected && ac.query.length >= 2) ac.setOpen(true);
-          }} onKeyDown={handleKeyDown} autoComplete="off" id="field_cowy9b" /></>
+          <>
+            <label htmlFor="field_cowy9b" className="sr-only">
+              Search medicine...
+            </label>
+            <input
+              required
+              ref={inputRef}
+              type="text"
+              className={`form-input ${isSelected ? "form-input-selected" : ""}`}
+              placeholder="Search medicine..."
+              value={isSelected ? item.name : ac.query}
+              onChange={(e) => {
+                if (isSelected) {
+                  // Clear selection to allow re-search
+                  onUpdate(idx, "_clearMedicine", null);
+                  ac.search(e.target.value);
+                } else {
+                  ac.search(e.target.value);
+                }
+              }}
+              onFocus={() => {
+                if (!isSelected && ac.query.length >= 2) ac.setOpen(true);
+              }}
+              onKeyDown={handleKeyDown}
+              autoComplete="off"
+              id="field_cowy9b"
+            />
+          </>
 
           {/* Loading indicator */}
-          {ac.loading && <Loader2 className="med-search-spinner animate-spin" size={12} />}
+          {ac.loading && (
+            <Loader2 className="med-search-spinner animate-spin" size={12} />
+          )}
           {/* Selected indicator */}
-          {isSelected && !ac.loading && <CheckCircle2 className="med-search-check" size={12} />}
+          {isSelected && !ac.loading && (
+            <CheckCircle2 className="med-search-check" size={12} />
+          )}
 
           {/* Autocomplete dropdown — rendered via portal so it escapes overflow */}
-          {ac.open && (ac.results.length > 0 || !ac.loading && ac.query.length >= 2) && createPortal(<div className="ac-dropdown-portal" ref={dropdownRef} style={dropdownStyle} data-theme={theme}>
-                {ac.results.length > 0 ? ac.results.map((med, mi) => {
-            const medPrice = safeNumber(med.price ?? med.mrp ?? 0);
-            const medStock = safeNumber(med.stock ?? med.quantity ?? 0);
-            return <button key={`${med.id || med._id}-${mi}`} type="button" data-acitem="true" className="ac-item" onMouseDown={e => e.preventDefault()} onClick={() => selectMedicine(med)}>
+          {ac.open &&
+            (ac.results.length > 0 || (!ac.loading && ac.query.length >= 2)) &&
+            createPortal(
+              <div
+                className="ac-dropdown-portal"
+                ref={dropdownRef}
+                style={dropdownStyle}
+                data-theme={theme}
+              >
+                {ac.results.length > 0 ? (
+                  ac.results.map((med, mi) => {
+                    const medPrice = safeNumber(med.price ?? med.mrp ?? 0);
+                    const medStock = safeNumber(med.stock ?? med.quantity ?? 0);
+                    return (
+                      <button
+                        key={`${med.id || med._id}-${mi}`}
+                        type="button"
+                        data-acitem="true"
+                        className="ac-item"
+                        onMouseDown={(e) => e.preventDefault()}
+                        onClick={() => selectMedicine(med)}
+                      >
                         <div className="ac-item-left">
                           <div className="ac-item-name">{med.name}</div>
                           <div className="ac-item-meta">
                             {med.genericName && <span>{med.genericName}</span>}
                             {med.strength && <span> · {med.strength}</span>}
-                            {med.batchNumber && <span> · Batch: {med.batchNumber}</span>}
+                            {med.batchNumber && (
+                              <span> · Batch: {med.batchNumber}</span>
+                            )}
                           </div>
                         </div>
                         <div className="ac-item-right">
                           <div className="ac-item-price">
                             ₹{medPrice.toFixed(2)}
                           </div>
-                          <div className={`ac-item-stock ${medStock === 0 ? "ac-item-stock-zero" : medStock < 10 ? "ac-item-stock-low" : ""}`}>
-                            {medStock === 0 ? "Out of stock" : `Stock: ${medStock}`}
+                          <div
+                            className={`ac-item-stock ${medStock === 0 ? "ac-item-stock-zero" : medStock < 10 ? "ac-item-stock-low" : ""}`}
+                          >
+                            {medStock === 0
+                              ? "Out of stock"
+                              : `Stock: ${medStock}`}
                           </div>
                         </div>
-                      </button>;
-          }) : <div className="ac-empty">
+                      </button>
+                    );
+                  })
+                ) : (
+                  <div className="ac-empty">
                     <AlertCircle size={14} />
                     No medicines found for "{ac.query}"
-                  </div>}
-              </div>, document.body)}
+                  </div>
+                )}
+              </div>,
+              document.body,
+            )}
         </div>
       </div>
 
       {/* ── Batch Select ── */}
       <div className="med-cell med-cell-batch">
-        {item.batchesLoading ? <div className="med-batch-loading">
+        {item.batchesLoading ? (
+          <div className="med-batch-loading">
             <Loader2 size={12} className="animate-spin" /> Loading…
-          </div> : <select className="form-input" disabled={!isSelected || (item.batches || []).length === 0} value={item.batchId || ""} onChange={handleBatchChange}>
+          </div>
+        ) : (
+          <select
+            className="form-input"
+            disabled={!isSelected || (item.batches || []).length === 0}
+            value={item.batchId || ""}
+            onChange={handleBatchChange}
+          >
             {!isSelected && <option value="">— Select medicine first —</option>}
-            {isSelected && (item.batches || []).length === 0 && <option value={item.batchId || ""}>
+            {isSelected && (item.batches || []).length === 0 && (
+              <option value={item.batchId || ""}>
                 {item.batchNumber || "Default batch"}
-              </option>}
-            {(item.batches || []).map(b => {
-          const bid = b.id || b._id || b.batchId;
-          const bnum = b.batchNumber || b.batch_number || bid;
-          const exp = b.expiryDate ? new Date(b.expiryDate).toLocaleDateString("en-IN", {
-            month: "short",
-            year: "2-digit"
-          }) : "";
-          const qty = b.quantity ?? b.stock ?? b.availableQty ?? 0;
-          return <option key={bid} value={bid}>
+              </option>
+            )}
+            {(item.batches || []).map((b) => {
+              const bid = b.id || b._id || b.batchId;
+              const bnum = b.batchNumber || b.batch_number || bid;
+              const exp = b.expiryDate
+                ? new Date(b.expiryDate).toLocaleDateString("en-IN", {
+                    month: "short",
+                    year: "2-digit",
+                  })
+                : "";
+              const qty = b.quantity ?? b.stock ?? b.availableQty ?? 0;
+              return (
+                <option key={bid} value={bid}>
                   {bnum}
                   {exp ? ` | Exp:${exp}` : ""} | Qty:{qty}
-                </option>;
-        })}
-          </select>}
+                </option>
+              );
+            })}
+          </select>
+        )}
       </div>
 
       {/* ── Qty ── */}
       <div className="med-cell med-cell-qty">
-        <input required type="number" className="form-input text-center" min="1" max={item.stock || 9999} value={item.qty || 1} disabled={!isSelected} onChange={e => {
-        const val = Math.max(1, Math.floor(safeNumber(e.target.value) || 1));
-        if (val > (item.stock || 9999)) {
-          showToast(`Only ${item.stock} units in stock`, "warning");
-          onUpdate(idx, "qty", item.stock);
-        } else {
-          onUpdate(idx, "qty", val);
-        }
-      }} />
+        <input
+          required
+          type="number"
+          className="form-input text-center"
+          min="1"
+          max={item.stock || 9999}
+          value={item.qty || 1}
+          disabled={!isSelected}
+          onChange={(e) => {
+            const val = Math.max(
+              1,
+              Math.floor(safeNumber(e.target.value) || 1),
+            );
+            if (val > (item.stock || 9999)) {
+              showToast(`Only ${item.stock} units in stock`, "warning");
+              onUpdate(idx, "qty", item.stock);
+            } else {
+              onUpdate(idx, "qty", val);
+            }
+          }}
+        />
       </div>
 
       {/* ── MRP ── */}
       <div className="med-cell med-cell-mrp">
-        <input required type="text" className="form-input text-right" readOnly value={`₹${safeNumber(item.mrp || 0).toFixed(2)}`} tabIndex={-1} />
+        <input
+          required
+          type="text"
+          className="form-input text-right"
+          readOnly
+          value={`₹${safeNumber(item.mrp || 0).toFixed(2)}`}
+          tabIndex={-1}
+        />
       </div>
 
       {/* ── Discount ── */}
       <div className="med-cell med-cell-disc">
-        <><label htmlFor="field_o5vlvg" className="sr-only">0</label><input required type="number" className="form-input text-center" min="0" max="100" step="0.5" placeholder="0" value={item.discount || ""} disabled={!isSelected} onChange={e => {
-          const val = Math.min(100, Math.max(0, safeNumber(e.target.value) || 0));
-          onUpdate(idx, "discount", val);
-        }} id="field_o5vlvg" /></>
+        <>
+          <label htmlFor="field_o5vlvg" className="sr-only">
+            0
+          </label>
+          <input
+            required
+            type="number"
+            className="form-input text-center"
+            min="0"
+            max="100"
+            step="0.5"
+            placeholder="0"
+            value={item.discount || ""}
+            disabled={!isSelected}
+            onChange={(e) => {
+              const val = Math.min(
+                100,
+                Math.max(0, safeNumber(e.target.value) || 0),
+              );
+              onUpdate(idx, "discount", val);
+            }}
+            id="field_o5vlvg"
+          />
+        </>
       </div>
 
       {/* ── GST ── */}
       <div className="med-cell med-cell-gst">
-        <select className="form-input" value={item.gst || 0} disabled={!isSelected} onChange={e => onUpdate(idx, "gst", safeNumber(e.target.value))}>
+        <select
+          className="form-input"
+          value={item.gst || 0}
+          disabled={!isSelected}
+          onChange={(e) => onUpdate(idx, "gst", safeNumber(e.target.value))}
+        >
           <option value={0}>0%</option>
           <option value={5}>5%</option>
           <option value={12}>12%</option>
@@ -371,11 +507,17 @@ function MedicineRow({
 
       {/* ── Delete ── */}
       <div className="med-cell med-cell-del">
-        <button type="button" className="btn-row-delete" onClick={() => onRemove(idx)} title="Remove row">
+        <button
+          type="button"
+          className="btn-row-delete"
+          onClick={() => onRemove(idx)}
+          title="Remove row"
+        >
           <Trash2 size={14} />
         </button>
       </div>
-    </div>;
+    </div>
+  );
 }
 
 // ─── Main section ─────────────────────────────────────────────────────────────
@@ -383,7 +525,7 @@ export default function MedicineTableSection({
   lineItems,
   setLineItems,
   showToast,
-  theme = "light"
+  theme = "light",
 }) {
   useEffect(() => {
     if (lineItems.length === 0) {
@@ -391,47 +533,53 @@ export default function MedicineTableSection({
     }
   }, [lineItems.length, setLineItems]);
   const addRow = () => {
-    setLineItems(prev => [...prev, makeBlankRow()]);
+    setLineItems((prev) => [...prev, makeBlankRow()]);
   };
-  const removeRow = idx => {
-    setLineItems(prev => {
+  const removeRow = (idx) => {
+    setLineItems((prev) => {
       const next = prev.filter((_, i) => i !== idx);
       return next.length === 0 ? [makeBlankRow()] : next;
     });
   };
 
   // Unified field updater — handles special composite updates
-  const updateRow = useCallback((idx, field, value) => {
-    setLineItems(prev => prev.map((item, i) => {
-      if (i !== idx) return item;
-      if (field === "_medicineSelect") {
-        // Full medicine selection payload
-        return {
-          ...item,
-          ...value
-        };
-      }
-      if (field === "_batchSelect") {
-        // Batch selection payload
-        return {
-          ...item,
-          ...value
-        };
-      }
-      if (field === "_clearMedicine") {
-        // Reset to blank row (keep _id stable)
-        return {
-          ...makeBlankRow(),
-          _id: item._id
-        };
-      }
-      return {
-        ...item,
-        [field]: value
-      };
-    }));
-  }, [setLineItems]);
-  return <div className="invoice-card">
+  const updateRow = useCallback(
+    (idx, field, value) => {
+      setLineItems((prev) =>
+        prev.map((item, i) => {
+          if (i !== idx) return item;
+          if (field === "_medicineSelect") {
+            // Full medicine selection payload
+            return {
+              ...item,
+              ...value,
+            };
+          }
+          if (field === "_batchSelect") {
+            // Batch selection payload
+            return {
+              ...item,
+              ...value,
+            };
+          }
+          if (field === "_clearMedicine") {
+            // Reset to blank row (keep _id stable)
+            return {
+              ...makeBlankRow(),
+              _id: item._id,
+            };
+          }
+          return {
+            ...item,
+            [field]: value,
+          };
+        }),
+      );
+    },
+    [setLineItems],
+  );
+  return (
+    <div className="invoice-card">
       {/* Header */}
       <div className="med-section-header">
         <div className="flex items-center gap-2">
@@ -459,7 +607,18 @@ export default function MedicineTableSection({
 
       {/* Rows */}
       <div className="medicine-rows-container">
-        {lineItems.map((item, idx) => <MedicineRow key={item._id} item={item} idx={idx} onUpdate={updateRow} onRemove={removeRow} showToast={showToast} theme={theme} />)}
+        {lineItems.map((item, idx) => (
+          <MedicineRow
+            key={item._id}
+            item={item}
+            idx={idx}
+            onUpdate={updateRow}
+            onRemove={removeRow}
+            showToast={showToast}
+            theme={theme}
+          />
+        ))}
       </div>
-    </div>;
+    </div>
+  );
 }
