@@ -685,17 +685,10 @@ function BulkImportSection1({
                     desc: "Pause and show conflict for each duplicate",
                   },
                 ].map((opt) => (
-                  <div
-                    role="button"
-                    tabIndex={0}
+                  <button
+                    type="button"
                     key={opt.id}
                     className="radio-item"
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter" || e.key === " ") {
-                        e.preventDefault();
-                        e.currentTarget.click();
-                      }
-                    }}
                     onClick={() => setDuplicateStrategy(opt.id)}
                   >
                     <div
@@ -705,7 +698,7 @@ function BulkImportSection1({
                       <span className="label">{opt.id}</span>
                       <span className="desc">{opt.desc}</span>
                     </div>
-                  </div>
+                  </button>
                 ))}
               </div>
             </div>
@@ -1131,16 +1124,10 @@ function BulkImportSection2({
     <AnimatePresence>
       {showHistoryDrawer && (
         <>
-          <div
-            role="button"
-            tabIndex={0}
+          <button
+            type="button"
             className="drawer-overlay"
-            onKeyDown={(e) => {
-              if (e.key === "Enter" || e.key === " ") {
-                e.preventDefault();
-                e.currentTarget.click();
-              }
-            }}
+            aria-label="Close history drawer"
             onClick={() => setShowHistoryDrawer(false)}
           />
           <m.div

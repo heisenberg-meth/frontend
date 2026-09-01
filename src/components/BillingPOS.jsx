@@ -274,16 +274,9 @@ function BillingPOSSection1({
         <div className="pos-card">
           <div className="pos-card-title">
             <span>PATIENT DETAILS</span>
-            <div
-              role="button"
-              tabIndex={0}
+            <button
+              type="button"
               className="walk-in-toggle"
-              onKeyDown={(e) => {
-                if (e.key === "Enter" || e.key === " ") {
-                  e.preventDefault();
-                  e.currentTarget.click();
-                }
-              }}
               onClick={(e) => {
                 e.stopPropagation();
                 setIsWalkIn((prev) => !prev);
@@ -321,7 +314,7 @@ function BillingPOSSection1({
                 />
               </div>
               Walk-in
-            </div>
+            </button>
           </div>
           <div className="patient-row">
             <div className="pos-input-group">
@@ -399,21 +392,14 @@ function BillingPOSSection1({
                 }}
               >
                 {patientResults.map((p, pIdx) => (
-                  <div
-                    role="button"
-                    tabIndex={0}
+                  <button
+                    type="button"
                     key={
                       p.id ||
                       p._id ||
                       `pat-${p.fullName || p.name || "p"}-${p.phone || ""}-${pIdx}`
                     }
                     className="patient-result-row"
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter" || e.key === " ") {
-                        e.preventDefault();
-                        e.currentTarget.click();
-                      }
-                    }}
                     onClick={() => selectPatient(p)}
                   >
                     <span className="patient-result-name">
@@ -425,7 +411,7 @@ function BillingPOSSection1({
                         last visit: {p.lastVisit} days ago
                       </span>
                     )}
-                  </div>
+                  </button>
                 ))}
               </m.div>
             )}
@@ -460,18 +446,7 @@ function BillingPOSSection1({
         </div>
 
         <div className="pos-card">
-          <div
-            role="button"
-            tabIndex={0}
-            className="search-wrapper"
-            onKeyDown={(e) => {
-              if (e.key === "Enter" || e.key === " ") {
-                e.preventDefault();
-                e.currentTarget.click();
-              }
-            }}
-            onClick={(e) => e.stopPropagation()}
-          >
+          <div className="search-wrapper" onClick={(e) => e.stopPropagation()}>
             <Barcode className="barcode-icon" size={24} />
             <>
               <label htmlFor="field_od78yz" className="sr-only">
@@ -491,6 +466,7 @@ function BillingPOSSection1({
             {search && (
               <button
                 className="search-clear-btn"
+                aria-label="Clear search"
                 onClick={(e) => {
                   e.stopPropagation();
                   clearSearch();
@@ -533,9 +509,8 @@ function BillingPOSSection1({
                     const availQty = res.availableStock ?? 0;
                     const isOOS = availQty <= 0 || res.isOutOfStock;
                     return (
-                      <div
-                        role="button"
-                        tabIndex={0}
+                      <button
+                        type="button"
                         key={res.id}
                         className={`result-row${isOOS ? " oos" : ""}`}
                         style={
@@ -615,7 +590,7 @@ function BillingPOSSection1({
                             </span>
                           )}
                         </div>
-                      </div>
+                      </button>
                     );
                   })}
                 </m.div>
@@ -674,6 +649,7 @@ function BillingPOSSection1({
                       <div className="qty-stepper">
                         <button
                           className="step-btn"
+                          aria-label="Decrease quantity"
                           onClick={() => updateQty(item.batchId, -1)}
                         >
                           <Minus size={12} />
@@ -681,6 +657,7 @@ function BillingPOSSection1({
                         <input
                           required
                           className="qty-input"
+                          aria-label="Item quantity"
                           type="number"
                           min="1"
                           max={item.stock}
@@ -1086,16 +1063,9 @@ function BillingPOSSection1({
                 alignItems: "center",
               }}
             >
-              <span
-                role="button"
-                tabIndex={0}
+              <button
+                type="button"
                 className="view-all-link"
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" || e.key === " ") {
-                    e.preventDefault();
-                    e.currentTarget.click();
-                  }
-                }}
                 onClick={() => {
                   if (
                     window.confirm(
@@ -1110,21 +1080,14 @@ function BillingPOSSection1({
                 }}
               >
                 Clear All
-              </span>
-              <span
-                role="button"
-                tabIndex={0}
+              </button>
+              <button
+                type="button"
                 className="view-all-link"
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" || e.key === " ") {
-                    e.preventDefault();
-                    e.currentTarget.click();
-                  }
-                }}
                 onClick={() => setShowAllBillsModal(true)}
               >
                 View All →
-              </span>
+              </button>
             </div>
           </div>
 
@@ -1140,8 +1103,6 @@ function BillingPOSSection1({
             <AnimatePresence>
               {visibleBills.map((bill) => (
                 <m.div
-                  role="button"
-                  tabIndex={0}
                   key={bill.id}
                   className={`bill-card-compact ${billCardFlash === bill.id ? "bill-card-flash" : ""} ${bill.status === "DRAFT" ? "bill-card-draft" : ""} ${bill.status === "RETURNED" ? "bill-card-returned" : ""}`}
                   initial={{
@@ -1155,12 +1116,6 @@ function BillingPOSSection1({
                   transition={{
                     duration: 0.3,
                     ease: "easeOut",
-                  }}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" || e.key === " ") {
-                      e.preventDefault();
-                      e.currentTarget.click();
-                    }
                   }}
                   onClick={() => openBillDetail(bill)}
                 >
@@ -1468,15 +1423,7 @@ function BillingPOSSection2({
     <AnimatePresence>
       {showNewBillConfirm && (
         <div
-          role="button"
-          tabIndex={0}
           className="stock-modal-overlay"
-          onKeyDown={(e) => {
-            if (e.key === "Enter" || e.key === " ") {
-              e.preventDefault();
-              e.currentTarget.click();
-            }
-          }}
           onClick={() => setShowNewBillConfirm(false)}
         >
           <m.div
@@ -1605,15 +1552,7 @@ function BillingPOSSection3({
     <AnimatePresence>
       {showAllBillsModal && (
         <div
-          role="button"
-          tabIndex={0}
           className="stock-modal-overlay"
-          onKeyDown={(e) => {
-            if (e.key === "Enter" || e.key === " ") {
-              e.preventDefault();
-              e.currentTarget.click();
-            }
-          }}
           onClick={() => setShowAllBillsModal(false)}
         >
           <m.div
@@ -1857,8 +1796,6 @@ function BillingPOSSection4({
       {showBillDetailDrawer && selectedBill && (
         <>
           <m.div
-            role="button"
-            tabIndex={0}
             className="drawer-backdrop"
             initial={{
               opacity: 0,
@@ -1868,12 +1805,6 @@ function BillingPOSSection4({
             }}
             exit={{
               opacity: 0,
-            }}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" || e.key === " ") {
-                e.preventDefault();
-                e.currentTarget.click();
-              }
             }}
             onClick={() => setShowBillDetailDrawer(false)}
           />
@@ -2155,15 +2086,7 @@ function BillingPOSSection5({
     <AnimatePresence>
       {showReturnBillModal && selectedBill && (
         <div
-          role="button"
-          tabIndex={0}
           className="stock-modal-overlay"
-          onKeyDown={(e) => {
-            if (e.key === "Enter" || e.key === " ") {
-              e.preventDefault();
-              e.currentTarget.click();
-            }
-          }}
           onClick={() => setShowReturnBillModal(false)}
         >
           <m.div
@@ -2355,15 +2278,7 @@ function BillingPOSSection6({
     <AnimatePresence>
       {showReturnModal && (
         <div
-          role="button"
-          tabIndex={0}
           className="stock-modal-overlay"
-          onKeyDown={(e) => {
-            if (e.key === "Enter" || e.key === " ") {
-              e.preventDefault();
-              e.currentTarget.click();
-            }
-          }}
           onClick={() => setShowReturnModal(false)}
         >
           <m.div
@@ -2451,9 +2366,8 @@ function BillingPOSSection6({
                     ).toLowerCase();
                     if (inv.includes(q) || name.includes(q)) {
                       acc.push(
-                        <div
-                          role="button"
-                          tabIndex={0}
+                        <button
+                          type="button"
                           key={bill.id}
                           className="patient-result-row"
                           style={{
@@ -2461,12 +2375,6 @@ function BillingPOSSection6({
                             padding: "10px",
                             borderRadius: "8px",
                             marginBottom: "4px",
-                          }}
-                          onKeyDown={(e) => {
-                            if (e.key === "Enter" || e.key === " ") {
-                              e.preventDefault();
-                              e.currentTarget.click();
-                            }
                           }}
                           onClick={() => {
                             setReturnModalSelectedBill(bill);
@@ -2494,7 +2402,7 @@ function BillingPOSSection6({
                               resolveInvoiceField(bill, "total", 0),
                             ).toFixed(2)}
                           </span>
-                        </div>,
+                        </button>,
                       );
                     }
                     return acc;

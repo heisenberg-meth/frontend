@@ -136,9 +136,8 @@ function ExpiryBatchIntelligenceSection1({
             </div>
           </div>
           <div className="timeline-bar">
-            <div
-              role="button"
-              tabIndex={0}
+            <button
+              type="button"
               className="timeline-segment expired"
               style={{
                 flex: Math.max(
@@ -146,20 +145,13 @@ function ExpiryBatchIntelligenceSection1({
                   5,
                 ),
               }}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" || e.key === " ") {
-                  e.preventDefault();
-                  e.currentTarget.click();
-                }
-              }}
               onClick={() => setFilter("EXPIRED")}
               title={`EXPIRED: ${timelineCounts.expired}`}
             >
               <span>EXPIRED {timelineCounts.expired}</span>
-            </div>
-            <div
-              role="button"
-              tabIndex={0}
+            </button>
+            <button
+              type="button"
               className="timeline-segment urg-7"
               style={{
                 flex: Math.max(
@@ -167,20 +159,13 @@ function ExpiryBatchIntelligenceSection1({
                   5,
                 ),
               }}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" || e.key === " ") {
-                  e.preventDefault();
-                  e.currentTarget.click();
-                }
-              }}
               onClick={() => setFilter("< 7 DAYS")}
               title={`< 7 DAYS: ${timelineCounts.urg7}`}
             >
               <span>&lt; 7D {timelineCounts.urg7}</span>
-            </div>
-            <div
-              role="button"
-              tabIndex={0}
+            </button>
+            <button
+              type="button"
               className="timeline-segment urg-30"
               style={{
                 flex: Math.max(
@@ -188,20 +173,13 @@ function ExpiryBatchIntelligenceSection1({
                   5,
                 ),
               }}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" || e.key === " ") {
-                  e.preventDefault();
-                  e.currentTarget.click();
-                }
-              }}
               onClick={() => setFilter("7-30 DAYS")}
               title={`7-30 DAYS: ${timelineCounts.urg30}`}
             >
               <span>7-30D {timelineCounts.urg30}</span>
-            </div>
-            <div
-              role="button"
-              tabIndex={0}
+            </button>
+            <button
+              type="button"
               className="timeline-segment urg-90"
               style={{
                 flex: Math.max(
@@ -209,20 +187,13 @@ function ExpiryBatchIntelligenceSection1({
                   5,
                 ),
               }}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" || e.key === " ") {
-                  e.preventDefault();
-                  e.currentTarget.click();
-                }
-              }}
               onClick={() => setFilter("30-90 DAYS")}
               title={`30-90 DAYS: ${timelineCounts.urg90}`}
             >
               <span>30-90D {timelineCounts.urg90}</span>
-            </div>
-            <div
-              role="button"
-              tabIndex={0}
+            </button>
+            <button
+              type="button"
               className="timeline-segment safe"
               style={{
                 flex: Math.max(
@@ -230,17 +201,11 @@ function ExpiryBatchIntelligenceSection1({
                   5,
                 ),
               }}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" || e.key === " ") {
-                  e.preventDefault();
-                  e.currentTarget.click();
-                }
-              }}
               onClick={() => setFilter("SAFE")}
               title={`SAFE: ${timelineCounts.safe}`}
             >
               <span>SAFE {timelineCounts.safe}</span>
-            </div>
+            </button>
           </div>
         </div>
 
@@ -655,18 +620,10 @@ function ExpiryBatchIntelligenceSection2({
               {showInvFilterDropdown && (
                 <>
                   <div
-                    role="button"
-                    tabIndex={0}
                     style={{
                       position: "fixed",
                       inset: 0,
                       zIndex: 99,
-                    }}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter" || e.key === " ") {
-                        e.preventDefault();
-                        e.currentTarget.click();
-                      }
                     }}
                     onClick={() => setShowInvFilterDropdown(false)}
                   />
@@ -904,16 +861,10 @@ function ExpiryBatchIntelligenceSection3({
               Oldest batch is always sold first at billing
             </p>
           </div>
-          <div
-            role="button"
-            tabIndex={0}
+          <button
+            type="button"
+            aria-label="Toggle FIFO enforcement"
             className={`toggle-switch ${fifoEnabled ? "on" : ""}`}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" || e.key === " ") {
-                e.preventDefault();
-                e.currentTarget.click();
-              }
-            }}
             onClick={() => {
               if (fifoEnabled) {
                 setShowFifoConfirm(true);
@@ -942,7 +893,7 @@ function ExpiryBatchIntelligenceSection3({
                 transition: "left 0.2s",
               }}
             />
-          </div>
+          </button>
         </div>
 
         <div
@@ -969,16 +920,9 @@ function ExpiryBatchIntelligenceSection3({
               );
               return (
                 <div key={med} className="fifo-medicine-card">
-                  <div
-                    role="button"
-                    tabIndex={0}
+                  <button
+                    type="button"
                     className="fifo-card-header"
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter" || e.key === " ") {
-                        e.preventDefault();
-                        e.currentTarget.click();
-                      }
-                    }}
                     onClick={() =>
                       setExpandedMed(expandedMed === med ? null : med)
                     }
@@ -1026,7 +970,7 @@ function ExpiryBatchIntelligenceSection3({
                         <ChevronDown size={18} />
                       )}
                     </div>
-                  </div>
+                  </button>
                   <AnimatePresence>
                     {expandedMed === med && (
                       <m.div
@@ -2500,15 +2444,7 @@ function ExpiryBatchIntelligenceSection6({
     <AnimatePresence>
       {showDisposeModal && (
         <div
-          role="button"
-          tabIndex={0}
           className="stock-modal-overlay"
-          onKeyDown={(e) => {
-            if (e.key === "Enter" || e.key === " ") {
-              e.preventDefault();
-              e.currentTarget.click();
-            }
-          }}
           onClick={() => !disposing && setShowDisposeModal(false)}
           style={{
             zIndex: 1100,
@@ -2734,15 +2670,7 @@ function ExpiryBatchIntelligenceSection7({
     <AnimatePresence>
       {showBulkSupplierModal && (
         <div
-          role="button"
-          tabIndex={0}
           className="stock-modal-overlay"
-          onKeyDown={(e) => {
-            if (e.key === "Enter" || e.key === " ") {
-              e.preventDefault();
-              e.currentTarget.click();
-            }
-          }}
           onClick={() => !bulkAssigning && setShowBulkSupplierModal(false)}
           style={{
             zIndex: 1100,
@@ -2910,15 +2838,7 @@ function ExpiryBatchIntelligenceSection8({
     <AnimatePresence>
       {showImportModal && (
         <div
-          role="button"
-          tabIndex={0}
           className="stock-modal-overlay"
-          onKeyDown={(e) => {
-            if (e.key === "Enter" || e.key === " ") {
-              e.preventDefault();
-              e.currentTarget.click();
-            }
-          }}
           onClick={() => !importing && setShowImportModal(false)}
           style={{
             zIndex: 1100,
@@ -4620,16 +4540,8 @@ export default function ExpiryBatchIntelligence({ showToast }) {
           const isExpiredCard = s.key === "EXPIRED";
           return (
             <div
-              role="button"
-              tabIndex={0}
               key={s.key}
               className="pos-stat-card"
-              onKeyDown={(e) => {
-                if (e.key === "Enter" || e.key === " ") {
-                  e.preventDefault();
-                  e.currentTarget.click();
-                }
-              }}
               onClick={() => setFilter(s.key)}
               style={{
                 borderLeft:

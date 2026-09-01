@@ -267,6 +267,7 @@ function AccountingTaxSection3({
               <h3>{editExpense ? "Edit Expense" : "Add Expense"}</h3>
               <button
                 className="modal-close-btn"
+                aria-label="Close modal"
                 onClick={() => setShowExpenseModal(false)}
               >
                 <X size={18} />
@@ -518,6 +519,7 @@ function AccountingTaxSection2Section1({
                       <div className="acc-actions">
                         <button
                           className="acc-action-icon"
+                          aria-label="Edit expense"
                           onClick={() => {
                             setEditExpense(e);
                             setExpenseForm({
@@ -535,6 +537,7 @@ function AccountingTaxSection2Section1({
                         </button>
                         <button
                           className="acc-action-icon danger"
+                          aria-label="Delete expense"
                           onClick={() => handleDeleteExpense(e.id)}
                         >
                           <Trash2 size={14} />

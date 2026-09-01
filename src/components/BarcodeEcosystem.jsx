@@ -1067,7 +1067,7 @@ function BarcodeEcosystemSection3({
                   >
                     View Full Details
                   </button>
-                  <button className="pos-btn outline">
+                  <button className="pos-btn outline" aria-label="Print label">
                     <Printer size={16} />
                   </button>
                 </div>
@@ -1180,7 +1180,10 @@ function BarcodeEcosystemSection4({
                     MAGTEC USB Scanner
                   </span>
                 </div>
-                <button className="micro-btn">
+                <button
+                  className="micro-btn"
+                  aria-label="Refresh scanner connection"
+                >
                   <RefreshCw size={14} />
                 </button>
               </div>
@@ -1370,7 +1373,7 @@ function BarcodeEcosystemSection5({
                   <td>{h.medicineName || "—"}</td>
                   <td>
                     <span
-                      className={`p-status ${(h.action || "").indexOf("BILL") !== -1 ? "paid" : ""}`}
+                      className={`p-status ${(h.action || "").includes("BILL") ? "paid" : ""}`}
                       style={{
                         fontSize: "10px",
                       }}
