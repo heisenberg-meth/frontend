@@ -430,9 +430,17 @@ export default function Topbar({
     <>
       <header className="top-app-bar">
         <div className="search-container">
-          <div role="button" tabIndex={0}
+          <div
+            role="button"
+            tabIndex={0}
             className="search-box"
-            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.currentTarget.click(); } }} onClick={() => setShowSearchOverlay(true)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                e.currentTarget.click();
+              }
+            }}
+            onClick={() => setShowSearchOverlay(true)}
           >
             <Search size={18} className="search-icon" />
             <input
@@ -533,10 +541,18 @@ export default function Topbar({
                     <div className="notif-list">
                       {notifications.length > 0 ? (
                         notifications.slice(0, 5).map((item) => (
-                          <div role="button" tabIndex={0}
+                          <div
+                            role="button"
+                            tabIndex={0}
                             key={item.id}
                             className={`notif-item ${!item.isRead ? "unread" : ""}`}
-                            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.currentTarget.click(); } }} onClick={() => {
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter" || e.key === " ") {
+                                e.preventDefault();
+                                e.currentTarget.click();
+                              }
+                            }}
+                            onClick={() => {
                               navigate("/notifications");
                               setShowNotifications(false);
                             }}
@@ -587,9 +603,17 @@ export default function Topbar({
             className="profile-section-wrap"
             style={{ position: "relative" }}
           >
-            <div role="button" tabIndex={0}
+            <div
+              role="button"
+              tabIndex={0}
               className={`user-profile clickable ${showProfileMenu ? "active" : ""}`}
-              onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.currentTarget.click(); } }} onClick={() => setShowProfileMenu(!showProfileMenu)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  e.currentTarget.click();
+                }
+              }}
+              onClick={() => setShowProfileMenu(!showProfileMenu)}
             >
               <div className="user-info">
                 <p className="user-display-name">
@@ -682,20 +706,36 @@ export default function Topbar({
 
       <AnimatePresence>
         {showSearchOverlay && (
-          <m.div role="button" tabIndex={0}
+          <m.div
+            role="button"
+            tabIndex={0}
             className="global-search-overlay"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.currentTarget.click(); } }} onClick={handleCloseSearch}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                e.currentTarget.click();
+              }
+            }}
+            onClick={handleCloseSearch}
           >
-            <m.div role="button" tabIndex={0}
+            <m.div
+              role="button"
+              tabIndex={0}
               className="search-overlay-content"
               initial={{ scale: 0.95, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.95, opacity: 0 }}
               transition={{ duration: 0.18, ease: "easeOut" }}
-              onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.currentTarget.click(); } }} onClick={(e) => e.stopPropagation()}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  e.currentTarget.click();
+                }
+              }}
+              onClick={(e) => e.stopPropagation()}
             >
               {/* Search Header */}
               <div className="search-input-wrap">
@@ -765,10 +805,18 @@ export default function Topbar({
                     /* Search Results Flat with Highlights */
                     <div className="search-results-list">
                       {filteredResults.map((item, idx) => (
-                        <div role="button" tabIndex={0}
+                        <div
+                          role="button"
+                          tabIndex={0}
                           key={item.id}
                           className={`search-result-item ${selectedIndex === idx ? "selected" : ""}`}
-                          onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.currentTarget.click(); } }} onClick={() => handleItemClick(item)}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter" || e.key === " ") {
+                              e.preventDefault();
+                              e.currentTarget.click();
+                            }
+                          }}
+                          onClick={() => handleItemClick(item)}
                           onMouseEnter={() => setSelectedIndex(idx)}
                         >
                           <div className="item-icon-box">
@@ -814,10 +862,18 @@ export default function Topbar({
                                 ? `recent-search-${item}`
                                 : item?.id || `recent-search-${label}`;
                             return (
-                              <div role="button" tabIndex={0}
+                              <div
+                                role="button"
+                                tabIndex={0}
                                 key={key}
                                 className="recent-search-item"
-                                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.currentTarget.click(); } }} onClick={() => handleSearchChange(label)}
+                                onKeyDown={(e) => {
+                                  if (e.key === "Enter" || e.key === " ") {
+                                    e.preventDefault();
+                                    e.currentTarget.click();
+                                  }
+                                }}
+                                onClick={() => handleSearchChange(label)}
                               >
                                 <Clock size={14} />
                                 <span className="recent-text">{label}</span>
@@ -867,10 +923,18 @@ export default function Topbar({
                             icon: <Activity size={16} />,
                           },
                         ].map((action) => (
-                          <div role="button" tabIndex={0}
+                          <div
+                            role="button"
+                            tabIndex={0}
                             key={action.title}
                             className="quick-action-card"
-                            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.currentTarget.click(); } }} onClick={() => handleQuickAction(action.path)}
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter" || e.key === " ") {
+                                e.preventDefault();
+                                e.currentTarget.click();
+                              }
+                            }}
+                            onClick={() => handleQuickAction(action.path)}
                           >
                             <div className="action-icon-wrap">
                               {action.icon}

@@ -29,14 +29,33 @@ export default function ConfirmModal({
         : "confirm-modal-btn primary";
 
   return (
-    <div role="button" tabIndex={0} className="confirm-modal-overlay" onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.currentTarget.click(); } }} onClick={onClose}>
-      <m.div role="button" tabIndex={0}
+    <div
+      role="button"
+      tabIndex={0}
+      className="confirm-modal-overlay"
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          e.currentTarget.click();
+        }
+      }}
+      onClick={onClose}
+    >
+      <m.div
+        role="button"
+        tabIndex={0}
         className="confirm-modal-content"
         initial={{ opacity: 0, scale: 0.95, y: 20 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.95, y: 20 }}
         transition={{ duration: 0.2, ease: "easeOut" }}
-        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.currentTarget.click(); } }} onClick={(e) => e.stopPropagation()}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            e.currentTarget.click();
+          }
+        }}
+        onClick={(e) => e.stopPropagation()}
       >
         <div className="confirm-modal-header">
           <div

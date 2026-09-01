@@ -224,9 +224,12 @@ export default function ReportsHub({ showToast }) {
                     style={{ gridTemplateColumns: "1fr" }}
                   >
                     <div className="pos-input-group">
-                      <label htmlFor="field_fo8dwa" className="p-label">FROM DATE</label>
+                      <label htmlFor="field_fo8dwa" className="p-label">
+                        FROM DATE
+                      </label>
                       <input
- id="field_fo8dwa"                        required
+                        id="field_fo8dwa"
+                        required
                         className="pos-input"
                         type="date"
                         value={dateRange.from}
@@ -239,9 +242,12 @@ export default function ReportsHub({ showToast }) {
                       />
                     </div>
                     <div className="pos-input-group">
-                      <label htmlFor="field_3rjf8l" className="p-label">TO DATE</label>
+                      <label htmlFor="field_3rjf8l" className="p-label">
+                        TO DATE
+                      </label>
                       <input
- id="field_3rjf8l"                        required
+                        id="field_3rjf8l"
+                        required
                         className="pos-input"
                         type="date"
                         value={dateRange.to}

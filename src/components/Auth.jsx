@@ -370,10 +370,13 @@ export default function Auth({ onAuth }) {
               {view === "register" && (
                 <>
                   <div className="control-group">
-                    <label htmlFor="field_qd2938" className="control-label">FULL NAME</label>
+                    <label htmlFor="field_qd2938" className="control-label">
+                      FULL NAME
+                    </label>
                     <div className="control-input-wrap">
                       <input
- id="field_qd2938"                        required
+                        id="field_qd2938"
+                        required
                         type="text"
                         className="canvas-input"
                         placeholder="Dr. Julian Sterling"
@@ -391,7 +394,8 @@ export default function Auth({ onAuth }) {
                     <div className="control-input-wrap">
                       <Shield size={18} className="input-icon-left" />
                       <input
- id="field_hxak7s"                        required
+                        id="field_hxak7s"
+                        required
                         type="text"
                         className="canvas-input"
                         placeholder="e.g. Apex Medical Solutions"
@@ -417,7 +421,8 @@ export default function Auth({ onAuth }) {
                   <div className="control-input-wrap">
                     <Mail size={18} className="input-icon-left" />
                     <input
- id="field_ijpf58"                      required
+                      id="field_ijpf58"
+                      required
                       type={loginType === "admin" ? "email" : "text"}
                       className="canvas-input"
                       placeholder={
@@ -483,7 +488,8 @@ export default function Auth({ onAuth }) {
                   <div className="control-input-wrap">
                     <Shield size={18} className="input-icon-left" />
                     <input
- id="field_06t1l4"                      required
+                      id="field_06t1l4"
+                      required
                       type="text"
                       className="canvas-input"
                       placeholder="Enter 6-digit code"
@@ -511,11 +517,14 @@ export default function Auth({ onAuth }) {
               {view === "newPassword" && (
                 <>
                   <div className="control-group">
-                    <label htmlFor="field_q1rywn" className="control-label">NEW PASSWORD</label>
+                    <label htmlFor="field_q1rywn" className="control-label">
+                      NEW PASSWORD
+                    </label>
                     <div className="control-input-wrap">
                       <Lock size={18} className="input-icon-left" />
                       <input
- id="field_q1rywn"                        required
+                        id="field_q1rywn"
+                        required
                         type={showPassword ? "text" : "password"}
                         className="canvas-input"
                         placeholder="Min. 8 characters"
@@ -549,7 +558,8 @@ export default function Auth({ onAuth }) {
                     <div className="control-input-wrap">
                       <Lock size={18} className="input-icon-left" />
                       <input
- id="field_0bwc93"                        required
+                        id="field_0bwc93"
+                        required
                         type={showPassword ? "text" : "password"}
                         className="canvas-input"
                         placeholder="Re-enter new password"
@@ -565,11 +575,14 @@ export default function Auth({ onAuth }) {
 
               {view === "register" && (
                 <div className="control-group">
-                  <label htmlFor="field_wfq2ur" className="control-label">CONFIRM PASSWORD</label>
+                  <label htmlFor="field_wfq2ur" className="control-label">
+                    CONFIRM PASSWORD
+                  </label>
                   <div className="control-input-wrap">
                     <Lock size={18} className="input-icon-left" />
                     <input
- id="field_wfq2ur"                      required
+                      id="field_wfq2ur"
+                      required
                       type={showPassword ? "text" : "password"}
                       className="canvas-input"
                       placeholder="Re-enter your password"

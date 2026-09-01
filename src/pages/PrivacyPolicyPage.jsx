@@ -149,9 +149,17 @@ export default function PrivacyPolicyPage() {
       {/* Simplified Nav */}
       <nav className="lp-nav lp-nav--scrolled">
         <div className="lp-nav-inner">
-          <div role="button" tabIndex={0}
+          <div
+            role="button"
+            tabIndex={0}
             className="lp-logo"
-            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.currentTarget.click(); } }} onClick={() => {
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                e.currentTarget.click();
+              }
+            }}
+            onClick={() => {
               navigate("/");
             }}
           >

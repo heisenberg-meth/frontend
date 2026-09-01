@@ -204,13 +204,32 @@ function PrescriptionModal({ onClose, onSave, editData, showToast, saving }) {
   };
 
   return (
-    <div role="button" tabIndex={0} className="rx-modal-overlay" onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.currentTarget.click(); } }} onClick={onClose}>
-      <m.div role="button" tabIndex={0}
+    <div
+      role="button"
+      tabIndex={0}
+      className="rx-modal-overlay"
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          e.currentTarget.click();
+        }
+      }}
+      onClick={onClose}
+    >
+      <m.div
+        role="button"
+        tabIndex={0}
         className="rx-modal-content"
         initial={{ opacity: 0, scale: 0.95, y: 20 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.95, y: 20 }}
-        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.currentTarget.click(); } }} onClick={(e) => e.stopPropagation()}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            e.currentTarget.click();
+          }
+        }}
+        onClick={(e) => e.stopPropagation()}
       >
         <div className="rx-modal-header">
           <div className="header-title-group">
@@ -240,7 +259,8 @@ function PrescriptionModal({ onClose, onSave, editData, showToast, saving }) {
             <div className="form-group full">
               <label htmlFor="field_70vw0h">Patient Name *</label>
               <input
- id="field_70vw0h"                required
+                id="field_70vw0h"
+                required
                 placeholder="e.g. Rahul Sharma"
                 value={form.patientName}
                 onChange={(e) => set("patientName", e.target.value)}
@@ -249,7 +269,8 @@ function PrescriptionModal({ onClose, onSave, editData, showToast, saving }) {
             <div className="form-group">
               <label htmlFor="field_odo97c">Phone Number</label>
               <input
- id="field_odo97c"                required
+                id="field_odo97c"
+                required
                 placeholder="+91 XXXXX XXXXX"
                 value={form.patientPhone}
                 onChange={(e) => set("patientPhone", e.target.value)}
@@ -258,7 +279,8 @@ function PrescriptionModal({ onClose, onSave, editData, showToast, saving }) {
             <div className="form-group">
               <label htmlFor="field_8dgnw7">Age</label>
               <input
- id="field_8dgnw7"                required
+                id="field_8dgnw7"
+                required
                 type="number"
                 placeholder="42"
                 value={form.patientAge}
@@ -268,7 +290,8 @@ function PrescriptionModal({ onClose, onSave, editData, showToast, saving }) {
             <div className="form-group">
               <label htmlFor="field_gjmdbv">Gender</label>
               <select
- id="field_gjmdbv"                value={form.patientGender}
+                id="field_gjmdbv"
+                value={form.patientGender}
                 onChange={(e) => set("patientGender", e.target.value)}
               >
                 <option>Male</option>
@@ -279,7 +302,8 @@ function PrescriptionModal({ onClose, onSave, editData, showToast, saving }) {
             <div className="form-group">
               <label htmlFor="field_n4ve14">Priority</label>
               <select
- id="field_n4ve14"                value={form.priority}
+                id="field_n4ve14"
+                value={form.priority}
                 onChange={(e) => set("priority", e.target.value)}
               >
                 {PRIORITY_OPTIONS.map((p) => (
@@ -295,7 +319,8 @@ function PrescriptionModal({ onClose, onSave, editData, showToast, saving }) {
             <div className="form-group full">
               <label htmlFor="field_afav0f">Doctor Name *</label>
               <input
- id="field_afav0f"                required
+                id="field_afav0f"
+                required
                 placeholder="e.g. Dr. Priya Mehta"
                 value={form.doctorName}
                 onChange={(e) => set("doctorName", e.target.value)}
@@ -304,7 +329,8 @@ function PrescriptionModal({ onClose, onSave, editData, showToast, saving }) {
             <div className="form-group">
               <label htmlFor="field_j0abnt">Registration Number</label>
               <input
- id="field_j0abnt"                required
+                id="field_j0abnt"
+                required
                 placeholder="e.g. MMC-12345"
                 value={form.doctorRegNo}
                 onChange={(e) => set("doctorRegNo", e.target.value)}
@@ -313,7 +339,8 @@ function PrescriptionModal({ onClose, onSave, editData, showToast, saving }) {
             <div className="form-group">
               <label htmlFor="field_a2hsdh">Specialty</label>
               <input
- id="field_a2hsdh"                required
+                id="field_a2hsdh"
+                required
                 placeholder="e.g. General Physician"
                 value={form.doctorSpecialty}
                 onChange={(e) => set("doctorSpecialty", e.target.value)}
@@ -340,7 +367,8 @@ function PrescriptionModal({ onClose, onSave, editData, showToast, saving }) {
                 <div className="form-group full">
                   <label htmlFor="field_5li47c">Medicine Name *</label>
                   <input
- id="field_5li47c"                    required
+                    id="field_5li47c"
+                    required
                     placeholder="e.g. Amoxicillin 500mg"
                     value={med.name}
                     onChange={(e) =>
@@ -351,7 +379,8 @@ function PrescriptionModal({ onClose, onSave, editData, showToast, saving }) {
                 <div className="form-group">
                   <label htmlFor="field_85rvcu">Dosage</label>
                   <select
- id="field_85rvcu"                    value={med.dosage}
+                    id="field_85rvcu"
+                    value={med.dosage}
                     onChange={(e) =>
                       updateMedication(idx, "dosage", e.target.value)
                     }
@@ -365,7 +394,8 @@ function PrescriptionModal({ onClose, onSave, editData, showToast, saving }) {
                   <label htmlFor="field_osikg9">Duration</label>
                   <div style={{ display: "flex", gap: 8 }}>
                     <input
- id="field_osikg9"                      required
+                      id="field_osikg9"
+                      required
                       type="number"
                       placeholder="7"
                       value={med.duration}
@@ -390,7 +420,8 @@ function PrescriptionModal({ onClose, onSave, editData, showToast, saving }) {
                 <div className="form-group full">
                   <label htmlFor="field_l1b6i2">Instructions</label>
                   <input
- id="field_l1b6i2"                    required
+                    id="field_l1b6i2"
+                    required
                     placeholder="e.g. After meals"
                     value={med.instructions}
                     onChange={(e) =>
@@ -411,7 +442,8 @@ function PrescriptionModal({ onClose, onSave, editData, showToast, saving }) {
             <div className="form-group full">
               <label htmlFor="field_r09biv">Diagnosis</label>
               <input
- id="field_r09biv"                required
+                id="field_r09biv"
+                required
                 placeholder="e.g. Upper Respiratory Tract Infection"
                 value={form.diagnosis}
                 onChange={(e) => set("diagnosis", e.target.value)}
@@ -420,7 +452,8 @@ function PrescriptionModal({ onClose, onSave, editData, showToast, saving }) {
             <div className="form-group full">
               <label htmlFor="field_v6ksp3">Notes</label>
               <textarea
- id="field_v6ksp3"                placeholder="Additional instructions, allergies, etc."
+                id="field_v6ksp3"
+                placeholder="Additional instructions, allergies, etc."
                 value={form.notes}
                 onChange={(e) => set("notes", e.target.value)}
                 rows={3}
@@ -468,13 +501,32 @@ function PrescriptionViewModal({
   const meds = rx.medications || rx.meds || [];
 
   return (
-    <div role="button" tabIndex={0} className="rx-modal-overlay" onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.currentTarget.click(); } }} onClick={onClose}>
-      <m.div role="button" tabIndex={0}
+    <div
+      role="button"
+      tabIndex={0}
+      className="rx-modal-overlay"
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          e.currentTarget.click();
+        }
+      }}
+      onClick={onClose}
+    >
+      <m.div
+        role="button"
+        tabIndex={0}
         className="rx-modal-content rx-view-modal"
         initial={{ opacity: 0, scale: 0.95, y: 20 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.95, y: 20 }}
-        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.currentTarget.click(); } }} onClick={(e) => e.stopPropagation()}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            e.currentTarget.click();
+          }
+        }}
+        onClick={(e) => e.stopPropagation()}
       >
         <div className="rx-view-header">
           <div className="rx-view-icon">
@@ -636,13 +688,32 @@ function PrescriptionViewModal({
 function EditNotesModal({ rx, onClose, onSave, saving }) {
   const [notes, setNotes] = useState(rx.notes || "");
   return (
-    <div role="button" tabIndex={0} className="rx-modal-overlay" onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.currentTarget.click(); } }} onClick={onClose}>
-      <m.div role="button" tabIndex={0}
+    <div
+      role="button"
+      tabIndex={0}
+      className="rx-modal-overlay"
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          e.currentTarget.click();
+        }
+      }}
+      onClick={onClose}
+    >
+      <m.div
+        role="button"
+        tabIndex={0}
         className="rx-modal-content rx-notes-modal"
         initial={{ opacity: 0, scale: 0.95, y: 20 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.95, y: 20 }}
-        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.currentTarget.click(); } }} onClick={(e) => e.stopPropagation()}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            e.currentTarget.click();
+          }
+        }}
+        onClick={(e) => e.stopPropagation()}
       >
         <div className="rx-modal-header">
           <div className="header-title-group">
@@ -657,7 +728,8 @@ function EditNotesModal({ rx, onClose, onSave, saving }) {
           <div className="form-group full">
             <label htmlFor="field_qgppk0">Notes</label>
             <textarea
- id="field_qgppk0"              value={notes}
+              id="field_qgppk0"
+              value={notes}
               onChange={(e) => setNotes(e.target.value)}
               rows={6}
               placeholder="Update prescription notes..."

@@ -512,10 +512,18 @@ export default function InventoryCRUD({
 
       {/* Stats */}
       <div className="inv-stats-row">
-        <div role="button" tabIndex={0}
+        <div
+          role="button"
+          tabIndex={0}
           className="inv-stat-card"
           onMouseMove={handleMouseMove}
-          onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.currentTarget.click(); } }} onClick={() => {
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === " ") {
+              e.preventDefault();
+              e.currentTarget.click();
+            }
+          }}
+          onClick={() => {
             setStatusFilter("All Status");
             setCurrentPage(1);
           }}
@@ -531,10 +539,18 @@ export default function InventoryCRUD({
             {loading ? "..." : stats.total}
           </div>
         </div>
-        <div role="button" tabIndex={0}
+        <div
+          role="button"
+          tabIndex={0}
           className={`inv-stat-card${statusFilter === "In Stock" ? " active-filter" : ""}`}
           onMouseMove={handleMouseMove}
-          onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.currentTarget.click(); } }} onClick={() => {
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === " ") {
+              e.preventDefault();
+              e.currentTarget.click();
+            }
+          }}
+          onClick={() => {
             setStatusFilter(
               statusFilter === "In Stock" ? "All Status" : "In Stock",
             );
@@ -550,10 +566,18 @@ export default function InventoryCRUD({
           </div>
           <div className="inv-stat-value text-success">{stats.inStock}</div>
         </div>
-        <div role="button" tabIndex={0}
+        <div
+          role="button"
+          tabIndex={0}
           className={`inv-stat-card${statusFilter === "Low Stock" ? " active-filter" : ""}`}
           onMouseMove={handleMouseMove}
-          onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.currentTarget.click(); } }} onClick={() => {
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === " ") {
+              e.preventDefault();
+              e.currentTarget.click();
+            }
+          }}
+          onClick={() => {
             setStatusFilter(
               statusFilter === "Low Stock" ? "All Status" : "Low Stock",
             );
@@ -569,10 +593,18 @@ export default function InventoryCRUD({
           </div>
           <div className="inv-stat-value text-warning">{stats.lowStock}</div>
         </div>
-        <div role="button" tabIndex={0}
+        <div
+          role="button"
+          tabIndex={0}
           className={`inv-stat-card${statusFilter === "Out of Stock" ? " active-filter" : ""}`}
           onMouseMove={handleMouseMove}
-          onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.currentTarget.click(); } }} onClick={() => {
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === " ") {
+              e.preventDefault();
+              e.currentTarget.click();
+            }
+          }}
+          onClick={() => {
             setStatusFilter(
               statusFilter === "Out of Stock" ? "All Status" : "Out of Stock",
             );
@@ -588,10 +620,18 @@ export default function InventoryCRUD({
           </div>
           <div className="inv-stat-value text-danger">{stats.outOfStock}</div>
         </div>
-        <div role="button" tabIndex={0}
+        <div
+          role="button"
+          tabIndex={0}
           className={`inv-stat-card${statusFilter === "Expired" ? " active-filter" : ""}`}
           onMouseMove={handleMouseMove}
-          onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.currentTarget.click(); } }} onClick={() => {
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === " ") {
+              e.preventDefault();
+              e.currentTarget.click();
+            }
+          }}
+          onClick={() => {
             setStatusFilter(
               statusFilter === "Expired" ? "All Status" : "Expired",
             );
@@ -607,10 +647,18 @@ export default function InventoryCRUD({
           </div>
           <div className="inv-stat-value text-danger">{stats.expired}</div>
         </div>
-        <div role="button" tabIndex={0}
+        <div
+          role="button"
+          tabIndex={0}
           className="inv-stat-card cursor-pointer hover:shadow-lg transition-transform hover:-translate-y-1"
           onMouseMove={handleMouseMove}
-          onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.currentTarget.click(); } }} onClick={() => setShowAnalyticsModal(true)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === " ") {
+              e.preventDefault();
+              e.currentTarget.click();
+            }
+          }}
+          onClick={() => setShowAnalyticsModal(true)}
           title="Click to view detailed inventory analytics"
         >
           <div className="inv-stat-header">

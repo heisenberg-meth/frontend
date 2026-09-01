@@ -222,7 +222,8 @@ export default function ManageTeam({ user, showToast }) {
                   <User size={12} /> FULL NAME
                 </label>
                 <input
- id="field_84a2zs"                  required
+                  id="field_84a2zs"
+                  required
                   placeholder="e.g. Dr. Sarah Chen"
                   value={form.fullName}
                   onChange={(e) =>
@@ -235,7 +236,8 @@ export default function ManageTeam({ user, showToast }) {
                   <Mail size={12} /> PROFESSIONAL EMAIL
                 </label>
                 <input
- id="field_9kkasv"                  required
+                  id="field_9kkasv"
+                  required
                   type="email"
                   placeholder="s.chen@viyanmed.com"
                   value={form.email}
@@ -248,7 +250,8 @@ export default function ManageTeam({ user, showToast }) {
                     <Shield size={12} /> ASSIGNED ROLE
                   </label>
                   <select
- id="field_qvioqd"                    value={form.role}
+                    id="field_qvioqd"
+                    value={form.role}
                     onChange={(e) => setForm({ ...form, role: e.target.value })}
                   >
                     {roles.map((r) => (
@@ -261,7 +264,8 @@ export default function ManageTeam({ user, showToast }) {
                     <Clock size={12} /> SHIFT SLOT
                   </label>
                   <select
- id="field_ec4fzu"                    value={form.shift}
+                    id="field_ec4fzu"
+                    value={form.shift}
                     onChange={(e) =>
                       setForm({ ...form, shift: e.target.value })
                     }
@@ -344,9 +348,17 @@ export default function ManageTeam({ user, showToast }) {
                     >
                       <td>
                         <div className="member-profile">
-                          <div role="button" tabIndex={0}
+                          <div
+                            role="button"
+                            tabIndex={0}
                             className="avatar-wrap"
-                            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.currentTarget.click(); } }} onClick={() => openAvatarEdit(m.id)}
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter" || e.key === " ") {
+                                e.preventDefault();
+                                e.currentTarget.click();
+                              }
+                            }}
+                            onClick={() => openAvatarEdit(m.id)}
                             style={{ position: "relative", overflow: "hidden" }}
                           >
                             <img
@@ -540,9 +552,17 @@ export default function ManageTeam({ user, showToast }) {
               </div>
 
               <div className="modal-body-p">
-                <div role="button" tabIndex={0}
+                <div
+                  role="button"
+                  tabIndex={0}
                   className="upload-zone"
-                  onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.currentTarget.click(); } }} onClick={() => fileInputRef.current?.click()}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      e.currentTarget.click();
+                    }
+                  }}
+                  onClick={() => fileInputRef.current?.click()}
                 >
                   {uploading ? (
                     <RefreshCw size={32} className="spin" />

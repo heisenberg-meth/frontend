@@ -591,16 +591,32 @@ export default function AccountingTax({ showToast }) {
 
       <AnimatePresence>
         {showExpenseModal && (
-          <div role="button" tabIndex={0}
+          <div
+            role="button"
+            tabIndex={0}
             className="modal-overlay"
-            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.currentTarget.click(); } }} onClick={() => setShowExpenseModal(false)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                e.currentTarget.click();
+              }
+            }}
+            onClick={() => setShowExpenseModal(false)}
           >
-            <m.div role="button" tabIndex={0}
+            <m.div
+              role="button"
+              tabIndex={0}
               className="modal-content"
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
-              onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.currentTarget.click(); } }} onClick={(e) => e.stopPropagation()}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  e.currentTarget.click();
+                }
+              }}
+              onClick={(e) => e.stopPropagation()}
               style={{ maxWidth: 480 }}
             >
               <div className="modal-header">
@@ -616,7 +632,8 @@ export default function AccountingTax({ showToast }) {
                 <div className="form-group">
                   <label htmlFor="field_gxfb8w">Category</label>
                   <select
- id="field_gxfb8w"                    className="pos-input"
+                    id="field_gxfb8w"
+                    className="pos-input"
                     value={expenseForm.category}
                     onChange={(e) =>
                       setExpenseForm({
@@ -636,7 +653,8 @@ export default function AccountingTax({ showToast }) {
                 <div className="form-group">
                   <label htmlFor="field_w5tsrt">Description</label>
                   <input
- id="field_w5tsrt"                    required
+                    id="field_w5tsrt"
+                    required
                     className="pos-input"
                     value={expenseForm.description}
                     onChange={(e) =>
@@ -651,7 +669,8 @@ export default function AccountingTax({ showToast }) {
                 <div className="form-group">
                   <label htmlFor="field_q81tdh">Amount (₹)</label>
                   <input
- id="field_q81tdh"                    required
+                    id="field_q81tdh"
+                    required
                     className="pos-input"
                     type="number"
                     value={expenseForm.amount}
@@ -664,7 +683,8 @@ export default function AccountingTax({ showToast }) {
                 <div className="form-group">
                   <label htmlFor="field_uhywql">Payment Method</label>
                   <select
- id="field_uhywql"                    className="pos-input"
+                    id="field_uhywql"
+                    className="pos-input"
                     value={expenseForm.paymentMethod}
                     onChange={(e) =>
                       setExpenseForm({

@@ -483,7 +483,13 @@ export default function DisposalHistory({ showToast }) {
                     onMouseLeave={(e) => {
                       e.currentTarget.style.background = "transparent";
                     }}
-                    onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.currentTarget.click(); } }} onClick={() => setSelectedItem(item)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        e.currentTarget.click();
+                      }
+                    }}
+                    onClick={() => setSelectedItem(item)}
                   >
                     <td style={{ padding: "10px 16px" }}>
                       <div
@@ -682,17 +688,33 @@ export default function DisposalHistory({ showToast }) {
       {/* Detail Modal */}
       <AnimatePresence>
         {selectedItem && (
-          <div role="button" tabIndex={0}
+          <div
+            role="button"
+            tabIndex={0}
             className="stock-modal-overlay"
-            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.currentTarget.click(); } }} onClick={() => setSelectedItem(null)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                e.currentTarget.click();
+              }
+            }}
+            onClick={() => setSelectedItem(null)}
           >
-            <m.div role="button" tabIndex={0}
+            <m.div
+              role="button"
+              tabIndex={0}
               className="stock-modal-content"
               style={{ maxWidth: 520 }}
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.currentTarget.click(); } }} onClick={(e) => e.stopPropagation()}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  e.currentTarget.click();
+                }
+              }}
+              onClick={(e) => e.stopPropagation()}
             >
               <div className="stock-modal-header">
                 <h3>Disposal Record Details</h3>

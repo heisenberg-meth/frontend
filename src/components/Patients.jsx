@@ -147,10 +147,18 @@ export default function Patients({ showToast }) {
       ) : (
         <div className="patient-grid-v2">
           {filteredPatients.map((p) => (
-            <m.div role="button" tabIndex={0}
+            <m.div
+              role="button"
+              tabIndex={0}
               key={p.id}
               className="patient-card-v2"
-              onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.currentTarget.click(); } }} onClick={() => handleOpenPatient(p)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  e.currentTarget.click();
+                }
+              }}
+              onClick={() => handleOpenPatient(p)}
               whileHover={{ y: -4 }}
             >
               <div className="p-card-top">
@@ -191,12 +199,20 @@ export default function Patients({ showToast }) {
       <AnimatePresence>
         {showDrawer && selectedPatient && (
           <>
-            <m.div role="button" tabIndex={0}
+            <m.div
+              role="button"
+              tabIndex={0}
               className="drawer-overlay"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.currentTarget.click(); } }} onClick={() => setShowDrawer(false)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  e.currentTarget.click();
+                }
+              }}
+              onClick={() => setShowDrawer(false)}
             />
             <m.div
               className="patient-drawer"

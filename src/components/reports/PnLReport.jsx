@@ -169,9 +169,12 @@ export default function PnLReport({ from, to, showToast }) {
           <div className="stock-modal-body" style={{ textAlign: "left" }}>
             <div className="p-form-grid" style={{ gridTemplateColumns: "1fr" }}>
               <div className="pos-input-group">
-                <label htmlFor="field_79zo1g" className="p-label">CATEGORY</label>
+                <label htmlFor="field_79zo1g" className="p-label">
+                  CATEGORY
+                </label>
                 <select
- id="field_79zo1g"                  className="pos-input"
+                  id="field_79zo1g"
+                  className="pos-input"
                   value={expenseCategory}
                   onChange={(e) => setExpenseCategory(e.target.value)}
                 >
@@ -184,9 +187,12 @@ export default function PnLReport({ from, to, showToast }) {
                 </select>
               </div>
               <div className="pos-input-group">
-                <label htmlFor="field_hv99o8" className="p-label">AMOUNT ₹</label>
+                <label htmlFor="field_hv99o8" className="p-label">
+                  AMOUNT ₹
+                </label>
                 <input
- id="field_hv99o8"                  required
+                  id="field_hv99o8"
+                  required
                   className="pos-input"
                   type="number"
                   placeholder="0.00"
@@ -195,9 +201,12 @@ export default function PnLReport({ from, to, showToast }) {
                 />
               </div>
               <div className="pos-input-group">
-                <label htmlFor="field_brtih5" className="p-label">DESCRIPTION</label>
+                <label htmlFor="field_brtih5" className="p-label">
+                  DESCRIPTION
+                </label>
                 <textarea
- id="field_brtih5"                  className="pos-input"
+                  id="field_brtih5"
+                  className="pos-input"
                   style={{ minHeight: "80px" }}
                   placeholder="Notes about this expense..."
                   value={expenseDescription}

@@ -125,7 +125,8 @@ export default function CustomerDetailsSection({
           <div className="relative">
             <User className="form-field-icon" size={14} />
             <input
- id="field_u82jqx"              required
+              id="field_u82jqx"
+              required
               type="text"
               disabled={isWalkIn}
               value={isWalkIn ? "Walk-in Customer" : patient.name}
@@ -144,7 +145,8 @@ export default function CustomerDetailsSection({
           <div className="relative">
             <Phone className="form-field-icon" size={14} />
             <input
- id="field_5hkfkd"              required
+              id="field_5hkfkd"
+              required
               type="text"
               disabled={isWalkIn}
               value={isWalkIn ? "" : patient.phone}
@@ -188,7 +190,8 @@ export default function CustomerDetailsSection({
           <div className="relative">
             <Stethoscope className="form-field-icon" size={14} />
             <input
- id="field_9glqt0"              required
+              id="field_9glqt0"
+              required
               type="text"
               value={doctorName}
               onChange={(e) => setDoctorName(e.target.value)}
@@ -204,7 +207,8 @@ export default function CustomerDetailsSection({
           <div className="relative">
             <FileText className="form-field-icon" size={14} />
             <input
- id="field_xwa2ge"              required
+              id="field_xwa2ge"
+              required
               type="text"
               value={prescriptionNo}
               onChange={(e) => setPrescriptionNo(e.target.value)}
@@ -220,7 +224,8 @@ export default function CustomerDetailsSection({
           <div className="relative">
             <MapPin className="form-field-icon" size={14} />
             <input
- id="field_oie7ea"              required
+              id="field_oie7ea"
+              required
               type="text"
               disabled={isWalkIn}
               value={isWalkIn ? "" : address}
@@ -237,7 +242,8 @@ export default function CustomerDetailsSection({
           <div className="relative">
             <Shield className="form-field-icon" size={14} />
             <input
- id="field_umklzr"              required
+              id="field_umklzr"
+              required
               type="text"
               disabled={isWalkIn}
               value={isWalkIn ? "" : gstNumber}
@@ -254,7 +260,8 @@ export default function CustomerDetailsSection({
           <div className="relative">
             <CreditCard className="form-field-icon" size={13} />
             <select
- id="field_ct10u6"              value={paymentTerms}
+              id="field_ct10u6"
+              value={paymentTerms}
               onChange={(e) => setPaymentTerms(e.target.value)}
               className="form-input form-input-has-icon cursor-pointer"
             >
@@ -273,7 +280,8 @@ export default function CustomerDetailsSection({
           <div className="relative">
             <Calendar className="form-field-icon" size={13} />
             <input
- id="field_gkuctl"              required
+              id="field_gkuctl"
+              required
               type="date"
               value={dueDate}
               onChange={(e) => setDueDate(e.target.value)}

@@ -783,9 +783,17 @@ export default function SupplierReturns({ showToast }) {
                     key={group.supplier?.id || group.supplier?.supplierCode}
                     className="supplier-group-card"
                   >
-                    <div role="button" tabIndex={0}
+                    <div
+                      role="button"
+                      tabIndex={0}
                       className="supplier-group-header"
-                      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.currentTarget.click(); } }} onClick={() =>
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" || e.key === " ") {
+                          e.preventDefault();
+                          e.currentTarget.click();
+                        }
+                      }}
+                      onClick={() =>
                         setExpandedGroup(expandedGroup === idx ? null : idx)
                       }
                     >
@@ -880,10 +888,29 @@ export default function SupplierReturns({ showToast }) {
       </div>
 
       {selectedReturn && (
-        <div role="button" tabIndex={0} className="modal-overlay" onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.currentTarget.click(); } }} onClick={() => setSelectedReturn(null)}>
-          <div role="button" tabIndex={0}
+        <div
+          role="button"
+          tabIndex={0}
+          className="modal-overlay"
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === " ") {
+              e.preventDefault();
+              e.currentTarget.click();
+            }
+          }}
+          onClick={() => setSelectedReturn(null)}
+        >
+          <div
+            role="button"
+            tabIndex={0}
             className="modal-content wide-modal"
-            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.currentTarget.click(); } }} onClick={(e) => e.stopPropagation()}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                e.currentTarget.click();
+              }
+            }}
+            onClick={(e) => e.stopPropagation()}
           >
             <div className="modal-header">
               <h2>{selectedReturn.returnNumber}</h2>
@@ -1041,13 +1068,29 @@ export default function SupplierReturns({ showToast }) {
       )}
 
       {showCreateModal && (
-        <div role="button" tabIndex={0}
+        <div
+          role="button"
+          tabIndex={0}
           className="modal-overlay"
-          onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.currentTarget.click(); } }} onClick={() => setShowCreateModal(false)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === " ") {
+              e.preventDefault();
+              e.currentTarget.click();
+            }
+          }}
+          onClick={() => setShowCreateModal(false)}
         >
-          <div role="button" tabIndex={0}
+          <div
+            role="button"
+            tabIndex={0}
             className="modal-content wide-modal"
-            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.currentTarget.click(); } }} onClick={(e) => e.stopPropagation()}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                e.currentTarget.click();
+              }
+            }}
+            onClick={(e) => e.stopPropagation()}
           >
             <div className="modal-header">
               <h2>Create Supplier Return</h2>
@@ -1069,7 +1112,8 @@ export default function SupplierReturns({ showToast }) {
                   <div className="form-group">
                     <label htmlFor="field_n1ux62">Select Supplier</label>
                     <select
- id="field_n1ux62"                      value={createData.supplierId}
+                      id="field_n1ux62"
+                      value={createData.supplierId}
                       onChange={(e) => {
                         const sid = e.target.value;
                         setCreateData((prev) => ({
@@ -1092,7 +1136,8 @@ export default function SupplierReturns({ showToast }) {
                   <div className="form-group">
                     <label htmlFor="field_5ypmdo">Select Reason</label>
                     <select
- id="field_5ypmdo"                      value={createData.reason}
+                      id="field_5ypmdo"
+                      value={createData.reason}
                       onChange={(e) => {
                         const reason = e.target.value;
                         setCreateData((prev) => ({
@@ -1245,7 +1290,8 @@ export default function SupplierReturns({ showToast }) {
                       <div className="form-group">
                         <label htmlFor="field_tgcbmt">Notes</label>
                         <textarea
- id="field_tgcbmt"                          value={createData.notes}
+                          id="field_tgcbmt"
+                          value={createData.notes}
                           onChange={(e) =>
                             setCreateData((prev) => ({
                               ...prev,

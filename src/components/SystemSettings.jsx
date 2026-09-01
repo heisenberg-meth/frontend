@@ -333,9 +333,17 @@ export default function SystemSettings({
                 {subscription?.status || "PENDING"}
               </div>
             </div>
-            <div role="button" tabIndex={0}
+            <div
+              role="button"
+              tabIndex={0}
               className="enterprise-grad-card"
-              onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.currentTarget.click(); } }} onClick={() => setCurrentView("subscription")}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  e.currentTarget.click();
+                }
+              }}
+              onClick={() => setCurrentView("subscription")}
             >
               {subscription?.isTrial && (
                 <>
@@ -413,18 +421,34 @@ export default function SystemSettings({
             </h3>
             <div className="sys-toggle-row">
               <span className="sys-toggle-label">Email</span>
-              <div role="button" tabIndex={0}
+              <div
+                role="button"
+                tabIndex={0}
                 className={`sys-toggle ${notifEmail ? "on" : ""}`}
-                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.currentTarget.click(); } }} onClick={() => setNotifEmail(!notifEmail)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    e.currentTarget.click();
+                  }
+                }}
+                onClick={() => setNotifEmail(!notifEmail)}
               >
                 <div className="sys-toggle-thumb" />
               </div>
             </div>
             <div className="sys-toggle-row">
               <span className="sys-toggle-label">WhatsApp</span>
-              <div role="button" tabIndex={0}
+              <div
+                role="button"
+                tabIndex={0}
                 className={`sys-toggle ${notifWa ? "on" : ""}`}
-                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.currentTarget.click(); } }} onClick={() => setNotifWa(!notifWa)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    e.currentTarget.click();
+                  }
+                }}
+                onClick={() => setNotifWa(!notifWa)}
               >
                 <div className="sys-toggle-thumb" />
               </div>
