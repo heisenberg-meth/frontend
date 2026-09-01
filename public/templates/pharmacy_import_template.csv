@@ -1,0 +1,9 @@
+med_name,stock_qty,expiry_dt,price_inr,batch_no,barcode,category,manufacturer,generic_name,strength,dosage_form,schedule,hsn_code,gst_percent
+Paracetamol 500mg,150,2026-12-31,25.50,BTC-2024-001,8901234567890,Analgesics,Cipla Ltd,Paracetamol,500mg,Tablet,OTC,30049099,12
+Amoxicillin 250mg,80,2025-10-15,45.00,BTC-2024-002,8901234567891,Antibiotics,Sun Pharma,Amoxicillin,250mg,Capsule,Schedule H,30041010,12
+Cetirizine 10mg,200,2027-05-20,18.00,BTC-2024-003,8901234567892,Antihistamines,Dr. Reddy's,Cetirizine,10mg,Tablet,OTC,30049099,12
+Metformin 500mg,120,2026-08-10,32.00,BTC-2024-004,8901234567893,Antidiabetic,Lupin Ltd,Metformin,500mg,Tablet,Schedule H,30049099,12
+Azithromycin 500mg,60,2025-11-30,115.00,BTC-2024-005,8901234567894,Antibiotics,Zydus Cadila,Azithromycin,500mg,Tablet,Schedule H1,30041010,12
+Atorvastatin 10mg,90,2026-09-15,65.50,BTC-2024-006,8901234567895,Cardiovascular,Torrent Pharma,Atorvastatin,10mg,Tablet,Schedule H,30049099,12
+Pantoprazole 40mg,110,2027-01-25,48.00,BTC-2024-007,8901234567896,Gastrointestinal,Alkem Labs,Pantoprazole,40mg,Tablet,OTC,30049099,12
+Cough Syrup 100ml,40,2025-12-01,85.00,BTC-2024-008,8901234567897,Respiratory,Dabur India,Dextromethorphan,10mg/5ml,Syrup,OTC,30049099,18

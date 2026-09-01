@@ -15,7 +15,6 @@ import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import api from "../../api.js";
 import { API_ROUTES } from "../../constants/api.routes.js";
-import { safeNumber } from "../../utils/number.js";
 const headers = ["Date", "Invoices", "Revenue (Rs.)"];
 function SalesReportSection1({
   showToast,
@@ -392,47 +391,6 @@ export default function SalesReport({ from, to, showToast }) {
       win.close();
     }, 500);
   };
-  const renderLineChart = () => {
-    if (!data || !data.chart || data.chart.length === 0) return null;
-    const width = 800;
-    const height = 200;
-    const revenues = data.chart.map((d) => safeNumber(d.revenue || 0));
-    const maxRevenue = Math.max(...revenues, 15000);
-    const points = data.chart
-      .map((d, i) => {
-        const x = (i / (data.chart.length - 1 || 1)) * width;
-        const y = height - (d.revenue / maxRevenue) * height;
-        return `${x},${y}`;
-      })
-      .join(" ");
-    const areaPoints = `${points} ${width},${height} 0,${height}`;
-    return (
-      <svg
-        viewBox={`0 0 ${width} ${height}`}
-        className="line-chart-svg"
-        style={{
-          width: "100%",
-          height: "100%",
-        }}
-      >
-        <defs>
-          <linearGradient id="areaGradient" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="var(--primary)" stopOpacity="0.1" />
-            <stop offset="100%" stopColor="var(--primary)" stopOpacity="0" />
-          </linearGradient>
-        </defs>
-        <polyline points={areaPoints} fill="url(#areaGradient)" />
-        <polyline
-          points={points}
-          fill="none"
-          stroke="var(--primary)"
-          strokeWidth="3"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
-      </svg>
-    );
-  };
   if (loading) {
     return (
       <div
@@ -648,29 +606,6 @@ export default function SalesReport({ from, to, showToast }) {
             </div>
           </div>
         ))}
-      </div>
-
-      <div className="line-chart-card">
-        <div className="chart-header">
-          <div
-            style={{
-              fontFamily: "Outfit",
-              fontWeight: 700,
-              fontSize: "16px",
-            }}
-          >
-            Revenue Trend
-          </div>
-        </div>
-        <div
-          style={{
-            height: "220px",
-            width: "100%",
-            marginTop: "20px",
-          }}
-        >
-          {renderLineChart()}
-        </div>
       </div>
 
       <SalesReportSection1
