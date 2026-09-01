@@ -35,7 +35,7 @@ const LazyRechartsWrapper = lazy(() =>
               ))}
             </m.Pie>
             <m.Tooltip
-              formatter={(value) => `₹${value.toLocaleString()}`}
+              formatter={(value) => formatIndianCurrency(value)}
               contentStyle={{
                 backgroundColor: "var(--surface)",
                 borderRadius: "8px",
@@ -51,6 +51,22 @@ const LazyRechartsWrapper = lazy(() =>
 );
 import { getMedicines } from "../../services/inventory.service";
 import { safeNumber } from "../../utils/number.js";
+
+const formatIndianCurrency = (value) => {
+  const amount = Number(value) || 0;
+
+  if (amount >= 1_00_00_000) {
+    return `₹${(amount / 1_00_00_000).toFixed(2).replace(/\.?0+$/, "")} Cr`;
+  }
+
+  if (amount >= 1_00_000) {
+    return `₹${(amount / 1_00_000).toFixed(2).replace(/\.?0+$/, "")} L`;
+  }
+
+  return `₹${amount.toLocaleString("en-IN", {
+    maximumFractionDigits: 2,
+  })}`;
+};
 
 // Re-using the design language from the modal
 export default function InventoryAnalyticsFull() {
@@ -337,7 +353,7 @@ export default function InventoryAnalyticsFull() {
                 className="inventory-summary-value"
                 style={{ color: "#4fdbc8" }}
               >
-                ₹{summary.totalValue?.toLocaleString() || 0}
+                {formatIndianCurrency(summary.totalValue)}
               </div>
             </div>
             <div className="inventory-summary-card">
@@ -348,7 +364,7 @@ export default function InventoryAnalyticsFull() {
                 className="inventory-summary-value"
                 style={{ color: "#10b981" }}
               >
-                ₹{summary.estimatedProfit?.toLocaleString() || 0}
+                {formatIndianCurrency(summary.estimatedProfit)}
               </div>
             </div>
             <div className="inventory-summary-card">
@@ -359,7 +375,7 @@ export default function InventoryAnalyticsFull() {
                 className="inventory-summary-value"
                 style={{ color: "#f59e0b" }}
               >
-                ₹{summary.expiryRiskValue?.toLocaleString() || 0}
+                {formatIndianCurrency(summary.expiryRiskValue)}
               </div>
             </div>
             <div className="inventory-summary-card">
@@ -370,7 +386,7 @@ export default function InventoryAnalyticsFull() {
                 className="inventory-summary-value"
                 style={{ color: "#ef4444" }}
               >
-                ₹{summary.deadStockValue?.toLocaleString() || 0}
+                {formatIndianCurrency(summary.deadStockValue)}
               </div>
             </div>
           </div>
@@ -411,7 +427,9 @@ export default function InventoryAnalyticsFull() {
                           ({item.batch})
                         </span>
                       </td>
-                      <td className="numeric">₹{item.purchaseValue}</td>
+                      <td className="numeric">
+                        {formatIndianCurrency(item.purchaseValue)}
+                      </td>
                       <td className="numeric">
                         <span className="profit-margin">{item.margin}%</span>
                       </td>
@@ -465,7 +483,9 @@ export default function InventoryAnalyticsFull() {
                   {riskItems.map((item) => (
                     <tr key={item.name}>
                       <td>{item.name}</td>
-                      <td className="numeric">₹{item.value}</td>
+                      <td className="numeric">
+                        {formatIndianCurrency(item.value)}
+                      </td>
                       <td className="numeric">
                         <span
                           className={`risk-badge ${item.daysLeft <= 30 ? "high" : "medium"}`}
@@ -497,7 +517,9 @@ export default function InventoryAnalyticsFull() {
                   {deadStock.map((item) => (
                     <tr key={item.name}>
                       <td>{item.name}</td>
-                      <td className="numeric">₹{item.value}</td>
+                      <td className="numeric">
+                        {formatIndianCurrency(item.value)}
+                      </td>
                       <td className="numeric">
                         <span className="risk-badge high">
                           {item.inactiveDays} days
