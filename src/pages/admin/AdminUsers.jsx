@@ -1,359 +1,136 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { adminApi } from "../../services/admin.service";
 import { downloadCsv } from "../../utils/exportCsv";
-import {
-  Search,
-  ShieldAlert,
-  CheckCircle,
-  Eye,
-  XCircle,
-  Ban,
-  Building2,
-  Award,
-  CreditCard,
-  Monitor,
-  Users,
-  Trash2,
-  Key,
-  Smartphone,
-  Download,
-  Lock,
-  Unlock,
-  PauseCircle,
-} from "lucide-react";
+import { Search, ShieldAlert, CheckCircle, Eye, XCircle, Ban, Building2, Award, CreditCard, Monitor, Users, Trash2, Key, Smartphone, Download, Lock, Unlock, PauseCircle } from "lucide-react";
 import toast from "react-hot-toast";
 import { safeNumber } from "../../utils/number.js";
-
-export default function AdminUsers() {
-  const [users, setUsers] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState("");
-  const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(25);
-  const [total, setTotal] = useState(0);
-  const [selectedUser, setSelectedUser] = useState(null);
-  const [detailLoading, setDetailLoading] = useState(false);
-  const [detail, setDetail] = useState(null);
-  const [filterVerified, setFilterVerified] = useState("");
-  const [filterBlacklisted, setFilterBlacklisted] = useState("");
-
-  const searchRef = useRef(search);
-  useEffect(() => {
-    searchRef.current = search;
-  }, [search]);
-
-  const fetchUsers = useCallback(async () => {
-    await Promise.resolve();
-    setLoading(true);
-    try {
-      const params = { page, limit: pageSize };
-      if (searchRef.current) params.search = searchRef.current;
-      if (filterVerified) params.verified = filterVerified;
-      if (filterBlacklisted) params.blacklisted = filterBlacklisted;
-      const res = await adminApi.getUsers(params);
-      if (res.success) {
-        setUsers(res.data || []);
-        setTotal(res.pagination?.total || 0);
-      }
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setLoading(false);
+const getPageNumbers = (current, totalPages) => {
+  const pages = [];
+  const maxVisible = 5;
+  if (totalPages <= maxVisible + 2) {
+    for (let i = 1; i <= totalPages; i++) {
+      pages.push(i);
     }
-  }, [page, pageSize, filterVerified, filterBlacklisted]);
-
-  const getPageNumbers = (current, totalPages) => {
-    const pages = [];
-    const maxVisible = 5;
-
-    if (totalPages <= maxVisible + 2) {
-      for (let i = 1; i <= totalPages; i++) {
-        pages.push(i);
-      }
-    } else {
-      pages.push(1);
-
-      let start = Math.max(2, current - 2);
-      let end = Math.min(totalPages - 1, current + 2);
-
-      if (current <= 3) {
-        end = maxVisible;
-      } else if (current >= totalPages - 2) {
-        start = totalPages - maxVisible + 1;
-      }
-
-      if (start > 2) {
-        pages.push("...");
-      }
-
-      for (let i = start; i <= end; i++) {
-        pages.push(i);
-      }
-
-      if (end < totalPages - 1) {
-        pages.push("...");
-      }
-
-      pages.push(totalPages);
+  } else {
+    pages.push(1);
+    let start = Math.max(2, current - 2);
+    let end = Math.min(totalPages - 1, current + 2);
+    if (current <= 3) {
+      end = maxVisible;
+    } else if (current >= totalPages - 2) {
+      start = totalPages - maxVisible + 1;
     }
-    return pages;
-  };
-
-  useEffect(() => {
-    Promise.resolve().then(() => fetchUsers());
-  }, [fetchUsers]);
-
-  const handleSearch = (e) => {
-    e.preventDefault();
-    setPage(1);
-    fetchUsers();
-  };
-
-  const handleStatusChange = async (id, status) => {
-    try {
-      await adminApi.updateTenantStatus(id, status);
-      toast.success(`Tenant status updated to ${status}`);
-      fetchUsers();
-    } catch (err) {
-      toast.error(err.response?.data?.message || "Failed to update status");
+    if (start > 2) {
+      pages.push("...");
     }
-  };
-
-  const handleVerify = async (id) => {
-    try {
-      await adminApi.verifyTenant(id);
-      toast.success("Tenant verified");
-      fetchUsers();
-    } catch (err) {
-      toast.error(err.response?.data?.message || "Failed to verify tenant");
+    for (let i = start; i <= end; i++) {
+      pages.push(i);
     }
-  };
-
-  const handleBlacklist = async (id) => {
-    const reason = prompt("Reason for blacklisting:");
-    if (!reason) return;
-    try {
-      await adminApi.blacklistTenant(id, reason);
-      toast.success("Tenant blacklisted");
-      fetchUsers();
-    } catch (err) {
-      toast.error(err.response?.data?.message || "Failed to blacklist tenant");
+    if (end < totalPages - 1) {
+      pages.push("...");
     }
-  };
-
-  const handleUnblacklist = async (id) => {
-    if (!confirm("Remove blacklist for this shop?")) return;
-    try {
-      await adminApi.unblacklistTenant(id);
-      toast.success("Blacklist removed");
-      fetchUsers();
-    } catch (err) {
-      toast.error(err.response?.data?.message || "Failed to remove blacklist");
-    }
-  };
-
-  const openDetail = async (id) => {
-    setDetailLoading(true);
-    setSelectedUser(id);
-    try {
-      const res = await adminApi.getTenantDetail(id);
-      if (res.success) setDetail(res.data);
-    } catch (err) {
-      toast.error(
-        err.response?.data?.message || "Failed to load tenant details",
-      );
-    } finally {
-      setDetailLoading(false);
-    }
-  };
-
-  const handleDeleteUser = async (tenantId, userId, userName) => {
-    if (!confirm(`Delete user "${userName}"? This action cannot be undone.`))
-      return;
-    try {
-      await adminApi.deleteUser(tenantId, userId);
-      toast.success("User deleted");
-      openDetail(tenantId);
-    } catch (err) {
-      toast.error(err.response?.data?.message || "Failed to delete user");
-    }
-  };
-
-  const handleResetPassword = async (tenantId, userId) => {
-    if (
-      !confirm(
-        "Reset password for this user? They will receive a temporary password.",
-      )
-    )
-      return;
-    try {
-      const res = await adminApi.resetUserPassword(tenantId, userId);
-      if (res.success)
-        toast.success(`Temporary password: ${res.data.tempPassword}`, {
-          duration: 15000,
-        });
-    } catch (err) {
-      toast.error(err.response?.data?.message || "Failed to reset password");
-    }
-  };
-
-  const handleResetDevice = async (tenantId, userId) => {
-    if (
-      !confirm(
-        "Reset all devices for this user? All sessions will be invalidated.",
-      )
-    )
-      return;
-    try {
-      await adminApi.resetUserDevice(tenantId, userId);
-      toast.success("User devices reset");
-    } catch (err) {
-      toast.error(err.response?.data?.message || "Failed to reset devices");
-    }
-  };
-
-  const handleBlockUser = async (tenantId, userId, userName) => {
-    const reason = prompt(`Reason for blocking "${userName}":`);
-    if (!reason) return;
-    try {
-      await adminApi.blockUser(tenantId, userId, reason);
-      toast.success(`User "${userName}" blocked`);
-      openDetail(tenantId);
-    } catch (err) {
-      toast.error(err.response?.data?.message || "Failed to block user");
-    }
-  };
-
-  const handleUnblockUser = async (tenantId, userId, userName) => {
-    if (!confirm(`Unblock "${userName}"?`)) return;
-    try {
-      await adminApi.unblockUser(tenantId, userId);
-      toast.success(`User "${userName}" unblocked`);
-      openDetail(tenantId);
-    } catch (err) {
-      toast.error(err.response?.data?.message || "Failed to unblock user");
-    }
-  };
-
-  const handleSuspendUser = async (tenantId, userId, userName) => {
-    if (!confirm(`Suspend "${userName}"?`)) return;
-    try {
-      await adminApi.updateUserStatus(tenantId, userId, "SUSPENDED");
-      toast.success(`User "${userName}" suspended`);
-      openDetail(tenantId);
-    } catch (err) {
-      toast.error(err.response?.data?.message || "Failed to suspend user");
-    }
-  };
-
-  const handleActivateUser = async (tenantId, userId, userName) => {
-    if (!confirm(`Activate "${userName}"?`)) return;
-    try {
-      await adminApi.updateUserStatus(tenantId, userId, "ACTIVE");
-      toast.success(`User "${userName}" activated`);
-      openDetail(tenantId);
-    } catch (err) {
-      toast.error(err.response?.data?.message || "Failed to activate user");
-    }
-  };
-
-  const getGstDisplay = (u) => {
-    return u.gstNumber || u.storeProfiles?.[0]?.gstin || "—";
-  };
-
-  const getDrugLicenseDisplay = (u) => {
-    return (
-      u.drugLicenseNumber || u.storeProfiles?.[0]?.drugLicenseNumber || "—"
-    );
-  };
-
-  return (
-    <div className="admin-page">
-      <div className="admin-toolbar">
+    pages.push(totalPages);
+  }
+  return pages;
+};
+const handleResetPassword = async (tenantId, userId) => {
+  if (!confirm("Reset password for this user? They will receive a temporary password.")) return;
+  try {
+    const res = await adminApi.resetUserPassword(tenantId, userId);
+    if (res.success) toast.success(`Temporary password: ${res.data.tempPassword}`, {
+      duration: 15000
+    });
+  } catch (err) {
+    toast.error(err.response?.data?.message || "Failed to reset password");
+  }
+};
+const handleResetDevice = async (tenantId, userId) => {
+  if (!confirm("Reset all devices for this user? All sessions will be invalidated.")) return;
+  try {
+    await adminApi.resetUserDevice(tenantId, userId);
+    toast.success("User devices reset");
+  } catch (err) {
+    toast.error(err.response?.data?.message || "Failed to reset devices");
+  }
+};
+const getGstDisplay = u => {
+  return u.gstNumber || u.storeProfiles?.[0]?.gstin || "—";
+};
+const getDrugLicenseDisplay = u => {
+  return u.drugLicenseNumber || u.storeProfiles?.[0]?.drugLicenseNumber || "—";
+};
+function AdminUsersSection1({
+  setSearch,
+  setFilterVerified,
+  setPage,
+  setFilterBlacklisted,
+  setPageSize,
+  users
+}) {
+  return <div className="admin-toolbar">
         <form className="admin-search" onSubmit={handleSearch}>
           <Search size={16} />
-          <input
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search by name, email, phone, GST, license..."
-          />
+          <><label htmlFor="field_i52090" className="sr-only">Search by name, email, phone, GST, license...</label><input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search by name, email, phone, GST, license..." id="field_i52090" /></>
         </form>
         <div className="admin-filter-group">
-          <select
-            value={filterVerified}
-            onChange={(e) => {
-              setFilterVerified(e.target.value);
-              setPage(1);
-            }}
-          >
+          <select value={filterVerified} onChange={e => {
+        setFilterVerified(e.target.value);
+        setPage(1);
+      }}>
             <option value="">All Shops</option>
             <option value="true">Verified</option>
             <option value="false">Unverified</option>
           </select>
         </div>
         <div className="admin-filter-group">
-          <select
-            value={filterBlacklisted}
-            onChange={(e) => {
-              setFilterBlacklisted(e.target.value);
-              setPage(1);
-            }}
-          >
+          <select value={filterBlacklisted} onChange={e => {
+        setFilterBlacklisted(e.target.value);
+        setPage(1);
+      }}>
             <option value="">All</option>
             <option value="true">Blacklisted</option>
             <option value="false">Not Blacklisted</option>
           </select>
         </div>
         <div className="admin-filter-group">
-          <select
-            value={pageSize}
-            onChange={(e) => {
-              setPageSize(safeNumber(e.target.value));
-              setPage(1);
-            }}
-          >
+          <select value={pageSize} onChange={e => {
+        setPageSize(safeNumber(e.target.value));
+        setPage(1);
+      }}>
             <option value={25}>Show 25</option>
             <option value={50}>Show 50</option>
             <option value={100}>Show 100</option>
           </select>
         </div>
-        <button
-          onClick={() =>
-            downloadCsv(
-              users.map((u) => ({
-                "Shop Name": u.name,
-                Email: u.email,
-                Phone: u.phone || "",
-                GST: u.gstNumber || u.storeProfiles?.[0]?.gstin || "",
-                "Drug License":
-                  u.drugLicenseNumber ||
-                  u.storeProfiles?.[0]?.drugLicenseNumber ||
-                  "",
-                Status: u.status,
-                Verified: u.blacklisted
-                  ? "BLOCKED"
-                  : u.isVerified
-                    ? "Yes"
-                    : "No",
-                Plan: u.subscription?.plan?.name || "Trial",
-                Created: new Date(u.createdAt).toLocaleDateString(),
-              })),
-              "users-export",
-            )
-          }
-          className="admin-btn"
-          style={{
-            background: "#222",
-            color: "#fff",
-            padding: "8px 14px",
-            fontSize: 12,
-          }}
-        >
+        <button onClick={() => downloadCsv(users.map(u => ({
+      "Shop Name": u.name,
+      Email: u.email,
+      Phone: u.phone || "",
+      GST: u.gstNumber || u.storeProfiles?.[0]?.gstin || "",
+      "Drug License": u.drugLicenseNumber || u.storeProfiles?.[0]?.drugLicenseNumber || "",
+      Status: u.status,
+      Verified: u.blacklisted ? "BLOCKED" : u.isVerified ? "Yes" : "No",
+      Plan: u.subscription?.plan?.name || "Trial",
+      Created: new Date(u.createdAt).toLocaleDateString()
+    })), "users-export")} className="admin-btn" style={{
+      background: "#222",
+      color: "#fff",
+      padding: "8px 14px",
+      fontSize: 12
+    }}>
           <Download size={14} /> CSV
         </button>
-      </div>
-
-      <div className="admin-table-container">
+      </div>;
+}
+function AdminUsersSection2({
+  openDetail,
+  u,
+  handleVerify,
+  handleStatusChange,
+  handleUnblacklist,
+  handleBlacklist
+}) {
+  return <div className="admin-table-container">
         <table className="admin-table">
           <thead>
             <tr>
@@ -371,24 +148,15 @@ export default function AdminUsers() {
             </tr>
           </thead>
           <tbody>
-            {loading ? (
-              <tr>
+            {loading ? <tr>
                 <td colSpan={10} className="admin-empty">
                   Loading...
                 </td>
-              </tr>
-            ) : users.length === 0 ? (
-              <tr>
+              </tr> : users.length === 0 ? <tr>
                 <td colSpan={10} className="admin-empty">
                   No users found
                 </td>
-              </tr>
-            ) : (
-              users.map((u) => (
-                <tr
-                  key={u.id}
-                  className={u.blacklisted ? "admin-row-danger" : ""}
-                >
+              </tr> : users.map(u => <tr key={u.id} className={u.blacklisted ? "admin-row-danger" : ""}>
                   <td>
                     <strong>{u.name || "N/A"}</strong>
                     <small>{u.email}</small>
@@ -402,172 +170,89 @@ export default function AdminUsers() {
                     <code className="admin-fp">{getDrugLicenseDisplay(u)}</code>
                   </td>
                   <td>
-                    {u.blacklisted ? (
-                      <span
-                        className="admin-badge"
-                        style={{ background: "#dc2626" }}
-                      >
+                    {u.blacklisted ? <span className="admin-badge" style={{
+              background: "#dc2626"
+            }}>
                         BLACKLISTED
-                      </span>
-                    ) : u.isVerified ? (
-                      <span
-                        className="admin-badge"
-                        style={{ background: "#22c55e" }}
-                      >
+                      </span> : u.isVerified ? <span className="admin-badge" style={{
+              background: "#22c55e"
+            }}>
                         VERIFIED
-                      </span>
-                    ) : (
-                      <span
-                        className="admin-badge"
-                        style={{ background: "#f59e0b" }}
-                      >
+                      </span> : <span className="admin-badge" style={{
+              background: "#f59e0b"
+            }}>
                         PENDING
-                      </span>
-                    )}
+                      </span>}
                   </td>
                   <td>
-                    <span
-                      className={`admin-status admin-status-${(u.status || "active").toLowerCase()}`}
-                    >
+                    <span className={`admin-status admin-status-${(u.status || "active").toLowerCase()}`}>
                       {u.status || "ACTIVE"}
                     </span>
                   </td>
                   <td>{u.subscription?.plan?.name || "Trial"}</td>
-                  <td style={{ fontSize: 12, color: "#888" }}>
-                    {u.lastLogin
-                      ? new Date(u.lastLogin).toLocaleDateString()
-                      : "—"}
+                  <td style={{
+            fontSize: 12,
+            color: "#888"
+          }}>
+                    {u.lastLogin ? new Date(u.lastLogin).toLocaleDateString() : "—"}
                   </td>
                   <td>{new Date(u.createdAt).toLocaleDateString()}</td>
                   <td className="admin-actions-cell">
-                    <button
-                      className="admin-icon-btn"
-                      title="View Details"
-                      onClick={() => openDetail(u.id)}
-                    >
+                    <button className="admin-icon-btn" title="View Details" onClick={() => openDetail(u.id)}>
                       <Eye size={16} />
                     </button>
-                    {!u.isVerified && !u.blacklisted && (
-                      <button
-                        className="admin-icon-btn success"
-                        title="Verify Shop"
-                        onClick={() => handleVerify(u.id)}
-                      >
+                    {!u.isVerified && !u.blacklisted && <button className="admin-icon-btn success" title="Verify Shop" onClick={() => handleVerify(u.id)}>
                         <CheckCircle size={16} />
-                      </button>
-                    )}
-                    {u.status === "ACTIVE" ? (
-                      <button
-                        className="admin-icon-btn warn"
-                        title="Suspend"
-                        onClick={() => handleStatusChange(u.id, "SUSPENDED")}
-                      >
+                      </button>}
+                    {u.status === "ACTIVE" ? <button className="admin-icon-btn warn" title="Suspend" onClick={() => handleStatusChange(u.id, "SUSPENDED")}>
                         <ShieldAlert size={16} />
-                      </button>
-                    ) : (
-                      <button
-                        className="admin-icon-btn success"
-                        title="Activate"
-                        onClick={() => handleStatusChange(u.id, "ACTIVE")}
-                      >
+                      </button> : <button className="admin-icon-btn success" title="Activate" onClick={() => handleStatusChange(u.id, "ACTIVE")}>
                         <CheckCircle size={16} />
-                      </button>
-                    )}
-                    {u.blacklisted ? (
-                      <button
-                        className="admin-icon-btn success"
-                        title="Remove Blacklist"
-                        onClick={() => handleUnblacklist(u.id)}
-                      >
+                      </button>}
+                    {u.blacklisted ? <button className="admin-icon-btn success" title="Remove Blacklist" onClick={() => handleUnblacklist(u.id)}>
                         <Ban size={16} />
-                      </button>
-                    ) : (
-                      <button
-                        className="admin-icon-btn danger"
-                        title="Blacklist"
-                        onClick={() => handleBlacklist(u.id)}
-                      >
+                      </button> : <button className="admin-icon-btn danger" title="Blacklist" onClick={() => handleBlacklist(u.id)}>
                         <XCircle size={16} />
-                      </button>
-                    )}
+                      </button>}
                   </td>
-                </tr>
-              ))
-            )}
+                </tr>)}
           </tbody>
         </table>
-      </div>
-
-      {total > pageSize && (
-        <div className="admin-pagination">
-          <button disabled={page === 1} onClick={() => setPage(page - 1)}>
-            Previous
-          </button>
-          {getPageNumbers(page, Math.ceil(total / pageSize)).map((p, idx) =>
-            p === "..." ? (
-              <span key={`dots-${idx}`} className="pagination-dots">
-                ...
-              </span>
-            ) : (
-              <button
-                key={`page-${p}`}
-                className={page === p ? "active" : ""}
-                onClick={() => setPage(p)}
-              >
-                {p}
-              </button>
-            ),
-          )}
-          <button
-            disabled={page === Math.ceil(total / pageSize)}
-            onClick={() => setPage(page + 1)}
-          >
-            Next
-          </button>
-        </div>
-      )}
-
-      {selectedUser && (
-        <div
-          role="button"
-          tabIndex={0}
-          className="admin-modal-overlay"
-          onKeyDown={(e) => {
-            if (e.key === "Enter" || e.key === " ") {
-              e.preventDefault();
-              e.currentTarget.click();
-            }
-          }}
-          onClick={() => {
-            setSelectedUser(null);
-            setDetail(null);
-          }}
-        >
-          <div
-            role="button"
-            tabIndex={0}
-            className="admin-modal admin-modal-wide"
-            onKeyDown={(e) => {
-              if (e.key === "Enter" || e.key === " ") {
-                e.preventDefault();
-                e.currentTarget.click();
-              }
-            }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            {detailLoading ? (
-              <div className="admin-empty">Loading details...</div>
-            ) : detail ? (
-              <>
+      </div>;
+}
+function AdminUsersSection3({
+  e,
+  setSelectedUser,
+  setDetail,
+  handleUnblockUser,
+  detail,
+  u,
+  handleActivateUser,
+  handleSuspendUser,
+  handleBlockUser,
+  handleDeleteUser,
+  handleVerify,
+  handleUnblacklist,
+  handleBlacklist,
+  reason
+}) {
+  return selectedUser && <div role="button" tabIndex={0} className="admin-modal-overlay" onKeyDown={e => {
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      e.currentTarget.click();
+    }
+  }} onClick={() => {
+    setSelectedUser(null);
+    setDetail(null);
+  }}>
+          <div className="admin-modal admin-modal-wide" onClick={e => e.stopPropagation()} role="presentation">
+            {detailLoading ? <div className="admin-empty">Loading details...</div> : detail ? <>
                 <div className="admin-modal-header">
                   <h3>{detail.name || "Unnamed Shop"}</h3>
-                  <button
-                    className="admin-icon-btn"
-                    onClick={() => {
-                      setSelectedUser(null);
-                      setDetail(null);
-                    }}
-                  >
+                  <button className="admin-icon-btn" onClick={() => {
+            setSelectedUser(null);
+            setDetail(null);
+          }}>
                     ✕
                   </button>
                 </div>
@@ -613,44 +298,31 @@ export default function AdminUsers() {
                       <div>
                         <span>Status</span>
                         <strong>
-                          {detail.blacklisted ? (
-                            <span
-                              className="admin-badge"
-                              style={{ background: "#dc2626" }}
-                            >
+                          {detail.blacklisted ? <span className="admin-badge" style={{
+                    background: "#dc2626"
+                  }}>
                               BLACKLISTED
-                            </span>
-                          ) : detail.isVerified ? (
-                            <span
-                              className="admin-badge"
-                              style={{ background: "#22c55e" }}
-                            >
+                            </span> : detail.isVerified ? <span className="admin-badge" style={{
+                    background: "#22c55e"
+                  }}>
                               VERIFIED
-                            </span>
-                          ) : (
-                            <span
-                              className="admin-badge"
-                              style={{ background: "#f59e0b" }}
-                            >
+                            </span> : <span className="admin-badge" style={{
+                    background: "#f59e0b"
+                  }}>
                               PENDING VERIFICATION
-                            </span>
-                          )}
+                            </span>}
                         </strong>
                       </div>
-                      {detail.blacklisted && detail.blacklistReason && (
-                        <div>
+                      {detail.blacklisted && detail.blacklistReason && <div>
                           <span>Blacklist Reason</span>
                           <strong>{detail.blacklistReason}</strong>
-                        </div>
-                      )}
-                      {detail.verifiedAt && (
-                        <div>
+                        </div>}
+                      {detail.verifiedAt && <div>
                           <span>Verified At</span>
                           <strong>
                             {new Date(detail.verifiedAt).toLocaleString()}
                           </strong>
-                        </div>
-                      )}
+                        </div>}
                       <div>
                         <span>Account Status</span>
                         <strong>{detail.status}</strong>
@@ -676,21 +348,13 @@ export default function AdminUsers() {
                       <div>
                         <span>Start</span>
                         <strong>
-                          {detail.subscription?.startDate
-                            ? new Date(
-                                detail.subscription.startDate,
-                              ).toLocaleDateString()
-                            : "—"}
+                          {detail.subscription?.startDate ? new Date(detail.subscription.startDate).toLocaleDateString() : "—"}
                         </strong>
                       </div>
                       <div>
                         <span>Expiry</span>
                         <strong>
-                          {detail.subscription?.endDate
-                            ? new Date(
-                                detail.subscription.endDate,
-                              ).toLocaleDateString()
-                            : "—"}
+                          {detail.subscription?.endDate ? new Date(detail.subscription.endDate).toLocaleDateString() : "—"}
                         </strong>
                       </div>
                     </div>
@@ -723,8 +387,7 @@ export default function AdminUsers() {
                   </div>
                 </div>
 
-                {detail.devices?.length > 0 && (
-                  <div className="admin-detail-section">
+                {detail.devices?.length > 0 && <div className="admin-detail-section">
                     <h4>
                       <Monitor size={16} /> Recent Devices ({detail.deviceCount}
                       )
@@ -741,8 +404,7 @@ export default function AdminUsers() {
                           </tr>
                         </thead>
                         <tbody>
-                          {detail.devices.slice(0, 5).map((d) => (
-                            <tr key={d.id}>
+                          {detail.devices.slice(0, 5).map(d => <tr key={d.id}>
                               <td>
                                 <code className="admin-fp">
                                   {d.fingerprintId?.slice(0, 16)}...
@@ -752,16 +414,13 @@ export default function AdminUsers() {
                               <td>{d.os || "—"}</td>
                               <td>{d.user?.fullName || "—"}</td>
                               <td>{new Date(d.lastSeen).toLocaleString()}</td>
-                            </tr>
-                          ))}
+                            </tr>)}
                         </tbody>
                       </table>
                     </div>
-                  </div>
-                )}
+                  </div>}
 
-                {detail.users?.length > 0 && (
-                  <div className="admin-detail-section">
+                {detail.users?.length > 0 && <div className="admin-detail-section">
                     <h4>
                       <Users size={16} /> Staff Members
                     </h4>
@@ -779,202 +438,287 @@ export default function AdminUsers() {
                           </tr>
                         </thead>
                         <tbody>
-                          {detail.users.map((u) => (
-                            <tr key={u.id}>
+                          {detail.users.map(u => <tr key={u.id}>
                               <td>{u.fullName}</td>
                               <td>{u.email}</td>
                               <td>{u.role}</td>
                               <td>
-                                {u.status === "BLOCKED" ? (
-                                  <span
-                                    className="admin-badge"
-                                    style={{ background: "#dc2626" }}
-                                  >
+                                {u.status === "BLOCKED" ? <span className="admin-badge" style={{
+                      background: "#dc2626"
+                    }}>
                                     BLOCKED
-                                  </span>
-                                ) : u.status === "SUSPENDED" ? (
-                                  <span
-                                    className="admin-badge"
-                                    style={{ background: "#f59e0b" }}
-                                  >
+                                  </span> : u.status === "SUSPENDED" ? <span className="admin-badge" style={{
+                      background: "#f59e0b"
+                    }}>
                                     SUSPENDED
-                                  </span>
-                                ) : (
-                                  <span
-                                    className="admin-badge"
-                                    style={{ background: "#22c55e" }}
-                                  >
+                                  </span> : <span className="admin-badge" style={{
+                      background: "#22c55e"
+                    }}>
                                     ACTIVE
-                                  </span>
-                                )}
+                                  </span>}
                               </td>
                               <td>{u.phone || "—"}</td>
                               <td>
                                 {new Date(u.createdAt).toLocaleDateString()}
                               </td>
                               <td>
-                                <div style={{ display: "flex", gap: 4 }}>
-                                  {u.status === "BLOCKED" ? (
-                                    <button
-                                      className="admin-icon-btn"
-                                      style={{ color: "#22c55e" }}
-                                      title="Unblock User"
-                                      onClick={() =>
-                                        handleUnblockUser(
-                                          detail.id,
-                                          u.id,
-                                          u.fullName,
-                                        )
-                                      }
-                                    >
+                                <div style={{
+                      display: "flex",
+                      gap: 4
+                    }}>
+                                  {u.status === "BLOCKED" ? <button className="admin-icon-btn" style={{
+                        color: "#22c55e"
+                      }} title="Unblock User" onClick={() => handleUnblockUser(detail.id, u.id, u.fullName)}>
                                       <Unlock size={14} />
-                                    </button>
-                                  ) : u.status === "SUSPENDED" ? (
-                                    <button
-                                      className="admin-icon-btn"
-                                      style={{ color: "#22c55e" }}
-                                      title="Activate User"
-                                      onClick={() =>
-                                        handleActivateUser(
-                                          detail.id,
-                                          u.id,
-                                          u.fullName,
-                                        )
-                                      }
-                                    >
+                                    </button> : u.status === "SUSPENDED" ? <button className="admin-icon-btn" style={{
+                        color: "#22c55e"
+                      }} title="Activate User" onClick={() => handleActivateUser(detail.id, u.id, u.fullName)}>
                                       <CheckCircle size={14} />
-                                    </button>
-                                  ) : (
-                                    <>
-                                      <button
-                                        className="admin-icon-btn"
-                                        style={{ color: "#f59e0b" }}
-                                        title="Suspend User"
-                                        onClick={() =>
-                                          handleSuspendUser(
-                                            detail.id,
-                                            u.id,
-                                            u.fullName,
-                                          )
-                                        }
-                                      >
+                                    </button> : <>
+                                      <button className="admin-icon-btn" style={{
+                          color: "#f59e0b"
+                        }} title="Suspend User" onClick={() => handleSuspendUser(detail.id, u.id, u.fullName)}>
                                         <PauseCircle size={14} />
                                       </button>
-                                      <button
-                                        className="admin-icon-btn"
-                                        style={{ color: "#dc2626" }}
-                                        title="Block User"
-                                        onClick={() =>
-                                          handleBlockUser(
-                                            detail.id,
-                                            u.id,
-                                            u.fullName,
-                                          )
-                                        }
-                                      >
+                                      <button className="admin-icon-btn" style={{
+                          color: "#dc2626"
+                        }} title="Block User" onClick={() => handleBlockUser(detail.id, u.id, u.fullName)}>
                                         <Lock size={14} />
                                       </button>
-                                    </>
-                                  )}
-                                  <button
-                                    className="admin-icon-btn"
-                                    style={{ color: "#f59e0b" }}
-                                    title="Reset Password"
-                                    onClick={() =>
-                                      handleResetPassword(detail.id, u.id)
-                                    }
-                                  >
+                                    </>}
+                                  <button className="admin-icon-btn" style={{
+                        color: "#f59e0b"
+                      }} title="Reset Password" onClick={() => handleResetPassword(detail.id, u.id)}>
                                     <Key size={14} />
                                   </button>
-                                  <button
-                                    className="admin-icon-btn"
-                                    style={{ color: "#3b82f6" }}
-                                    title="Reset Device"
-                                    onClick={() =>
-                                      handleResetDevice(detail.id, u.id)
-                                    }
-                                  >
+                                  <button className="admin-icon-btn" style={{
+                        color: "#3b82f6"
+                      }} title="Reset Device" onClick={() => handleResetDevice(detail.id, u.id)}>
                                     <Smartphone size={14} />
                                   </button>
-                                  <button
-                                    className="admin-icon-btn"
-                                    style={{ color: "#ef4444" }}
-                                    title="Delete User"
-                                    onClick={() =>
-                                      handleDeleteUser(
-                                        detail.id,
-                                        u.id,
-                                        u.fullName,
-                                      )
-                                    }
-                                  >
+                                  <button className="admin-icon-btn" style={{
+                        color: "#ef4444"
+                      }} title="Delete User" onClick={() => handleDeleteUser(detail.id, u.id, u.fullName)}>
                                     <Trash2 size={14} />
                                   </button>
                                 </div>
                               </td>
-                            </tr>
-                          ))}
+                            </tr>)}
                         </tbody>
                       </table>
                     </div>
-                  </div>
-                )}
+                  </div>}
 
                 <div className="admin-modal-actions">
-                  {!detail.isVerified && !detail.blacklisted && (
-                    <button
-                      className="admin-btn"
-                      style={{ background: "#22c55e" }}
-                      onClick={() => {
-                        handleVerify(detail.id);
-                        setDetail({ ...detail, isVerified: true });
-                      }}
-                    >
+                  {!detail.isVerified && !detail.blacklisted && <button className="admin-btn" style={{
+            background: "#22c55e"
+          }} onClick={() => {
+            handleVerify(detail.id);
+            setDetail({
+              ...detail,
+              isVerified: true
+            });
+          }}>
                       <CheckCircle size={16} /> Verify Shop
-                    </button>
-                  )}
-                  {detail.blacklisted ? (
-                    <button
-                      className="admin-btn"
-                      style={{ background: "#22c55e" }}
-                      onClick={() => {
-                        handleUnblacklist(detail.id);
-                        setDetail({
-                          ...detail,
-                          blacklisted: false,
-                          blacklistReason: null,
-                        });
-                      }}
-                    >
+                    </button>}
+                  {detail.blacklisted ? <button className="admin-btn" style={{
+            background: "#22c55e"
+          }} onClick={() => {
+            handleUnblacklist(detail.id);
+            setDetail({
+              ...detail,
+              blacklisted: false,
+              blacklistReason: null
+            });
+          }}>
                       <Ban size={16} /> Remove Blacklist
-                    </button>
-                  ) : (
-                    <button
-                      className="admin-btn"
-                      style={{ background: "#dc2626" }}
-                      onClick={() => {
-                        const reason = prompt("Reason for blacklisting:");
-                        if (reason) {
-                          handleBlacklist(detail.id);
-                          setDetail({
-                            ...detail,
-                            blacklisted: true,
-                            blacklistReason: reason,
-                          });
-                        }
-                      }}
-                    >
+                    </button> : <button className="admin-btn" style={{
+            background: "#dc2626"
+          }} onClick={() => {
+            const reason = prompt("Reason for blacklisting:");
+            if (reason) {
+              handleBlacklist(detail.id);
+              setDetail({
+                ...detail,
+                blacklisted: true,
+                blacklistReason: reason
+              });
+            }
+          }}>
                       <XCircle size={16} /> Blacklist Shop
-                    </button>
-                  )}
+                    </button>}
                 </div>
-              </>
-            ) : (
-              <div className="admin-empty">Failed to load details</div>
-            )}
+              </> : <div className="admin-empty">Failed to load details</div>}
           </div>
-        </div>
-      )}
-    </div>
-  );
+        </div>;
+}
+export default function AdminUsers() {
+  const [users, setUsers] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState("");
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(25);
+  const [total, setTotal] = useState(0);
+  const [selectedUser, setSelectedUser] = useState(null);
+  const [detailLoading, setDetailLoading] = useState(false);
+  const [detail, setDetail] = useState(null);
+  const [filterVerified, setFilterVerified] = useState("");
+  const [filterBlacklisted, setFilterBlacklisted] = useState("");
+  const searchRef = useRef(search);
+  useEffect(() => {
+    searchRef.current = search;
+  }, [search]);
+  const fetchUsers = useCallback(async () => {
+    await Promise.resolve();
+    setLoading(true);
+    try {
+      const params = {
+        page,
+        limit: pageSize
+      };
+      if (searchRef.current) params.search = searchRef.current;
+      if (filterVerified) params.verified = filterVerified;
+      if (filterBlacklisted) params.blacklisted = filterBlacklisted;
+      const res = await adminApi.getUsers(params);
+      if (res.success) {
+        setUsers(res.data || []);
+        setTotal(res.pagination?.total || 0);
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  }, [page, pageSize, filterVerified, filterBlacklisted]);
+  useEffect(() => {
+    Promise.resolve().then(() => fetchUsers());
+  }, [fetchUsers]);
+  const handleSearch = e => {
+    e.preventDefault();
+    setPage(1);
+    fetchUsers();
+  };
+  const handleStatusChange = async (id, status) => {
+    try {
+      await adminApi.updateTenantStatus(id, status);
+      toast.success(`Tenant status updated to ${status}`);
+      fetchUsers();
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Failed to update status");
+    }
+  };
+  const handleVerify = async id => {
+    try {
+      await adminApi.verifyTenant(id);
+      toast.success("Tenant verified");
+      fetchUsers();
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Failed to verify tenant");
+    }
+  };
+  const handleBlacklist = async id => {
+    const reason = prompt("Reason for blacklisting:");
+    if (!reason) return;
+    try {
+      await adminApi.blacklistTenant(id, reason);
+      toast.success("Tenant blacklisted");
+      fetchUsers();
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Failed to blacklist tenant");
+    }
+  };
+  const handleUnblacklist = async id => {
+    if (!confirm("Remove blacklist for this shop?")) return;
+    try {
+      await adminApi.unblacklistTenant(id);
+      toast.success("Blacklist removed");
+      fetchUsers();
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Failed to remove blacklist");
+    }
+  };
+  const openDetail = async id => {
+    setDetailLoading(true);
+    setSelectedUser(id);
+    try {
+      const res = await adminApi.getTenantDetail(id);
+      if (res.success) setDetail(res.data);
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Failed to load tenant details");
+    } finally {
+      setDetailLoading(false);
+    }
+  };
+  const handleDeleteUser = async (tenantId, userId, userName) => {
+    if (!confirm(`Delete user "${userName}"? This action cannot be undone.`)) return;
+    try {
+      await adminApi.deleteUser(tenantId, userId);
+      toast.success("User deleted");
+      openDetail(tenantId);
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Failed to delete user");
+    }
+  };
+  const handleBlockUser = async (tenantId, userId, userName) => {
+    const reason = prompt(`Reason for blocking "${userName}":`);
+    if (!reason) return;
+    try {
+      await adminApi.blockUser(tenantId, userId, reason);
+      toast.success(`User "${userName}" blocked`);
+      openDetail(tenantId);
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Failed to block user");
+    }
+  };
+  const handleUnblockUser = async (tenantId, userId, userName) => {
+    if (!confirm(`Unblock "${userName}"?`)) return;
+    try {
+      await adminApi.unblockUser(tenantId, userId);
+      toast.success(`User "${userName}" unblocked`);
+      openDetail(tenantId);
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Failed to unblock user");
+    }
+  };
+  const handleSuspendUser = async (tenantId, userId, userName) => {
+    if (!confirm(`Suspend "${userName}"?`)) return;
+    try {
+      await adminApi.updateUserStatus(tenantId, userId, "SUSPENDED");
+      toast.success(`User "${userName}" suspended`);
+      openDetail(tenantId);
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Failed to suspend user");
+    }
+  };
+  const handleActivateUser = async (tenantId, userId, userName) => {
+    if (!confirm(`Activate "${userName}"?`)) return;
+    try {
+      await adminApi.updateUserStatus(tenantId, userId, "ACTIVE");
+      toast.success(`User "${userName}" activated`);
+      openDetail(tenantId);
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Failed to activate user");
+    }
+  };
+  return <div className="admin-page">
+      <AdminUsersSection1 setSearch={setSearch} setFilterVerified={setFilterVerified} setPage={setPage} setFilterBlacklisted={setFilterBlacklisted} setPageSize={setPageSize} users={users} />
+
+      <AdminUsersSection2 openDetail={openDetail} u={u} handleVerify={handleVerify} handleStatusChange={handleStatusChange} handleUnblacklist={handleUnblacklist} handleBlacklist={handleBlacklist} />
+
+      {total > pageSize && <div className="admin-pagination">
+          <button disabled={page === 1} onClick={() => setPage(page - 1)}>
+            Previous
+          </button>
+          {getPageNumbers(page, Math.ceil(total / pageSize)).map((p, idx) => p === "..." ? <span key={`dots-${idx}`} className="pagination-dots">
+                ...
+              </span> : <button key={`page-${p}`} className={page === p ? "active" : ""} onClick={() => setPage(p)}>
+                {p}
+              </button>)}
+          <button disabled={page === Math.ceil(total / pageSize)} onClick={() => setPage(page + 1)}>
+            Next
+          </button>
+        </div>}
+
+      <AdminUsersSection3 e={e} setSelectedUser={setSelectedUser} setDetail={setDetail} handleUnblockUser={handleUnblockUser} detail={detail} u={u} handleActivateUser={handleActivateUser} handleSuspendUser={handleSuspendUser} handleBlockUser={handleBlockUser} handleDeleteUser={handleDeleteUser} handleVerify={handleVerify} handleUnblacklist={handleUnblacklist} handleBlacklist={handleBlacklist} reason={reason} />
+    </div>;
 }

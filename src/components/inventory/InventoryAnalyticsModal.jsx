@@ -346,62 +346,47 @@ export default function InventoryAnalyticsModal({ isOpen, onClose }) {
         }}
         onClick={handleClose}
       >
-        <m.div
-          role="button"
-          tabIndex={0}
-          className="inventory-analytics-modal"
-          initial={{ opacity: 0, y: 30, scale: 0.95 }}
-          animate={{ opacity: 1, y: 0, scale: 1 }}
-          exit={{ opacity: 0, y: 20, scale: 0.95 }}
-          transition={{ duration: 0.2, ease: "easeOut" }}
-          onKeyDown={(e) => {
-            if (e.key === "Enter" || e.key === " ") {
-              e.preventDefault();
-              e.currentTarget.click();
-            }
-          }}
-          onClick={(e) => e.stopPropagation()}
-        >
+        <m.div className="inventory-analytics-modal" initial={{
+  opacity: 0,
+  y: 30,
+  scale: 0.95
+}} animate={{
+  opacity: 1,
+  y: 0,
+  scale: 1
+}} exit={{
+  opacity: 0,
+  y: 20,
+  scale: 0.95
+}} transition={{
+  duration: 0.2,
+  ease: "easeOut"
+}} onClick={e => e.stopPropagation()} role="presentation">
           {/* Header */}
           <div className="inventory-analytics-header">
             <div className="inventory-analytics-title">
               <h2>Inventory Valuation Overview</h2>
-              {summary?.lastUpdated && (
-                <span>
+              {summary?.lastUpdated && <span>
                   <Clock size={14} />
                   Updated {formatInvoiceTime(summary.lastUpdated)}
-                </span>
-              )}
+                </span>}
             </div>
-            <button
-              className="inventory-analytics-close"
-              onClick={handleClose}
-              aria-label="Close modal"
-            >
+            <button className="inventory-analytics-close" onClick={handleClose} aria-label="Close modal">
               <X size={24} />
             </button>
           </div>
 
           {/* Tabs */}
           <div className="inventory-analytics-tabs">
-            <button
-              className={`inventory-analytics-tab ${activeTab === "overview" ? "active" : ""}`}
-              onClick={() => setActiveTab("overview")}
-            >
+            <button className={`inventory-analytics-tab ${activeTab === "overview" ? "active" : ""}`} onClick={() => setActiveTab("overview")}>
               <Activity size={18} />
               Summary & Insights
             </button>
-            <button
-              className={`inventory-analytics-tab ${activeTab === "categories" ? "active" : ""}`}
-              onClick={() => setActiveTab("categories")}
-            >
+            <button className={`inventory-analytics-tab ${activeTab === "categories" ? "active" : ""}`} onClick={() => setActiveTab("categories")}>
               <PieChartIcon size={18} />
               Category Breakdown
             </button>
-            <button
-              className={`inventory-analytics-tab ${activeTab === "risk" ? "active" : ""}`}
-              onClick={() => setActiveTab("risk")}
-            >
+            <button className={`inventory-analytics-tab ${activeTab === "risk" ? "active" : ""}`} onClick={() => setActiveTab("risk")}>
               <Layers size={18} />
               Risk & Dead Stock
             </button>
@@ -409,20 +394,20 @@ export default function InventoryAnalyticsModal({ isOpen, onClose }) {
 
           {/* Content */}
           <div className="inventory-analytics-content">
-            {loading ? (
-              <div className="flex items-center justify-center h-64 text-on-surface-variant flex-col gap-4">
+            {loading ? <div className="flex items-center justify-center h-64 text-on-surface-variant flex-col gap-4">
                 <div className="w-8 h-8 border-4 border-primary/30 border-t-primary rounded-full animate-spin"></div>
                 <span>Loading comprehensive analytics...</span>
-              </div>
-            ) : (
-              <>
+              </div> : <>
                 {/* TAB: OVERVIEW */}
-                {(activeTab === "overview" || isPrinting) && (
-                  <m.div
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.3 }}
-                  >
+                {(activeTab === "overview" || isPrinting) && <m.div initial={{
+        opacity: 0,
+        y: 10
+      }} animate={{
+        opacity: 1,
+        y: 0
+      }} transition={{
+        duration: 0.3
+      }}>
                     <div className="inventory-summary-grid">
                       <div className="inventory-summary-card">
                         <div className="inventory-summary-header">
@@ -499,8 +484,7 @@ export default function InventoryAnalyticsModal({ isOpen, onClose }) {
                     </h3>
                     <div className="inventory-table-wrapper">
                       <div className="inventory-table-scroll">
-                        {highValueStock && highValueStock.length > 0 ? (
-                          <table className="inventory-analytics-table">
+                        {highValueStock && highValueStock.length > 0 ? <table className="inventory-analytics-table">
                             <thead>
                               <tr>
                                 <th>Medicine Name</th>
@@ -510,8 +494,7 @@ export default function InventoryAnalyticsModal({ isOpen, onClose }) {
                               </tr>
                             </thead>
                             <tbody>
-                              {highValueStock.map((item) => (
-                                <tr key={item.id || item.name}>
+                              {highValueStock.map(item => <tr key={item.id || item.name}>
                                   <td className="font-semibold">{item.name}</td>
                                   <td className="text-on-surface-variant">
                                     {item.genericName || "-"}
@@ -522,69 +505,48 @@ export default function InventoryAnalyticsModal({ isOpen, onClose }) {
                                   <td className="numeric">
                                     {fmt(item.totalValue)}
                                   </td>
-                                </tr>
-                              ))}
+                                </tr>)}
                             </tbody>
-                          </table>
-                        ) : (
-                          <div className="flex items-center justify-center p-8 text-on-surface-variant font-medium text-sm border-t border-outline-variant">
+                          </table> : <div className="flex items-center justify-center p-8 text-on-surface-variant font-medium text-sm border-t border-outline-variant">
                             No high-value medicines found.
-                          </div>
-                        )}
+                          </div>}
                       </div>
                     </div>
-                  </m.div>
-                )}
+                  </m.div>}
 
                 {/* TAB: CATEGORIES */}
-                {(activeTab === "categories" || isPrinting) && (
-                  <m.div
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.3 }}
-                    className="inventory-charts-grid"
-                  >
+                {(activeTab === "categories" || isPrinting) && <m.div initial={{
+        opacity: 0,
+        y: 10
+      }} animate={{
+        opacity: 1,
+        y: 0
+      }} transition={{
+        duration: 0.3
+      }} className="inventory-charts-grid">
                     <div className="inventory-card-container">
                       <h3 className="inventory-section-title">
                         Value by Category
                       </h3>
-                      {categories && categories.length > 0 ? (
-                        <div className="inventory-chart-wrapper">
-                          <Suspense
-                            fallback={
-                              <div className="flex justify-center items-center h-full">
+                      {categories && categories.length > 0 ? <div className="inventory-chart-wrapper">
+                          <Suspense fallback={<div className="flex justify-center items-center h-full">
                                 <Loader2 className="animate-spin text-primary" />
-                              </div>
-                            }
-                          >
+                              </div>}>
                             <LazyModalChart categories={categories} fmt={fmt} />
                           </Suspense>
-                        </div>
-                      ) : (
-                        <div className="flex items-center justify-center p-8 text-on-surface-variant font-medium text-sm">
+                        </div> : <div className="flex items-center justify-center p-8 text-on-surface-variant font-medium text-sm">
                           No category data available.
-                        </div>
-                      )}
+                        </div>}
                     </div>
 
                     <div className="inventory-card-container">
                       <h3 className="inventory-section-title">
                         Category Breakdown
                       </h3>
-                      {categories && categories.length > 0 ? (
-                        <div className="category-breakdown-list">
-                          {categories.map((cat) => {
-                            const percentage = totalCategoryValue
-                              ? (
-                                  (cat.value / totalCategoryValue) *
-                                  100
-                                ).toFixed(1)
-                              : 0;
-                            return (
-                              <div
-                                className="category-breakdown-item"
-                                key={cat.value}
-                              >
+                      {categories && categories.length > 0 ? <div className="category-breakdown-list">
+                          {categories.map(cat => {
+              const percentage = totalCategoryValue ? (cat.value / totalCategoryValue * 100).toFixed(1) : 0;
+              return <div className="category-breakdown-item" key={cat.value}>
                                 <div className="category-breakdown-header">
                                   <span className="name">
                                     {cat.category}{" "}
@@ -600,35 +562,29 @@ export default function InventoryAnalyticsModal({ isOpen, onClose }) {
                                   </span>
                                 </div>
                                 <div className="category-breakdown-bar">
-                                  <div
-                                    className="category-breakdown-fill"
-                                    style={{
-                                      width: `${percentage}%`,
-                                      backgroundColor: cat.color,
-                                    }}
-                                  />
+                                  <div className="category-breakdown-fill" style={{
+                    width: `${percentage}%`,
+                    backgroundColor: cat.color
+                  }} />
                                 </div>
-                              </div>
-                            );
-                          })}
-                        </div>
-                      ) : (
-                        <div className="flex items-center justify-center p-8 text-on-surface-variant font-medium text-sm">
+                              </div>;
+            })}
+                        </div> : <div className="flex items-center justify-center p-8 text-on-surface-variant font-medium text-sm">
                           No category data available.
-                        </div>
-                      )}
+                        </div>}
                     </div>
-                  </m.div>
-                )}
+                  </m.div>}
 
                 {/* TAB: RISK & DEAD STOCK */}
-                {(activeTab === "risk" || isPrinting) && (
-                  <m.div
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.3 }}
-                    className="flex flex-col gap-6 pt-2"
-                  >
+                {(activeTab === "risk" || isPrinting) && <m.div initial={{
+        opacity: 0,
+        y: 10
+      }} animate={{
+        opacity: 1,
+        y: 0
+      }} transition={{
+        duration: 0.3
+      }} className="flex flex-col gap-6 pt-2">
                     <div>
                       <h3 className="inventory-section-title mb-4">
                         <AlertTriangle className="text-rose-500" size={20} />
@@ -703,42 +659,21 @@ export default function InventoryAnalyticsModal({ isOpen, onClose }) {
                         </div>
                       </div>
                     </div>
-                  </m.div>
-                )}
-              </>
-            )}
+                  </m.div>}
+              </>}
           </div>
 
           {/* Footer Actions */}
           <div className="inventory-analytics-footer">
-            <button
-              className="inventory-analytics-btn"
-              onClick={handleOpenFullAnalytics}
-            >
+            <button className="inventory-analytics-btn" onClick={handleOpenFullAnalytics}>
               <FileText size={16} /> Open Full Analytics
             </button>
-            <button
-              className="inventory-analytics-btn"
-              onClick={handlePrint}
-              disabled={printing}
-            >
-              {printing ? (
-                <Loader2 size={16} className="animate-spin" />
-              ) : (
-                <Printer size={16} />
-              )}
+            <button className="inventory-analytics-btn" onClick={handlePrint} disabled={printing}>
+              {printing ? <Loader2 size={16} className="animate-spin" /> : <Printer size={16} />}
               {printing ? "Printing..." : "Print Report"}
             </button>
-            <button
-              className="inventory-analytics-btn primary"
-              onClick={handleExportCSV}
-              disabled={exporting}
-            >
-              {exporting ? (
-                <Loader2 size={16} className="animate-spin" />
-              ) : (
-                <Download size={16} />
-              )}
+            <button className="inventory-analytics-btn primary" onClick={handleExportCSV} disabled={exporting}>
+              {exporting ? <Loader2 size={16} className="animate-spin" /> : <Download size={16} />}
               {exporting ? "Exporting..." : "Export CSV"}
             </button>
           </div>

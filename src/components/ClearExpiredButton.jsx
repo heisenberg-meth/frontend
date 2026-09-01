@@ -20,166 +20,47 @@ import { AnimatePresence, m } from "framer-motion";
 import api from "../api";
 
 /* ─── tiny helpers ─────────────────────────────────────────────── */
-const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
-
-export default function ClearExpiredButton({
-  showToast,
-  onCleared,
-  branchId,
-  className = "",
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+function ClearExpiredButtonSection1({
+  e,
+  clearingRef,
+  handleClose
 }) {
-  const [count, setCount] = useState(null); // null = not loaded yet
-  const [loadingCount, setLoadingCount] = useState(false);
-
-  // Modal states
-  const [showConfirm, setShowConfirm] = useState(false);
-  const clearingRef = useRef(false);
-  const [result, setResult] = useState(null); // { cleared, skipped, failed, remaining }
-  const [phase, setPhase] = useState("idle"); // idle | confirm | clearing | done
-
-  /* ── Fetch clearable count ──────────────────────────────────── */
-  const fetchCount = useCallback(async () => {
-    try {
-      setLoadingCount(true);
-      const params = branchId ? `?branchId=${branchId}` : "";
-      const res = await api.get(`/inventory/expired/clearable${params}`);
-      const data = res?.data?.data ?? res?.data ?? {};
-      setCount(data.count ?? 0);
-    } catch {
-      setCount(0);
-    } finally {
-      setLoadingCount(false);
-    }
-  }, [branchId]);
-
-  useEffect(() => {
-    let ignore = false;
-    (async () => {
-      try {
-        const params = branchId ? `?branchId=${branchId}` : "";
-        const res = await api.get(`/inventory/expired/clearable${params}`);
-        if (!ignore) {
-          const data = res?.data?.data ?? res?.data ?? {};
-          setCount(data.count ?? 0);
-        }
-      } catch {
-        if (!ignore) setCount(0);
+  return <AnimatePresence>
+        {showConfirm && <m.div tabIndex={0} className="clear-expired-overlay" initial={{
+      opacity: 0
+    }} animate={{
+      opacity: 1
+    }} exit={{
+      opacity: 0
+    }} transition={{
+      duration: 0.18
+    }} onKeyDown={e => {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        e.currentTarget.click();
       }
-    })();
-    return () => {
-      ignore = true;
-    };
-  }, [branchId]);
-
-  /* ── Handler: user clicks the trigger button ────────────────── */
-  const handleOpenConfirm = () => {
-    if (!count) return;
-    setResult(null);
-    setPhase("confirm");
-    setShowConfirm(true);
-  };
-
-  /* ── Handler: user confirms clear ──────────────────────────── */
-  const handleClear = async () => {
-    setPhase("clearing");
-    clearingRef.current = true;
-    try {
-      const params = branchId ? `?branchId=${branchId}` : "";
-      const res = await api.post(`/inventory/expired/clear${params}`);
-      const data = res?.data?.data ?? res?.data ?? {};
-
-      // Small artificial delay so the progress bar feels real
-      await sleep(600);
-
-      setResult(data);
-      setPhase("done");
-
-      // Refresh the count
-      await fetchCount();
-
-      // Notify parent
-      onCleared?.();
-    } catch (err) {
-      const msg =
-        err?.response?.data?.error?.message ||
-        err?.message ||
-        "Failed to clear expired batches.";
-      showToast?.(msg, "error");
-      setPhase("confirm"); // revert to confirm so user can retry
-    } finally {
-      clearingRef.current = false;
-    }
-  };
-
-  /* ── Handler: close / dismiss ───────────────────────────────── */
-  const handleClose = () => {
-    if (clearingRef.current) return; // prevent close during operation
-    setShowConfirm(false);
-    setPhase("idle");
-    setResult(null);
-  };
-
-  /* ── Render ─────────────────────────────────────────────────── */
-  const disabled = !count || loadingCount;
-
-  return (
-    <>
-      {/* ── Trigger button ──────────────────────────────────── */}
-      <button
-        id="clear-expired-btn"
-        className={`clear-expired-trigger-btn ${disabled ? "disabled" : ""} ${className}`}
-        onClick={handleOpenConfirm}
-        disabled={disabled}
-        title={
-          disabled
-            ? "No disposed expired batches to clear"
-            : `Clear ${count} disposed expired batches from active inventory`
-        }
-        aria-label={`Clear expired batches${count ? ` (${count} available)` : ""}`}
-      >
-        <Trash2 size={14} />
-        <span>Clear Expired</span>
-        {loadingCount ? (
-          <span className="clear-expired-badge loading">…</span>
-        ) : count > 0 ? (
-          <span className="clear-expired-badge">{count}</span>
-        ) : null}
-      </button>
-
-      {/* ── Modal overlay ───────────────────────────────────── */}
-      <AnimatePresence>
-        {showConfirm && (
-          <m.div
-            tabIndex={0}
-            className="clear-expired-overlay"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.18 }}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" || e.key === " ") {
-                e.preventDefault();
-                e.currentTarget.click();
-              }
-            }}
-            onClick={(e) => {
-              if (e.target === e.currentTarget && !clearingRef.current)
-                handleClose();
-            }}
-            aria-modal="true"
-            role="dialog"
-            aria-labelledby="clear-expired-dialog-title"
-          >
-            <m.div
-              className="clear-expired-modal"
-              initial={{ opacity: 0, scale: 0.94, y: 16 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.94, y: 16 }}
-              transition={{ duration: 0.22, ease: "easeOut" }}
-            >
+    }} onClick={e => {
+      if (e.target === e.currentTarget && !clearingRef.current) handleClose();
+    }} aria-modal="true" role="dialog" aria-labelledby="clear-expired-dialog-title">
+            <m.div className="clear-expired-modal" initial={{
+        opacity: 0,
+        scale: 0.94,
+        y: 16
+      }} animate={{
+        opacity: 1,
+        scale: 1,
+        y: 0
+      }} exit={{
+        opacity: 0,
+        scale: 0.94,
+        y: 16
+      }} transition={{
+        duration: 0.22,
+        ease: "easeOut"
+      }}>
               {/* ── CONFIRM phase ─────────────────────────── */}
-              {phase === "confirm" && (
-                <>
+              {phase === "confirm" && <>
                   <div className="cem-header">
                     <div className="cem-icon-wrap danger">
                       <AlertTriangle size={22} />
@@ -192,11 +73,7 @@ export default function ClearExpiredButton({
                         This action cannot be undone.
                       </p>
                     </div>
-                    <button
-                      className="cem-close-btn"
-                      onClick={handleClose}
-                      aria-label="Close dialog"
-                    >
+                    <button className="cem-close-btn" onClick={handleClose} aria-label="Close dialog">
                       <X size={18} />
                     </button>
                   </div>
@@ -234,28 +111,18 @@ export default function ClearExpiredButton({
                   </div>
 
                   <div className="cem-footer">
-                    <button
-                      id="clear-expired-cancel-btn"
-                      className="cem-btn secondary"
-                      onClick={handleClose}
-                    >
+                    <button id="clear-expired-cancel-btn" className="cem-btn secondary" onClick={handleClose}>
                       Cancel
                     </button>
-                    <button
-                      id="clear-expired-confirm-btn"
-                      className="cem-btn primary danger"
-                      onClick={handleClear}
-                    >
+                    <button id="clear-expired-confirm-btn" className="cem-btn primary danger" onClick={handleClear}>
                       <Trash2 size={14} />
                       Clear&nbsp;{count}&nbsp;Batch{count !== 1 ? "es" : ""}
                     </button>
                   </div>
-                </>
-              )}
+                </>}
 
               {/* ── CLEARING phase ────────────────────────── */}
-              {phase === "clearing" && (
-                <div className="cem-progress-container">
+              {phase === "clearing" && <div className="cem-progress-container">
                   <div className="cem-progress-icon">
                     <Loader2 size={36} className="cem-spinner" />
                   </div>
@@ -268,12 +135,10 @@ export default function ClearExpiredButton({
                     <div className="cem-progress-bar-fill animate" />
                   </div>
                   <p className="cem-progress-note">Do not close this window.</p>
-                </div>
-              )}
+                </div>}
 
               {/* ── DONE phase ───────────────────────────── */}
-              {phase === "done" && result && (
-                <>
+              {phase === "done" && result && <>
                   <div className="cem-header">
                     <div className="cem-icon-wrap success">
                       <CheckCircle2 size={22} />
@@ -284,11 +149,7 @@ export default function ClearExpiredButton({
                       </h2>
                       <p className="cem-subtitle">Inventory refreshed.</p>
                     </div>
-                    <button
-                      className="cem-close-btn"
-                      onClick={handleClose}
-                      aria-label="Close dialog"
-                    >
+                    <button className="cem-close-btn" onClick={handleClose} aria-label="Close dialog">
                       <X size={18} />
                     </button>
                   </div>
@@ -303,14 +164,12 @@ export default function ClearExpiredButton({
                           Batches Removed
                         </span>
                       </div>
-                      {(result.skipped ?? 0) > 0 && (
-                        <div className="cem-result-item warn">
+                      {(result.skipped ?? 0) > 0 && <div className="cem-result-item warn">
                           <span className="cem-result-val">
                             {result.skipped}
                           </span>
                           <span className="cem-result-label">Skipped</span>
-                        </div>
-                      )}
+                        </div>}
                       <div className="cem-result-item neutral">
                         <span className="cem-result-val">
                           {result.remaining ?? 0}
@@ -326,23 +185,17 @@ export default function ClearExpiredButton({
                   </div>
 
                   <div className="cem-footer">
-                    <button
-                      id="clear-expired-done-btn"
-                      className="cem-btn primary success"
-                      onClick={handleClose}
-                    >
+                    <button id="clear-expired-done-btn" className="cem-btn primary success" onClick={handleClose}>
                       Done
                     </button>
                   </div>
-                </>
-              )}
+                </>}
             </m.div>
-          </m.div>
-        )}
-      </AnimatePresence>
-
-      {/* ── Scoped styles ───────────────────────────────────────── */}
-      <style>{`
+          </m.div>}
+      </AnimatePresence>;
+}
+function ClearExpiredButtonSection2() {
+  return <style>{`
         /* ── Trigger Button ───────────────────────────────────── */
         .clear-expired-trigger-btn {
           display: inline-flex;
@@ -668,7 +521,114 @@ export default function ClearExpiredButton({
           margin: 0;
           text-align: center;
         }
-      `}</style>
-    </>
-  );
+      `}</style>;
+}
+export default function ClearExpiredButton({
+  showToast,
+  onCleared,
+  branchId,
+  className = ""
+}) {
+  const [count, setCount] = useState(null); // null = not loaded yet
+  const [loadingCount, setLoadingCount] = useState(false);
+
+  // Modal states
+  const [showConfirm, setShowConfirm] = useState(false);
+  const clearingRef = useRef(false);
+  const [result, setResult] = useState(null); // { cleared, skipped, failed, remaining }
+  const [phase, setPhase] = useState("idle"); // idle | confirm | clearing | done
+
+  /* ── Fetch clearable count ──────────────────────────────────── */
+  const fetchCount = useCallback(async () => {
+    try {
+      setLoadingCount(true);
+      const params = branchId ? `?branchId=${branchId}` : "";
+      const res = await api.get(`/inventory/expired/clearable${params}`);
+      const data = res?.data?.data ?? res?.data ?? {};
+      setCount(data.count ?? 0);
+    } catch {
+      setCount(0);
+    } finally {
+      setLoadingCount(false);
+    }
+  }, [branchId]);
+  useEffect(() => {
+    let ignore = false;
+    (async () => {
+      try {
+        const params = branchId ? `?branchId=${branchId}` : "";
+        const res = await api.get(`/inventory/expired/clearable${params}`);
+        if (!ignore) {
+          const data = res?.data?.data ?? res?.data ?? {};
+          setCount(data.count ?? 0);
+        }
+      } catch {
+        if (!ignore) setCount(0);
+      }
+    })();
+    return () => {
+      ignore = true;
+    };
+  }, [branchId]);
+
+  /* ── Handler: user clicks the trigger button ────────────────── */
+  const handleOpenConfirm = () => {
+    if (!count) return;
+    setResult(null);
+    setPhase("confirm");
+    setShowConfirm(true);
+  };
+
+  /* ── Handler: user confirms clear ──────────────────────────── */
+  const handleClear = async () => {
+    setPhase("clearing");
+    clearingRef.current = true;
+    try {
+      const params = branchId ? `?branchId=${branchId}` : "";
+      const res = await api.post(`/inventory/expired/clear${params}`);
+      const data = res?.data?.data ?? res?.data ?? {};
+
+      // Small artificial delay so the progress bar feels real
+      await sleep(600);
+      setResult(data);
+      setPhase("done");
+
+      // Refresh the count
+      await fetchCount();
+
+      // Notify parent
+      onCleared?.();
+    } catch (err) {
+      const msg = err?.response?.data?.error?.message || err?.message || "Failed to clear expired batches.";
+      showToast?.(msg, "error");
+      setPhase("confirm"); // revert to confirm so user can retry
+    } finally {
+      clearingRef.current = false;
+    }
+  };
+
+  /* ── Handler: close / dismiss ───────────────────────────────── */
+  const handleClose = () => {
+    if (clearingRef.current) return; // prevent close during operation
+    setShowConfirm(false);
+    setPhase("idle");
+    setResult(null);
+  };
+
+  /* ── Render ─────────────────────────────────────────────────── */
+  const disabled = !count || loadingCount;
+  return <>
+      {/* ── Trigger button ──────────────────────────────────── */}
+      <button id="clear-expired-btn" className={`clear-expired-trigger-btn ${disabled ? "disabled" : ""} ${className}`} onClick={handleOpenConfirm} disabled={disabled} title={disabled ? "No disposed expired batches to clear" : `Clear ${count} disposed expired batches from active inventory`} aria-label={`Clear expired batches${count ? ` (${count} available)` : ""}`}>
+        <Trash2 size={14} />
+        <span>Clear Expired</span>
+        {loadingCount ? <span className="clear-expired-badge loading">…</span> : count > 0 ? <span className="clear-expired-badge">{count}</span> : null}
+      </button>
+
+      {/* ── Modal overlay ───────────────────────────────────── */}
+      <ClearExpiredButtonSection1 e={e} clearingRef={clearingRef} handleClose={handleClose} />
+
+      {/* ── Scoped styles ───────────────────────────────────────── */}
+      <ClearExpiredButtonSection2 />
+    </>;
 }

@@ -225,3 +225,29 @@ body.modal-open {
 .action-btn.editing:hover {
   filter: brightness(1.05);
 }
+
+.reset-btn {
+  background: transparent;
+  border: none;
+  padding: 0;
+  margin: 0;
+  font: inherit;
+  color: inherit;
+  cursor: default;
+  outline: none;
+  display: block;
+  width: 100%;
+  text-align: left;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}

@@ -9,6 +9,12 @@ import {
   CheckCircle,
 } from "lucide-react";
 
+const channels = [
+  { value: "EMAIL", label: "Email", icon: Mail },
+  { value: "SMS", label: "SMS", icon: MessageSquare },
+  { value: "WHATSAPP", label: "WhatsApp", icon: Globe },
+];
+
 export default function AdminBroadcast() {
   const [channel, setChannel] = useState("EMAIL");
   const [subject, setSubject] = useState("");
@@ -39,12 +45,6 @@ export default function AdminBroadcast() {
       setSending(false);
     }
   };
-
-  const channels = [
-    { value: "EMAIL", label: "Email", icon: Mail },
-    { value: "SMS", label: "SMS", icon: MessageSquare },
-    { value: "WHATSAPP", label: "WhatsApp", icon: Globe },
-  ];
 
   return (
     <div className="admin-page">

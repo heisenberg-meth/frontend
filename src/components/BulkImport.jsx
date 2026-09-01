@@ -1,1132 +1,163 @@
 import { useState, useCallback, useEffect, useReducer, useRef } from "react";
 import { useDropzone } from "react-dropzone";
 import { useNavigate } from "react-router-dom";
-import {
-  UploadCloud,
-  Download,
-  RefreshCw,
-  History,
-  Truck,
-  GitMerge,
-  CheckCircle2,
-  X,
-  FileSpreadsheet,
-} from "lucide-react";
+import { UploadCloud, Download, RefreshCw, History, Truck, GitMerge, CheckCircle2, X, FileSpreadsheet } from "lucide-react";
 import { AnimatePresence, m } from "framer-motion";
 import ExcelJS from "exceljs";
 import Papa from "papaparse";
 import api from "../api";
 import { getSuppliers, createSupplier } from "../services/suppliers.service.js";
 import { safeNumber } from "../utils/number.js";
-
-export default function BulkImport({ fetchData, showToast }) {
-  const navigate = useNavigate();
-  const [importState, dispatchImport] = useReducer(
-    (state, action) => {
-      if (action.type === "RESET_IMPORT") {
-        return {
-          ...state,
-          file: null,
-          headers: [],
-          importProgress: 0,
-          importStatus: "idle",
-          dataPreview: [],
-          duplicateResults: {
-            new: 0,
-            duplicates: 0,
-            conflicts: 0,
-            rows: [],
-            errors: [],
-          },
-          parsedRows: [],
-          commitResult: null,
-        };
-      }
-      if (action.type === "SET_FIELD") {
-        return {
-          ...state,
-          [action.field]:
-            typeof action.value === "function"
-              ? action.value(state[action.field])
-              : action.value,
-        };
-      }
-      return state;
-    },
-    {
-      file: null,
-      headers: [],
-      mapping: {
-        nameColumn: "med_name",
-        qtyColumn: "stock_qty",
-        expiryColumn: "expiry_dt",
-        priceColumn: "price_inr",
-        categoryColumn: "category",
-        batchColumn: "batch_no",
-        barcodeColumn: "barcode",
-        manufacturerColumn: "manufacturer",
-        genericNameColumn: "generic_name",
-        strengthColumn: "strength",
-        dosageFormColumn: "dosage_form",
-        hsnCodeColumn: "hsn_code",
-        gstPercentageColumn: "gst_percent",
-      },
-      importProgress: 0,
-      importStatus: "idle",
-      importType: "New Medicines",
-      selectedSupplier: "None",
-      duplicateStrategy: "Skip",
-      barcodeOptions: { autoGen: true, overwrite: false, validate: true },
-      dataPreview: [],
-      duplicateResults: {
-        new: 0,
-        duplicates: 0,
-        conflicts: 0,
-        rows: [],
-        errors: [],
-      },
-      parsedRows: [],
-      commitResult: null,
-    },
-  );
-
-  const {
-    file,
-    headers,
-    mapping,
-    importProgress,
-    importStatus,
-    importType,
-    selectedSupplier,
-    duplicateStrategy,
-    barcodeOptions,
-    dataPreview,
-    duplicateResults,
-    parsedRows,
-    commitResult,
-  } = importState;
-
-  const setFile = useCallback(
-    (val) => dispatchImport({ type: "SET_FIELD", field: "file", value: val }),
-    [],
-  );
-  const setHeaders = useCallback(
-    (val) =>
-      dispatchImport({ type: "SET_FIELD", field: "headers", value: val }),
-    [],
-  );
-  const setMapping = useCallback(
-    (val) =>
-      dispatchImport({ type: "SET_FIELD", field: "mapping", value: val }),
-    [],
-  );
-  const setImportProgress = useCallback(
-    (val) =>
-      dispatchImport({
-        type: "SET_FIELD",
-        field: "importProgress",
-        value: val,
-      }),
-    [],
-  );
-  const setImportStatus = useCallback(
-    (val) =>
-      dispatchImport({ type: "SET_FIELD", field: "importStatus", value: val }),
-    [],
-  );
-  const setImportType = useCallback(
-    (val) =>
-      dispatchImport({ type: "SET_FIELD", field: "importType", value: val }),
-    [],
-  );
-  const setSelectedSupplier = useCallback(
-    (val) =>
-      dispatchImport({
-        type: "SET_FIELD",
-        field: "selectedSupplier",
-        value: val,
-      }),
-    [],
-  );
-  const setDuplicateStrategy = useCallback(
-    (val) =>
-      dispatchImport({
-        type: "SET_FIELD",
-        field: "duplicateStrategy",
-        value: val,
-      }),
-    [],
-  );
-  const setBarcodeOptions = useCallback(
-    (val) =>
-      dispatchImport({
-        type: "SET_FIELD",
-        field: "barcodeOptions",
-        value: val,
-      }),
-    [],
-  );
-  const setDataPreview = useCallback(
-    (val) =>
-      dispatchImport({ type: "SET_FIELD", field: "dataPreview", value: val }),
-    [],
-  );
-  const setDuplicateResults = useCallback(
-    (val) =>
-      dispatchImport({
-        type: "SET_FIELD",
-        field: "duplicateResults",
-        value: val,
-      }),
-    [],
-  );
-  const setParsedRows = useCallback(
-    (val) =>
-      dispatchImport({ type: "SET_FIELD", field: "parsedRows", value: val }),
-    [],
-  );
-  const setCommitResult = useCallback(
-    (val) =>
-      dispatchImport({ type: "SET_FIELD", field: "commitResult", value: val }),
-    [],
-  );
-
-  const [showHistoryDrawer, setShowHistoryDrawer] = useState(false);
-  const [importHistory, setImportHistory] = useState([]);
-  const [historyLoading, setHistoryLoading] = useState(false);
-  const [suppliersList, setSuppliersList] = useState([]);
-  const [showAddSupplierModal, setShowAddSupplierModal] = useState(false);
-  useEffect(() => {}, [showAddSupplierModal]);
-  useEffect(() => {
-    return () => {
-      if (window._importPollTimer) {
-        clearTimeout(window._importPollTimer);
-        window._importPollTimer = null;
-      }
-    };
-  }, []);
-  const initialTemplates = (() => {
-    try {
-      localStorage.removeItem("bulkImportTemplates");
-      const stored = localStorage.getItem("bulkImportTemplates:v1");
-      return stored ? JSON.parse(stored) : [];
-    } catch (err) {
-      console.error(err);
-      return [];
-    }
-  })();
-
-  const [templateState, dispatchTemplate] = useReducer(
-    (state, action) => {
-      switch (action.type) {
-        case "SAVE_TEMPLATE":
-          return {
-            ...state,
-            savedTemplates: action.payload,
-            showSaveMappingModal: false,
-            templateName: "",
-            templateDesc: "",
-            templateDefault: false,
-          };
-        case "SET_FIELD":
-          return {
-            ...state,
-            [action.field]:
-              typeof action.value === "function"
-                ? action.value(state[action.field])
-                : action.value,
-          };
-        default:
-          return state;
-      }
-    },
-    {
-      savedTemplates: initialTemplates,
-      showSaveMappingModal: false,
-      showLoadMappingModal: false,
-      templateName: "",
-      templateDesc: "",
-      templateDefault: false,
-    },
-  );
-
-  const {
-    savedTemplates,
-    showSaveMappingModal,
-    showLoadMappingModal,
-    templateName,
-    templateDesc,
-    templateDefault,
-  } = templateState;
-
-  const setShowSaveMappingModal = useCallback(
-    (val) =>
-      dispatchTemplate({
-        type: "SET_FIELD",
-        field: "showSaveMappingModal",
-        value: val,
-      }),
-    [],
-  );
-  const setShowLoadMappingModal = useCallback(
-    (val) =>
-      dispatchTemplate({
-        type: "SET_FIELD",
-        field: "showLoadMappingModal",
-        value: val,
-      }),
-    [],
-  );
-  const setTemplateName = useCallback(
-    (val) =>
-      dispatchTemplate({
-        type: "SET_FIELD",
-        field: "templateName",
-        value: val,
-      }),
-    [],
-  );
-  const setTemplateDesc = useCallback(
-    (val) =>
-      dispatchTemplate({
-        type: "SET_FIELD",
-        field: "templateDesc",
-        value: val,
-      }),
-    [],
-  );
-  const setTemplateDefault = useCallback(
-    (val) =>
-      dispatchTemplate({
-        type: "SET_FIELD",
-        field: "templateDefault",
-        value: val,
-      }),
-    [],
-  );
-  const [supplierForm, setSupplierForm] = useState({
-    name: "",
-    contact: "",
-    phone: "",
-    email: "",
-    gst: "",
-    leadTime: "",
-    paymentTerms: "Net 30",
-  });
-
-  const autoMapHeaders = useCallback(
-    (fileHeaders) => {
-      const newMapping = {};
-      const usedHeaders = new Set();
-      const fieldKeywords = {
-        nameColumn: [
-          "name",
-          "med",
-          "medicine",
-          "drug",
-          "item",
-          "product",
-          "description",
-          "med_name",
-        ],
-        qtyColumn: [
-          "qty",
-          "quantity",
-          "stock",
-          "unit",
-          "units",
-          "count",
-          "on hand",
-          "available",
-          "balance",
-        ],
-        expiryColumn: ["expiry", "exp", "date", "valid"],
-        priceColumn: [
-          "price",
-          "rate",
-          "cost",
-          "inr",
-          "purchase rate",
-          "buy price",
-          "mrp",
-          "retail",
-          "selling",
-        ],
-        batchColumn: ["batch", "lot", "no", "code"],
-        barcodeColumn: ["barcode", "upc", "ean", "sku"],
-        categoryColumn: ["category", "cat", "type", "group", "classification"],
-        manufacturerColumn: [
-          "manufacturer",
-          "mfr",
-          "maker",
-          "brand",
-          "company",
-          "vendor",
-        ],
-        genericNameColumn: ["generic", "gen", "salt", "composition"],
-        strengthColumn: ["strength", "mg", "ml", "dose", "concentration"],
-        dosageFormColumn: ["dosage", "form", "type", "drug_form"],
-        hsnCodeColumn: ["hsn", "hsn_code", "hsncode", "sac", "tariff"],
-        gstPercentageColumn: ["gst", "gst%", "tax", "tax_percent"],
-      };
-
-      const fieldExcludes = {
-        nameColumn: [
-          "generic",
-          "price",
-          "rate",
-          "cost",
-          "qty",
-          "quantity",
-          "stock",
-          "expiry",
-          "date",
-          "batch",
-          "barcode",
-          "sku",
-        ],
-        qtyColumn: [
-          "price",
-          "rate",
-          "cost",
-          "inr",
-          "date",
-          "expiry",
-          "name",
-          "med",
-          "batch",
-          "barcode",
-          "sku",
-        ],
-        expiryColumn: [
-          "name",
-          "med",
-          "price",
-          "qty",
-          "batch",
-          "barcode",
-          "sku",
-        ],
-        priceColumn: [
-          "qty",
-          "quantity",
-          "stock",
-          "units",
-          "count",
-          "name",
-          "med",
-          "expiry",
-          "date",
-          "batch",
-          "barcode",
-          "sku",
-        ],
-        batchColumn: [
-          "name",
-          "med",
-          "price",
-          "qty",
-          "expiry",
-          "date",
-          "barcode",
-          "hsn",
-        ],
-        barcodeColumn: [
-          "name",
-          "med",
-          "price",
-          "qty",
-          "expiry",
-          "date",
-          "batch",
-        ],
-        categoryColumn: [
-          "name",
-          "med",
-          "price",
-          "qty",
-          "expiry",
-          "date",
-          "batch",
-          "barcode",
-          "generic",
-        ],
-        manufacturerColumn: [
-          "name",
-          "med",
-          "price",
-          "qty",
-          "expiry",
-          "date",
-          "batch",
-          "barcode",
-          "generic",
-          "category",
-        ],
-        genericNameColumn: [
-          "name",
-          "med",
-          "price",
-          "qty",
-          "expiry",
-          "date",
-          "batch",
-          "barcode",
-        ],
-        strengthColumn: [
-          "name",
-          "med",
-          "price",
-          "qty",
-          "expiry",
-          "date",
-          "batch",
-          "barcode",
-        ],
-        dosageFormColumn: [
-          "name",
-          "med",
-          "price",
-          "qty",
-          "expiry",
-          "date",
-          "batch",
-          "barcode",
-        ],
-        hsnCodeColumn: [
-          "name",
-          "med",
-          "price",
-          "qty",
-          "expiry",
-          "date",
-          "batch",
-          "barcode",
-        ],
-        gstPercentageColumn: [
-          "name",
-          "med",
-          "price",
-          "qty",
-          "expiry",
-          "date",
-          "batch",
-          "barcode",
-        ],
-      };
-
-      if (fileHeaders.length <= 1) {
-        showToast(
-          "Import file has no column delimiters. Use a comma-separated CSV.",
-          "error",
-        );
-        return;
-      }
-
-      const fieldOrder = [
-        "nameColumn",
-        "qtyColumn",
-        "expiryColumn",
-        "priceColumn",
-        "batchColumn",
-        "barcodeColumn",
-        "categoryColumn",
-        "manufacturerColumn",
-        "genericNameColumn",
-        "strengthColumn",
-        "dosageFormColumn",
-        "hsnCodeColumn",
-        "gstPercentageColumn",
-      ];
-
-      fieldOrder.forEach((field) => {
-        const match = fileHeaders.find((header) => {
-          if (usedHeaders.has(header)) return false;
-          const lower = header.toLowerCase();
-          const excludes = fieldExcludes[field] || [];
-          const hasExclude = excludes.some((ex) => lower.includes(ex));
-          if (hasExclude) return false;
-
-          return fieldKeywords[field].some((keyword) =>
-            lower.includes(keyword),
-          );
-        });
-        if (match) {
-          newMapping[field] = match;
-          usedHeaders.add(match);
-        }
-      });
-
-      setMapping((prev) => ({ ...prev, ...newMapping }));
-    },
-    [setMapping, showToast],
-  );
-
-  const normalizeDate = (dateStr) => {
-    if (!dateStr) return null;
-    const trimmed = String(dateStr).trim();
-    const numVal = Number(trimmed);
-    if (!isNaN(numVal) && numVal > 10000 && numVal < 100000) {
-      const excelEpoch = new Date(1899, 11, 30);
-      const date = new Date(excelEpoch.getTime() + numVal * 86400000);
-      if (!isNaN(date.getTime())) return date.toISOString().split("T")[0];
-    }
-    const d = new Date(trimmed);
-    if (!isNaN(d.getTime())) return d.toISOString().split("T")[0];
-    return trimmed;
-  };
-
-  const getMappedMedicines = useCallback(() => {
-    const result = parsedRows.map((row) => {
-      const name = String(row[mapping.nameColumn] || "").trim();
-      const qtyStr = mapping.qtyColumn
-        ? String(row[mapping.qtyColumn] ?? "").trim()
-        : "";
-      const priceStr = mapping.priceColumn
-        ? String(row[mapping.priceColumn] ?? "").trim()
-        : "";
-      const expiryStr = mapping.expiryColumn
-        ? String(row[mapping.expiryColumn] ?? "").trim()
-        : "";
-
-      return {
-        name,
-        qty: qtyStr ? Number(qtyStr.replace(/[^0-9.-]/g, "")) || 0 : 0,
-        expiry: normalizeDate(expiryStr),
-        price: priceStr ? Number(priceStr.replace(/[^0-9.-]/g, "")) || 0 : 0,
-        batch: String(row[mapping.batchColumn] || "").trim(),
-        barcode: String(row[mapping.barcodeColumn] || "").trim(),
-        category: String(row[mapping.categoryColumn] || "").trim(),
-        manufacturer: String(row[mapping.manufacturerColumn] || "").trim(),
-        genericName: String(row[mapping.genericNameColumn] || "").trim(),
-        strength: String(row[mapping.strengthColumn] || "").trim(),
-        dosageForm: String(row[mapping.dosageFormColumn] || "").trim(),
-        hsnCode: String(row[mapping.hsnCodeColumn] || "").trim(),
-        gstPercentage: String(row[mapping.gstPercentageColumn] || "").trim(),
-      };
-    });
-
-    if (result.length > 0) {
-      const vals = Object.values(result[0]);
-      const uniqueVals = new Set(
-        vals.filter((v) => v !== "" && v !== 0 && v !== null),
-      );
-      if (uniqueVals.size === 1 && result[0].name !== "") {
-        console.error(
-          "[BulkImport] CRITICAL: All fields have identical value. Mapping is broken.",
-          {
-            mapping,
-            sampleRow: parsedRows[0],
-          },
-        );
-      }
-    }
-
-    return result;
-  }, [parsedRows, mapping]);
-
-  useEffect(() => {
-    let active = true;
-    const load = async () => {
-      try {
-        const res = await getSuppliers();
-        if (active && res.data?.success) {
-          setSuppliersList(res.data.data);
-        }
-      } catch (err) {
-        console.error("Failed to load suppliers", err);
-      }
-    };
-    load();
-    return () => {
-      active = false;
-    };
-  }, []);
-
-  useEffect(() => {
-    let active = true;
-    if (showHistoryDrawer) {
-      const fetchHist = async () => {
-        setHistoryLoading(true);
-        try {
-          const res = await api.get("/import/history");
-          if (!active) return;
-          if (res.data?.success) {
-            setImportHistory(res.data.data);
-          }
-        } catch (err) {
-          if (!active) return;
-          console.error(err);
-          showToast(err.message || "Failed to fetch import history", "error");
-        } finally {
-          if (active) setHistoryLoading(false);
-        }
-      };
-      fetchHist();
-    }
-    return () => {
-      active = false;
-    };
-  }, [showHistoryDrawer, showToast]);
-
-  const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const isAnalyzingRef = useRef(false);
-
-  const handleAnalyzeImport = useCallback(async () => {
-    if (isAnalyzingRef.current) return;
-    if (!file) {
-      showToast("Upload a file first", "error");
-      return;
-    }
-    if (!mapping.nameColumn || !mapping.qtyColumn) {
-      showToast("Required field mappings missing (Name + Quantity)", "error");
-      return;
-    }
-
-    isAnalyzingRef.current = true;
-    setIsAnalyzing(true);
-    const medicines = getMappedMedicines();
-    try {
-      const res = await api.post("/import/bulk/analyze", {
-        medicines,
-        supplier: selectedSupplier,
-        duplicateStrategy,
-        barcodeOptions,
-      });
-      if (res.data?.success) {
-        setDuplicateResults(res.data.summary);
-        showToast("✓ Import analysis / duplicate scan completed", "success");
-      } else {
-        throw new Error(res.data?.message || "Failed to analyze import data");
-      }
-    } catch (err) {
-      console.error(err);
-      showToast(err.message || "Failed to analyze import data", "error");
-    } finally {
-      isAnalyzingRef.current = false;
-      setIsAnalyzing(false);
-    }
-  }, [
-    file,
-    mapping.nameColumn,
-    mapping.qtyColumn,
-    getMappedMedicines,
-    showToast,
-    selectedSupplier,
-    duplicateStrategy,
-    barcodeOptions,
-    setDuplicateResults,
-  ]);
-
-  const onDrop = useCallback(
-    async (files) => {
-      const f = files[0];
-      if (!f) return;
-      setFile(f);
-
-      try {
-        if (f.name.endsWith(".csv")) {
-          Papa.parse(f, {
-            header: true,
-            skipEmptyLines: true,
-            delimiter: ",",
-            dynamicTyping: false,
-            complete: (results) => {
-              const parsedHeaders = results.meta.fields || [];
-              const parsedData = results.data;
-
-              if (parsedData.length > 10000) {
-                showToast(
-                  `Import exceeds maximum supported size (10,000 rows). Your file has ${parsedData.length.toLocaleString()} rows. Please split the file or reduce the size.`,
-                  "error",
-                );
-                setFile(null);
-                return;
-              }
-
-              if (parsedHeaders.length <= 1 && parsedData.length > 0) {
-                const val = Object.values(parsedData[0])[0] || "";
-                showToast(
-                  `CSV has no column delimiters. Only 1 column detected. Value: "${val.slice(0, 60)}..."`,
-                  "error",
-                );
-                return;
-              }
-
-              setHeaders(parsedHeaders);
-              setParsedRows(parsedData);
-              setDataPreview(parsedData.slice(0, 5));
-              autoMapHeaders(parsedHeaders);
-              showToast(`✓ CSV File ${f.name} loaded successfully`, "success");
-            },
-            error: (err) => {
-              console.error("[BulkImport] PapaParse Error:", err);
-              showToast("Failed to parse CSV file", "error");
-            },
-          });
-        } else if (f.name.endsWith(".xlsx")) {
-          const reader = new FileReader();
-          reader.onload = async (e) => {
-            const buffer = e.target.result;
-            const workbook = new ExcelJS.Workbook();
-            await workbook.xlsx.load(buffer);
-            const worksheet = workbook.getWorksheet(1);
-
-            const totalRowsCount = worksheet.rowCount - 1;
-            if (totalRowsCount > 10000) {
-              showToast(
-                `Import exceeds maximum supported size (10,000 rows). Your file has ${totalRowsCount.toLocaleString()} rows. Please split the file or reduce the size.`,
-                "error",
-              );
-              setFile(null);
-              return;
-            }
-
-            const parsedHeaders = [];
-            const parsedData = [];
-            worksheet.eachRow({ includeEmpty: false }, (row, rowNumber) => {
-              if (rowNumber === 1) {
-                row.eachCell({ includeEmpty: true }, (cell) => {
-                  parsedHeaders.push(String(cell.value || "").trim());
-                });
-              } else {
-                const rowObj = {};
-                parsedHeaders.forEach((header, index) => {
-                  const cell = row.getCell(index + 1);
-                  let val = cell.value;
-                  if (val && typeof val === "object") {
-                    if (val.result !== undefined) val = val.result;
-                    else if (val.richText)
-                      val = val.richText.map((t) => t.text).join("");
-                    else if (val instanceof Date)
-                      val = val.toISOString().split("T")[0];
-                  }
-                  rowObj[header] =
-                    val !== null && val !== undefined ? String(val).trim() : "";
-                });
-                parsedData.push(rowObj);
-              }
-            });
-            setHeaders(parsedHeaders);
-            setParsedRows(parsedData);
-            setDataPreview(parsedData.slice(0, 5));
-            autoMapHeaders(parsedHeaders);
-            showToast(`Excel File ${f.name} loaded successfully`, "success");
-          };
-          reader.readAsArrayBuffer(f);
-        }
-      } catch (err) {
-        console.error(err);
-        showToast("Failed to parse file", "error");
-      }
-    },
-    [
-      setFile,
-      setHeaders,
-      setParsedRows,
-      setDataPreview,
-      autoMapHeaders,
-      showToast,
-    ],
-  );
-
-  const { getRootProps, getInputProps, isDragActive, open } = useDropzone({
-    onDrop,
-    noClick: true,
-    accept: {
-      "text/csv": [".csv"],
-      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": [
-        ".xlsx",
-      ],
-    },
-  });
-
-  const downloadSampleTemplate = () => {
-    const link = document.createElement("a");
-    link.href = "/templates/pharmacy_import_template.xlsx";
-    link.download = "pharmacy_import_template.xlsx";
-    link.click();
-    showToast("Sample template downloaded", "success");
-  };
-
-  const resetMappingToAI = () => {
-    setMapping({
-      nameColumn: "med_name",
-      qtyColumn: "stock_qty",
-      expiryColumn: "expiry_dt",
-      priceColumn: "price_inr",
-      batchColumn: "batch_no",
-      categoryColumn: "",
-      manufacturerColumn: "",
-      barcodeColumn: "barcode",
-      genericNameColumn: "",
-      strengthColumn: "",
-      dosageFormColumn: "",
-      hsnCodeColumn: "",
-      gstPercentageColumn: "",
-    });
-    showToast("AI mapping restored", "success");
-  };
-
-  const handleDuplicateAction = (row, action) => {
-    showToast(`${action} selected for ${row.name}`, "info");
-  };
-
-  const handleViewImport = (item) => {
-    showToast(`Viewing ${item?.id || "Import"}`, "info");
-  };
-
-  const handleDownloadImport = (item) => {
-    showToast(
-      `Downloading ${item?.name || item?.fileName || "Report"}`,
-      "success",
-    );
-  };
-
-  const saveTemplate = () => {
-    if (!templateName.trim()) {
-      showToast("Template name required", "error");
-      return;
-    }
-    const newTemplate = {
-      name: templateName,
-      description: templateDesc,
-      mapping,
-      default: templateDefault,
-      date: new Date().toLocaleDateString(),
-    };
-    const updated = [...savedTemplates, newTemplate];
-    dispatchTemplate({ type: "SAVE_TEMPLATE", payload: updated });
-    localStorage.setItem("bulkImportTemplates:v1", JSON.stringify(updated));
-    showToast("Template saved", "success");
-  };
-
-  const loadTemplate = (template) => {
-    setMapping(template.mapping);
-    showToast(`${template.name} loaded`, "success");
-    setShowLoadMappingModal(false);
-  };
-
-  const isSavingSupplierRef = useRef(false);
-
-  const saveSupplier = async () => {
-    if (isSavingSupplierRef.current) return;
-    if (!supplierForm.name.trim()) {
-      showToast("Supplier name required", "error");
-      return;
-    }
-    isSavingSupplierRef.current = true;
-
-    try {
-      const payload = {
-        name: supplierForm.name.trim(),
-        contactPerson: supplierForm.contact.trim(),
-        phone: supplierForm.phone.trim(),
-        email: supplierForm.email.trim(),
-        gstNumber: supplierForm.gst.trim(),
-
-        leadTimeDays: safeNumber(supplierForm.leadTime || 7),
-
-        paymentTermsDays:
-          supplierForm.paymentTerms === "Net 15"
-            ? 15
-            : supplierForm.paymentTerms === "Net 30"
-              ? 30
-              : 0,
-
-        status: "ACTIVE",
-      };
-
-      const res = await createSupplier(payload);
-
-      if (res.data?.success) {
-        await getSuppliers().then((r) => {
-          if (r.data?.success) {
-            setSuppliersList(r.data.data);
-          }
-        });
-        setSelectedSupplier(supplierForm.name);
-        setShowAddSupplierModal(false);
-        setSupplierForm({
-          name: "",
-          contact: "",
-          phone: "",
-          email: "",
-          gst: "",
-          leadTime: "",
-          paymentTerms: "Net 30",
-        });
-        showToast("Supplier Added", "success");
-      }
-    } catch (err) {
-      console.error(err);
-      showToast(err.response?.data?.error || "Failed to add supplier", "error");
-    } finally {
-      isSavingSupplierRef.current = false;
-    }
-  };
-
-  const importProcessingRef = useRef(false);
-  const handleStartImport = async () => {
-    if (importProcessingRef.current) return;
-    if (!file) {
-      showToast("Upload a file first", "error");
-      return;
-    }
-    if (!mapping.nameColumn || !mapping.qtyColumn) {
-      showToast("Required field mappings missing (Name + Quantity)", "error");
-      return;
-    }
-
-    importProcessingRef.current = true;
-    setImportStatus("processing");
-    setImportProgress(15);
-
-    const medicines = getMappedMedicines();
-    try {
-      setImportProgress(45);
-
-      const res = await api.post("/import/bulk/commit", {
-        medicines,
-        fileName: file?.name || "bulk_import.csv",
-        supplier: selectedSupplier,
-        duplicateStrategy,
-        barcodeOptions,
-      });
-
-      if (res.data?.success) {
-        setImportProgress(100);
-        setImportStatus("complete");
-        setCommitResult({
-          ...(res.data.summary || {}),
-          errors: res.data.errors || [],
-        });
-        const imported = res.data.summary?.imported ?? 0;
-        const duplicates = res.data.summary?.duplicates ?? 0;
-        const failed = res.data.summary?.failed ?? 0;
-        showToast(
-          `Import complete: ${imported} imported, ${duplicates} duplicates, ${failed} failed`,
-          imported > 0 ? "success" : "warning",
-        );
-        if (fetchData) fetchData();
-      } else {
-        throw new Error(res.data?.message || "Failed to commit import");
-      }
-    } catch (error) {
-      console.error(error);
-      setImportStatus("idle");
-      const errMsg =
-        error.response?.data?.message ||
-        error.message ||
-        "Failed to commit import";
-      showToast(errMsg, "error");
-    } finally {
-      importProcessingRef.current = false;
-    }
-  };
-
-  const cancelImport = () => {
-    if (window._importPollTimer) {
-      clearTimeout(window._importPollTimer);
-      window._importPollTimer = null;
-    }
-    setImportStatus("idle");
-    showToast("Import cancelled", "info");
-  };
-
-  const fields = [
-    { key: "nameColumn", label: "Medication Name" },
-    { key: "qtyColumn", label: "Units in Stock" },
-    { key: "expiryColumn", label: "Expiry Date" },
-    { key: "priceColumn", label: "Unit Price (INR)" },
-    { key: "batchColumn", label: "Batch Number" },
-    { key: "barcodeColumn", label: "Barcode / SKU" },
-    { key: "categoryColumn", label: "Category" },
-    { key: "manufacturerColumn", label: "Manufacturer" },
-    { key: "genericNameColumn", label: "Generic Name" },
-    { key: "strengthColumn", label: "Strength" },
-    { key: "dosageFormColumn", label: "Dosage Form" },
-    { key: "hsnCodeColumn", label: "HSN Code" },
-    { key: "gstPercentageColumn", label: "GST %" },
-  ];
-
-  return (
-    <div className="import-hub-container">
-      <div className="import-header-v2">
-        <div className="header-left">
-          <div className="import-pill">
-            <UploadCloud size={12} />
-            <span>SMART IMPORT HUB</span>
-          </div>
-          <h1>Bulk Inventory Import</h1>
-          <p>
-            Upload CSV or XLSX files to synchronize pharmacy stock with live
-            data mapping.
-          </p>
-        </div>
-        <div className="header-actions">
-          <button
-            type="button"
-            className="pos-btn outline"
-            onClick={downloadSampleTemplate}
-          >
-            <Download size={16} />
-            <span>Sample Template</span>
-          </button>
-          <button
-            className="pos-btn outline"
-            onClick={() => setShowHistoryDrawer(true)}
-          >
-            <History size={16} />
-            <span>Import History</span>
-          </button>
-        </div>
-      </div>
-
-      {importStatus === "complete" ? (
-        <m.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="import-results-card"
-        >
+const fieldKeywords = {
+  nameColumn: ["name", "med", "medicine", "drug", "item", "product", "description", "med_name"],
+  qtyColumn: ["qty", "quantity", "stock", "unit", "units", "count", "on hand", "available", "balance"],
+  expiryColumn: ["expiry", "exp", "date", "valid"],
+  priceColumn: ["price", "rate", "cost", "inr", "purchase rate", "buy price", "mrp", "retail", "selling"],
+  batchColumn: ["batch", "lot", "no", "code"],
+  barcodeColumn: ["barcode", "upc", "ean", "sku"],
+  categoryColumn: ["category", "cat", "type", "group", "classification"],
+  manufacturerColumn: ["manufacturer", "mfr", "maker", "brand", "company", "vendor"],
+  genericNameColumn: ["generic", "gen", "salt", "composition"],
+  strengthColumn: ["strength", "mg", "ml", "dose", "concentration"],
+  dosageFormColumn: ["dosage", "form", "type", "drug_form"],
+  hsnCodeColumn: ["hsn", "hsn_code", "hsncode", "sac", "tariff"],
+  gstPercentageColumn: ["gst", "gst%", "tax", "tax_percent"]
+};
+const fieldExcludes = {
+  nameColumn: ["generic", "price", "rate", "cost", "qty", "quantity", "stock", "expiry", "date", "batch", "barcode", "sku"],
+  qtyColumn: ["price", "rate", "cost", "inr", "date", "expiry", "name", "med", "batch", "barcode", "sku"],
+  expiryColumn: ["name", "med", "price", "qty", "batch", "barcode", "sku"],
+  priceColumn: ["qty", "quantity", "stock", "units", "count", "name", "med", "expiry", "date", "batch", "barcode", "sku"],
+  batchColumn: ["name", "med", "price", "qty", "expiry", "date", "barcode", "hsn"],
+  barcodeColumn: ["name", "med", "price", "qty", "expiry", "date", "batch"],
+  categoryColumn: ["name", "med", "price", "qty", "expiry", "date", "batch", "barcode", "generic"],
+  manufacturerColumn: ["name", "med", "price", "qty", "expiry", "date", "batch", "barcode", "generic", "category"],
+  genericNameColumn: ["name", "med", "price", "qty", "expiry", "date", "batch", "barcode"],
+  strengthColumn: ["name", "med", "price", "qty", "expiry", "date", "batch", "barcode"],
+  dosageFormColumn: ["name", "med", "price", "qty", "expiry", "date", "batch", "barcode"],
+  hsnCodeColumn: ["name", "med", "price", "qty", "expiry", "date", "batch", "barcode"],
+  gstPercentageColumn: ["name", "med", "price", "qty", "expiry", "date", "batch", "barcode"]
+};
+const fieldOrder = ["nameColumn", "qtyColumn", "expiryColumn", "priceColumn", "batchColumn", "barcodeColumn", "categoryColumn", "manufacturerColumn", "genericNameColumn", "strengthColumn", "dosageFormColumn", "hsnCodeColumn", "gstPercentageColumn"];
+const fields = [{
+  key: "nameColumn",
+  label: "Medication Name"
+}, {
+  key: "qtyColumn",
+  label: "Units in Stock"
+}, {
+  key: "expiryColumn",
+  label: "Expiry Date"
+}, {
+  key: "priceColumn",
+  label: "Unit Price (INR)"
+}, {
+  key: "batchColumn",
+  label: "Batch Number"
+}, {
+  key: "barcodeColumn",
+  label: "Barcode / SKU"
+}, {
+  key: "categoryColumn",
+  label: "Category"
+}, {
+  key: "manufacturerColumn",
+  label: "Manufacturer"
+}, {
+  key: "genericNameColumn",
+  label: "Generic Name"
+}, {
+  key: "strengthColumn",
+  label: "Strength"
+}, {
+  key: "dosageFormColumn",
+  label: "Dosage Form"
+}, {
+  key: "hsnCodeColumn",
+  label: "HSN Code"
+}, {
+  key: "gstPercentageColumn",
+  label: "GST %"
+}];
+const normalizeDate = dateStr => {
+  if (!dateStr) return null;
+  const trimmed = String(dateStr).trim();
+  const numVal = Number(trimmed);
+  if (!isNaN(numVal) && numVal > 10000 && numVal < 100000) {
+    const excelEpoch = new Date(1899, 11, 30);
+    const date = new Date(excelEpoch.getTime() + numVal * 86400000);
+    if (!isNaN(date.getTime())) return date.toISOString().split("T")[0];
+  }
+  const d = new Date(trimmed);
+  if (!isNaN(d.getTime())) return d.toISOString().split("T")[0];
+  return trimmed;
+};
+function BulkImportSection1({
+  commitResult,
+  field,
+  navigate,
+  setFile,
+  setImportStatus,
+  setCommitResult,
+  headers,
+  row,
+  importType,
+  setImportType,
+  t,
+  setShowAddSupplierModal,
+  setSelectedSupplier,
+  e,
+  setDuplicateStrategy,
+  opt,
+  duplicateStrategy,
+  setBarcodeOptions,
+  barcodeOptions,
+  mapping,
+  setMapping,
+  f,
+  setShowSaveMappingModal,
+  setShowLoadMappingModal,
+  handleDuplicateAction,
+  r,
+  showToast
+}) {
+  return importStatus === "complete" ? <m.div initial={{
+    opacity: 0,
+    y: 20
+  }} animate={{
+    opacity: 1,
+    y: 0
+  }} className="import-results-card">
           <div className="results-header">
-            <CheckCircle2 size={48} style={{ color: "var(--primary)" }} />
+            <CheckCircle2 size={48} style={{
+        color: "var(--primary)"
+      }} />
             <div>
               <h2>Import Complete!</h2>
               <p>
                 {commitResult?.imported ?? 0} records imported
                 {commitResult?.failed > 0 && ` · ${commitResult.failed} failed`}
-                {commitResult?.duplicates > 0 &&
-                  ` · ${commitResult.duplicates} duplicates processed`}
+                {commitResult?.duplicates > 0 && ` · ${commitResult.duplicates} duplicates processed`}
               </p>
             </div>
           </div>
 
-          {commitResult?.errors?.length > 0 && (
-            <div className="error-details-section">
+          {commitResult?.errors?.length > 0 && <div className="error-details-section">
               <h3>{commitResult.errors.length} Records Failed</h3>
               <div className="error-summary-badges">
-                {[...new Set(commitResult.errors.map((e) => e.field))].map(
-                  (field) => {
-                    const count = commitResult.errors.filter(
-                      (e) => e.field === field,
-                    ).length;
-                    return (
-                      <span
-                        key={field}
-                        className="match-badge danger"
-                        style={{ margin: "0 4px" }}
-                      >
+                {[...new Set(commitResult.errors.map(e => e.field))].map(field => {
+          const count = commitResult.errors.filter(e => e.field === field).length;
+          return <span key={field} className="match-badge danger" style={{
+            margin: "0 4px"
+          }}>
                         {field}: {count}
-                      </span>
-                    );
-                  },
-                )}
+                      </span>;
+        })}
               </div>
-              <div
-                className="table-overflow"
-                style={{ maxHeight: "400px", marginTop: "12px" }}
-              >
+              <div className="table-overflow" style={{
+        maxHeight: "400px",
+        marginTop: "12px"
+      }}>
                 <table className="results-table">
                   <thead>
                     <tr>
@@ -1138,67 +169,51 @@ export default function BulkImport({ fetchData, showToast }) {
                     </tr>
                   </thead>
                   <tbody>
-                    {commitResult.errors.map((err, errIdx) => (
-                      <tr
-                        key={
-                          err.id ||
-                          `${err.row}-${err.field || err.name || errIdx}`
-                        }
-                      >
+                    {commitResult.errors.map((err, errIdx) => <tr key={err.id || `${err.row}-${err.field || err.name || errIdx}`}>
                         <td>Row {err.row}</td>
                         <td>{err.name || "Unknown"}</td>
                         <td>
-                          <span
-                            className="match-badge danger"
-                            style={{ fontSize: "11px" }}
-                          >
+                          <span className="match-badge danger" style={{
+                  fontSize: "11px"
+                }}>
                             {err.field || "—"}
                           </span>
                         </td>
-                        <td
-                          style={{ fontFamily: "monospace", fontSize: "12px" }}
-                        >
-                          {err.value !== undefined &&
-                          err.value !== null &&
-                          err.value !== ""
-                            ? `"${err.value}"`
-                            : "(empty)"}
+                        <td style={{
+                fontFamily: "monospace",
+                fontSize: "12px"
+              }}>
+                          {err.value !== undefined && err.value !== null && err.value !== "" ? `"${err.value}"` : "(empty)"}
                         </td>
-                        <td style={{ color: "var(--danger)" }}>
+                        <td style={{
+                color: "var(--danger)"
+              }}>
                           {err.message || err.reason}
                         </td>
-                      </tr>
-                    ))}
+                      </tr>)}
                   </tbody>
                 </table>
               </div>
-            </div>
-          )}
+            </div>}
 
           <div className="results-actions">
             <button className="pos-btn teal" onClick={() => navigate("/stock")}>
               View Stock
             </button>
-            <button
-              className="pos-btn outline"
-              onClick={() => {
-                setFile(null);
-                setImportStatus("idle");
-                setCommitResult(null);
-              }}
-            >
+            <button className="pos-btn outline" onClick={() => {
+        setFile(null);
+        setImportStatus("idle");
+        setCommitResult(null);
+      }}>
               Import Another
             </button>
           </div>
-        </m.div>
-      ) : importStatus === "processing" ? (
-        <div className="import-progress-card">
+        </m.div> : importStatus === "processing" ? <div className="import-progress-card">
           <h3>Processing Import...</h3>
           <div className="progress-bar-wrap">
-            <div
-              className="progress-bar-fill"
-              style={{ width: `${importProgress}%` }}
-            >
+            <div className="progress-bar-fill" style={{
+        width: `${importProgress}%`
+      }}>
               {importProgress}%
             </div>
           </div>
@@ -1208,26 +223,18 @@ export default function BulkImport({ fetchData, showToast }) {
             complete)...
           </p>
 
-          <button
-            className="pos-btn outline danger"
-            style={{ marginTop: 20 }}
-            onClick={cancelImport}
-          >
+          <button className="pos-btn outline danger" style={{
+      marginTop: 20
+    }} onClick={cancelImport}>
             Cancel Import
           </button>
-        </div>
-      ) : (
-        <>
+        </div> : <>
           <div className="import-layout-grid">
             <div className="layout-col-left">
               <div className="dropzone-card-v2">
-                <div
-                  {...getRootProps()}
-                  className={`dropzone-inner-v2 ${isDragActive ? "active" : ""}`}
-                >
+                <div {...getRootProps()} className={`dropzone-inner-v2 ${isDragActive ? "active" : ""}`}>
                   <input required {...getInputProps()} />
-                  {file ? (
-                    <div className="file-selected-state">
+                  {file ? <div className="file-selected-state">
                       <div className="file-info-row">
                         <div className="file-icon-box csv">
                           <FileSpreadsheet size={24} />
@@ -1238,14 +245,10 @@ export default function BulkImport({ fetchData, showToast }) {
                             {(file.size / 1024).toFixed(1)} KB · CSV File
                           </div>
                         </div>
-                        <button
-                          type="button"
-                          className="remove-file-btn"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setFile(null);
-                          }}
-                        >
+                        <button type="button" className="remove-file-btn" onClick={e => {
+                  e.stopPropagation();
+                  setFile(null);
+                }}>
                           <X size={16} />
                         </button>
                       </div>
@@ -1266,25 +269,13 @@ export default function BulkImport({ fetchData, showToast }) {
                           <table className="preview-table">
                             <thead>
                               <tr>
-                                {headers.slice(0, 5).map((h) => (
-                                  <th key={h}>{h}</th>
-                                ))}
+                                {headers.slice(0, 5).map(h => <th key={h}>{h}</th>)}
                               </tr>
                             </thead>
                             <tbody>
-                              {dataPreview.map((row, rIdx) => (
-                                <tr
-                                  key={
-                                    row.id || row.name
-                                      ? `${row.id || row.name}-${rIdx}`
-                                      : `preview-row-${rIdx}`
-                                  }
-                                >
-                                  {headers.slice(0, 5).map((h) => (
-                                    <td key={h}>{row[h] || "---"}</td>
-                                  ))}
-                                </tr>
-                              ))}
+                              {dataPreview.map((row, rIdx) => <tr key={row.id || row.name ? `${row.id || row.name}-${rIdx}` : `preview-row-${rIdx}`}>
+                                  {headers.slice(0, 5).map(h => <td key={h}>{row[h] || "---"}</td>)}
+                                </tr>)}
                             </tbody>
                           </table>
                         </div>
@@ -1293,23 +284,16 @@ export default function BulkImport({ fetchData, showToast }) {
                           {parsedRows.length} rows
                         </div>
                       </div>
-                    </div>
-                  ) : (
-                    <div className="empty-upload-state">
+                    </div> : <div className="empty-upload-state">
                       <div className="upload-icon-wrap">
                         <UploadCloud size={48} />
                       </div>
                       <h3>Drag and drop file</h3>
                       <p>Support for CSV, XLSX and JSON · Maximum 25MB</p>
-                      <button
-                        type="button"
-                        className="select-btn-large"
-                        onClick={open}
-                      >
+                      <button type="button" className="select-btn-large" onClick={open}>
                         Select Local File
                       </button>
-                    </div>
-                  )}
+                    </div>}
                 </div>
               </div>
 
@@ -1319,19 +303,9 @@ export default function BulkImport({ fetchData, showToast }) {
                 <div className="config-row">
                   <span className="p-label">IMPORT TYPE</span>
                   <div className="pill-selector">
-                    {[
-                      "New Medicines",
-                      "Update Existing",
-                      "Stock Entry Only",
-                    ].map((t) => (
-                      <button
-                        key={t}
-                        className={`pill ${importType === t ? "active" : ""}`}
-                        onClick={() => setImportType(t)}
-                      >
+                    {["New Medicines", "Update Existing", "Stock Entry Only"].map(t => <button key={t} className={`pill ${importType === t ? "active" : ""}`} onClick={() => setImportType(t)}>
                         {t}
-                      </button>
-                    ))}
+                      </button>)}
                   </div>
                 </div>
 
@@ -1340,88 +314,60 @@ export default function BulkImport({ fetchData, showToast }) {
                     TAG THIS IMPORT TO SUPPLIER
                   </label>
                   <div className="supplier-select-wrap">
-                    <select
-                      id="field_84m1br"
-                      className="pos-input"
-                      value={selectedSupplier}
-                      onChange={(e) => {
-                        if (e.target.value === "ADD_NEW") {
-                          setShowAddSupplierModal(true);
-                        } else {
-                          setSelectedSupplier(e.target.value);
-                        }
-                      }}
-                    >
+                    <select id="field_84m1br" className="pos-input" value={selectedSupplier} onChange={e => {
+                if (e.target.value === "ADD_NEW") {
+                  setShowAddSupplierModal(true);
+                } else {
+                  setSelectedSupplier(e.target.value);
+                }
+              }}>
                       <option value="None">None — No supplier</option>
-                      {suppliersList.map((sup) => (
-                        <option key={sup.id} value={sup.name}>
+                      {suppliersList.map(sup => <option key={sup.id} value={sup.name}>
                           {sup.name}
-                        </option>
-                      ))}
+                        </option>)}
                       <option disabled>──────────</option>
                       <option value="ADD_NEW">+ Add New Supplier</option>
                     </select>
-                    {selectedSupplier !== "None" && (
-                      <div className="supplier-alert">
+                    {selectedSupplier !== "None" && <div className="supplier-alert">
                         <Truck size={14} />
                         <span>
                           All {parsedRows.length} medicines will be tagged to:{" "}
                           {selectedSupplier}
                         </span>
-                        <button
-                          type="button"
-                          onClick={() => setSelectedSupplier("None")}
-                        >
+                        <button type="button" onClick={() => setSelectedSupplier("None")}>
                           Change
                         </button>
-                      </div>
-                    )}
+                      </div>}
                   </div>
                 </div>
 
                 <div className="config-row">
                   <span className="p-label">IF DUPLICATE FOUND</span>
                   <div className="radio-group-vertical">
-                    {[
-                      {
-                        id: "Skip",
-                        desc: "Keep existing record, don't overwrite",
-                      },
-                      {
-                        id: "Overwrite",
-                        desc: "Replace existing with imported data",
-                      },
-                      {
-                        id: "Merge",
-                        desc: "Keep existing fields, fill only blanks",
-                      },
-                      {
-                        id: "Ask me",
-                        desc: "Pause and show conflict for each duplicate",
-                      },
-                    ].map((opt) => (
-                      <div
-                        role="button"
-                        tabIndex={0}
-                        key={opt.id}
-                        className="radio-item"
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter" || e.key === " ") {
-                            e.preventDefault();
-                            e.currentTarget.click();
-                          }
-                        }}
-                        onClick={() => setDuplicateStrategy(opt.id)}
-                      >
-                        <div
-                          className={`radio-dot ${duplicateStrategy === opt.id ? "active" : ""}`}
-                        />
+                    {[{
+                id: "Skip",
+                desc: "Keep existing record, don't overwrite"
+              }, {
+                id: "Overwrite",
+                desc: "Replace existing with imported data"
+              }, {
+                id: "Merge",
+                desc: "Keep existing fields, fill only blanks"
+              }, {
+                id: "Ask me",
+                desc: "Pause and show conflict for each duplicate"
+              }].map(opt => <div role="button" tabIndex={0} key={opt.id} className="radio-item" onKeyDown={e => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  e.currentTarget.click();
+                }
+              }} onClick={() => setDuplicateStrategy(opt.id)}>
+                        <div className={`radio-dot ${duplicateStrategy === opt.id ? "active" : ""}`} />
                         <div className="radio-label-wrap">
                           <span className="label">{opt.id}</span>
                           <span className="desc">{opt.desc}</span>
                         </div>
-                      </div>
-                    ))}
+                      </div>)}
                   </div>
                 </div>
 
@@ -1429,59 +375,34 @@ export default function BulkImport({ fetchData, showToast }) {
                   <span className="p-label">BARCODE SETTINGS</span>
                   <div className="checkbox-list">
                     <label className="check-item">
-                      <input
-                        required
-                        type="checkbox"
-                        checked={barcodeOptions.autoGen}
-                        onChange={(e) =>
-                          setBarcodeOptions({
-                            ...barcodeOptions,
-                            autoGen: e.target.checked,
-                          })
-                        }
-                      />
+                      <input required type="checkbox" checked={barcodeOptions.autoGen} onChange={e => setBarcodeOptions({
+                  ...barcodeOptions,
+                  autoGen: e.target.checked
+                })} />
                       <span>Generate barcode if column is missing</span>
                     </label>
                     <label className="check-item">
-                      <input
-                        required
-                        type="checkbox"
-                        checked={barcodeOptions.overwrite}
-                        onChange={(e) =>
-                          setBarcodeOptions({
-                            ...barcodeOptions,
-                            overwrite: e.target.checked,
-                          })
-                        }
-                      />
+                      <input required type="checkbox" checked={barcodeOptions.overwrite} onChange={e => setBarcodeOptions({
+                  ...barcodeOptions,
+                  overwrite: e.target.checked
+                })} />
                       <span>
                         Overwrite existing barcodes with imported values
                       </span>
                     </label>
                     <label className="check-item">
-                      <input
-                        required
-                        type="checkbox"
-                        checked={barcodeOptions.validate}
-                        onChange={(e) =>
-                          setBarcodeOptions({
-                            ...barcodeOptions,
-                            validate: e.target.checked,
-                          })
-                        }
-                      />
+                      <input required type="checkbox" checked={barcodeOptions.validate} onChange={e => setBarcodeOptions({
+                  ...barcodeOptions,
+                  validate: e.target.checked
+                })} />
                       <span>Validate barcode format (EAN-13 / QR)</span>
                     </label>
                   </div>
-                  {headers.includes("barcode") ? (
-                    <div className="barcode-hint success">
+                  {headers.includes("barcode") ? <div className="barcode-hint success">
                       ✓ Column 'barcode' detected in your file
-                    </div>
-                  ) : (
-                    <div className="barcode-hint warning">
+                    </div> : <div className="barcode-hint warning">
                       No barcode column found — will auto-generate
-                    </div>
-                  )}
+                    </div>}
                 </div>
               </div>
             </div>
@@ -1489,45 +410,27 @@ export default function BulkImport({ fetchData, showToast }) {
             <div className="layout-col-right">
               <div className="mapping-card-v2">
                 <h3>Field Mapping</h3>
-                {fields.map((f) => (
-                  <div key={f.key} className="map-row-v2">
+                {fields.map(f => <div key={f.key} className="map-row-v2">
                     <label htmlFor="field_r6n3xw">{f.label}</label>
-                    <select
-                      id="field_r6n3xw"
-                      className="pos-input"
-                      value={mapping[f.key]}
-                      onChange={(e) =>
-                        setMapping({ ...mapping, [f.key]: e.target.value })
-                      }
-                    >
+                    <select id="field_r6n3xw" className="pos-input" value={mapping[f.key]} onChange={e => setMapping({
+              ...mapping,
+              [f.key]: e.target.value
+            })}>
                       <option value="">— Skip —</option>
-                      {headers.map((h) => (
-                        <option key={h} value={h}>
+                      {headers.map(h => <option key={h} value={h}>
                           {h}
-                        </option>
-                      ))}
+                        </option>)}
                     </select>
-                  </div>
-                ))}
+                  </div>)}
 
                 <div className="mapping-actions-footer">
-                  <button
-                    type="button"
-                    className="text-link"
-                    onClick={resetMappingToAI}
-                  >
+                  <button type="button" className="text-link" onClick={resetMappingToAI}>
                     <RefreshCw size={12} /> Reset to AI suggestions
                   </button>
-                  <button
-                    className="text-link"
-                    onClick={() => setShowSaveMappingModal(true)}
-                  >
+                  <button className="text-link" onClick={() => setShowSaveMappingModal(true)}>
                     Save as Template
                   </button>
-                  <button
-                    className="text-link"
-                    onClick={() => setShowLoadMappingModal(true)}
-                  >
+                  <button className="text-link" onClick={() => setShowLoadMappingModal(true)}>
                     Load Template
                   </button>
                 </div>
@@ -1536,22 +439,21 @@ export default function BulkImport({ fetchData, showToast }) {
           </div>
 
           <AnimatePresence>
-            {file && (
-              <m.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="duplicate-panel-card"
-              >
+            {file && <m.div initial={{
+        opacity: 0,
+        y: 20
+      }} animate={{
+        opacity: 1,
+        y: 0
+      }} className="duplicate-panel-card">
                 <div className="panel-header">
                   <div className="title">
-                    <GitMerge size={18} style={{ color: "var(--warning)" }} />
+                    <GitMerge size={18} style={{
+              color: "var(--warning)"
+            }} />
                     <span>Duplicate Detection Results</span>
                   </div>
-                  <button
-                    className={`pos-btn outline micro ${isAnalyzing ? "loading" : ""}`}
-                    onClick={handleAnalyzeImport}
-                    disabled={isAnalyzing}
-                  >
+                  <button className={`pos-btn outline micro ${isAnalyzing ? "loading" : ""}`} onClick={handleAnalyzeImport} disabled={isAnalyzing}>
                     {isAnalyzing ? "Analyzing..." : "Re-scan / Analyze"}
                   </button>
                 </div>
@@ -1588,11 +490,7 @@ export default function BulkImport({ fetchData, showToast }) {
                         </tr>
                       </thead>
                       <tbody>
-                        {duplicateResults.rows.map((r, rIdx) => (
-                          <tr
-                            key={r.id || `${r.row}-${r.name || rIdx}`}
-                            className={r.conflict ? "conflict-row" : ""}
-                          >
+                        {duplicateResults.rows.map((r, rIdx) => <tr key={r.id || `${r.row}-${r.name || rIdx}`} className={r.conflict ? "conflict-row" : ""}>
                             <td>Row {r.row}</td>
                             <td className="bold">{r.name}</td>
                             <td>{r.match}</td>
@@ -1604,106 +502,56 @@ export default function BulkImport({ fetchData, showToast }) {
                             <td className="diff">{r.diff}</td>
                             <td>
                               <div className="action-btns">
-                                <button
-                                  type="button"
-                                  className="btn skip"
-                                  onClick={() =>
-                                    handleDuplicateAction(r, "Skip")
-                                  }
-                                >
+                                <button type="button" className="btn skip" onClick={() => handleDuplicateAction(r, "Skip")}>
                                   Skip
                                 </button>
-                                <button
-                                  type="button"
-                                  className="btn overwrite"
-                                  onClick={() =>
-                                    handleDuplicateAction(r, "Overwrite")
-                                  }
-                                >
+                                <button type="button" className="btn overwrite" onClick={() => handleDuplicateAction(r, "Overwrite")}>
                                   Overwrite
                                 </button>
-                                <button
-                                  type="button"
-                                  className="btn merge"
-                                  onClick={() =>
-                                    handleDuplicateAction(r, "Merge")
-                                  }
-                                >
+                                <button type="button" className="btn merge" onClick={() => handleDuplicateAction(r, "Merge")}>
                                   Merge
                                 </button>
-                                {r.conflict && (
-                                  <button
-                                    type="button"
-                                    className="btn review"
-                                    onClick={() =>
-                                      handleDuplicateAction(r, "Review")
-                                    }
-                                  >
+                                {r.conflict && <button type="button" className="btn review" onClick={() => handleDuplicateAction(r, "Review")}>
                                     Review ⚠
-                                  </button>
-                                )}
+                                  </button>}
                               </div>
                             </td>
-                          </tr>
-                        ))}
+                          </tr>)}
                       </tbody>
                     </table>
                   </div>
                   <div className="bulk-actions-row">
-                    <button
-                      className="pos-btn outline micro"
-                      onClick={() =>
-                        showToast("All duplicates will be skipped", "info")
-                      }
-                    >
+                    <button className="pos-btn outline micro" onClick={() => showToast("All duplicates will be skipped", "info")}>
                       Skip All Duplicates
                     </button>
-                    <button
-                      className="pos-btn outline micro warning"
-                      onClick={() =>
-                        showToast("All duplicates will be overwritten", "info")
-                      }
-                    >
+                    <button className="pos-btn outline micro warning" onClick={() => showToast("All duplicates will be overwritten", "info")}>
                       Overwrite All
                     </button>
-                    <button
-                      className="pos-btn outline micro blue"
-                      onClick={() =>
-                        showToast("All duplicates will be merged", "info")
-                      }
-                    >
+                    <button className="pos-btn outline micro blue" onClick={() => showToast("All duplicates will be merged", "info")}>
                       Merge All
                     </button>
                   </div>
                 </div>
-                {duplicateResults.errors &&
-                  duplicateResults.errors.length > 0 && (
-                    <div
-                      className="validation-errors-section"
-                      style={{
-                        marginTop: "24px",
-                        padding: "16px",
-                        border: "1px solid rgba(239, 68, 68, 0.2)",
-                        borderRadius: "8px",
-                        background: "rgba(239, 68, 68, 0.02)",
-                      }}
-                    >
-                      <h4
-                        style={{
-                          color: "var(--danger)",
-                          display: "flex",
-                          alignItems: "center",
-                          gap: "8px",
-                          marginBottom: "12px",
-                        }}
-                      >
+                {duplicateResults.errors && duplicateResults.errors.length > 0 && <div className="validation-errors-section" style={{
+          marginTop: "24px",
+          padding: "16px",
+          border: "1px solid rgba(239, 68, 68, 0.2)",
+          borderRadius: "8px",
+          background: "rgba(239, 68, 68, 0.02)"
+        }}>
+                      <h4 style={{
+            color: "var(--danger)",
+            display: "flex",
+            alignItems: "center",
+            gap: "8px",
+            marginBottom: "12px"
+          }}>
                         <X size={16} /> {duplicateResults.errors.length}{" "}
                         Validation Errors (These rows will be skipped)
                       </h4>
-                      <div
-                        className="table-overflow"
-                        style={{ maxHeight: "200px" }}
-                      >
+                      <div className="table-overflow" style={{
+            maxHeight: "200px"
+          }}>
                         <table className="duplicate-list-table">
                           <thead>
                             <tr>
@@ -1714,50 +562,35 @@ export default function BulkImport({ fetchData, showToast }) {
                             </tr>
                           </thead>
                           <tbody>
-                            {duplicateResults.errors.map((err, errIdx) => (
-                              <tr
-                                key={
-                                  err.id ||
-                                  `${err.row}-${err.field || err.name || errIdx}`
-                                }
-                                className="conflict-row"
-                              >
+                            {duplicateResults.errors.map((err, errIdx) => <tr key={err.id || `${err.row}-${err.field || err.name || errIdx}`} className="conflict-row">
                                 <td>Row {err.row}</td>
                                 <td className="bold">
                                   {err.name || "Unknown"}
                                 </td>
                                 <td>
-                                  <span
-                                    className="match-badge danger"
-                                    style={{
-                                      color: "var(--danger)",
-                                      background: "rgba(239, 68, 68, 0.1)",
-                                      padding: "2px 6px",
-                                      borderRadius: "4px",
-                                    }}
-                                  >
+                                  <span className="match-badge danger" style={{
+                      color: "var(--danger)",
+                      background: "rgba(239, 68, 68, 0.1)",
+                      padding: "2px 6px",
+                      borderRadius: "4px"
+                    }}>
                                     {err.field}
                                   </span>
                                 </td>
-                                <td
-                                  className="diff"
-                                  style={{ color: "var(--danger)" }}
-                                >
+                                <td className="diff" style={{
+                    color: "var(--danger)"
+                  }}>
                                   {err.message}
                                 </td>
-                              </tr>
-                            ))}
+                              </tr>)}
                           </tbody>
                         </table>
                       </div>
-                    </div>
-                  )}
-              </m.div>
-            )}
+                    </div>}
+              </m.div>}
           </AnimatePresence>
 
-          {file && (
-            <div className="sticky-import-footer">
+          {file && <div className="sticky-import-footer">
               <div className="validation-bar">
                 <div className="val-item green">
                   <div className="dot" />{" "}
@@ -1810,54 +643,44 @@ export default function BulkImport({ fetchData, showToast }) {
                   = {duplicateResults.new || 0} records
                 </div>
                 <div className="action-btns">
-                  <button
-                    className="pos-btn outline"
-                    onClick={() => setFile(null)}
-                  >
+                  <button className="pos-btn outline" onClick={() => setFile(null)}>
                     Cancel
                   </button>
-                  <button
-                    className="pos-btn teal large"
-                    onClick={handleStartImport}
-                    title="Send mapped medicines for import"
-                  >
+                  <button className="pos-btn teal large" onClick={handleStartImport} title="Send mapped medicines for import">
                     <UploadCloud size={18} />
                     <span>Start Import — {parsedRows.length} Records</span>
                   </button>
                 </div>
               </div>
-            </div>
-          )}
-        </>
-      )}
-
-      <AnimatePresence>
-        {showHistoryDrawer && (
-          <>
-            <div
-              role="button"
-              tabIndex={0}
-              className="drawer-overlay"
-              onKeyDown={(e) => {
-                if (e.key === "Enter" || e.key === " ") {
-                  e.preventDefault();
-                  e.currentTarget.click();
-                }
-              }}
-              onClick={() => setShowHistoryDrawer(false)}
-            />
-            <m.div
-              initial={{ x: "100%" }}
-              animate={{ x: 0 }}
-              exit={{ x: "100%" }}
-              className="import-history-drawer"
-            >
+            </div>}
+        </>;
+}
+function BulkImportSection2({
+  e,
+  setShowHistoryDrawer,
+  handleViewImport,
+  item,
+  handleDownloadImport,
+  showToast
+}) {
+  return <AnimatePresence>
+        {showHistoryDrawer && <>
+            <div role="button" tabIndex={0} className="drawer-overlay" onKeyDown={e => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          e.currentTarget.click();
+        }
+      }} onClick={() => setShowHistoryDrawer(false)} />
+            <m.div initial={{
+        x: "100%"
+      }} animate={{
+        x: 0
+      }} exit={{
+        x: "100%"
+      }} className="import-history-drawer">
               <div className="drawer-header">
                 <h3>Import History</h3>
-                <button
-                  type="button"
-                  onClick={() => setShowHistoryDrawer(false)}
-                >
+                <button type="button" onClick={() => setShowHistoryDrawer(false)}>
                   <X size={20} />
                 </button>
               </div>
@@ -1868,11 +691,7 @@ export default function BulkImport({ fetchData, showToast }) {
                 <div className="sub">Last import: 2 hours ago</div>
               </div>
               <div className="history-list">
-                {historyLoading ? (
-                  <p>Loading history...</p>
-                ) : (
-                  importHistory.map((item) => (
-                    <div key={item.id} className="history-item-card">
+                {historyLoading ? <p>Loading history...</p> : importHistory.map(item => <div key={item.id} className="history-item-card">
                       <div className="top-row">
                         <span className="filename">
                           {item.fileName || item.name}
@@ -1882,74 +701,55 @@ export default function BulkImport({ fetchData, showToast }) {
                         </span>
                       </div>
                       <div className="stats-row">
-                        {item.records ??
-                          item.extractedData?.summary?.importedCount ??
-                          0}{" "}
+                        {item.records ?? item.extractedData?.summary?.importedCount ?? 0}{" "}
                         records imported
                       </div>
                       <div className="tags-row">
                         <span className="tag supplier">
-                          {item.supplier ||
-                            item.extractedData?.supplier ||
-                            "General / CSV"}
+                          {item.supplier || item.extractedData?.supplier || "General / CSV"}
                         </span>
                         <span className="tag type">
                           {item.type || item.importType || "BULK"}
                         </span>
                         <span className="tag ai">
-                          {item.strategy
-                            ? `Strategy: ${item.strategy}`
-                            : "AI Mapping"}
+                          {item.strategy ? `Strategy: ${item.strategy}` : "AI Mapping"}
                         </span>
                       </div>
                       <div className="footer-row">
-                        <span
-                          className={`status-badge ${String(item.status || item.importStatus || "").toLowerCase()}`}
-                        >
+                        <span className={`status-badge ${String(item.status || item.importStatus || "").toLowerCase()}`}>
                           {item.status || item.importStatus}
                         </span>
                         <div className="links">
-                          <button
-                            className="link-btn"
-                            onClick={() => handleViewImport(item)}
-                          >
+                          <button className="link-btn" onClick={() => handleViewImport(item)}>
                             View Details
                           </button>
-                          <button
-                            className="link-btn"
-                            onClick={() => handleDownloadImport(item)}
-                          >
+                          <button className="link-btn" onClick={() => handleDownloadImport(item)}>
                             Download
                           </button>
                         </div>
                       </div>
-                    </div>
-                  ))
-                )}
-                <button
-                  className="load-more-btn"
-                  onClick={() => showToast("Loading more history...", "info")}
-                >
+                    </div>)}
+                <button className="load-more-btn" onClick={() => showToast("Loading more history...", "info")}>
                   Load More History...
                 </button>
               </div>
             </m.div>
-          </>
-        )}
-      </AnimatePresence>
-
-      {showAddSupplierModal && (
-        <div className="modal-overlay-v2">
+          </>}
+      </AnimatePresence>;
+}
+function BulkImportSection3({
+  setShowAddSupplierModal,
+  setSupplierForm,
+  supplierForm
+}) {
+  return showAddSupplierModal && <div className="modal-overlay-v2">
           <div className="modal-content-v2">
             <div className="modal-header">
               <div>
                 <h3>Add New Supplier</h3>
                 <p>Quickly add a supplier for this import.</p>
               </div>
-              <button
-                type="button"
-                onClick={() => setShowAddSupplierModal(false)}
-              >
+              <button type="button" onClick={() => setShowAddSupplierModal(false)}>
                 <X size={20} />
               </button>
             </div>
@@ -1959,121 +759,65 @@ export default function BulkImport({ fetchData, showToast }) {
                   <label htmlFor="field_iggj8m" className="p-label">
                     SUPPLIER NAME*
                   </label>
-                  <input
-                    id="field_iggj8m"
-                    required
-                    className="pos-input"
-                    placeholder="e.g. Cipla Ltd"
-                    value={supplierForm.name}
-                    onChange={(e) =>
-                      setSupplierForm({ ...supplierForm, name: e.target.value })
-                    }
-                  />
+                  <input id="field_iggj8m" required className="pos-input" placeholder="e.g. Cipla Ltd" value={supplierForm.name} onChange={e => setSupplierForm({
+              ...supplierForm,
+              name: e.target.value
+            })} />
                 </div>
                 <div className="pos-input-group">
                   <label htmlFor="field_rj59f5" className="p-label">
                     CONTACT PERSON
                   </label>
-                  <input
-                    id="field_rj59f5"
-                    required
-                    className="pos-input"
-                    placeholder="Name"
-                    value={supplierForm.contact}
-                    onChange={(e) =>
-                      setSupplierForm({
-                        ...supplierForm,
-                        contact: e.target.value,
-                      })
-                    }
-                  />
+                  <input id="field_rj59f5" required className="pos-input" placeholder="Name" value={supplierForm.contact} onChange={e => setSupplierForm({
+              ...supplierForm,
+              contact: e.target.value
+            })} />
                 </div>
                 <div className="pos-input-group">
                   <label htmlFor="field_kx3d43" className="p-label">
                     PHONE
                   </label>
-                  <input
-                    id="field_kx3d43"
-                    required
-                    className="pos-input"
-                    placeholder="+91..."
-                    value={supplierForm.phone}
-                    onChange={(e) =>
-                      setSupplierForm({
-                        ...supplierForm,
-                        phone: e.target.value,
-                      })
-                    }
-                  />
+                  <input id="field_kx3d43" required className="pos-input" placeholder="+91..." value={supplierForm.phone} onChange={e => setSupplierForm({
+              ...supplierForm,
+              phone: e.target.value
+            })} />
                 </div>
                 <div className="pos-input-group">
                   <label htmlFor="field_pq7nvt" className="p-label">
                     EMAIL
                   </label>
-                  <input
-                    id="field_pq7nvt"
-                    required
-                    className="pos-input"
-                    placeholder="supplier@mail.com"
-                    value={supplierForm.email}
-                    onChange={(e) =>
-                      setSupplierForm({
-                        ...supplierForm,
-                        email: e.target.value,
-                      })
-                    }
-                  />
+                  <input id="field_pq7nvt" required className="pos-input" placeholder="supplier@mail.com" value={supplierForm.email} onChange={e => setSupplierForm({
+              ...supplierForm,
+              email: e.target.value
+            })} />
                 </div>
                 <div className="pos-input-group">
                   <label htmlFor="field_xkpgsj" className="p-label">
                     GST NUMBER
                   </label>
-                  <input
-                    id="field_xkpgsj"
-                    required
-                    className="pos-input"
-                    placeholder="29AAB..."
-                    value={supplierForm.gst}
-                    onChange={(e) =>
-                      setSupplierForm({ ...supplierForm, gst: e.target.value })
-                    }
-                  />
+                  <input id="field_xkpgsj" required className="pos-input" placeholder="29AAB..." value={supplierForm.gst} onChange={e => setSupplierForm({
+              ...supplierForm,
+              gst: e.target.value
+            })} />
                 </div>
                 <div className="pos-input-group">
                   <label htmlFor="field_6384ac" className="p-label">
                     LEAD TIME (DAYS)
                   </label>
-                  <input
-                    id="field_6384ac"
-                    required
-                    className="pos-input"
-                    type="number"
-                    placeholder="3"
-                    value={supplierForm.leadTime}
-                    onChange={(e) =>
-                      setSupplierForm({
-                        ...supplierForm,
-                        leadTime: e.target.value,
-                      })
-                    }
-                  />
+                  <input id="field_6384ac" required className="pos-input" type="number" placeholder="3" value={supplierForm.leadTime} onChange={e => setSupplierForm({
+              ...supplierForm,
+              leadTime: e.target.value
+            })} />
                 </div>
               </div>
               <div className="pos-input-group">
                 <label htmlFor="field_0dkque" className="p-label">
                   PAYMENT TERMS
                 </label>
-                <select
-                  id="field_0dkque"
-                  className="pos-input"
-                  value={supplierForm.paymentTerms}
-                  onChange={(e) =>
-                    setSupplierForm({
-                      ...supplierForm,
-                      paymentTerms: e.target.value,
-                    })
-                  }
-                >
+                <select id="field_0dkque" className="pos-input" value={supplierForm.paymentTerms} onChange={e => setSupplierForm({
+            ...supplierForm,
+            paymentTerms: e.target.value
+          })}>
                   <option>Net 30</option>
                   <option>Net 15</option>
                   <option>Advance</option>
@@ -2082,34 +826,693 @@ export default function BulkImport({ fetchData, showToast }) {
               </div>
             </div>
             <div className="modal-footer">
-              <button
-                type="button"
-                className="pos-btn outline"
-                onClick={() => setShowAddSupplierModal(false)}
-              >
+              <button type="button" className="pos-btn outline" onClick={() => setShowAddSupplierModal(false)}>
                 Cancel
               </button>
-              <button
-                type="button"
-                className="pos-btn teal"
-                onClick={saveSupplier}
-              >
+              <button type="button" className="pos-btn teal" onClick={saveSupplier}>
                 Save & Use Supplier
               </button>
             </div>
           </div>
+        </div>;
+}
+export default function BulkImport({
+  fetchData,
+  showToast
+}) {
+  const navigate = useNavigate();
+  const [importState, dispatchImport] = useReducer((state, action) => {
+    if (action.type === "RESET_IMPORT") {
+      return {
+        ...state,
+        file: null,
+        headers: [],
+        importProgress: 0,
+        importStatus: "idle",
+        dataPreview: [],
+        duplicateResults: {
+          new: 0,
+          duplicates: 0,
+          conflicts: 0,
+          rows: [],
+          errors: []
+        },
+        parsedRows: [],
+        commitResult: null
+      };
+    }
+    if (action.type === "SET_FIELD") {
+      return {
+        ...state,
+        [action.field]: typeof action.value === "function" ? action.value(state[action.field]) : action.value
+      };
+    }
+    return state;
+  }, {
+    file: null,
+    headers: [],
+    mapping: {
+      nameColumn: "med_name",
+      qtyColumn: "stock_qty",
+      expiryColumn: "expiry_dt",
+      priceColumn: "price_inr",
+      categoryColumn: "category",
+      batchColumn: "batch_no",
+      barcodeColumn: "barcode",
+      manufacturerColumn: "manufacturer",
+      genericNameColumn: "generic_name",
+      strengthColumn: "strength",
+      dosageFormColumn: "dosage_form",
+      hsnCodeColumn: "hsn_code",
+      gstPercentageColumn: "gst_percent"
+    },
+    importProgress: 0,
+    importStatus: "idle",
+    importType: "New Medicines",
+    selectedSupplier: "None",
+    duplicateStrategy: "Skip",
+    barcodeOptions: {
+      autoGen: true,
+      overwrite: false,
+      validate: true
+    },
+    dataPreview: [],
+    duplicateResults: {
+      new: 0,
+      duplicates: 0,
+      conflicts: 0,
+      rows: [],
+      errors: []
+    },
+    parsedRows: [],
+    commitResult: null
+  });
+  const {
+    file,
+    headers,
+    mapping,
+    importProgress,
+    importStatus,
+    importType,
+    selectedSupplier,
+    duplicateStrategy,
+    barcodeOptions,
+    dataPreview,
+    duplicateResults,
+    parsedRows,
+    commitResult
+  } = importState;
+  const setFile = useCallback(val => dispatchImport({
+    type: "SET_FIELD",
+    field: "file",
+    value: val
+  }), []);
+  const setHeaders = useCallback(val => dispatchImport({
+    type: "SET_FIELD",
+    field: "headers",
+    value: val
+  }), []);
+  const setMapping = useCallback(val => dispatchImport({
+    type: "SET_FIELD",
+    field: "mapping",
+    value: val
+  }), []);
+  const setImportProgress = useCallback(val => dispatchImport({
+    type: "SET_FIELD",
+    field: "importProgress",
+    value: val
+  }), []);
+  const setImportStatus = useCallback(val => dispatchImport({
+    type: "SET_FIELD",
+    field: "importStatus",
+    value: val
+  }), []);
+  const setImportType = useCallback(val => dispatchImport({
+    type: "SET_FIELD",
+    field: "importType",
+    value: val
+  }), []);
+  const setSelectedSupplier = useCallback(val => dispatchImport({
+    type: "SET_FIELD",
+    field: "selectedSupplier",
+    value: val
+  }), []);
+  const setDuplicateStrategy = useCallback(val => dispatchImport({
+    type: "SET_FIELD",
+    field: "duplicateStrategy",
+    value: val
+  }), []);
+  const setBarcodeOptions = useCallback(val => dispatchImport({
+    type: "SET_FIELD",
+    field: "barcodeOptions",
+    value: val
+  }), []);
+  const setDataPreview = useCallback(val => dispatchImport({
+    type: "SET_FIELD",
+    field: "dataPreview",
+    value: val
+  }), []);
+  const setDuplicateResults = useCallback(val => dispatchImport({
+    type: "SET_FIELD",
+    field: "duplicateResults",
+    value: val
+  }), []);
+  const setParsedRows = useCallback(val => dispatchImport({
+    type: "SET_FIELD",
+    field: "parsedRows",
+    value: val
+  }), []);
+  const setCommitResult = useCallback(val => dispatchImport({
+    type: "SET_FIELD",
+    field: "commitResult",
+    value: val
+  }), []);
+  const [showHistoryDrawer, setShowHistoryDrawer] = useState(false);
+  const [importHistory, setImportHistory] = useState([]);
+  const [historyLoading, setHistoryLoading] = useState(false);
+  const [suppliersList, setSuppliersList] = useState([]);
+  const [showAddSupplierModal, setShowAddSupplierModal] = useState(false);
+  useEffect(() => {}, [showAddSupplierModal]);
+  useEffect(() => {
+    return () => {
+      if (window._importPollTimer) {
+        clearTimeout(window._importPollTimer);
+        window._importPollTimer = null;
+      }
+    };
+  }, []);
+  const initialTemplates = (() => {
+    try {
+      localStorage.removeItem("bulkImportTemplates");
+      const stored = localStorage.getItem("bulkImportTemplates:v1");
+      return stored ? JSON.parse(stored) : [];
+    } catch (err) {
+      console.error(err);
+      return [];
+    }
+  })();
+  const [templateState, dispatchTemplate] = useReducer((state, action) => {
+    switch (action.type) {
+      case "SAVE_TEMPLATE":
+        return {
+          ...state,
+          savedTemplates: action.payload,
+          showSaveMappingModal: false,
+          templateName: "",
+          templateDesc: "",
+          templateDefault: false
+        };
+      case "SET_FIELD":
+        return {
+          ...state,
+          [action.field]: typeof action.value === "function" ? action.value(state[action.field]) : action.value
+        };
+      default:
+        return state;
+    }
+  }, {
+    savedTemplates: initialTemplates,
+    showSaveMappingModal: false,
+    showLoadMappingModal: false,
+    templateName: "",
+    templateDesc: "",
+    templateDefault: false
+  });
+  const {
+    savedTemplates,
+    showSaveMappingModal,
+    showLoadMappingModal,
+    templateName,
+    templateDesc,
+    templateDefault
+  } = templateState;
+  const setShowSaveMappingModal = useCallback(val => dispatchTemplate({
+    type: "SET_FIELD",
+    field: "showSaveMappingModal",
+    value: val
+  }), []);
+  const setShowLoadMappingModal = useCallback(val => dispatchTemplate({
+    type: "SET_FIELD",
+    field: "showLoadMappingModal",
+    value: val
+  }), []);
+  const setTemplateName = useCallback(val => dispatchTemplate({
+    type: "SET_FIELD",
+    field: "templateName",
+    value: val
+  }), []);
+  const setTemplateDesc = useCallback(val => dispatchTemplate({
+    type: "SET_FIELD",
+    field: "templateDesc",
+    value: val
+  }), []);
+  const setTemplateDefault = useCallback(val => dispatchTemplate({
+    type: "SET_FIELD",
+    field: "templateDefault",
+    value: val
+  }), []);
+  const [supplierForm, setSupplierForm] = useState({
+    name: "",
+    contact: "",
+    phone: "",
+    email: "",
+    gst: "",
+    leadTime: "",
+    paymentTerms: "Net 30"
+  });
+  const autoMapHeaders = useCallback(fileHeaders => {
+    const newMapping = {};
+    const usedHeaders = new Set();
+    if (fileHeaders.length <= 1) {
+      showToast("Import file has no column delimiters. Use a comma-separated CSV.", "error");
+      return;
+    }
+    fieldOrder.forEach(field => {
+      const match = fileHeaders.find(header => {
+        if (usedHeaders.has(header)) return false;
+        const lower = header.toLowerCase();
+        const excludes = fieldExcludes[field] || [];
+        const hasExclude = excludes.some(ex => lower.includes(ex));
+        if (hasExclude) return false;
+        return fieldKeywords[field].some(keyword => lower.includes(keyword));
+      });
+      if (match) {
+        newMapping[field] = match;
+        usedHeaders.add(match);
+      }
+    });
+    setMapping(prev => ({
+      ...prev,
+      ...newMapping
+    }));
+  }, [setMapping, showToast]);
+  const getMappedMedicines = useCallback(() => {
+    const result = parsedRows.map(row => {
+      const name = String(row[mapping.nameColumn] || "").trim();
+      const qtyStr = mapping.qtyColumn ? String(row[mapping.qtyColumn] ?? "").trim() : "";
+      const priceStr = mapping.priceColumn ? String(row[mapping.priceColumn] ?? "").trim() : "";
+      const expiryStr = mapping.expiryColumn ? String(row[mapping.expiryColumn] ?? "").trim() : "";
+      return {
+        name,
+        qty: qtyStr ? Number(qtyStr.replace(/[^0-9.-]/g, "")) || 0 : 0,
+        expiry: normalizeDate(expiryStr),
+        price: priceStr ? Number(priceStr.replace(/[^0-9.-]/g, "")) || 0 : 0,
+        batch: String(row[mapping.batchColumn] || "").trim(),
+        barcode: String(row[mapping.barcodeColumn] || "").trim(),
+        category: String(row[mapping.categoryColumn] || "").trim(),
+        manufacturer: String(row[mapping.manufacturerColumn] || "").trim(),
+        genericName: String(row[mapping.genericNameColumn] || "").trim(),
+        strength: String(row[mapping.strengthColumn] || "").trim(),
+        dosageForm: String(row[mapping.dosageFormColumn] || "").trim(),
+        hsnCode: String(row[mapping.hsnCodeColumn] || "").trim(),
+        gstPercentage: String(row[mapping.gstPercentageColumn] || "").trim()
+      };
+    });
+    if (result.length > 0) {
+      const vals = Object.values(result[0]);
+      const uniqueVals = new Set(vals.filter(v => v !== "" && v !== 0 && v !== null));
+      if (uniqueVals.size === 1 && result[0].name !== "") {
+        console.error("[BulkImport] CRITICAL: All fields have identical value. Mapping is broken.", {
+          mapping,
+          sampleRow: parsedRows[0]
+        });
+      }
+    }
+    return result;
+  }, [parsedRows, mapping]);
+  useEffect(() => {
+    let active = true;
+    const load = async () => {
+      try {
+        const res = await getSuppliers();
+        if (active && res.data?.success) {
+          setSuppliersList(res.data.data);
+        }
+      } catch (err) {
+        console.error("Failed to load suppliers", err);
+      }
+    };
+    load();
+    return () => {
+      active = false;
+    };
+  }, []);
+  useEffect(() => {
+    let active = true;
+    if (showHistoryDrawer) {
+      const fetchHist = async () => {
+        setHistoryLoading(true);
+        try {
+          const res = await api.get("/import/history");
+          if (!active) return;
+          if (res.data?.success) {
+            setImportHistory(res.data.data);
+          }
+        } catch (err) {
+          if (!active) return;
+          console.error(err);
+          showToast(err.message || "Failed to fetch import history", "error");
+        } finally {
+          if (active) setHistoryLoading(false);
+        }
+      };
+      fetchHist();
+    }
+    return () => {
+      active = false;
+    };
+  }, [showHistoryDrawer, showToast]);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const isAnalyzingRef = useRef(false);
+  const handleAnalyzeImport = useCallback(async () => {
+    if (isAnalyzingRef.current) return;
+    if (!file) {
+      showToast("Upload a file first", "error");
+      return;
+    }
+    if (!mapping.nameColumn || !mapping.qtyColumn) {
+      showToast("Required field mappings missing (Name + Quantity)", "error");
+      return;
+    }
+    isAnalyzingRef.current = true;
+    setIsAnalyzing(true);
+    const medicines = getMappedMedicines();
+    try {
+      const res = await api.post("/import/bulk/analyze", {
+        medicines,
+        supplier: selectedSupplier,
+        duplicateStrategy,
+        barcodeOptions
+      });
+      if (res.data?.success) {
+        setDuplicateResults(res.data.summary);
+        showToast("✓ Import analysis / duplicate scan completed", "success");
+      } else {
+        throw new Error(res.data?.message || "Failed to analyze import data");
+      }
+    } catch (err) {
+      console.error(err);
+      showToast(err.message || "Failed to analyze import data", "error");
+    } finally {
+      isAnalyzingRef.current = false;
+      setIsAnalyzing(false);
+    }
+  }, [file, mapping.nameColumn, mapping.qtyColumn, getMappedMedicines, showToast, selectedSupplier, duplicateStrategy, barcodeOptions, setDuplicateResults]);
+  const onDrop = useCallback(async files => {
+    const f = files[0];
+    if (!f) return;
+    setFile(f);
+    try {
+      if (f.name.endsWith(".csv")) {
+        Papa.parse(f, {
+          header: true,
+          skipEmptyLines: true,
+          delimiter: ",",
+          dynamicTyping: false,
+          complete: results => {
+            const parsedHeaders = results.meta.fields || [];
+            const parsedData = results.data;
+            if (parsedData.length > 10000) {
+              showToast(`Import exceeds maximum supported size (10,000 rows). Your file has ${parsedData.length.toLocaleString()} rows. Please split the file or reduce the size.`, "error");
+              setFile(null);
+              return;
+            }
+            if (parsedHeaders.length <= 1 && parsedData.length > 0) {
+              const val = Object.values(parsedData[0])[0] || "";
+              showToast(`CSV has no column delimiters. Only 1 column detected. Value: "${val.slice(0, 60)}..."`, "error");
+              return;
+            }
+            setHeaders(parsedHeaders);
+            setParsedRows(parsedData);
+            setDataPreview(parsedData.slice(0, 5));
+            autoMapHeaders(parsedHeaders);
+            showToast(`✓ CSV File ${f.name} loaded successfully`, "success");
+          },
+          error: err => {
+            console.error("[BulkImport] PapaParse Error:", err);
+            showToast("Failed to parse CSV file", "error");
+          }
+        });
+      } else if (f.name.endsWith(".xlsx")) {
+        const reader = new FileReader();
+        reader.onload = async e => {
+          const buffer = e.target.result;
+          const workbook = new ExcelJS.Workbook();
+          await workbook.xlsx.load(buffer);
+          const worksheet = workbook.getWorksheet(1);
+          const totalRowsCount = worksheet.rowCount - 1;
+          if (totalRowsCount > 10000) {
+            showToast(`Import exceeds maximum supported size (10,000 rows). Your file has ${totalRowsCount.toLocaleString()} rows. Please split the file or reduce the size.`, "error");
+            setFile(null);
+            return;
+          }
+          const parsedHeaders = [];
+          const parsedData = [];
+          worksheet.eachRow({
+            includeEmpty: false
+          }, (row, rowNumber) => {
+            if (rowNumber === 1) {
+              row.eachCell({
+                includeEmpty: true
+              }, cell => {
+                parsedHeaders.push(String(cell.value || "").trim());
+              });
+            } else {
+              const rowObj = {};
+              parsedHeaders.forEach((header, index) => {
+                const cell = row.getCell(index + 1);
+                let val = cell.value;
+                if (val && typeof val === "object") {
+                  if (val.result !== undefined) val = val.result;else if (val.richText) val = val.richText.map(t => t.text).join("");else if (val instanceof Date) val = val.toISOString().split("T")[0];
+                }
+                rowObj[header] = val !== null && val !== undefined ? String(val).trim() : "";
+              });
+              parsedData.push(rowObj);
+            }
+          });
+          setHeaders(parsedHeaders);
+          setParsedRows(parsedData);
+          setDataPreview(parsedData.slice(0, 5));
+          autoMapHeaders(parsedHeaders);
+          showToast(`Excel File ${f.name} loaded successfully`, "success");
+        };
+        reader.readAsArrayBuffer(f);
+      }
+    } catch (err) {
+      console.error(err);
+      showToast("Failed to parse file", "error");
+    }
+  }, [setFile, setHeaders, setParsedRows, setDataPreview, autoMapHeaders, showToast]);
+  const {
+    getRootProps,
+    getInputProps,
+    isDragActive,
+    open
+  } = useDropzone({
+    onDrop,
+    noClick: true,
+    accept: {
+      "text/csv": [".csv"],
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": [".xlsx"]
+    }
+  });
+  const downloadSampleTemplate = () => {
+    const link = document.createElement("a");
+    link.href = "/templates/pharmacy_import_template.xlsx";
+    link.download = "pharmacy_import_template.xlsx";
+    link.click();
+    showToast("Sample template downloaded", "success");
+  };
+  const resetMappingToAI = () => {
+    setMapping({
+      nameColumn: "med_name",
+      qtyColumn: "stock_qty",
+      expiryColumn: "expiry_dt",
+      priceColumn: "price_inr",
+      batchColumn: "batch_no",
+      categoryColumn: "",
+      manufacturerColumn: "",
+      barcodeColumn: "barcode",
+      genericNameColumn: "",
+      strengthColumn: "",
+      dosageFormColumn: "",
+      hsnCodeColumn: "",
+      gstPercentageColumn: ""
+    });
+    showToast("AI mapping restored", "success");
+  };
+  const handleDuplicateAction = (row, action) => {
+    showToast(`${action} selected for ${row.name}`, "info");
+  };
+  const handleViewImport = item => {
+    showToast(`Viewing ${item?.id || "Import"}`, "info");
+  };
+  const handleDownloadImport = item => {
+    showToast(`Downloading ${item?.name || item?.fileName || "Report"}`, "success");
+  };
+  const saveTemplate = () => {
+    if (!templateName.trim()) {
+      showToast("Template name required", "error");
+      return;
+    }
+    const newTemplate = {
+      name: templateName,
+      description: templateDesc,
+      mapping,
+      default: templateDefault,
+      date: new Date().toLocaleDateString()
+    };
+    const updated = [...savedTemplates, newTemplate];
+    dispatchTemplate({
+      type: "SAVE_TEMPLATE",
+      payload: updated
+    });
+    localStorage.setItem("bulkImportTemplates:v1", JSON.stringify(updated));
+    showToast("Template saved", "success");
+  };
+  const loadTemplate = template => {
+    setMapping(template.mapping);
+    showToast(`${template.name} loaded`, "success");
+    setShowLoadMappingModal(false);
+  };
+  const isSavingSupplierRef = useRef(false);
+  const saveSupplier = async () => {
+    if (isSavingSupplierRef.current) return;
+    if (!supplierForm.name.trim()) {
+      showToast("Supplier name required", "error");
+      return;
+    }
+    isSavingSupplierRef.current = true;
+    try {
+      const payload = {
+        name: supplierForm.name.trim(),
+        contactPerson: supplierForm.contact.trim(),
+        phone: supplierForm.phone.trim(),
+        email: supplierForm.email.trim(),
+        gstNumber: supplierForm.gst.trim(),
+        leadTimeDays: safeNumber(supplierForm.leadTime || 7),
+        paymentTermsDays: supplierForm.paymentTerms === "Net 15" ? 15 : supplierForm.paymentTerms === "Net 30" ? 30 : 0,
+        status: "ACTIVE"
+      };
+      const res = await createSupplier(payload);
+      if (res.data?.success) {
+        await getSuppliers().then(r => {
+          if (r.data?.success) {
+            setSuppliersList(r.data.data);
+          }
+        });
+        setSelectedSupplier(supplierForm.name);
+        setShowAddSupplierModal(false);
+        setSupplierForm({
+          name: "",
+          contact: "",
+          phone: "",
+          email: "",
+          gst: "",
+          leadTime: "",
+          paymentTerms: "Net 30"
+        });
+        showToast("Supplier Added", "success");
+      }
+    } catch (err) {
+      console.error(err);
+      showToast(err.response?.data?.error || "Failed to add supplier", "error");
+    } finally {
+      isSavingSupplierRef.current = false;
+    }
+  };
+  const importProcessingRef = useRef(false);
+  const handleStartImport = async () => {
+    if (importProcessingRef.current) return;
+    if (!file) {
+      showToast("Upload a file first", "error");
+      return;
+    }
+    if (!mapping.nameColumn || !mapping.qtyColumn) {
+      showToast("Required field mappings missing (Name + Quantity)", "error");
+      return;
+    }
+    importProcessingRef.current = true;
+    setImportStatus("processing");
+    setImportProgress(15);
+    const medicines = getMappedMedicines();
+    try {
+      setImportProgress(45);
+      const res = await api.post("/import/bulk/commit", {
+        medicines,
+        fileName: file?.name || "bulk_import.csv",
+        supplier: selectedSupplier,
+        duplicateStrategy,
+        barcodeOptions
+      });
+      if (res.data?.success) {
+        setImportProgress(100);
+        setImportStatus("complete");
+        setCommitResult({
+          ...(res.data.summary || {}),
+          errors: res.data.errors || []
+        });
+        const imported = res.data.summary?.imported ?? 0;
+        const duplicates = res.data.summary?.duplicates ?? 0;
+        const failed = res.data.summary?.failed ?? 0;
+        showToast(`Import complete: ${imported} imported, ${duplicates} duplicates, ${failed} failed`, imported > 0 ? "success" : "warning");
+        if (fetchData) fetchData();
+      } else {
+        throw new Error(res.data?.message || "Failed to commit import");
+      }
+    } catch (error) {
+      console.error(error);
+      setImportStatus("idle");
+      const errMsg = error.response?.data?.message || error.message || "Failed to commit import";
+      showToast(errMsg, "error");
+    } finally {
+      importProcessingRef.current = false;
+    }
+  };
+  const cancelImport = () => {
+    if (window._importPollTimer) {
+      clearTimeout(window._importPollTimer);
+      window._importPollTimer = null;
+    }
+    setImportStatus("idle");
+    showToast("Import cancelled", "info");
+  };
+  return <div className="import-hub-container">
+      <div className="import-header-v2">
+        <div className="header-left">
+          <div className="import-pill">
+            <UploadCloud size={12} />
+            <span>SMART IMPORT HUB</span>
+          </div>
+          <h1>Bulk Inventory Import</h1>
+          <p>
+            Upload CSV or XLSX files to synchronize pharmacy stock with live
+            data mapping.
+          </p>
         </div>
-      )}
+        <div className="header-actions">
+          <button type="button" className="pos-btn outline" onClick={downloadSampleTemplate}>
+            <Download size={16} />
+            <span>Sample Template</span>
+          </button>
+          <button className="pos-btn outline" onClick={() => setShowHistoryDrawer(true)}>
+            <History size={16} />
+            <span>Import History</span>
+          </button>
+        </div>
+      </div>
 
-      {showSaveMappingModal && (
-        <div className="modal-overlay-v2">
+      <BulkImportSection1 commitResult={commitResult} field={field} navigate={navigate} setFile={setFile} setImportStatus={setImportStatus} setCommitResult={setCommitResult} headers={headers} row={row} importType={importType} setImportType={setImportType} t={t} setShowAddSupplierModal={setShowAddSupplierModal} setSelectedSupplier={setSelectedSupplier} e={e} setDuplicateStrategy={setDuplicateStrategy} opt={opt} duplicateStrategy={duplicateStrategy} setBarcodeOptions={setBarcodeOptions} barcodeOptions={barcodeOptions} mapping={mapping} setMapping={setMapping} f={f} setShowSaveMappingModal={setShowSaveMappingModal} setShowLoadMappingModal={setShowLoadMappingModal} handleDuplicateAction={handleDuplicateAction} r={r} showToast={showToast} />
+
+      <BulkImportSection2 e={e} setShowHistoryDrawer={setShowHistoryDrawer} handleViewImport={handleViewImport} item={item} handleDownloadImport={handleDownloadImport} showToast={showToast} />
+
+      <BulkImportSection3 setShowAddSupplierModal={setShowAddSupplierModal} setSupplierForm={setSupplierForm} supplierForm={supplierForm} />
+
+      {showSaveMappingModal && <div className="modal-overlay-v2">
           <div className="modal-content-v2">
             <div className="modal-header">
               <h3>Save Mapping Template</h3>
-              <button
-                type="button"
-                onClick={() => setShowSaveMappingModal(false)}
-              >
+              <button type="button" onClick={() => setShowSaveMappingModal(false)}>
                 <X size={20} />
               </button>
             </div>
@@ -2118,79 +1521,45 @@ export default function BulkImport({ fetchData, showToast }) {
                 <label htmlFor="field_himsdq" className="p-label">
                   TEMPLATE NAME
                 </label>
-                <input
-                  id="field_himsdq"
-                  required
-                  className="pos-input"
-                  placeholder="e.g. Cipla Invoice Format"
-                  value={templateName}
-                  onChange={(e) => setTemplateName(e.target.value)}
-                />
+                <input id="field_himsdq" required className="pos-input" placeholder="e.g. Cipla Invoice Format" value={templateName} onChange={e => setTemplateName(e.target.value)} />
               </div>
               <div className="pos-input-group full">
                 <label htmlFor="field_vvjc94" className="p-label">
                   DESCRIPTION
                 </label>
-                <textarea
-                  id="field_vvjc94"
-                  className="pos-input"
-                  placeholder="Optional notes..."
-                  style={{ height: 80 }}
-                  value={templateDesc}
-                  onChange={(e) => setTemplateDesc(e.target.value)}
-                />
+                <textarea id="field_vvjc94" className="pos-input" placeholder="Optional notes..." style={{
+              height: 80
+            }} value={templateDesc} onChange={e => setTemplateDesc(e.target.value)} />
               </div>
               <label className="check-item">
-                <input
-                  required
-                  type="checkbox"
-                  checked={templateDefault}
-                  onChange={(e) => setTemplateDefault(e.target.checked)}
-                />
+                <input required type="checkbox" checked={templateDefault} onChange={e => setTemplateDefault(e.target.checked)} />
                 <span>Make this my default mapping</span>
               </label>
             </div>
             <div className="modal-footer">
-              <button
-                type="button"
-                className="pos-btn outline"
-                onClick={() => setShowSaveMappingModal(false)}
-              >
+              <button type="button" className="pos-btn outline" onClick={() => setShowSaveMappingModal(false)}>
                 Cancel
               </button>
-              <button
-                type="button"
-                className="pos-btn teal"
-                onClick={saveTemplate}
-              >
+              <button type="button" className="pos-btn teal" onClick={saveTemplate}>
                 Save Template
               </button>
             </div>
           </div>
-        </div>
-      )}
+        </div>}
 
-      {showLoadMappingModal && (
-        <div className="modal-overlay-v2">
+      {showLoadMappingModal && <div className="modal-overlay-v2">
           <div className="modal-content-v2">
             <div className="modal-header">
               <h3>Load Mapping Template</h3>
-              <button
-                type="button"
-                onClick={() => setShowLoadMappingModal(false)}
-              >
+              <button type="button" onClick={() => setShowLoadMappingModal(false)}>
                 <X size={20} />
               </button>
             </div>
             <div className="modal-body">
               <div className="template-load-list">
-                {savedTemplates.length === 0 ? (
-                  <div className="empty-templates">
+                {savedTemplates.length === 0 ? <div className="empty-templates">
                     <p>No saved templates yet. Save one to get started.</p>
-                  </div>
-                ) : (
-                  savedTemplates.map((t) => (
-                    <div key={t.name} className="template-row">
+                  </div> : savedTemplates.map(t => <div key={t.name} className="template-row">
                       <div className="t-info">
                         <div className="t-name">{t.name}</div>
                         <div className="t-date">
@@ -2199,30 +1568,20 @@ export default function BulkImport({ fetchData, showToast }) {
                           {t.default ? " · Default" : ""}
                         </div>
                       </div>
-                      <button
-                        type="button"
-                        className="pos-btn outline micro"
-                        onClick={() => loadTemplate(t)}
-                      >
+                      <button type="button" className="pos-btn outline micro" onClick={() => loadTemplate(t)}>
                         Load
                       </button>
-                    </div>
-                  ))
-                )}
+                    </div>)}
               </div>
             </div>
             <div className="modal-footer">
-              <button
-                type="button"
-                className="pos-btn outline"
-                style={{ width: "100%" }}
-              >
+              <button type="button" className="pos-btn outline" style={{
+            width: "100%"
+          }}>
                 Manage Templates
               </button>
             </div>
           </div>
-        </div>
-      )}
-    </div>
-  );
+        </div>}
+    </div>;
 }

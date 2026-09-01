@@ -1,38 +1,5 @@
-export default function PlanSelection({ onSelectTrial, onSelectPro }) {
-  const handleTrialClick = () => {
-    if (onSelectTrial) onSelectTrial();
-  };
-
-  const handleProClick = () => {
-    if (onSelectPro) onSelectPro();
-  };
-
-  return (
-    <div className="dark bg-(--bg-dark) h-screen text-on-surface font-['Manrope'] antialiased overflow-y-auto">
-      {/* TopAppBar Segment */}
-      <header className="fixed top-0 w-full z-50 flex justify-between items-center px-6 py-3 bg-(--bg-dark)/90 backdrop-blur-md border-b border-(--surface) shadow-xl">
-        <div className="flex items-center gap-3">
-          <img
-            src="/viyan_logo.webp"
-            alt="Viyan MedAssist"
-            className="h-10 w-auto"
-          />
-        </div>
-        <div className="hidden md:flex items-center space-x-8">
-          <span className="text-slate-400 text-xs font-bold uppercase tracking-widest cursor-default">
-            Onboarding Mode
-          </span>
-        </div>
-        <div className="flex items-center gap-4">
-          <div className="h-2 w-2 rounded-full bg-primary animate-pulse"></div>
-          <span className="text-[10px] font-bold text-primary uppercase tracking-widest">
-            System Live
-          </span>
-        </div>
-      </header>
-
-      {/* Main Content */}
-      <main className="pt-28 pb-12 px-6 max-w-6xl mx-auto flex flex-col items-center">
+function PlanSelectionSection1() {
+  return <main className="pt-28 pb-12 px-6 max-w-6xl mx-auto flex flex-col items-center">
         {/* Header Section */}
         <div className="text-center mb-10 animate-in fade-in slide-in-from-top-4 transition-transform duration-700">
           <span className="text-[10px] font-bold text-primary uppercase tracking-[0.3em] mb-3 block">
@@ -71,19 +38,12 @@ export default function PlanSelection({ onSelectTrial, onSelectPro }) {
             </div>
 
             <div className="space-y-3 mb-8 grow">
-              {[
-                "Full Clinical Analytics",
-                "Unlimited Pharmacy SKUs",
-                "Audit Logs",
-                "Community Intelligence",
-              ].map((feature) => (
-                <div key={feature} className="flex items-center gap-3">
+              {["Full Clinical Analytics", "Unlimited Pharmacy SKUs", "Audit Logs", "Community Intelligence"].map(feature => <div key={feature} className="flex items-center gap-3">
                   <span className="material-symbols-outlined text-primary text-lg">
                     check_circle
                   </span>
                   <span className="text-sm text-on-surface/80">{feature}</span>
-                </div>
-              ))}
+                </div>)}
             </div>
 
             <div className="mt-auto pt-6 border-t border-(--surface)">
@@ -95,10 +55,7 @@ export default function PlanSelection({ onSelectTrial, onSelectPro }) {
                   / 28 Days
                 </span>
               </div>
-              <button
-                onClick={handleTrialClick}
-                className="w-full bg-(--surface) border border-(--surface) text-on-surface py-4 rounded-xl font-bold hover:bg-(--surface) hover:border-primary/50 transition-colors active:scale-[0.98] shadow-lg"
-              >
+              <button onClick={handleTrialClick} className="w-full bg-(--surface) border border-(--surface) text-on-surface py-4 rounded-xl font-bold hover:bg-(--surface) hover:border-primary/50 transition-colors active:scale-[0.98] shadow-lg">
                 Start Free Trial
               </button>
             </div>
@@ -126,19 +83,12 @@ export default function PlanSelection({ onSelectTrial, onSelectPro }) {
             </div>
 
             <div className="space-y-3 mb-8 grow">
-              {[
-                "Unlimited Medicines",
-                "Basic Analytics",
-                "Up to 3 Users",
-                "Standard Support",
-              ].map((feature) => (
-                <div key={feature} className="flex items-center gap-3">
+              {["Unlimited Medicines", "Basic Analytics", "Up to 3 Users", "Standard Support"].map(feature => <div key={feature} className="flex items-center gap-3">
                   <span className="material-symbols-outlined text-primary text-lg">
                     check_circle
                   </span>
                   <span className="text-sm text-on-surface/80">{feature}</span>
-                </div>
-              ))}
+                </div>)}
             </div>
 
             <div className="mt-auto pt-6 border-t border-(--surface)">
@@ -150,10 +100,7 @@ export default function PlanSelection({ onSelectTrial, onSelectPro }) {
                   / month
                 </span>
               </div>
-              <button
-                onClick={handleProClick}
-                className="w-full bg-(--surface) border border-(--surface) text-on-surface py-4 rounded-xl font-bold hover:bg-(--surface) hover:border-primary/50 transition-colors active:scale-[0.98] shadow-lg"
-              >
+              <button onClick={handleProClick} className="w-full bg-(--surface) border border-(--surface) text-on-surface py-4 rounded-xl font-bold hover:bg-(--surface) hover:border-primary/50 transition-colors active:scale-[0.98] shadow-lg">
                 Get Started
               </button>
             </div>
@@ -167,10 +114,9 @@ export default function PlanSelection({ onSelectTrial, onSelectPro }) {
             <div className="mb-6">
               <div className="flex justify-between items-start mb-4">
                 <div className="p-3 bg-primary/20 rounded-xl border border-primary/30">
-                  <span
-                    className="material-symbols-outlined text-primary text-2xl"
-                    style={{ fontVariationSettings: "'FILL' 1" }}
-                  >
+                  <span className="material-symbols-outlined text-primary text-2xl" style={{
+                fontVariationSettings: "'FILL' 1"
+              }}>
                     rocket_launch
                   </span>
                 </div>
@@ -187,25 +133,16 @@ export default function PlanSelection({ onSelectTrial, onSelectPro }) {
             </div>
 
             <div className="space-y-3 mb-8 grow">
-              {[
-                "Full Intelligence Hub",
-                "Unlimited Inventory SKUs",
-                "24/7 Priority Support",
-                "Advanced Bulk Import",
-                "Personnel Multi-Tenancy",
-              ].map((feature) => (
-                <div key={feature} className="flex items-center gap-3">
-                  <span
-                    className="material-symbols-outlined text-primary text-lg"
-                    style={{ fontVariationSettings: "'FILL' 1" }}
-                  >
+              {["Full Intelligence Hub", "Unlimited Inventory SKUs", "24/7 Priority Support", "Advanced Bulk Import", "Personnel Multi-Tenancy"].map(feature => <div key={feature} className="flex items-center gap-3">
+                  <span className="material-symbols-outlined text-primary text-lg" style={{
+              fontVariationSettings: "'FILL' 1"
+            }}>
                     verified
                   </span>
                   <span className="text-sm font-semibold text-on-surface">
                     {feature}
                   </span>
-                </div>
-              ))}
+                </div>)}
             </div>
 
             <div className="mt-auto pt-6 border-t border-primary/20">
@@ -217,10 +154,7 @@ export default function PlanSelection({ onSelectTrial, onSelectPro }) {
                   / month
                 </span>
               </div>
-              <button
-                onClick={handleProClick}
-                className="w-full bg-primary text-(--bg-dark) py-4 rounded-xl font-extrabold shadow-xl shadow-primary/20 hover:brightness-110 hover:scale-[1.02] transition-[filter] active:scale-[0.98]"
-              >
+              <button onClick={handleProClick} className="w-full bg-primary text-(--bg-dark) py-4 rounded-xl font-extrabold shadow-xl shadow-primary/20 hover:brightness-110 hover:scale-[1.02] transition-[filter] active:scale-[0.98]">
                 Activate Pro License
               </button>
             </div>
@@ -248,10 +182,41 @@ export default function PlanSelection({ onSelectTrial, onSelectPro }) {
             </span>
           </div>
         </div>
-      </main>
+      </main>;
+}
+export default function PlanSelection({
+  onSelectTrial,
+  onSelectPro
+}) {
+  const handleTrialClick = () => {
+    if (onSelectTrial) onSelectTrial();
+  };
+  const handleProClick = () => {
+    if (onSelectPro) onSelectPro();
+  };
+  return <div className="dark bg-(--bg-dark) h-screen text-on-surface font-['Manrope'] antialiased overflow-y-auto">
+      {/* TopAppBar Segment */}
+      <header className="fixed top-0 w-full z-50 flex justify-between items-center px-6 py-3 bg-(--bg-dark)/90 backdrop-blur-md border-b border-(--surface) shadow-xl">
+        <div className="flex items-center gap-3">
+          <img src="/viyan_logo.webp" alt="Viyan MedAssist" className="h-10 w-auto" />
+        </div>
+        <div className="hidden md:flex items-center space-x-8">
+          <span className="text-slate-400 text-xs font-bold uppercase tracking-widest cursor-default">
+            Onboarding Mode
+          </span>
+        </div>
+        <div className="flex items-center gap-4">
+          <div className="h-2 w-2 rounded-full bg-primary animate-pulse"></div>
+          <span className="text-[10px] font-bold text-primary uppercase tracking-widest">
+            System Live
+          </span>
+        </div>
+      </header>
+
+      {/* Main Content */}
+      <PlanSelectionSection1 />
 
       {/* Background Decor */}
       <div className="fixed bottom-0 left-0 w-full h-1/2 bg-linear-to-t from-primary/5 to-transparent -z-10 pointer-events-none"></div>
-    </div>
-  );
+    </div>;
 }

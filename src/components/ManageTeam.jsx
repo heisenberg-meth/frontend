@@ -1,212 +1,27 @@
 import { useState, useCallback, useRef, useEffect } from "react";
-import {
-  Users,
-  CheckCircle2,
-  XCircle,
-  RefreshCw,
-  UserPlus,
-  ShieldAlert,
-  Download,
-  Filter,
-  MoreVertical,
-  ShieldCheck,
-  Activity,
-  Trash2,
-  Camera,
-  Upload,
-  X,
-  ShieldUser,
-  Key,
-  Clipboard,
-  Fingerprint,
-  Lock,
-  Zap,
-  Mail,
-  User,
-  Shield,
-  Clock,
-  ChevronRight,
-  ExternalLink,
-} from "lucide-react";
+import { Users, CheckCircle2, XCircle, RefreshCw, UserPlus, ShieldAlert, Download, Filter, MoreVertical, ShieldCheck, Activity, Trash2, Camera, Upload, X, ShieldUser, Key, Clipboard, Fingerprint, Lock, Zap, Mail, User, Shield, Clock, ChevronRight, ExternalLink } from "lucide-react";
 import { AnimatePresence, m } from "framer-motion";
-import {
-  getTeamMembers,
-  inviteTeamMember,
-  removeTeamMember,
-  uploadTeamAvatar,
-} from "../services/profile.service";
+import { getTeamMembers, inviteTeamMember, removeTeamMember, uploadTeamAvatar } from "../services/profile.service";
 import { getAvatarUrl } from "../utils/image.js";
-
 const generateTempPassword = () => {
-  const randomPart = Math.floor(1000 + (Date.now() % 9000));
+  const randomPart = Math.floor(1000 + Date.now() % 9000);
   return `MedAssist!${randomPart}`;
 };
-
-export default function ManageTeam({ user, showToast }) {
-  const [team, setTeam] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [activeTab, setActiveTab] = useState("All Staff");
-  const [form, setForm] = useState({
-    fullName: "",
-    email: "",
-    role: "Pharmacist",
-    shift: "Day (7A-3P)",
-  });
-
-  const [showAvatarModal, setShowAvatarModal] = useState(false);
-  const [showSuccessModal, setShowSuccessModal] = useState(false);
-  const [newCredentials, setNewCredentials] = useState(null);
-  const selectedMemberIdRef = useRef(null);
-  const [uploading, setUploading] = useState(false);
-  const fileInputRef = useRef(null);
-
-  const fetchTeam = useCallback(async () => {
-    try {
-      const res = await getTeamMembers();
-      const data = res.data.data || res.data;
-      setTeam(Array.isArray(data) ? data : []);
-    } catch {
-      showToast("Failed to fetch clinical personnel", "error");
-    }
-  }, [showToast]);
-
-  useEffect(() => {
-    let active = true;
-    getTeamMembers()
-      .then((res) => {
-        if (active) {
-          const data = res.data.data || res.data;
-          setTeam(Array.isArray(data) ? data : []);
-        }
-      })
-      .catch(() => {
-        if (active) showToast("Failed to fetch clinical personnel", "error");
-      });
-    return () => {
-      active = false;
-    };
-  }, [showToast]);
-
-  const handleOnboard = async (e) => {
-    e.preventDefault();
-    if (!form.fullName || !form.email)
-      return showToast("Please fill all mandatory fields", "error");
-
-    setLoading(true);
-    try {
-      const tempPassword = generateTempPassword();
-      const payload = {
-        email: form.email,
-        password: tempPassword,
-        name: form.fullName,
-        role: form.role.toLowerCase(),
-        shiftGroup: form.shift,
-      };
-
-      await inviteTeamMember(payload);
-      setNewCredentials({ ...payload, loginUrl: window.location.origin });
-      setShowSuccessModal(true);
-      setForm({
-        fullName: "",
-        email: "",
-        role: "Pharmacist",
-        shift: "Day (7A-3P)",
-      });
-      fetchTeam();
-    } catch (err) {
-      showToast(
-        err.response?.data?.error ||
-          err.response?.data?.message ||
-          "Error generating invitation",
-        "error",
-      );
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const copyToClipboard = (text) => {
-    navigator.clipboard.writeText(text);
-    showToast("Copied to clinical clipboard", "success");
-  };
-
-  const openAvatarEdit = (memberId) => {
-    selectedMemberIdRef.current = memberId;
-    setShowAvatarModal(true);
-  };
-
-  const handleFileUpload = async (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-
-    setUploading(true);
-    try {
-      await uploadTeamAvatar(selectedMemberIdRef.current, file);
-      showToast("Clinical profile image synchronized", "success");
-      setShowAvatarModal(false);
-      fetchTeam();
-    } catch {
-      showToast("Failed to upload assets", "error");
-    } finally {
-      setUploading(false);
-    }
-  };
-
-  const removeMemberFn = async (id) => {
-    if (id === user.id)
-      return showToast("Cannot revoke primary owner access", "error");
-    if (
-      !window.confirm(
-        "⚠ DE-AUTHORIZATION: This will revoke all system permissions. Proceed?",
-      )
-    )
-      return;
-
-    try {
-      await removeTeamMember(id);
-      showToast("Personnel de-authorized", "success");
-      fetchTeam();
-    } catch {
-      showToast("Critical: Error removing staff", "error");
-    }
-  };
-
-  const shiftGroups = ["Day (7A-3P)", "Evening (3P-11P)", "Night (11P-7A)"];
-  const roles = ["Pharmacist", "Technician", "Inventory Mgr", "Administrator"];
-
-  return (
-    <div className="team-container-v2">
-      <div className="team-header-v2">
-        <div className="header-content">
-          <div className="clinical-badge-row">
-            <span className="badge-primary">SYSTEM NODE</span>
-            <span className="badge-secondary">ADMINISTRATIVE CONTROL</span>
-          </div>
-          <h1>Clinical Personnel &amp; RBAC</h1>
-          <p>
-            Orchestrate pharmacy staff, manage biometric access, and audit
-            real-time system interactions.
-          </p>
-        </div>
-        <div className="header-stats">
-          <div className="header-stat-box">
-            <span>TOTAL STAFF</span>
-            <div className="val-row">
-              <span className="val">{team.length}</span>
-              <Users size={20} style={{ color: "var(--info)" }} />
-            </div>
-          </div>
-          <div className="header-stat-box">
-            <span>ACTIVE SESSIONS</span>
-            <div className="val-row">
-              <span className="val">{Math.ceil(team.length * 0.4)}</span>
-              <ShieldCheck size={20} style={{ color: "var(--primary)" }} />
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div className="team-grid">
+const shiftGroups = ["Day (7A-3P)", "Evening (3P-11P)", "Night (11P-7A)"];
+const roles = ["Pharmacist", "Technician", "Inventory Mgr", "Administrator"];
+function ManageTeamSection1({
+  setForm,
+  form,
+  activeTab,
+  setActiveTab,
+  t,
+  e,
+  openAvatarEdit,
+  m,
+  user,
+  removeMemberFn
+}) {
+  return <div className="team-grid">
         <div className="team-left-stack">
           <div className="team-card onboard">
             <div className="card-header">
@@ -214,74 +29,55 @@ export default function ManageTeam({ user, showToast }) {
                 <UserPlus size={18} />
                 <span>Personnel Onboarding</span>
               </div>
-              <Zap size={14} style={{ color: "var(--warning)" }} />
+              <Zap size={14} style={{
+            color: "var(--warning)"
+          }} />
             </div>
             <form className="card-body" onSubmit={handleOnboard}>
               <div className="input-v2">
                 <label htmlFor="field_84a2zs">
                   <User size={12} /> FULL NAME
                 </label>
-                <input
-                  id="field_84a2zs"
-                  required
-                  placeholder="e.g. Dr. Sarah Chen"
-                  value={form.fullName}
-                  onChange={(e) =>
-                    setForm({ ...form, fullName: e.target.value })
-                  }
-                />
+                <input id="field_84a2zs" required placeholder="e.g. Dr. Sarah Chen" value={form.fullName} onChange={e => setForm({
+              ...form,
+              fullName: e.target.value
+            })} />
               </div>
               <div className="input-v2">
                 <label htmlFor="field_9kkasv">
                   <Mail size={12} /> PROFESSIONAL EMAIL
                 </label>
-                <input
-                  id="field_9kkasv"
-                  required
-                  type="email"
-                  placeholder="s.chen@viyanmed.com"
-                  value={form.email}
-                  onChange={(e) => setForm({ ...form, email: e.target.value })}
-                />
+                <input id="field_9kkasv" required type="email" placeholder="s.chen@viyanmed.com" value={form.email} onChange={e => setForm({
+              ...form,
+              email: e.target.value
+            })} />
               </div>
               <div className="form-row">
                 <div className="input-v2">
                   <label htmlFor="field_qvioqd">
                     <Shield size={12} /> ASSIGNED ROLE
                   </label>
-                  <select
-                    id="field_qvioqd"
-                    value={form.role}
-                    onChange={(e) => setForm({ ...form, role: e.target.value })}
-                  >
-                    {roles.map((r) => (
-                      <option key={r}>{r}</option>
-                    ))}
+                  <select id="field_qvioqd" value={form.role} onChange={e => setForm({
+                ...form,
+                role: e.target.value
+              })}>
+                    {roles.map(r => <option key={r}>{r}</option>)}
                   </select>
                 </div>
                 <div className="input-v2">
                   <label htmlFor="field_ec4fzu">
                     <Clock size={12} /> SHIFT SLOT
                   </label>
-                  <select
-                    id="field_ec4fzu"
-                    value={form.shift}
-                    onChange={(e) =>
-                      setForm({ ...form, shift: e.target.value })
-                    }
-                  >
-                    {shiftGroups.map((s) => (
-                      <option key={s}>{s}</option>
-                    ))}
+                  <select id="field_ec4fzu" value={form.shift} onChange={e => setForm({
+                ...form,
+                shift: e.target.value
+              })}>
+                    {shiftGroups.map(s => <option key={s}>{s}</option>)}
                   </select>
                 </div>
               </div>
               <button className="onboard-btn" type="submit" disabled={loading}>
-                {loading ? (
-                  <RefreshCw size={16} className="spin" />
-                ) : (
-                  <ExternalLink size={16} />
-                )}
+                {loading ? <RefreshCw size={16} className="spin" /> : <ExternalLink size={16} />}
                 {loading ? "INITIALIZING NODE..." : "GENERATE INVITATION"}
               </button>
             </form>
@@ -313,15 +109,9 @@ export default function ManageTeam({ user, showToast }) {
               <span>Clinical Registry</span>
             </div>
             <div className="registry-tabs">
-              {["All Staff", "Audit Logs", "Active"].map((t) => (
-                <button
-                  key={t}
-                  className={`tab-btn ${activeTab === t ? "active" : ""}`}
-                  onClick={() => setActiveTab(t)}
-                >
+              {["All Staff", "Audit Logs", "Active"].map(t => <button key={t} className={`tab-btn ${activeTab === t ? "active" : ""}`} onClick={() => setActiveTab(t)}>
                   {t}
-                </button>
-              ))}
+                </button>)}
             </div>
           </div>
 
@@ -339,54 +129,43 @@ export default function ManageTeam({ user, showToast }) {
               </thead>
               <tbody>
                 <AnimatePresence>
-                  {team.map((m) => (
-                    <m.tr
-                      key={m.id}
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, scale: 0.95 }}
-                    >
+                  {team.map(m => <m.tr key={m.id} initial={{
+                opacity: 0,
+                y: 10
+              }} animate={{
+                opacity: 1,
+                y: 0
+              }} exit={{
+                opacity: 0,
+                scale: 0.95
+              }}>
                       <td>
                         <div className="member-profile">
-                          <div
-                            role="button"
-                            tabIndex={0}
-                            className="avatar-wrap"
-                            onKeyDown={(e) => {
-                              if (e.key === "Enter" || e.key === " ") {
-                                e.preventDefault();
-                                e.currentTarget.click();
-                              }
-                            }}
-                            onClick={() => openAvatarEdit(m.id)}
-                            style={{ position: "relative", overflow: "hidden" }}
-                          >
-                            <img
-                              src={getAvatarUrl(
-                                m.avatar,
-                                m.fullName || m.username,
-                              )}
-                              alt=""
-                              style={{
-                                width: "100%",
-                                height: "100%",
-                                objectFit: "cover",
-                              }}
-                            />
-                            <div
-                              className="avatar-hover"
-                              style={{
-                                position: "absolute",
-                                inset: 0,
-                                background: "rgba(0,0,0,0.6)",
-                                display: "flex",
-                                alignItems: "center",
-                                justifyCenter: "center",
-                                opacity: 0,
-                                transition: "opacity 0.2s",
-                                color: "white",
-                              }}
-                            >
+                          <div role="button" tabIndex={0} className="avatar-wrap" onKeyDown={e => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        e.currentTarget.click();
+                      }
+                    }} onClick={() => openAvatarEdit(m.id)} style={{
+                      position: "relative",
+                      overflow: "hidden"
+                    }}>
+                            <img src={getAvatarUrl(m.avatar, m.fullName || m.username)} alt="" style={{
+                        width: "100%",
+                        height: "100%",
+                        objectFit: "cover"
+                      }} />
+                            <div className="avatar-hover" style={{
+                        position: "absolute",
+                        inset: 0,
+                        background: "rgba(0,0,0,0.6)",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyCenter: "center",
+                        opacity: 0,
+                        transition: "opacity 0.2s",
+                        color: "white"
+                      }}>
                               <Camera size={12} />
                             </div>
                           </div>
@@ -395,42 +174,29 @@ export default function ManageTeam({ user, showToast }) {
                               {m.fullName || m.username}
                             </span>
                             <span className="role">
-                              {m.role === "OWNER"
-                                ? "System Administrator"
-                                : "Clinical Pharmacist"}
+                              {m.role === "OWNER" ? "System Administrator" : "Clinical Pharmacist"}
                             </span>
                           </div>
                         </div>
                       </td>
                       <td className="perm-cell">
-                        {m.role === "OWNER" ? (
-                          <CheckCircle2 size={16} className="perm-ok" />
-                        ) : (
-                          <XCircle size={16} className="perm-no" />
-                        )}
+                        {m.role === "OWNER" ? <CheckCircle2 size={16} className="perm-ok" /> : <XCircle size={16} className="perm-no" />}
                       </td>
                       <td className="perm-cell">
                         <CheckCircle2 size={16} className="perm-ok" />
                       </td>
                       <td className="perm-cell">
-                        {m.role === "OWNER" ? (
-                          <CheckCircle2 size={16} className="perm-ok" />
-                        ) : (
-                          <XCircle size={16} className="perm-no" />
-                        )}
+                        {m.role === "OWNER" ? <CheckCircle2 size={16} className="perm-ok" /> : <XCircle size={16} className="perm-no" />}
                       </td>
                       <td>
                         <span className="status-pill active">
-                          <div
-                            className="dot"
-                            style={{
-                              width: 6,
-                              height: 6,
-                              borderRadius: "50%",
-                              background: "var(--success)",
-                              marginRight: 8,
-                            }}
-                          />
+                          <div className="dot" style={{
+                      width: 6,
+                      height: 6,
+                      borderRadius: "50%",
+                      background: "var(--success)",
+                      marginRight: 8
+                    }} />
                           ONLINE
                         </span>
                       </td>
@@ -439,18 +205,12 @@ export default function ManageTeam({ user, showToast }) {
                           <button className="icon-btn">
                             <MoreVertical size={14} />
                           </button>
-                          {user.role === "OWNER" && m.id !== user.id && (
-                            <button
-                              className="icon-btn delete"
-                              onClick={() => removeMemberFn(m.id)}
-                            >
+                          {user.role === "OWNER" && m.id !== user.id && <button className="icon-btn delete" onClick={() => removeMemberFn(m.id)}>
                               <Trash2 size={14} />
-                            </button>
-                          )}
+                            </button>}
                         </div>
                       </td>
-                    </m.tr>
-                  ))}
+                    </m.tr>)}
                 </AnimatePresence>
               </tbody>
             </table>
@@ -468,9 +228,10 @@ export default function ManageTeam({ user, showToast }) {
             </div>
           </div>
         </div>
-      </div>
-
-      <div className="team-footer-row">
+      </div>;
+}
+function ManageTeamSection2() {
+  return <div className="team-footer-row">
         <div className="team-card logs">
           <div className="card-header">
             <div className="header-title">
@@ -508,102 +269,103 @@ export default function ManageTeam({ user, showToast }) {
               <span>TRAINING COMPLETION</span>
             </div>
             <div className="comp-bar-wrap">
-              <div className="bar-fill" style={{ width: "98.4%" }} />
+              <div className="bar-fill" style={{
+            width: "98.4%"
+          }} />
             </div>
-            <button
-              className="report-btn"
-              style={{
-                background: "none",
-                border: "none",
-                cursor: "pointer",
-                display: "flex",
-                alignItems: "center",
-                gap: 8,
-                marginTop: 12,
-              }}
-            >
+            <button className="report-btn" style={{
+          background: "none",
+          border: "none",
+          cursor: "pointer",
+          display: "flex",
+          alignItems: "center",
+          gap: 8,
+          marginTop: 12
+        }}>
               AUDIT FULL SYSTEM <ChevronRight size={14} />
             </button>
           </div>
         </div>
-      </div>
-
-      <AnimatePresence>
-        {showAvatarModal && (
-          <div className="modal-overlay">
-            <m.div
-              className="modal-content"
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              style={{ maxWidth: 440 }}
-            >
+      </div>;
+}
+function ManageTeamSection3({
+  setShowAvatarModal,
+  e,
+  fileInputRef,
+  setShowSuccessModal,
+  copyToClipboard,
+  newCredentials
+}) {
+  return <AnimatePresence>
+        {showAvatarModal && <div className="modal-overlay">
+            <m.div className="modal-content" initial={{
+        opacity: 0,
+        scale: 0.95
+      }} animate={{
+        opacity: 1,
+        scale: 1
+      }} exit={{
+        opacity: 0,
+        scale: 0.95
+      }} style={{
+        maxWidth: 440
+      }}>
               <div className="modal-header">
-                <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                  <ShieldUser size={20} style={{ color: "var(--primary)" }} />
+                <div style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 12
+          }}>
+                  <ShieldUser size={20} style={{
+              color: "var(--primary)"
+            }} />
                   <h3>Personnel Asset Update</h3>
                 </div>
-                <button
-                  className="modal-close-btn"
-                  onClick={() => setShowAvatarModal(false)}
-                >
+                <button className="modal-close-btn" onClick={() => setShowAvatarModal(false)}>
                   <X size={18} />
                 </button>
               </div>
 
               <div className="modal-body-p">
-                <div
-                  role="button"
-                  tabIndex={0}
-                  className="upload-zone"
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" || e.key === " ") {
-                      e.preventDefault();
-                      e.currentTarget.click();
-                    }
-                  }}
-                  onClick={() => fileInputRef.current?.click()}
-                >
-                  {uploading ? (
-                    <RefreshCw size={32} className="spin" />
-                  ) : (
-                    <>
+                <div role="button" tabIndex={0} className="upload-zone" onKeyDown={e => {
+            if (e.key === "Enter" || e.key === " ") {
+              e.preventDefault();
+              e.currentTarget.click();
+            }
+          }} onClick={() => fileInputRef.current?.click()}>
+                  {uploading ? <RefreshCw size={32} className="spin" /> : <>
                       <Upload size={32} />
                       <p>DRAG ASSET HERE OR CLICK TO BROWSE</p>
                       <span>Supports JPG, PNG, WEBP (Max 2MB)</span>
-                    </>
-                  )}
-                  <input
-                    required
-                    type="file"
-                    ref={fileInputRef}
-                    hidden
-                    accept="image/*"
-                    onChange={handleFileUpload}
-                  />
+                    </>}
+                  <input required type="file" ref={fileInputRef} hidden accept="image/*" onChange={handleFileUpload} />
                 </div>
               </div>
             </m.div>
-          </div>
-        )}
+          </div>}
 
-        {showSuccessModal && (
-          <div className="modal-overlay">
-            <m.div
-              className="modal-content"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              style={{ maxWidth: 480 }}
-            >
+        {showSuccessModal && <div className="modal-overlay">
+            <m.div className="modal-content" initial={{
+        opacity: 0,
+        y: 20
+      }} animate={{
+        opacity: 1,
+        y: 0
+      }} style={{
+        maxWidth: 480
+      }}>
               <div className="modal-header">
-                <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                  <Key size={20} style={{ color: "var(--primary)" }} />
+                <div style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 12
+          }}>
+                  <Key size={20} style={{
+              color: "var(--primary)"
+            }} />
                   <h3>Credential Generated</h3>
                 </div>
-                <button
-                  className="modal-close-btn"
-                  onClick={() => setShowSuccessModal(false)}
-                >
+                <button className="modal-close-btn" onClick={() => setShowSuccessModal(false)}>
                   <X size={18} />
                 </button>
               </div>
@@ -619,11 +381,7 @@ export default function ManageTeam({ user, showToast }) {
                     <span>LOGIN GATEWAY</span>
                     <div className="val-box">
                       <span>{newCredentials?.loginUrl}</span>
-                      <button
-                        onClick={() =>
-                          copyToClipboard(newCredentials?.loginUrl)
-                        }
-                      >
+                      <button onClick={() => copyToClipboard(newCredentials?.loginUrl)}>
                         <Clipboard size={14} />
                       </button>
                     </div>
@@ -632,50 +390,188 @@ export default function ManageTeam({ user, showToast }) {
                     <span>USERNAME</span>
                     <div className="val-box">
                       <span>{newCredentials?.email}</span>
-                      <button
-                        onClick={() => copyToClipboard(newCredentials?.email)}
-                      >
+                      <button onClick={() => copyToClipboard(newCredentials?.email)}>
                         <Clipboard size={14} />
                       </button>
                     </div>
                   </div>
                   <div className="cred-item">
                     <span>ACCESS KEY</span>
-                    <div
-                      className="val-box secret"
-                      style={{
-                        background: "rgba(79, 219, 200, 0.05)",
-                        borderColor: "var(--primary-glow)",
-                      }}
-                    >
-                      <span
-                        style={{ color: "var(--primary)", fontWeight: 800 }}
-                      >
+                    <div className="val-box secret" style={{
+                background: "rgba(79, 219, 200, 0.05)",
+                borderColor: "var(--primary-glow)"
+              }}>
+                      <span style={{
+                  color: "var(--primary)",
+                  fontWeight: 800
+                }}>
                         {newCredentials?.password}
                       </span>
-                      <button
-                        onClick={() =>
-                          copyToClipboard(newCredentials?.password)
-                        }
-                      >
+                      <button onClick={() => copyToClipboard(newCredentials?.password)}>
                         <Clipboard size={14} />
                       </button>
                     </div>
                   </div>
                 </div>
 
-                <button
-                  className="confirm-btn"
-                  onClick={() => setShowSuccessModal(false)}
-                  style={{ width: "100%", marginTop: 24 }}
-                >
+                <button className="confirm-btn" onClick={() => setShowSuccessModal(false)} style={{
+            width: "100%",
+            marginTop: 24
+          }}>
                   I HAVE SECURED THE KEYS
                 </button>
               </div>
             </m.div>
+          </div>}
+      </AnimatePresence>;
+}
+export default function ManageTeam({
+  user,
+  showToast
+}) {
+  const [team, setTeam] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [activeTab, setActiveTab] = useState("All Staff");
+  const [form, setForm] = useState({
+    fullName: "",
+    email: "",
+    role: "Pharmacist",
+    shift: "Day (7A-3P)"
+  });
+  const [showAvatarModal, setShowAvatarModal] = useState(false);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [newCredentials, setNewCredentials] = useState(null);
+  const selectedMemberIdRef = useRef(null);
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef(null);
+  const fetchTeam = useCallback(async () => {
+    try {
+      const res = await getTeamMembers();
+      const data = res.data.data || res.data;
+      setTeam(Array.isArray(data) ? data : []);
+    } catch {
+      showToast("Failed to fetch clinical personnel", "error");
+    }
+  }, [showToast]);
+  useEffect(() => {
+    let active = true;
+    getTeamMembers().then(res => {
+      if (active) {
+        const data = res.data.data || res.data;
+        setTeam(Array.isArray(data) ? data : []);
+      }
+    }).catch(() => {
+      if (active) showToast("Failed to fetch clinical personnel", "error");
+    });
+    return () => {
+      active = false;
+    };
+  }, [showToast]);
+  const handleOnboard = async e => {
+    e.preventDefault();
+    if (!form.fullName || !form.email) return showToast("Please fill all mandatory fields", "error");
+    setLoading(true);
+    try {
+      const tempPassword = generateTempPassword();
+      const payload = {
+        email: form.email,
+        password: tempPassword,
+        name: form.fullName,
+        role: form.role.toLowerCase(),
+        shiftGroup: form.shift
+      };
+      await inviteTeamMember(payload);
+      setNewCredentials({
+        ...payload,
+        loginUrl: window.location.origin
+      });
+      setShowSuccessModal(true);
+      setForm({
+        fullName: "",
+        email: "",
+        role: "Pharmacist",
+        shift: "Day (7A-3P)"
+      });
+      fetchTeam();
+    } catch (err) {
+      showToast(err.response?.data?.error || err.response?.data?.message || "Error generating invitation", "error");
+    } finally {
+      setLoading(false);
+    }
+  };
+  const copyToClipboard = text => {
+    navigator.clipboard.writeText(text);
+    showToast("Copied to clinical clipboard", "success");
+  };
+  const openAvatarEdit = memberId => {
+    selectedMemberIdRef.current = memberId;
+    setShowAvatarModal(true);
+  };
+  const handleFileUpload = async e => {
+    const file = e.target.files[0];
+    if (!file) return;
+    setUploading(true);
+    try {
+      await uploadTeamAvatar(selectedMemberIdRef.current, file);
+      showToast("Clinical profile image synchronized", "success");
+      setShowAvatarModal(false);
+      fetchTeam();
+    } catch {
+      showToast("Failed to upload assets", "error");
+    } finally {
+      setUploading(false);
+    }
+  };
+  const removeMemberFn = async id => {
+    if (id === user.id) return showToast("Cannot revoke primary owner access", "error");
+    if (!window.confirm("⚠ DE-AUTHORIZATION: This will revoke all system permissions. Proceed?")) return;
+    try {
+      await removeTeamMember(id);
+      showToast("Personnel de-authorized", "success");
+      fetchTeam();
+    } catch {
+      showToast("Critical: Error removing staff", "error");
+    }
+  };
+  return <div className="team-container-v2">
+      <div className="team-header-v2">
+        <div className="header-content">
+          <div className="clinical-badge-row">
+            <span className="badge-primary">SYSTEM NODE</span>
+            <span className="badge-secondary">ADMINISTRATIVE CONTROL</span>
           </div>
-        )}
-      </AnimatePresence>
-    </div>
-  );
+          <h1>Clinical Personnel &amp; RBAC</h1>
+          <p>
+            Orchestrate pharmacy staff, manage biometric access, and audit
+            real-time system interactions.
+          </p>
+        </div>
+        <div className="header-stats">
+          <div className="header-stat-box">
+            <span>TOTAL STAFF</span>
+            <div className="val-row">
+              <span className="val">{team.length}</span>
+              <Users size={20} style={{
+              color: "var(--info)"
+            }} />
+            </div>
+          </div>
+          <div className="header-stat-box">
+            <span>ACTIVE SESSIONS</span>
+            <div className="val-row">
+              <span className="val">{Math.ceil(team.length * 0.4)}</span>
+              <ShieldCheck size={20} style={{
+              color: "var(--primary)"
+            }} />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <ManageTeamSection1 setForm={setForm} form={form} activeTab={activeTab} setActiveTab={setActiveTab} t={t} e={e} openAvatarEdit={openAvatarEdit} m={m} user={user} removeMemberFn={removeMemberFn} />
+
+      <ManageTeamSection2 />
+
+      <ManageTeamSection3 setShowAvatarModal={setShowAvatarModal} e={e} fileInputRef={fileInputRef} setShowSuccessModal={setShowSuccessModal} copyToClipboard={copyToClipboard} newCredentials={newCredentials} />
+    </div>;
 }

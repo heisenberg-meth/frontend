@@ -3,7 +3,280 @@ import { useNavigate } from "react-router-dom";
 import { Lock, Mail, Shield, Eye, EyeOff, Check, Loader2 } from "lucide-react";
 import api from "../api";
 import { API_ROUTES } from "../constants/api.routes.js";
-export default function Auth({ onAuth }) {
+const validateEmail = email => {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+};
+const validatePassword = password => {
+  if (password.length < 6) return "Password must be at least 6 characters";
+  return null;
+};
+const getFingerprint = () => {
+  try {
+    const {
+      userAgent,
+      language,
+      hardwareConcurrency,
+      deviceMemory
+    } = navigator;
+    const {
+      width,
+      height,
+      colorDepth
+    } = window.screen;
+    const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    const canvas = document.createElement("canvas");
+    const ctx = canvas.getContext("2d");
+    ctx.fillText("viyan-medassist-fingerprint", 2, 17);
+    const canvasHash = canvas.toDataURL().slice(-50);
+    return btoa(`${userAgent}-${language}-${hardwareConcurrency}-${deviceMemory}-${width}x${height}-${colorDepth}-${timezone}-${canvasHash}`);
+  } catch {
+    return null;
+  }
+};
+function AuthSection1({
+  setLoginType,
+  setError,
+  updateField,
+  navigateTo,
+  setShowPassword,
+  showPassword,
+  setAgreedToTerms,
+  navigate
+}) {
+  return <div className="auth-canvas-section">
+        <AuthSection1Section1 setLoginType={setLoginType} setError={setError} updateField={updateField} navigateTo={navigateTo} setShowPassword={setShowPassword} showPassword={showPassword} setAgreedToTerms={setAgreedToTerms} navigate={navigate} />
+      </div>;
+}
+function AuthSection1Section1({
+  setLoginType,
+  setError,
+  updateField,
+  navigateTo,
+  setShowPassword,
+  showPassword,
+  setAgreedToTerms,
+  navigate
+}) {
+  return <div className="auth-canvas-content">
+          <div className="mobile-logo-wrap">
+            <img src="/viyan_logo.webp" alt="Viyan Medassist" className="h-10 w-auto" />
+          </div>
+
+          <div className="canvas-header">
+            <h2 className="canvas-title">
+              {view === "login" && (loginType === "admin" ? "Admin Access" : "Staff Portal")}
+              {view === "register" && "Join the Network"}
+              {view === "forgot" && "Forgot Password"}
+              {view === "verifyOtp" && "Verify Code"}
+              {view === "verifyDeviceOtp" && "Verify Device"}
+
+              {view === "newPassword" && "Create New Password"}
+            </h2>
+            <p className="canvas-subtitle">
+              {view === "login" && (loginType === "admin" ? "Access your facility administration dashboard." : "Sign in with your clinical access credentials.")}
+              {view === "register" && "Start your facility registration today."}
+              {view === "forgot" && "Enter your email to receive a recovery code."}
+              {view === "verifyOtp" && "Enter the 6-digit code sent to your email."}
+              {view === "verifyDeviceOtp" && "Enter the 6-digit authorization code sent to your email."}
+
+              {view === "newPassword" && "Choose a strong password for your account."}
+            </p>
+          </div>
+
+          {view === "login" && <div className="login-type-toggle">
+              <button type="button" className={`type-btn ${loginType === "admin" ? "active" : ""}`} onClick={() => {
+        setLoginType("admin");
+        setError("");
+      }}>
+                <Shield size={16} />
+                <span>Facility Admin</span>
+              </button>
+            </div>}
+
+          {error && <div className="auth-error-alert" role="alert">
+              {typeof error === "string" ? error : error?.message || String(error)}
+            </div>}
+
+          {success && <div className="auth-success-alert" role="status">
+              {success}
+            </div>}
+
+          <form onSubmit={handleSubmit} className="canvas-form" autoComplete="off">
+            <div className="form-controls-stack">
+              {view === "register" && <>
+                  <div className="control-group">
+                    <label htmlFor="field_qd2938" className="control-label">
+                      FULL NAME
+                    </label>
+                    <div className="control-input-wrap">
+                      <input id="field_qd2938" required type="text" className="canvas-input" placeholder="Dr. Julian Sterling" value={form.fullName} onChange={e => updateField("fullName", e.target.value)} />
+                    </div>
+                  </div>
+                  <div className="control-group">
+                    <label htmlFor="field_hxak7s" className="control-label">
+                      PHARMACY / SHOP NAME
+                    </label>
+                    <div className="control-input-wrap">
+                      <Shield size={18} className="input-icon-left" />
+                      <input id="field_hxak7s" required type="text" className="canvas-input" placeholder="e.g. Apex Medical Solutions" value={form.shopName} onChange={e => updateField("shopName", e.target.value)} />
+                    </div>
+                  </div>
+                </>}
+
+              {(view === "login" || view === "register" || view === "forgot" || view === "verifyOtp" || view === "verifyDeviceOtp") && <div className="control-group">
+                  <label htmlFor="field_ijpf58" className="control-label">
+                    {loginType === "admin" ? "WORK EMAIL" : "STAFF ID / EMAIL"}
+                  </label>
+                  <div className="control-input-wrap">
+                    <Mail size={18} className="input-icon-left" />
+                    <input id="field_ijpf58" required type={loginType === "admin" ? "email" : "text"} className="canvas-input" placeholder={loginType === "admin" ? "dr.house@viyan.med" : "STAFF-9921"} value={form.email} onChange={e => updateField("email", e.target.value)} disabled={view === "verifyOtp" || view === "verifyDeviceOtp"} autoComplete="off" />
+                  </div>
+                </div>}
+
+              {(view === "login" || view === "register") && <div className="control-group">
+                  <div className="control-header-flex">
+                    <span className="control-label">PASSWORD</span>
+                    {view === "login" && <button type="button" className="control-link" onClick={() => navigateTo("forgot")}>
+                        FORGOT PASSWORD?
+                      </button>}
+                  </div>
+                  <div className="control-input-wrap">
+                    <Lock size={18} className="input-icon-left" />
+                    <><label htmlFor="field_4jpra7" className="sr-only">Enter your password</label><input required type={showPassword ? "text" : "password"} className="canvas-input" placeholder="Enter your password" value={form.password} onChange={e => updateField("password", e.target.value)} autoComplete="new-password" id="field_4jpra7" /></>
+                    <button type="button" className="input-icon-right" onClick={() => setShowPassword(!showPassword)} aria-label={showPassword ? "Hide password" : "Show password"}>
+                      {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                    </button>
+                  </div>
+                </div>}
+
+              {(view === "verifyOtp" || view === "verifyDeviceOtp") && <div className="control-group">
+                  <label htmlFor="field_06t1l4" className="control-label">
+                    VERIFICATION CODE (OTP)
+                  </label>
+                  <div className="control-input-wrap">
+                    <Shield size={18} className="input-icon-left" />
+                    <input id="field_06t1l4" required type="text" className="canvas-input" placeholder="Enter 6-digit code" value={form.otp} onChange={e => updateField("otp", e.target.value)} maxLength={6} pattern="\d{6}" autoFocus />
+                  </div>
+                  {view === "verifyOtp" && <button type="button" className="control-link" onClick={handleResendOtp} disabled={loading} style={{
+            marginTop: "8px",
+            alignSelf: "flex-end"
+          }}>
+                      Resend Code
+                    </button>}
+                </div>}
+
+              {view === "newPassword" && <>
+                  <div className="control-group">
+                    <label htmlFor="field_q1rywn" className="control-label">
+                      NEW PASSWORD
+                    </label>
+                    <div className="control-input-wrap">
+                      <Lock size={18} className="input-icon-left" />
+                      <input id="field_q1rywn" required type={showPassword ? "text" : "password"} className="canvas-input" placeholder="Min. 8 characters" value={form.newPassword} onChange={e => updateField("newPassword", e.target.value)} minLength={8} autoFocus />
+                      <button type="button" className="input-icon-right" onClick={() => setShowPassword(!showPassword)} aria-label={showPassword ? "Hide password" : "Show password"}>
+                        {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                      </button>
+                    </div>
+                  </div>
+                  <div className="control-group">
+                    <label htmlFor="field_0bwc93" className="control-label">
+                      CONFIRM NEW PASSWORD
+                    </label>
+                    <div className="control-input-wrap">
+                      <Lock size={18} className="input-icon-left" />
+                      <input id="field_0bwc93" required type={showPassword ? "text" : "password"} className="canvas-input" placeholder="Re-enter new password" value={form.confirmPassword || ""} onChange={e => updateField("confirmPassword", e.target.value)} />
+                    </div>
+                  </div>
+                </>}
+
+              {view === "register" && <div className="control-group">
+                  <label htmlFor="field_wfq2ur" className="control-label">
+                    CONFIRM PASSWORD
+                  </label>
+                  <div className="control-input-wrap">
+                    <Lock size={18} className="input-icon-left" />
+                    <input id="field_wfq2ur" required type={showPassword ? "text" : "password"} className="canvas-input" placeholder="Re-enter your password" value={form.confirmPassword || ""} onChange={e => updateField("confirmPassword", e.target.value)} />
+                  </div>
+                </div>}
+
+              {view === "register" && <div className="auth-consent-group">
+                  <input type="checkbox" id="legal-consent" className="auth-consent-checkbox" checked={agreedToTerms} onChange={e => setAgreedToTerms(e.target.checked)} />
+                  <label htmlFor="legal-consent" className="auth-consent-text">
+                    I have read and agree to the{" "}
+                    <a href="/legal" target="_blank" rel="noopener noreferrer" className="auth-consent-link">
+                      Terms of Service
+                    </a>
+                    ,{" "}
+                    <a href="/legal" target="_blank" rel="noopener noreferrer" className="auth-consent-link">
+                      Privacy Policy
+                    </a>
+                    , and{" "}
+                    <a href="/legal" target="_blank" rel="noopener noreferrer" className="auth-consent-link">
+                      EULA
+                    </a>
+                    .
+                  </label>
+                </div>}
+            </div>
+
+            <button type="submit" className="canvas-submit-btn" disabled={loading}>
+              {loading ? <span className="submit-loading">
+                  <Loader2 size={18} className="spinner" />
+                  Processing...
+                </span> : view === "login" ? "Sign In to Dashboard" : view === "register" ? "Create Account" : view === "forgot" ? "Send Recovery Code" : view === "verifyOtp" || view === "verifyDeviceOtp" ? "Verify Code" : "Reset Password"}
+            </button>
+          </form>
+
+          {/* SSO Divider */}
+          {(view === "login" || view === "register") && <>
+              <div className="canvas-divider">
+                <div className="divider-line"></div>
+                <span className="divider-text">OR CONTINUE WITH</span>
+                <div className="divider-line"></div>
+              </div>
+            </>}
+
+          <p className="canvas-footer-toggle">
+            {view === "login" && <>
+                New to Viyan MedAssist?
+                <button type="button" onClick={() => navigate("/pricing")}>
+                  View Plans & Sign Up
+                </button>
+              </>}
+            {view === "register" && <>
+                Already registered?
+                <button type="button" onClick={() => navigateTo("login")}>
+                  Sign In to Portal
+                </button>
+              </>}
+            {(view === "forgot" || view === "verifyOtp" || view === "verifyDeviceOtp" || view === "newPassword") && <button type="button" onClick={() => navigateTo("login")}>
+                Back to Sign In
+              </button>}
+          </p>
+
+          <div className="canvas-compliance-footer">
+            <div className="compliance-badges">
+              <span className="badge">
+                <Check size={12} /> HIPAA COMPLIANT
+              </span>
+              <span className="badge">
+                <Lock size={12} /> SSL SECURED
+              </span>
+            </div>
+            <div className="compliance-links">
+              <a href="/legal" target="_blank" rel="noopener noreferrer">
+                Privacy
+              </a>
+              <a href="/legal" target="_blank" rel="noopener noreferrer">
+                Terms
+              </a>
+            </div>
+          </div>
+        </div>;
+}
+export default function Auth({
+  onAuth
+}) {
   const navigate = useNavigate();
   const [view, setView] = useState("login");
   const [loginType, setLoginType] = useState("admin");
@@ -12,60 +285,25 @@ export default function Auth({ onAuth }) {
     email: "",
     password: "",
     otp: "",
-
     newPassword: "",
     confirmPassword: "",
-    resetToken: "",
+    resetToken: ""
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [agreedToTerms, setAgreedToTerms] = useState(false);
-
-  const validateEmail = (email) => {
-    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-  };
-
-  const validatePassword = (password) => {
-    if (password.length < 6) return "Password must be at least 6 characters";
-    return null;
-  };
-
-  const getFingerprint = () => {
-    try {
-      const { userAgent, language, hardwareConcurrency, deviceMemory } =
-        navigator;
-      const { width, height, colorDepth } = window.screen;
-      const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-      const canvas = document.createElement("canvas");
-      const ctx = canvas.getContext("2d");
-      ctx.fillText("viyan-medassist-fingerprint", 2, 17);
-      const canvasHash = canvas.toDataURL().slice(-50);
-      return btoa(
-        `${userAgent}-${language}-${hardwareConcurrency}-${deviceMemory}-${width}x${height}-${colorDepth}-${timezone}-${canvasHash}`,
-      );
-    } catch {
-      return null;
-    }
-  };
-
-  const handleSubmit = async (e) => {
+  const handleSubmit = async e => {
     e.preventDefault();
     setError("");
     setSuccess("");
-
     const email = form.email.trim();
     const password = form.password.trim();
-
     if (!email && view !== "newPassword") {
       setError("Email is required.");
       return;
     }
-    if (
-      loginType === "admin" &&
-      !validateEmail(email) &&
-      view !== "newPassword"
-    ) {
+    if (loginType === "admin" && !validateEmail(email) && view !== "newPassword") {
       setError("Please enter a valid email address.");
       return;
     }
@@ -73,7 +311,6 @@ export default function Auth({ onAuth }) {
       setError("Please enter a valid Staff ID or email.");
       return;
     }
-
     if (view === "login" || view === "register") {
       if (!password) {
         setError("Password is required.");
@@ -85,17 +322,14 @@ export default function Auth({ onAuth }) {
         return;
       }
     }
-
     if (view === "register" && form.password !== form.confirmPassword) {
       setError("Passwords do not match.");
       return;
     }
-
     if (view === "register" && !agreedToTerms) {
       setError("You must agree to the Terms of Service and Privacy Policy.");
       return;
     }
-
     if (view === "newPassword") {
       if (!form.otp) {
         setError("Session expired. Please start over.");
@@ -114,71 +348,65 @@ export default function Auth({ onAuth }) {
         return;
       }
     }
-
     if ((view === "verifyOtp" || view === "verifyDeviceOtp") && !form.otp) {
       setError("Please enter the verification code.");
       return;
     }
-
     setLoading(true);
-
     try {
       if (view === "login") {
-        const result = await onAuth(
-          {
-            email: email.toLowerCase(),
-            password,
-            fingerprint: getFingerprint(),
-          },
-          false,
-        );
+        const result = await onAuth({
+          email: email.toLowerCase(),
+          password,
+          fingerprint: getFingerprint()
+        }, false);
         if (result?.deviceVerificationRequired) {
           setView("verifyDeviceOtp");
           setSuccess(result.message);
         }
       } else if (view === "verifyDeviceOtp") {
-        await onAuth(
-          {
-            email: email.toLowerCase(),
-            password,
-            fingerprint: getFingerprint(),
-            otp: form.otp,
-          },
-          false,
-        );
+        await onAuth({
+          email: email.toLowerCase(),
+          password,
+          fingerprint: getFingerprint(),
+          otp: form.otp
+        }, false);
       } else if (view === "register") {
-        await onAuth(
-          {
-            email: email.toLowerCase(),
-            password,
-            fullName: form.fullName.trim(),
-            shopName: form.shopName.trim(),
-            confirmPassword: form.confirmPassword.trim(),
-            role: "owner",
-            fingerprint: getFingerprint(),
-          },
-          true,
-        );
+        await onAuth({
+          email: email.toLowerCase(),
+          password,
+          fullName: form.fullName.trim(),
+          shopName: form.shopName.trim(),
+          confirmPassword: form.confirmPassword.trim(),
+          role: "owner",
+          fingerprint: getFingerprint()
+        }, true);
       } else if (view === "forgot") {
         await api.post(API_ROUTES.AUTH_FORGOT_PASSWORD, {
-          email: email.toLowerCase(),
+          email: email.toLowerCase()
         });
-        setForm((prev) => ({ ...prev, email: email.toLowerCase() }));
+        setForm(prev => ({
+          ...prev,
+          email: email.toLowerCase()
+        }));
         setView("verifyOtp");
         setSuccess("Verification code sent. Check your inbox.");
       } else if (view === "verifyOtp") {
         const res = await api.post(API_ROUTES.AUTH_VERIFY_RESET_OTP, {
           email: email.toLowerCase(),
-          otp: form.otp,
+          otp: form.otp
         });
         const resetToken = res.data?.data?.resetToken || "";
-        setForm((prev) => ({ ...prev, resetToken }));
+        setForm(prev => ({
+          ...prev,
+          resetToken
+        }));
         setView("newPassword");
         setSuccess("Code verified. Create a new password.");
       } else if (view === "newPassword") {
         await api.post(API_ROUTES.AUTH_RESET_PASSWORD, {
           resetToken: form.resetToken,
-          newPassword: form.newPassword,
+          newPassword: form.newPassword
         });
         setView("login");
         setSuccess("Password reset successful. Please sign in.");
@@ -188,63 +416,47 @@ export default function Auth({ onAuth }) {
           otp: "",
           newPassword: "",
           confirmPassword: "",
-          resetToken: "",
+          resetToken: ""
         });
       }
     } catch (err) {
       const errData = err.response?.data;
-      const message =
-        typeof errData?.error?.message === "string"
-          ? errData.error.message
-          : typeof errData?.message === "string"
-            ? errData.message
-            : typeof errData?.error === "string"
-              ? errData.error
-              : typeof err.message === "string"
-                ? err.message
-                : "Action failed. Please try again.";
+      const message = typeof errData?.error?.message === "string" ? errData.error.message : typeof errData?.message === "string" ? errData.message : typeof errData?.error === "string" ? errData.error : typeof err.message === "string" ? err.message : "Action failed. Please try again.";
       setError(message);
     } finally {
       setLoading(false);
     }
   };
-
   const handleResendOtp = async () => {
     setError("");
     setSuccess("");
     setLoading(true);
     try {
       await api.post(API_ROUTES.AUTH_RESEND_RESET_OTP, {
-        email: form.email.toLowerCase(),
+        email: form.email.toLowerCase()
       });
       setSuccess("New code sent. Check your inbox.");
     } catch (err) {
       const errData = err.response?.data;
-      const message =
-        typeof errData?.error?.message === "string"
-          ? errData.error.message
-          : typeof errData?.message === "string"
-            ? errData.message
-            : "Failed to resend code.";
+      const message = typeof errData?.error?.message === "string" ? errData.error.message : typeof errData?.message === "string" ? errData.message : "Failed to resend code.";
       setError(message);
     } finally {
       setLoading(false);
     }
   };
-
   const updateField = (field, value) => {
-    setForm((prev) => ({ ...prev, [field]: value }));
+    setForm(prev => ({
+      ...prev,
+      [field]: value
+    }));
     if (error) setError("");
   };
-
-  const navigateTo = (target) => {
+  const navigateTo = target => {
     setView(target);
     setError("");
     setSuccess("");
   };
-
-  return (
-    <div className="auth-gateway-layout">
+  return <div className="auth-gateway-layout">
       <div className="systems-status-badge">
         <div className="status-dot"></div>
         <span>SYSTEMS ONLINE</span>
@@ -259,11 +471,7 @@ export default function Auth({ onAuth }) {
 
         <div className="branding-content">
           <div className="branding-logo-wrap">
-            <img
-              src="/viyan_logo.webp"
-              alt="Viyan Medassist"
-              className="auth-brand-logo"
-            />
+            <img src="/viyan_logo.webp" alt="Viyan Medassist" className="auth-brand-logo" />
           </div>
 
           <h1 className="branding-title">
@@ -292,434 +500,6 @@ export default function Auth({ onAuth }) {
       </div>
 
       {/* Right Form Section */}
-      <div className="auth-canvas-section">
-        <div className="auth-canvas-content">
-          <div className="mobile-logo-wrap">
-            <img
-              src="/viyan_logo.webp"
-              alt="Viyan Medassist"
-              className="h-10 w-auto"
-            />
-          </div>
-
-          <div className="canvas-header">
-            <h2 className="canvas-title">
-              {view === "login" &&
-                (loginType === "admin" ? "Admin Access" : "Staff Portal")}
-              {view === "register" && "Join the Network"}
-              {view === "forgot" && "Forgot Password"}
-              {view === "verifyOtp" && "Verify Code"}
-              {view === "verifyDeviceOtp" && "Verify Device"}
-
-              {view === "newPassword" && "Create New Password"}
-            </h2>
-            <p className="canvas-subtitle">
-              {view === "login" &&
-                (loginType === "admin"
-                  ? "Access your facility administration dashboard."
-                  : "Sign in with your clinical access credentials.")}
-              {view === "register" && "Start your facility registration today."}
-              {view === "forgot" &&
-                "Enter your email to receive a recovery code."}
-              {view === "verifyOtp" &&
-                "Enter the 6-digit code sent to your email."}
-              {view === "verifyDeviceOtp" &&
-                "Enter the 6-digit authorization code sent to your email."}
-
-              {view === "newPassword" &&
-                "Choose a strong password for your account."}
-            </p>
-          </div>
-
-          {view === "login" && (
-            <div className="login-type-toggle">
-              <button
-                type="button"
-                className={`type-btn ${loginType === "admin" ? "active" : ""}`}
-                onClick={() => {
-                  setLoginType("admin");
-                  setError("");
-                }}
-              >
-                <Shield size={16} />
-                <span>Facility Admin</span>
-              </button>
-            </div>
-          )}
-
-          {error && (
-            <div className="auth-error-alert" role="alert">
-              {typeof error === "string"
-                ? error
-                : error?.message || String(error)}
-            </div>
-          )}
-
-          {success && (
-            <div className="auth-success-alert" role="status">
-              {success}
-            </div>
-          )}
-
-          <form
-            onSubmit={handleSubmit}
-            className="canvas-form"
-            autoComplete="off"
-          >
-            <div className="form-controls-stack">
-              {view === "register" && (
-                <>
-                  <div className="control-group">
-                    <label htmlFor="field_qd2938" className="control-label">
-                      FULL NAME
-                    </label>
-                    <div className="control-input-wrap">
-                      <input
-                        id="field_qd2938"
-                        required
-                        type="text"
-                        className="canvas-input"
-                        placeholder="Dr. Julian Sterling"
-                        value={form.fullName}
-                        onChange={(e) =>
-                          updateField("fullName", e.target.value)
-                        }
-                      />
-                    </div>
-                  </div>
-                  <div className="control-group">
-                    <label htmlFor="field_hxak7s" className="control-label">
-                      PHARMACY / SHOP NAME
-                    </label>
-                    <div className="control-input-wrap">
-                      <Shield size={18} className="input-icon-left" />
-                      <input
-                        id="field_hxak7s"
-                        required
-                        type="text"
-                        className="canvas-input"
-                        placeholder="e.g. Apex Medical Solutions"
-                        value={form.shopName}
-                        onChange={(e) =>
-                          updateField("shopName", e.target.value)
-                        }
-                      />
-                    </div>
-                  </div>
-                </>
-              )}
-
-              {(view === "login" ||
-                view === "register" ||
-                view === "forgot" ||
-                view === "verifyOtp" ||
-                view === "verifyDeviceOtp") && (
-                <div className="control-group">
-                  <label htmlFor="field_ijpf58" className="control-label">
-                    {loginType === "admin" ? "WORK EMAIL" : "STAFF ID / EMAIL"}
-                  </label>
-                  <div className="control-input-wrap">
-                    <Mail size={18} className="input-icon-left" />
-                    <input
-                      id="field_ijpf58"
-                      required
-                      type={loginType === "admin" ? "email" : "text"}
-                      className="canvas-input"
-                      placeholder={
-                        loginType === "admin"
-                          ? "dr.house@viyan.med"
-                          : "STAFF-9921"
-                      }
-                      value={form.email}
-                      onChange={(e) => updateField("email", e.target.value)}
-                      disabled={
-                        view === "verifyOtp" || view === "verifyDeviceOtp"
-                      }
-                      autoComplete="off"
-                    />
-                  </div>
-                </div>
-              )}
-
-              {(view === "login" || view === "register") && (
-                <div className="control-group">
-                  <div className="control-header-flex">
-                    <span className="control-label">PASSWORD</span>
-                    {view === "login" && (
-                      <button
-                        type="button"
-                        className="control-link"
-                        onClick={() => navigateTo("forgot")}
-                      >
-                        FORGOT PASSWORD?
-                      </button>
-                    )}
-                  </div>
-                  <div className="control-input-wrap">
-                    <Lock size={18} className="input-icon-left" />
-                    <input
-                      required
-                      type={showPassword ? "text" : "password"}
-                      className="canvas-input"
-                      placeholder="Enter your password"
-                      value={form.password}
-                      onChange={(e) => updateField("password", e.target.value)}
-                      autoComplete="new-password"
-                    />
-                    <button
-                      type="button"
-                      className="input-icon-right"
-                      onClick={() => setShowPassword(!showPassword)}
-                      aria-label={
-                        showPassword ? "Hide password" : "Show password"
-                      }
-                    >
-                      {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                    </button>
-                  </div>
-                </div>
-              )}
-
-              {(view === "verifyOtp" || view === "verifyDeviceOtp") && (
-                <div className="control-group">
-                  <label htmlFor="field_06t1l4" className="control-label">
-                    VERIFICATION CODE (OTP)
-                  </label>
-                  <div className="control-input-wrap">
-                    <Shield size={18} className="input-icon-left" />
-                    <input
-                      id="field_06t1l4"
-                      required
-                      type="text"
-                      className="canvas-input"
-                      placeholder="Enter 6-digit code"
-                      value={form.otp}
-                      onChange={(e) => updateField("otp", e.target.value)}
-                      maxLength={6}
-                      pattern="\d{6}"
-                      autoFocus
-                    />
-                  </div>
-                  {view === "verifyOtp" && (
-                    <button
-                      type="button"
-                      className="control-link"
-                      onClick={handleResendOtp}
-                      disabled={loading}
-                      style={{ marginTop: "8px", alignSelf: "flex-end" }}
-                    >
-                      Resend Code
-                    </button>
-                  )}
-                </div>
-              )}
-
-              {view === "newPassword" && (
-                <>
-                  <div className="control-group">
-                    <label htmlFor="field_q1rywn" className="control-label">
-                      NEW PASSWORD
-                    </label>
-                    <div className="control-input-wrap">
-                      <Lock size={18} className="input-icon-left" />
-                      <input
-                        id="field_q1rywn"
-                        required
-                        type={showPassword ? "text" : "password"}
-                        className="canvas-input"
-                        placeholder="Min. 8 characters"
-                        value={form.newPassword}
-                        onChange={(e) =>
-                          updateField("newPassword", e.target.value)
-                        }
-                        minLength={8}
-                        autoFocus
-                      />
-                      <button
-                        type="button"
-                        className="input-icon-right"
-                        onClick={() => setShowPassword(!showPassword)}
-                        aria-label={
-                          showPassword ? "Hide password" : "Show password"
-                        }
-                      >
-                        {showPassword ? (
-                          <EyeOff size={18} />
-                        ) : (
-                          <Eye size={18} />
-                        )}
-                      </button>
-                    </div>
-                  </div>
-                  <div className="control-group">
-                    <label htmlFor="field_0bwc93" className="control-label">
-                      CONFIRM NEW PASSWORD
-                    </label>
-                    <div className="control-input-wrap">
-                      <Lock size={18} className="input-icon-left" />
-                      <input
-                        id="field_0bwc93"
-                        required
-                        type={showPassword ? "text" : "password"}
-                        className="canvas-input"
-                        placeholder="Re-enter new password"
-                        value={form.confirmPassword || ""}
-                        onChange={(e) =>
-                          updateField("confirmPassword", e.target.value)
-                        }
-                      />
-                    </div>
-                  </div>
-                </>
-              )}
-
-              {view === "register" && (
-                <div className="control-group">
-                  <label htmlFor="field_wfq2ur" className="control-label">
-                    CONFIRM PASSWORD
-                  </label>
-                  <div className="control-input-wrap">
-                    <Lock size={18} className="input-icon-left" />
-                    <input
-                      id="field_wfq2ur"
-                      required
-                      type={showPassword ? "text" : "password"}
-                      className="canvas-input"
-                      placeholder="Re-enter your password"
-                      value={form.confirmPassword || ""}
-                      onChange={(e) =>
-                        updateField("confirmPassword", e.target.value)
-                      }
-                    />
-                  </div>
-                </div>
-              )}
-
-              {view === "register" && (
-                <div className="auth-consent-group">
-                  <input
-                    type="checkbox"
-                    id="legal-consent"
-                    className="auth-consent-checkbox"
-                    checked={agreedToTerms}
-                    onChange={(e) => setAgreedToTerms(e.target.checked)}
-                  />
-                  <label htmlFor="legal-consent" className="auth-consent-text">
-                    I have read and agree to the{" "}
-                    <a
-                      href="/legal"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="auth-consent-link"
-                    >
-                      Terms of Service
-                    </a>
-                    ,{" "}
-                    <a
-                      href="/legal"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="auth-consent-link"
-                    >
-                      Privacy Policy
-                    </a>
-                    , and{" "}
-                    <a
-                      href="/legal"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="auth-consent-link"
-                    >
-                      EULA
-                    </a>
-                    .
-                  </label>
-                </div>
-              )}
-            </div>
-
-            <button
-              type="submit"
-              className="canvas-submit-btn"
-              disabled={loading}
-            >
-              {loading ? (
-                <span className="submit-loading">
-                  <Loader2 size={18} className="spinner" />
-                  Processing...
-                </span>
-              ) : view === "login" ? (
-                "Sign In to Dashboard"
-              ) : view === "register" ? (
-                "Create Account"
-              ) : view === "forgot" ? (
-                "Send Recovery Code"
-              ) : view === "verifyOtp" || view === "verifyDeviceOtp" ? (
-                "Verify Code"
-              ) : (
-                "Reset Password"
-              )}
-            </button>
-          </form>
-
-          {/* SSO Divider */}
-          {(view === "login" || view === "register") && (
-            <>
-              <div className="canvas-divider">
-                <div className="divider-line"></div>
-                <span className="divider-text">OR CONTINUE WITH</span>
-                <div className="divider-line"></div>
-              </div>
-            </>
-          )}
-
-          <p className="canvas-footer-toggle">
-            {view === "login" && (
-              <>
-                New to Viyan MedAssist?
-                <button type="button" onClick={() => navigate("/pricing")}>
-                  View Plans & Sign Up
-                </button>
-              </>
-            )}
-            {view === "register" && (
-              <>
-                Already registered?
-                <button type="button" onClick={() => navigateTo("login")}>
-                  Sign In to Portal
-                </button>
-              </>
-            )}
-            {(view === "forgot" ||
-              view === "verifyOtp" ||
-              view === "verifyDeviceOtp" ||
-              view === "newPassword") && (
-              <button type="button" onClick={() => navigateTo("login")}>
-                Back to Sign In
-              </button>
-            )}
-          </p>
-
-          <div className="canvas-compliance-footer">
-            <div className="compliance-badges">
-              <span className="badge">
-                <Check size={12} /> HIPAA COMPLIANT
-              </span>
-              <span className="badge">
-                <Lock size={12} /> SSL SECURED
-              </span>
-            </div>
-            <div className="compliance-links">
-              <a href="/legal" target="_blank" rel="noopener noreferrer">
-                Privacy
-              </a>
-              <a href="/legal" target="_blank" rel="noopener noreferrer">
-                Terms
-              </a>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
+      <AuthSection1 setLoginType={setLoginType} setError={setError} updateField={updateField} navigateTo={navigateTo} setShowPassword={setShowPassword} showPassword={showPassword} setAgreedToTerms={setAgreedToTerms} navigate={navigate} />
+    </div>;
 }

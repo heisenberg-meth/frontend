@@ -32,14 +32,26 @@ import {
   deleteSupplier,
 } from "../services/suppliers.service.js";
 import { getSupplierCreditBalance } from "../services/supplier-returns.service.js";
-
+const headers = [
+  "Name",
+  "Contact",
+  "Phone",
+  "Email",
+  "GST",
+  "LeadTime",
+  "Reliability",
+];
+const handleMouseMove = (e) => {
+  const rect = e.currentTarget.getBoundingClientRect();
+  e.currentTarget.style.setProperty("--x", `${e.clientX - rect.left}px`);
+  e.currentTarget.style.setProperty("--y", `${e.clientY - rect.top}px`);
+};
 function CustomDropdown({ value, onChange, options, placeholder = "Select" }) {
   const [isOpen, setIsOpen] = useState(false);
   const [menuStyle, setMenuStyle] = useState({});
   const dropdownRef = useRef(null);
   const buttonRef = useRef(null);
   const menuRef = useRef(null);
-
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (
@@ -51,33 +63,26 @@ function CustomDropdown({ value, onChange, options, placeholder = "Select" }) {
         setIsOpen(false);
       }
     };
-
     const handleScroll = () => {
       setIsOpen(false);
     };
-
     if (isOpen) {
       document.addEventListener("mousedown", handleClickOutside);
       window.addEventListener("scroll", handleScroll, true);
     }
-
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
       window.removeEventListener("scroll", handleScroll, true);
     };
   }, [isOpen]);
-
   const toggleDropdown = () => {
     if (!isOpen && buttonRef.current) {
       const rect = buttonRef.current.getBoundingClientRect();
-
       const estimatedMenuHeight = Math.min(options.length * 42 + 16, 300);
       const spaceBelow = window.innerHeight - rect.bottom;
       const spaceAbove = rect.top;
-
       const openUpward =
         spaceBelow < estimatedMenuHeight && spaceAbove > spaceBelow;
-
       setMenuStyle({
         position: "fixed",
         top: openUpward ? "auto" : `${rect.bottom + 8}px`,
@@ -87,10 +92,8 @@ function CustomDropdown({ value, onChange, options, placeholder = "Select" }) {
         zIndex: 99999,
       });
     }
-
     setIsOpen((prev) => !prev);
   };
-
   return (
     <div className="custom-dropdown-container" ref={dropdownRef}>
       <button
@@ -130,21 +133,19 @@ function CustomDropdown({ value, onChange, options, placeholder = "Select" }) {
                 y: menuStyle.bottom !== "auto" ? 10 : -10,
                 scale: 0.95,
               }}
-              transition={{ duration: 0.15 }}
+              transition={{
+                duration: 0.15,
+              }}
               role="listbox"
               style={menuStyle}
             >
               {options.map((opt) => {
                 const optValue = typeof opt === "object" ? opt.value : opt;
-
                 const optLabel = typeof opt === "object" ? opt.label : opt;
-
                 return (
                   <div
                     key={optValue}
-                    className={`custom-dropdown-item ${
-                      value === optValue ? "selected" : ""
-                    }`}
+                    className={`custom-dropdown-item ${value === optValue ? "selected" : ""}`}
                     onKeyDown={(e) => {
                       if (e.key === "Enter" || e.key === " ") {
                         e.preventDefault();
@@ -175,7 +176,6 @@ function CustomDropdown({ value, onChange, options, placeholder = "Select" }) {
     </div>
   );
 }
-
 function SupplierActionMenu({
   supplier,
   handleView,
@@ -189,7 +189,6 @@ function SupplierActionMenu({
   const [menuStyle, setMenuStyle] = useState({});
   const buttonRef = useRef(null);
   const menuRef = useRef(null);
-
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (
@@ -201,11 +200,9 @@ function SupplierActionMenu({
         setIsOpen(false);
       }
     };
-
     const handleScroll = () => {
       setIsOpen(false);
     };
-
     if (isOpen) {
       document.addEventListener("mousedown", handleClickOutside);
       window.addEventListener("scroll", handleScroll, true);
@@ -215,7 +212,6 @@ function SupplierActionMenu({
       window.removeEventListener("scroll", handleScroll, true);
     };
   }, [isOpen]);
-
   const toggleMenu = () => {
     if (!isOpen && buttonRef.current) {
       const rect = buttonRef.current.getBoundingClientRect();
@@ -231,7 +227,6 @@ function SupplierActionMenu({
     }
     setIsOpen(!isOpen);
   };
-
   return (
     <div className="custom-dropdown-container">
       <button
@@ -256,15 +251,24 @@ function SupplierActionMenu({
                 y: menuStyle.bottom !== "auto" ? 10 : -10,
                 scale: 0.95,
               }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
+              animate={{
+                opacity: 1,
+                y: 0,
+                scale: 1,
+              }}
               exit={{
                 opacity: 0,
                 y: menuStyle.bottom !== "auto" ? 10 : -10,
                 scale: 0.95,
               }}
-              transition={{ duration: 0.15 }}
+              transition={{
+                duration: 0.15,
+              }}
               role="menu"
-              style={{ ...menuStyle, position: "fixed" }}
+              style={{
+                ...menuStyle,
+                position: "fixed",
+              }}
             >
               <div
                 role="button"
@@ -281,7 +285,13 @@ function SupplierActionMenu({
                   handleView(supplier);
                 }}
               >
-                <Eye size={14} style={{ marginRight: "8px" }} /> View Details
+                <Eye
+                  size={14}
+                  style={{
+                    marginRight: "8px",
+                  }}
+                />{" "}
+                View Details
               </div>
               <div
                 role="button"
@@ -299,7 +309,13 @@ function SupplierActionMenu({
                   setModalOpen(true);
                 }}
               >
-                <Pencil size={14} style={{ marginRight: "8px" }} /> Edit Profile
+                <Pencil
+                  size={14}
+                  style={{
+                    marginRight: "8px",
+                  }}
+                />{" "}
+                Edit Profile
               </div>
               <div
                 role="button"
@@ -317,9 +333,19 @@ function SupplierActionMenu({
                 }}
               >
                 {(supplier.status || "").toLowerCase() === "active" ? (
-                  <ToggleLeft size={14} style={{ marginRight: "8px" }} />
+                  <ToggleLeft
+                    size={14}
+                    style={{
+                      marginRight: "8px",
+                    }}
+                  />
                 ) : (
-                  <ToggleRight size={14} style={{ marginRight: "8px" }} />
+                  <ToggleRight
+                    size={14}
+                    style={{
+                      marginRight: "8px",
+                    }}
+                  />
                 )}
                 {(supplier.status || "").toLowerCase() === "active"
                   ? "Deactivate"
@@ -338,12 +364,20 @@ function SupplierActionMenu({
                 onClick={() => {
                   setIsOpen(false);
                   navigate("/purchases", {
-                    state: { action: "raise-po", supplierId: supplier.id },
+                    state: {
+                      action: "raise-po",
+                      supplierId: supplier.id,
+                    },
                   });
                 }}
               >
-                <ClipboardList size={14} style={{ marginRight: "8px" }} /> Raise
-                PO
+                <ClipboardList
+                  size={14}
+                  style={{
+                    marginRight: "8px",
+                  }}
+                />{" "}
+                Raise PO
               </div>
               <div
                 role="button"
@@ -359,9 +393,17 @@ function SupplierActionMenu({
                   setIsOpen(false);
                   handleDelete(supplier.id, supplier.name);
                 }}
-                style={{ color: "var(--danger)" }}
+                style={{
+                  color: "var(--danger)",
+                }}
               >
-                <Trash2 size={14} style={{ marginRight: "8px" }} /> Delete
+                <Trash2
+                  size={14}
+                  style={{
+                    marginRight: "8px",
+                  }}
+                />{" "}
+                Delete
               </div>
             </m.div>
           )}
@@ -371,13 +413,16 @@ function SupplierActionMenu({
     </div>
   );
 }
-
 function Spinner({ size = 14 }) {
   return (
-    <Loader2 size={size} style={{ animation: "spin 0.8s linear infinite" }} />
+    <Loader2
+      size={size}
+      style={{
+        animation: "spin 0.8s linear infinite",
+      }}
+    />
   );
 }
-
 const DRUG_OPTIONS = [
   "Antibiotics",
   "Analgesics",
@@ -391,14 +436,12 @@ const DRUG_OPTIONS = [
   "Vitamins",
   "Vaccines",
 ];
-
 const PAYMENT_TERMS_MAP = {
   "Net 15": 15,
   "Net 30": 30,
   "Net 45": 45,
   Advance: 0,
 };
-
 const LEAD_TIME_MAP = {
   "1 day": 1,
   "2 days": 2,
@@ -407,16 +450,26 @@ const LEAD_TIME_MAP = {
   "2 weeks": 14,
 };
 
+const EMPTY = {
+  name: "",
+  contact: "",
+  phone: "",
+  email: "",
+  gst: "",
+  rating: 5,
+  categories: [],
+  paymentTerms: "Net 30",
+  leadTime: "1 week",
+};
+
 const getPaymentTermsStr = (days) => {
   const entry = Object.entries(PAYMENT_TERMS_MAP).find(([, v]) => v === days);
   return entry ? entry[0] : "Net 30";
 };
-
 const getLeadTimeStr = (days) => {
   const entry = Object.entries(LEAD_TIME_MAP).find(([, v]) => v === days);
   return entry ? entry[0] : "2 days";
 };
-
 const getInitials = (name) =>
   name
     .split(" ")
@@ -431,7 +484,6 @@ function TagInput({ tags = [], onChange }) {
   const [focused, setFocused] = useState(false);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const wrapRef = useRef(null);
-
   const suggestions =
     inputVal.length > 0 && showSuggestions
       ? DRUG_OPTIONS.filter(
@@ -440,16 +492,13 @@ function TagInput({ tags = [], onChange }) {
             !tags.includes(o),
         )
       : [];
-
   const addTag = (tag) => {
     const trimmed = tag.trim();
     if (trimmed && !tags.includes(trimmed)) onChange([...tags, trimmed]);
     setInputVal("");
     setShowSuggestions(false);
   };
-
   const removeTag = (tag) => onChange(tags.filter((t) => t !== tag));
-
   const handleKey = (e) => {
     if ((e.key === "Enter" || e.key === ",") && inputVal.trim()) {
       e.preventDefault();
@@ -458,9 +507,13 @@ function TagInput({ tags = [], onChange }) {
     if (e.key === "Backspace" && !inputVal && tags.length)
       removeTag(tags[tags.length - 1]);
   };
-
   return (
-    <div style={{ position: "relative" }} ref={wrapRef}>
+    <div
+      style={{
+        position: "relative",
+      }}
+      ref={wrapRef}
+    >
       <div
         role="button"
         tabIndex={0}
@@ -485,25 +538,31 @@ function TagInput({ tags = [], onChange }) {
             </button>
           </span>
         ))}
-        <input
-          required
-          className="sup-tag-inner-input"
-          value={inputVal}
-          placeholder={tags.length === 0 ? "Type and press Enter…" : ""}
-          onChange={(e) => {
-            setInputVal(e.target.value);
-            setShowSuggestions(true);
-          }}
-          onKeyDown={handleKey}
-          onFocus={() => {
-            setFocused(true);
-            setShowSuggestions(true);
-          }}
-          onBlur={() => {
-            setFocused(false);
-            setTimeout(() => setShowSuggestions(false), 150);
-          }}
-        />
+        <>
+          <label htmlFor="field_hgm7g5" className="sr-only">
+            {tags.length === 0 ? "Type and press Enter…" : ""}
+          </label>
+          <input
+            required
+            className="sup-tag-inner-input"
+            value={inputVal}
+            placeholder={tags.length === 0 ? "Type and press Enter…" : ""}
+            onChange={(e) => {
+              setInputVal(e.target.value);
+              setShowSuggestions(true);
+            }}
+            onKeyDown={handleKey}
+            onFocus={() => {
+              setFocused(true);
+              setShowSuggestions(true);
+            }}
+            onBlur={() => {
+              setFocused(false);
+              setTimeout(() => setShowSuggestions(false), 150);
+            }}
+            id="field_hgm7g5"
+          />
+        </>
       </div>
       {suggestions.length > 0 && (
         <div className="sup-tag-suggestions">
@@ -526,20 +585,6 @@ function TagInput({ tags = [], onChange }) {
 
 /* ─── Add / Edit Modal ─── */
 function SupplierModal({ onClose, onSave, editData, showToast, saving }) {
-  const EMPTY = {
-    name: "",
-    contact: "",
-    phone: "",
-    email: "",
-    gst: "",
-    categories: [],
-    leadTime: "2 days",
-    paymentTerms: "Net 30",
-    address: "",
-    notes: "",
-    status: "active",
-  };
-
   const initialForm = editData
     ? {
         ...EMPTY,
@@ -554,10 +599,12 @@ function SupplierModal({ onClose, onSave, editData, showToast, saving }) {
         leadTime: editData.leadTime || getLeadTimeStr(editData.leadTimeDays),
       }
     : EMPTY;
-
   const [form, setForm] = useState(initialForm);
-  const set = (key, val) => setForm((f) => ({ ...f, [key]: val }));
-
+  const set = (key, val) =>
+    setForm((f) => ({
+      ...f,
+      [key]: val,
+    }));
   const handleSave = () => {
     if (
       !(form.name || "").trim() ||
@@ -569,17 +616,29 @@ function SupplierModal({ onClose, onSave, editData, showToast, saving }) {
     }
     onSave(form);
   };
-
   return (
     <div className="modal-overlay">
       <m.div
         className="modal-content sup-modal-wide"
-        initial={{ opacity: 0, scale: 0.95, y: 20 }}
-        animate={{ opacity: 1, scale: 1, y: 0 }}
+        initial={{
+          opacity: 0,
+          scale: 0.95,
+          y: 20,
+        }}
+        animate={{
+          opacity: 1,
+          scale: 1,
+          y: 0,
+        }}
       >
         <div className="modal-header">
           <div className="header-title-group">
-            <Building2 size={20} style={{ color: "var(--primary)" }} />
+            <Building2
+              size={20}
+              style={{
+                color: "var(--primary)",
+              }}
+            />
             <h3>{editData ? "Edit Supplier" : "Add New Supplier"}</h3>
           </div>
           <button className="modal-close-btn" onClick={onClose}>
@@ -697,7 +756,9 @@ function SupplierModal({ onClose, onSave, editData, showToast, saving }) {
                 placeholder="Complete address details…"
                 value={form.address}
                 onChange={(e) => set("address", e.target.value)}
-                style={{ minHeight: "80px" }}
+                style={{
+                  minHeight: "80px",
+                }}
               />
             </div>
             <div className="form-group full">
@@ -737,6 +798,461 @@ function SupplierModal({ onClose, onSave, editData, showToast, saving }) {
 }
 
 /* ─── MAIN COMPONENT ─── */
+function SuppliersSection1({ loading, suppliers }) {
+  return (
+    <div className="sup-stats-row">
+      <div className="sup-stat-card-v2" onMouseMove={handleMouseMove}>
+        <div className="sup-stat-header">
+          <span className="sup-stat-label">TOTAL VENDORS</span>
+          <div className="sup-stat-icon bg-primary/10 text-primary">
+            <Truck size={14} />
+          </div>
+        </div>
+        <div className="flex items-center">
+          <div className="sup-stat-value text-primary">
+            {loading ? "..." : suppliers.length}
+          </div>
+          <div className="sup-stat-trend">
+            <TrendingUp size={10} /> <span>4%</span>
+          </div>
+        </div>
+      </div>
+      <div className="sup-stat-card-v2" onMouseMove={handleMouseMove}>
+        <div className="sup-stat-header">
+          <span className="sup-stat-label">ACTIVE</span>
+          <div className="sup-stat-icon bg-blue-500/10 text-blue-400">
+            <ShieldCheck size={14} />
+          </div>
+        </div>
+        <div className="sup-stat-value text-blue-400">
+          {
+            suppliers.filter((s) => (s.status || "").toLowerCase() === "active")
+              .length
+          }
+        </div>
+      </div>
+      <div className="sup-stat-card-v2" onMouseMove={handleMouseMove}>
+        <div className="sup-stat-header">
+          <span className="sup-stat-label">PENDING POs</span>
+          <div className="sup-stat-icon bg-yellow-500/10 text-yellow-500">
+            <Clock size={14} />
+          </div>
+        </div>
+        <div className="flex items-center">
+          <div className="sup-stat-value text-yellow-500">4</div>
+          <div className="sup-stat-trend">
+            <TrendingUp size={10} /> <span>2%</span>
+          </div>
+        </div>
+      </div>
+      <div className="sup-stat-card-v2" onMouseMove={handleMouseMove}>
+        <div className="sup-stat-header">
+          <span className="sup-stat-label">INACTIVE</span>
+          <div className="sup-stat-icon bg-rose-500/10 text-rose-500">
+            <AlertCircle size={14} />
+          </div>
+        </div>
+        <div className="sup-stat-value text-rose-500">
+          {
+            suppliers.filter(
+              (s) => (s.status || "").toLowerCase() === "inactive",
+            ).length
+          }
+        </div>
+      </div>
+    </div>
+  );
+}
+function SuppliersSection2({
+  search,
+  setSearch,
+  categoryFilter,
+  setCategoryFilter,
+  loading,
+  filtered,
+  handleView,
+  setEditTarget,
+  setModalOpen,
+  handleToggleStatus,
+  navigate,
+  handleDelete,
+}) {
+  return (
+    <div className="sup-table-card">
+      <div className="sup-table-header">
+        <div className="sup-search-box">
+          <Search size={18} className="search-icon" />
+          <>
+            <label htmlFor="field_ejrx9j" className="sr-only">
+              Search by name, contact, or category...
+            </label>
+            <input
+              placeholder="Search by name, contact, or category..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              id="field_ejrx9j"
+            />
+          </>
+        </div>
+        <div className="sup-filter-group">
+          <CustomDropdown
+            value={categoryFilter}
+            onChange={setCategoryFilter}
+            options={["All Categories", ...DRUG_OPTIONS]}
+            placeholder="All Categories"
+          />
+        </div>
+      </div>
+
+      <div className="sup-table-wrapper">
+        <table className="sup-table">
+          <thead>
+            <tr>
+              <th>SUPPLIER IDENTITY</th>
+              <th>CONTACT PERSON</th>
+              <th>PHONE</th>
+              <th>DRUG SPECIALTIES</th>
+              <th>PAYMENT TERMS</th>
+              <th>STATUS</th>
+              <th>ACTIONS</th>
+            </tr>
+          </thead>
+          <tbody>
+            {loading ? (
+              <tr>
+                <td
+                  colSpan={7}
+                  style={{
+                    textAlign: "center",
+                    padding: "40px",
+                    color: "var(--text-dim)",
+                  }}
+                >
+                  <Spinner size={20} /> Loading suppliers...
+                </td>
+              </tr>
+            ) : filtered.length === 0 ? (
+              <tr>
+                <td
+                  colSpan={7}
+                  style={{
+                    textAlign: "center",
+                    padding: "40px",
+                    color: "var(--text-dim)",
+                  }}
+                >
+                  No suppliers found. Register your first supplier →
+                </td>
+              </tr>
+            ) : (
+              filtered.map((s) => (
+                <tr key={s.id}>
+                  <td>
+                    <div className="sup-identity">
+                      <div className="sup-avatar">{getInitials(s.name)}</div>
+                      <div className="sup-info">
+                        <span className="sup-name">{s.name}</span>
+                        <span className="sup-gst">
+                          {s.gstNumber || s.gst || "GST Pending"}
+                        </span>
+                      </div>
+                    </div>
+                  </td>
+                  <td>
+                    <div className="sup-contact-info">
+                      <span className="sup-person">
+                        {s.contactPerson || s.contact || "—"}
+                      </span>
+                    </div>
+                  </td>
+                  <td>
+                    <span className="sup-phone">{s.phone || "—"}</span>
+                  </td>
+                  <td>
+                    <div className="sup-tag-list">
+                      {(s.drugCategories || s.categories || [])
+                        .slice(0, 2)
+                        .map((c, i) => (
+                          <span
+                            key={`${s.id || s.name}-cat-${c}-${i}`}
+                            className="sup-tag-v2"
+                          >
+                            {c}
+                          </span>
+                        ))}
+                      {(s.drugCategories || s.categories || []).length > 2 && (
+                        <span className="sup-tag-more">
+                          +{(s.drugCategories || s.categories || []).length - 2}
+                        </span>
+                      )}
+                    </div>
+                  </td>
+                  <td>
+                    <span className="sup-lead-time">
+                      {s.paymentTerms ||
+                        (s.paymentTermsDays !== undefined
+                          ? s.paymentTermsDays === 0
+                            ? "Advance"
+                            : `Net ${s.paymentTermsDays}`
+                          : "—")}
+                    </span>
+                  </td>
+                  <td>
+                    <span
+                      className={`sup-status-badge ${(s.status || "active").toLowerCase()}`}
+                    >
+                      <div className="status-dot" />
+                      {(s.status || "active").toUpperCase()}
+                    </span>
+                  </td>
+                  <td>
+                    <div className="sup-row-actions">
+                      <SupplierActionMenu
+                        supplier={s}
+                        handleView={handleView}
+                        setEditTarget={setEditTarget}
+                        setModalOpen={setModalOpen}
+                        handleToggleStatus={handleToggleStatus}
+                        navigate={navigate}
+                        handleDelete={handleDelete}
+                      />
+                    </div>
+                  </td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+function SuppliersSection3({
+  modalOpen,
+  setModalOpen,
+  handleSave,
+  editTarget,
+  setEditTarget,
+  showToast,
+  saving,
+  viewTarget,
+  setViewTarget,
+  creditBalance,
+}) {
+  return (
+    <AnimatePresence>
+      {modalOpen && (
+        <SupplierModal
+          onClose={() => setModalOpen(false)}
+          onSave={handleSave}
+          editData={editTarget}
+          showToast={showToast}
+          saving={saving}
+        />
+      )}
+      {viewTarget && (
+        <div
+          role="button"
+          tabIndex={0}
+          className="modal-overlay"
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === " ") {
+              e.preventDefault();
+              e.currentTarget.click();
+            }
+          }}
+          onClick={() => setViewTarget(null)}
+        >
+          <m.div
+            className="modal-content sup-view-modal"
+            initial={{
+              opacity: 0,
+              scale: 0.95,
+              y: 20,
+            }}
+            animate={{
+              opacity: 1,
+              scale: 1,
+              y: 0,
+            }}
+            exit={{
+              opacity: 0,
+              scale: 0.95,
+              y: 20,
+            }}
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              maxHeight: "90vh",
+              display: "flex",
+              flexDirection: "column",
+              overflow: "hidden",
+            }}
+            role="presentation"
+          >
+            <div className="modal-header">
+              <div className="flex items-start gap-5">
+                <div className="sup-avatar large w-20! h-20! text-[24px]!">
+                  {getInitials(viewTarget.name)}
+                </div>
+                <div className="flex-1">
+                  <h3 className="text-[28px] font-black text-on-surface mb-2 leading-tight">
+                    {viewTarget.name}
+                  </h3>
+                  <div className="flex items-center gap-2">
+                    <span
+                      className={`sup-status-badge ${(viewTarget.status || "active").toLowerCase()}`}
+                    >
+                      <div className="status-dot" />
+                      {(viewTarget.status || "active").toUpperCase()}
+                    </span>
+                  </div>
+                </div>
+                <button
+                  className="modal-close-btn"
+                  onClick={() => setViewTarget(null)}
+                >
+                  <X size={20} />
+                </button>
+              </div>
+            </div>
+
+            <div
+              className="modal-scroll-area p-8"
+              style={{
+                overflowY: "auto",
+                flex: 1,
+              }}
+            >
+              <div className="grid grid-cols-2 gap-8 mb-10">
+                <div className="detail-item">
+                  <span>Primary Contact</span>
+                  <span>
+                    {viewTarget.contactPerson || viewTarget.contact || "—"}
+                  </span>
+                </div>
+                <div className="detail-item">
+                  <span>Phone Number</span>
+                  <span>{viewTarget.phone || "—"}</span>
+                </div>
+                <div className="detail-item">
+                  <span>Email Address</span>
+                  <span>{viewTarget.email || "N/A"}</span>
+                </div>
+                <div className="detail-item">
+                  <span>GSTIN Number</span>
+                  <span className="font-mono text-primary">
+                    {viewTarget.gstNumber || viewTarget.gst || "N/A"}
+                  </span>
+                </div>
+                <div className="detail-item">
+                  <span>Payment Terms</span>
+                  <span>
+                    {viewTarget.paymentTerms ??
+                      (viewTarget.paymentTermsDays === 0
+                        ? "Advance"
+                        : viewTarget.paymentTermsDays
+                          ? `Net ${viewTarget.paymentTermsDays}`
+                          : "Net 30 (Default)")}
+                  </span>
+                </div>
+                <div className="detail-item">
+                  <span>Lead Time</span>
+                  <span>
+                    {viewTarget.leadTime ??
+                      (viewTarget.leadTimeDays
+                        ? `${viewTarget.leadTimeDays} Day${viewTarget.leadTimeDays > 1 ? "s" : ""}`
+                        : "Not Configured")}
+                  </span>
+                </div>
+                <div className="detail-item">
+                  <span>Drug Specialties</span>
+                  <span>
+                    {(viewTarget.drugCategories || viewTarget.categories || [])
+                      .length > 0
+                      ? (
+                          viewTarget.drugCategories ||
+                          viewTarget.categories ||
+                          []
+                        ).join(", ")
+                      : "—"}
+                  </span>
+                </div>
+                <div className="detail-item">
+                  <span>Available Credit</span>
+                  <span className="font-bold text-green-500">
+                    {creditBalance === null
+                      ? "Loading..."
+                      : `₹${creditBalance.toFixed(2)}`}
+                  </span>
+                </div>
+                <div className="detail-item col-span-2">
+                  <span>Address</span>
+                  <span
+                    style={{
+                      whiteSpace: "pre-wrap",
+                    }}
+                  >
+                    {viewTarget.address || "Not Provided"}
+                  </span>
+                </div>
+                <div className="detail-item col-span-2">
+                  <span>Operational Notes</span>
+                  <span
+                    style={{
+                      whiteSpace: "pre-wrap",
+                    }}
+                  >
+                    {viewTarget.notes || "No operational notes available."}
+                  </span>
+                </div>
+                <div className="detail-item">
+                  <span>Created On</span>
+                  <span>
+                    {viewTarget.createdAt
+                      ? new Date(viewTarget.createdAt).toLocaleDateString()
+                      : "—"}
+                  </span>
+                </div>
+                <div className="detail-item">
+                  <span>Last Updated</span>
+                  <span>
+                    {viewTarget.updatedAt
+                      ? new Date(viewTarget.updatedAt).toLocaleDateString()
+                      : "—"}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <div
+              className="modal-footer"
+              style={{
+                borderTop: "1px solid var(--overlay-04)",
+              }}
+            >
+              <button
+                className="modal-btn cancel"
+                onClick={() => setViewTarget(null)}
+              >
+                Close
+              </button>
+              <button
+                className="modal-btn confirm"
+                onClick={() => {
+                  setEditTarget(viewTarget);
+                  setViewTarget(null);
+                  setModalOpen(true);
+                }}
+              >
+                <Pencil size={16} /> Edit Profile
+              </button>
+            </div>
+          </m.div>
+        </div>
+      )}
+    </AnimatePresence>
+  );
+}
 export default function Suppliers({ showToast }) {
   const navigate = useNavigate();
   const [suppliers, setSuppliers] = useState([]);
@@ -748,12 +1264,10 @@ export default function Suppliers({ showToast }) {
   const [creditBalance, setCreditBalance] = useState(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-
   const handleView = (s) => {
     setCreditBalance(null);
     setViewTarget(s);
   };
-
   useEffect(() => {
     if (viewTarget) {
       getSupplierCreditBalance(viewTarget.id)
@@ -761,7 +1275,6 @@ export default function Suppliers({ showToast }) {
         .catch(() => setCreditBalance(0));
     }
   }, [viewTarget]);
-
   const loadSuppliers = useCallback(async () => {
     setLoading(true);
     try {
@@ -774,20 +1287,14 @@ export default function Suppliers({ showToast }) {
       setLoading(false);
     }
   }, [showToast]);
-
   useEffect(() => {
     let mounted = true;
-
     const initialize = async () => {
       try {
         setLoading(true);
-
         const res = await getSuppliers();
-
         if (!mounted) return;
-
         const data = res.data.data || res.data;
-
         setSuppliers(Array.isArray(data) ? data : []);
       } catch {
         if (mounted) {
@@ -799,14 +1306,11 @@ export default function Suppliers({ showToast }) {
         }
       }
     };
-
     initialize();
-
     return () => {
       mounted = false;
     };
   }, [showToast]);
-
   const filtered = useMemo(() => {
     return suppliers.filter((s) => {
       const matchSearch =
@@ -817,22 +1321,18 @@ export default function Suppliers({ showToast }) {
         (s.drugCategories || s.categories || []).some((c) =>
           c.toLowerCase().includes(search.toLowerCase()),
         );
-
       const matchCategory =
         categoryFilter === "All Categories" ||
         (s.drugCategories || s.categories || []).some(
           (c) => c === categoryFilter,
         );
-
       return matchSearch && matchCategory;
     });
   }, [suppliers, search, categoryFilter]);
-
   const handleSave = async (form) => {
     setSaving(true);
     try {
       const cleanPhone = (form.phone || "").replace(/[\s\-+()]/g, "");
-
       const payload = {
         name: form.name,
         contactPerson: form.contact || undefined,
@@ -846,7 +1346,6 @@ export default function Suppliers({ showToast }) {
         leadTimeDays: LEAD_TIME_MAP[form.leadTime] ?? 7,
         status: (form.status || "active").toUpperCase(),
       };
-
       if (editTarget) {
         await updateSupplier(editTarget.id, payload);
         showToast("Supplier profile updated ✓", "success");
@@ -868,13 +1367,14 @@ export default function Suppliers({ showToast }) {
       setSaving(false);
     }
   };
-
   const handleToggleStatus = async (supplier) => {
     const isCurrentlyActive =
       (supplier.status || "").toLowerCase() === "active";
     const nextStatus = isCurrentlyActive ? "INACTIVE" : "ACTIVE";
     try {
-      await updateSupplier(supplier.id, { status: nextStatus });
+      await updateSupplier(supplier.id, {
+        status: nextStatus,
+      });
       showToast(
         `Supplier status updated to ${nextStatus.toLowerCase()} ✓`,
         "success",
@@ -889,7 +1389,6 @@ export default function Suppliers({ showToast }) {
       );
     }
   };
-
   const handleDelete = async (id, name) => {
     if (!window.confirm(`Delete "${name}"? This cannot be undone.`)) return;
     try {
@@ -903,17 +1402,7 @@ export default function Suppliers({ showToast }) {
       );
     }
   };
-
   const exportCSV = () => {
-    const headers = [
-      "Name",
-      "Contact",
-      "Phone",
-      "Email",
-      "GST",
-      "LeadTime",
-      "Reliability",
-    ];
     const rows = suppliers.map((s) => [
       s.name,
       s.contactPerson || s.contact || "",
@@ -924,7 +1413,9 @@ export default function Suppliers({ showToast }) {
       "",
     ]);
     const csvContent = [headers, ...rows].map((e) => e.join(",")).join("\n");
-    const blob = new Blob([csvContent], { type: "text/csv" });
+    const blob = new Blob([csvContent], {
+      type: "text/csv",
+    });
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
@@ -933,13 +1424,6 @@ export default function Suppliers({ showToast }) {
     showToast("Supplier data exported", "success");
     setTimeout(() => window.URL.revokeObjectURL(url), 100);
   };
-
-  const handleMouseMove = (e) => {
-    const rect = e.currentTarget.getBoundingClientRect();
-    e.currentTarget.style.setProperty("--x", `${e.clientX - rect.left}px`);
-    e.currentTarget.style.setProperty("--y", `${e.clientY - rect.top}px`);
-  };
-
   return (
     <div className="sup-container">
       <div className="sup-header">
@@ -966,410 +1450,35 @@ export default function Suppliers({ showToast }) {
         </div>
       </div>
 
-      <div className="sup-stats-row">
-        <div className="sup-stat-card-v2" onMouseMove={handleMouseMove}>
-          <div className="sup-stat-header">
-            <span className="sup-stat-label">TOTAL VENDORS</span>
-            <div className="sup-stat-icon bg-primary/10 text-primary">
-              <Truck size={14} />
-            </div>
-          </div>
-          <div className="flex items-center">
-            <div className="sup-stat-value text-primary">
-              {loading ? "..." : suppliers.length}
-            </div>
-            <div className="sup-stat-trend">
-              <TrendingUp size={10} /> <span>4%</span>
-            </div>
-          </div>
-        </div>
-        <div className="sup-stat-card-v2" onMouseMove={handleMouseMove}>
-          <div className="sup-stat-header">
-            <span className="sup-stat-label">ACTIVE</span>
-            <div className="sup-stat-icon bg-blue-500/10 text-blue-400">
-              <ShieldCheck size={14} />
-            </div>
-          </div>
-          <div className="sup-stat-value text-blue-400">
-            {
-              suppliers.filter(
-                (s) => (s.status || "").toLowerCase() === "active",
-              ).length
-            }
-          </div>
-        </div>
-        <div className="sup-stat-card-v2" onMouseMove={handleMouseMove}>
-          <div className="sup-stat-header">
-            <span className="sup-stat-label">PENDING POs</span>
-            <div className="sup-stat-icon bg-yellow-500/10 text-yellow-500">
-              <Clock size={14} />
-            </div>
-          </div>
-          <div className="flex items-center">
-            <div className="sup-stat-value text-yellow-500">4</div>
-            <div className="sup-stat-trend">
-              <TrendingUp size={10} /> <span>2%</span>
-            </div>
-          </div>
-        </div>
-        <div className="sup-stat-card-v2" onMouseMove={handleMouseMove}>
-          <div className="sup-stat-header">
-            <span className="sup-stat-label">INACTIVE</span>
-            <div className="sup-stat-icon bg-rose-500/10 text-rose-500">
-              <AlertCircle size={14} />
-            </div>
-          </div>
-          <div className="sup-stat-value text-rose-500">
-            {
-              suppliers.filter(
-                (s) => (s.status || "").toLowerCase() === "inactive",
-              ).length
-            }
-          </div>
-        </div>
-      </div>
+      <SuppliersSection1 loading={loading} suppliers={suppliers} />
 
-      <div className="sup-table-card">
-        <div className="sup-table-header">
-          <div className="sup-search-box">
-            <Search size={18} className="search-icon" />
-            <input
-              placeholder="Search by name, contact, or category..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-            />
-          </div>
-          <div className="sup-filter-group">
-            <CustomDropdown
-              value={categoryFilter}
-              onChange={setCategoryFilter}
-              options={["All Categories", ...DRUG_OPTIONS]}
-              placeholder="All Categories"
-            />
-          </div>
-        </div>
+      <SuppliersSection2
+        search={search}
+        setSearch={setSearch}
+        categoryFilter={categoryFilter}
+        setCategoryFilter={setCategoryFilter}
+        loading={loading}
+        filtered={filtered}
+        handleView={handleView}
+        setEditTarget={setEditTarget}
+        setModalOpen={setModalOpen}
+        handleToggleStatus={handleToggleStatus}
+        navigate={navigate}
+        handleDelete={handleDelete}
+      />
 
-        <div className="sup-table-wrapper">
-          <table className="sup-table">
-            <thead>
-              <tr>
-                <th>SUPPLIER IDENTITY</th>
-                <th>CONTACT PERSON</th>
-                <th>PHONE</th>
-                <th>DRUG SPECIALTIES</th>
-                <th>PAYMENT TERMS</th>
-                <th>STATUS</th>
-                <th>ACTIONS</th>
-              </tr>
-            </thead>
-            <tbody>
-              {loading ? (
-                <tr>
-                  <td
-                    colSpan={7}
-                    style={{
-                      textAlign: "center",
-                      padding: "40px",
-                      color: "var(--text-dim)",
-                    }}
-                  >
-                    <Spinner size={20} /> Loading suppliers...
-                  </td>
-                </tr>
-              ) : filtered.length === 0 ? (
-                <tr>
-                  <td
-                    colSpan={7}
-                    style={{
-                      textAlign: "center",
-                      padding: "40px",
-                      color: "var(--text-dim)",
-                    }}
-                  >
-                    No suppliers found. Register your first supplier →
-                  </td>
-                </tr>
-              ) : (
-                filtered.map((s) => (
-                  <tr key={s.id}>
-                    <td>
-                      <div className="sup-identity">
-                        <div className="sup-avatar">{getInitials(s.name)}</div>
-                        <div className="sup-info">
-                          <span className="sup-name">{s.name}</span>
-                          <span className="sup-gst">
-                            {s.gstNumber || s.gst || "GST Pending"}
-                          </span>
-                        </div>
-                      </div>
-                    </td>
-                    <td>
-                      <div className="sup-contact-info">
-                        <span className="sup-person">
-                          {s.contactPerson || s.contact || "—"}
-                        </span>
-                      </div>
-                    </td>
-                    <td>
-                      <span className="sup-phone">{s.phone || "—"}</span>
-                    </td>
-                    <td>
-                      <div className="sup-tag-list">
-                        {(s.drugCategories || s.categories || [])
-                          .slice(0, 2)
-                          .map((c, i) => (
-                            <span
-                              key={`${s.id || s.name}-cat-${c}-${i}`}
-                              className="sup-tag-v2"
-                            >
-                              {c}
-                            </span>
-                          ))}
-                        {(s.drugCategories || s.categories || []).length >
-                          2 && (
-                          <span className="sup-tag-more">
-                            +
-                            {(s.drugCategories || s.categories || []).length -
-                              2}
-                          </span>
-                        )}
-                      </div>
-                    </td>
-                    <td>
-                      <span className="sup-lead-time">
-                        {s.paymentTerms ||
-                          (s.paymentTermsDays !== undefined
-                            ? s.paymentTermsDays === 0
-                              ? "Advance"
-                              : `Net ${s.paymentTermsDays}`
-                            : "—")}
-                      </span>
-                    </td>
-                    <td>
-                      <span
-                        className={`sup-status-badge ${(s.status || "active").toLowerCase()}`}
-                      >
-                        <div className="status-dot" />
-                        {(s.status || "active").toUpperCase()}
-                      </span>
-                    </td>
-                    <td>
-                      <div className="sup-row-actions">
-                        <SupplierActionMenu
-                          supplier={s}
-                          handleView={handleView}
-                          setEditTarget={setEditTarget}
-                          setModalOpen={setModalOpen}
-                          handleToggleStatus={handleToggleStatus}
-                          navigate={navigate}
-                          handleDelete={handleDelete}
-                        />
-                      </div>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      <AnimatePresence>
-        {modalOpen && (
-          <SupplierModal
-            onClose={() => setModalOpen(false)}
-            onSave={handleSave}
-            editData={editTarget}
-            showToast={showToast}
-            saving={saving}
-          />
-        )}
-        {viewTarget && (
-          <div
-            role="button"
-            tabIndex={0}
-            className="modal-overlay"
-            onKeyDown={(e) => {
-              if (e.key === "Enter" || e.key === " ") {
-                e.preventDefault();
-                e.currentTarget.click();
-              }
-            }}
-            onClick={() => setViewTarget(null)}
-          >
-            <m.div
-              role="button"
-              tabIndex={0}
-              className="modal-content sup-view-modal"
-              initial={{ opacity: 0, scale: 0.95, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" || e.key === " ") {
-                  e.preventDefault();
-                  e.currentTarget.click();
-                }
-              }}
-              onClick={(e) => e.stopPropagation()}
-              style={{
-                maxHeight: "90vh",
-                display: "flex",
-                flexDirection: "column",
-                overflow: "hidden",
-              }}
-            >
-              <div className="modal-header">
-                <div className="flex items-start gap-5">
-                  <div className="sup-avatar large w-20! h-20! text-[24px]!">
-                    {getInitials(viewTarget.name)}
-                  </div>
-                  <div className="flex-1">
-                    <h3 className="text-[28px] font-black text-on-surface mb-2 leading-tight">
-                      {viewTarget.name}
-                    </h3>
-                    <div className="flex items-center gap-2">
-                      <span
-                        className={`sup-status-badge ${(viewTarget.status || "active").toLowerCase()}`}
-                      >
-                        <div className="status-dot" />
-                        {(viewTarget.status || "active").toUpperCase()}
-                      </span>
-                    </div>
-                  </div>
-                  <button
-                    className="modal-close-btn"
-                    onClick={() => setViewTarget(null)}
-                  >
-                    <X size={20} />
-                  </button>
-                </div>
-              </div>
-
-              <div
-                className="modal-scroll-area p-8"
-                style={{ overflowY: "auto", flex: 1 }}
-              >
-                <div className="grid grid-cols-2 gap-8 mb-10">
-                  <div className="detail-item">
-                    <span>Primary Contact</span>
-                    <span>
-                      {viewTarget.contactPerson || viewTarget.contact || "—"}
-                    </span>
-                  </div>
-                  <div className="detail-item">
-                    <span>Phone Number</span>
-                    <span>{viewTarget.phone || "—"}</span>
-                  </div>
-                  <div className="detail-item">
-                    <span>Email Address</span>
-                    <span>{viewTarget.email || "N/A"}</span>
-                  </div>
-                  <div className="detail-item">
-                    <span>GSTIN Number</span>
-                    <span className="font-mono text-primary">
-                      {viewTarget.gstNumber || viewTarget.gst || "N/A"}
-                    </span>
-                  </div>
-                  <div className="detail-item">
-                    <span>Payment Terms</span>
-                    <span>
-                      {viewTarget.paymentTerms ??
-                        (viewTarget.paymentTermsDays === 0
-                          ? "Advance"
-                          : viewTarget.paymentTermsDays
-                            ? `Net ${viewTarget.paymentTermsDays}`
-                            : "Net 30 (Default)")}
-                    </span>
-                  </div>
-                  <div className="detail-item">
-                    <span>Lead Time</span>
-                    <span>
-                      {viewTarget.leadTime ??
-                        (viewTarget.leadTimeDays
-                          ? `${viewTarget.leadTimeDays} Day${viewTarget.leadTimeDays > 1 ? "s" : ""}`
-                          : "Not Configured")}
-                    </span>
-                  </div>
-                  <div className="detail-item">
-                    <span>Drug Specialties</span>
-                    <span>
-                      {(
-                        viewTarget.drugCategories ||
-                        viewTarget.categories ||
-                        []
-                      ).length > 0
-                        ? (
-                            viewTarget.drugCategories ||
-                            viewTarget.categories ||
-                            []
-                          ).join(", ")
-                        : "—"}
-                    </span>
-                  </div>
-                  <div className="detail-item">
-                    <span>Available Credit</span>
-                    <span className="font-bold text-green-500">
-                      {creditBalance === null
-                        ? "Loading..."
-                        : `₹${creditBalance.toFixed(2)}`}
-                    </span>
-                  </div>
-                  <div className="detail-item col-span-2">
-                    <span>Address</span>
-                    <span style={{ whiteSpace: "pre-wrap" }}>
-                      {viewTarget.address || "Not Provided"}
-                    </span>
-                  </div>
-                  <div className="detail-item col-span-2">
-                    <span>Operational Notes</span>
-                    <span style={{ whiteSpace: "pre-wrap" }}>
-                      {viewTarget.notes || "No operational notes available."}
-                    </span>
-                  </div>
-                  <div className="detail-item">
-                    <span>Created On</span>
-                    <span>
-                      {viewTarget.createdAt
-                        ? new Date(viewTarget.createdAt).toLocaleDateString()
-                        : "—"}
-                    </span>
-                  </div>
-                  <div className="detail-item">
-                    <span>Last Updated</span>
-                    <span>
-                      {viewTarget.updatedAt
-                        ? new Date(viewTarget.updatedAt).toLocaleDateString()
-                        : "—"}
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              <div
-                className="modal-footer"
-                style={{ borderTop: "1px solid var(--overlay-04)" }}
-              >
-                <button
-                  className="modal-btn cancel"
-                  onClick={() => setViewTarget(null)}
-                >
-                  Close
-                </button>
-                <button
-                  className="modal-btn confirm"
-                  onClick={() => {
-                    setEditTarget(viewTarget);
-                    setViewTarget(null);
-                    setModalOpen(true);
-                  }}
-                >
-                  <Pencil size={16} /> Edit Profile
-                </button>
-              </div>
-            </m.div>
-          </div>
-        )}
-      </AnimatePresence>
+      <SuppliersSection3
+        modalOpen={modalOpen}
+        setModalOpen={setModalOpen}
+        handleSave={handleSave}
+        editTarget={editTarget}
+        setEditTarget={setEditTarget}
+        showToast={showToast}
+        saving={saving}
+        viewTarget={viewTarget}
+        setViewTarget={setViewTarget}
+        creditBalance={creditBalance}
+      />
     </div>
   );
 }

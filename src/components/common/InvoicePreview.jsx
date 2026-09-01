@@ -1,62 +1,18 @@
-export default function InvoicePreview({
-  patient,
-  doctorName,
-  prescriptionNo,
-  address,
-  gstNumber,
-  paymentTerms,
-  dueDate,
-  lineItems,
-  subtotal,
-  discountAmount,
-  tax,
-  grandTotal,
-  isWalkIn,
-  invoiceNumber,
-  invoiceDate,
-  storeProfile,
-}) {
-  const formatDate = (dateVal) => {
-    if (!dateVal) return "—";
-    const d = new Date(dateVal);
-    if (isNaN(d.getTime())) return String(dateVal);
-    const day = String(d.getDate()).padStart(2, "0");
-    const months = [
-      "Jan",
-      "Feb",
-      "Mar",
-      "Apr",
-      "May",
-      "Jun",
-      "Jul",
-      "Aug",
-      "Sep",
-      "Oct",
-      "Nov",
-      "Dec",
-    ];
-    return `${day} ${months[d.getMonth()]} ${d.getFullYear()}`;
-  };
-
-  const todayStr = invoiceDate
-    ? formatDate(invoiceDate)
-    : formatDate(new Date());
-  const dueDateStr = formatDate(dueDate);
-  const invoiceNo =
-    invoiceNumber ||
-    `INV-${new Date().toISOString().slice(0, 10).replace(/-/g, "")}-XXXX`;
-  const validItems = lineItems.filter((i) => !i.isNew && i.id);
-
-  return (
-    <div className="inv-sheet-wrapper">
-      <div className="inv-sheet">
+const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+const formatDate = dateVal => {
+  if (!dateVal) return "—";
+  const d = new Date(dateVal);
+  if (isNaN(d.getTime())) return String(dateVal);
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${day} ${months[d.getMonth()]} ${d.getFullYear()}`;
+};
+function InvoicePreviewSection1() {
+  return <div className="inv-sheet">
         {/* ── HEADER ── */}
         <div className="inv-header">
           <div className="inv-header-left">
             <div className="inv-pharmacy-name">
-              {storeProfile?.shopName ||
-                storeProfile?.businessName ||
-                "Your Shop Name"}
+              {storeProfile?.shopName || storeProfile?.businessName || "Your Shop Name"}
             </div>
             <div className="inv-pharmacy-meta">
               {storeProfile?.address || "Your Address"}
@@ -78,12 +34,10 @@ export default function InvoicePreview({
                 <span className="inv-meta-label">Date</span>
                 <span className="inv-meta-value">{todayStr}</span>
               </div>
-              {dueDateStr && dueDateStr !== "—" && (
-                <div className="inv-meta-row">
+              {dueDateStr && dueDateStr !== "—" && <div className="inv-meta-row">
                   <span className="inv-meta-label">Due Date</span>
                   <span className="inv-meta-value">{dueDateStr}</span>
-                </div>
-              )}
+                </div>}
               <div className="inv-meta-row">
                 <span className="inv-meta-label">Payment</span>
                 <span className="inv-meta-value">
@@ -102,36 +56,24 @@ export default function InvoicePreview({
           <div className="inv-bill-to">
             <div className="inv-section-label">BILLED TO</div>
             <div className="inv-customer-name">
-              {isWalkIn
-                ? "Walk-in Customer"
-                : patient?.name || "Walk-in Customer"}
+              {isWalkIn ? "Walk-in Customer" : patient?.name || "Walk-in Customer"}
             </div>
-            {patient?.phone && !isWalkIn && (
-              <div className="inv-customer-detail">📞 {patient.phone}</div>
-            )}
-            {address && !isWalkIn && (
-              <div className="inv-customer-detail">{address}</div>
-            )}
+            {patient?.phone && !isWalkIn && <div className="inv-customer-detail">📞 {patient.phone}</div>}
+            {address && !isWalkIn && <div className="inv-customer-detail">{address}</div>}
           </div>
 
-          {(doctorName || prescriptionNo) && (
-            <div className="inv-rx-box">
-              {doctorName && (
-                <div className="inv-meta-row">
+          {(doctorName || prescriptionNo) && <div className="inv-rx-box">
+              {doctorName && <div className="inv-meta-row">
                   <span className="inv-meta-label">Doctor</span>
                   <span className="inv-meta-value">Dr. {doctorName}</span>
-                </div>
-              )}
-              {prescriptionNo && (
-                <div className="inv-meta-row">
+                </div>}
+              {prescriptionNo && <div className="inv-meta-row">
                   <span className="inv-meta-label">Rx No.</span>
                   <span className="inv-meta-value inv-mono">
                     {prescriptionNo}
                   </span>
-                </div>
-              )}
-            </div>
-          )}
+                </div>}
+            </div>}
         </div>
 
         {/* ── MEDICINES TABLE ── */}
@@ -153,8 +95,7 @@ export default function InvoicePreview({
               </tr>
             </thead>
             <tbody>
-              {validItems.length === 0 ? (
-                <tr>
+              {validItems.length === 0 ? <tr>
                   <td colSpan="7" className="inv-empty-state">
                     <div className="inv-empty-icon">💊</div>
                     <div className="inv-empty-text">No medicines added yet</div>
@@ -162,17 +103,11 @@ export default function InvoicePreview({
                       Add items from the left panel to generate invoice
                     </div>
                   </td>
-                </tr>
-              ) : (
-                validItems.map((item, idx) => {
-                  const itemSub = item.price * item.qty;
-                  const itemDisc = itemSub * ((item.discount || 0) / 100);
-                  const amount = itemSub - itemDisc;
-                  return (
-                    <tr
-                      key={item.name}
-                      className={`inv-tr ${idx % 2 === 0 ? "" : "inv-tr-alt"}`}
-                    >
+                </tr> : validItems.map((item, idx) => {
+            const itemSub = item.price * item.qty;
+            const itemDisc = itemSub * ((item.discount || 0) / 100);
+            const amount = itemSub - itemDisc;
+            return <tr key={item.name} className={`inv-tr ${idx % 2 === 0 ? "" : "inv-tr-alt"}`}>
                       <td className="inv-td inv-td-left">
                         <div className="inv-med-name">{item.name}</div>
                       </td>
@@ -192,10 +127,8 @@ export default function InvoicePreview({
                       <td className="inv-td inv-td-right inv-td-amount">
                         {amount.toFixed(2)}
                       </td>
-                    </tr>
-                  );
-                })
-              )}
+                    </tr>;
+          })}
             </tbody>
           </table>
         </div>
@@ -204,7 +137,9 @@ export default function InvoicePreview({
         <div className="inv-footer-row">
           {/* Left: Terms / Notes */}
           <div className="inv-notes-col">
-            <div className="inv-section-label" style={{ marginBottom: 6 }}>
+            <div className="inv-section-label" style={{
+          marginBottom: 6
+        }}>
               TERMS & CONDITIONS
             </div>
             <div className="inv-notes-text">
@@ -214,11 +149,9 @@ export default function InvoicePreview({
               <br />
               3. E. &amp; O.E.
             </div>
-            {gstNumber && (
-              <div className="inv-gst-tag">
+            {gstNumber && <div className="inv-gst-tag">
                 Customer GSTIN: <strong>{gstNumber}</strong>
-              </div>
-            )}
+              </div>}
           </div>
 
           {/* Right: Totals */}
@@ -228,14 +161,12 @@ export default function InvoicePreview({
                 <span className="inv-totals-label">Subtotal</span>
                 <span className="inv-totals-val">₹{subtotal.toFixed(2)}</span>
               </div>
-              {discountAmount > 0 && (
-                <div className="inv-totals-row inv-totals-disc">
+              {discountAmount > 0 && <div className="inv-totals-row inv-totals-disc">
                   <span className="inv-totals-label">Discount</span>
                   <span className="inv-totals-val">
                     −₹{discountAmount.toFixed(2)}
                   </span>
-                </div>
-              )}
+                </div>}
               <div className="inv-totals-row">
                 <span className="inv-totals-label">GST / Tax</span>
                 <span className="inv-totals-val">₹{tax.toFixed(2)}</span>
@@ -268,7 +199,31 @@ export default function InvoicePreview({
             <div className="inv-sig-caption">Authorised Signatory</div>
           </div>
         </div>
-      </div>
-    </div>
-  );
+      </div>;
+}
+export default function InvoicePreview({
+  patient,
+  doctorName,
+  prescriptionNo,
+  address,
+  gstNumber,
+  paymentTerms,
+  dueDate,
+  lineItems,
+  subtotal,
+  discountAmount,
+  tax,
+  grandTotal,
+  isWalkIn,
+  invoiceNumber,
+  invoiceDate,
+  storeProfile
+}) {
+  const todayStr = invoiceDate ? formatDate(invoiceDate) : formatDate(new Date());
+  const dueDateStr = formatDate(dueDate);
+  const invoiceNo = invoiceNumber || `INV-${new Date().toISOString().slice(0, 10).replace(/-/g, "")}-XXXX`;
+  const validItems = lineItems.filter(i => !i.isNew && i.id);
+  return <div className="inv-sheet-wrapper">
+      <InvoicePreviewSection1 />
+    </div>;
 }

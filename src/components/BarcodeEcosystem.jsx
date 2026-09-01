@@ -25,13 +25,16 @@ import {
 } from "../services/inventory.service";
 import { getBarcodes, verifyBarcode } from "../services/reports.service";
 import "../styles/BarcodeEcosystem.css";
-
 function Spinner({ size = 14 }) {
   return (
-    <Loader2 size={size} style={{ animation: "spin 0.8s linear infinite" }} />
+    <Loader2
+      size={size}
+      style={{
+        animation: "spin 0.8s linear infinite",
+      }}
+    />
   );
 }
-
 const LABEL_TEMPLATES = {
   Standard: {
     width: 100,
@@ -39,11 +42,1379 @@ const LABEL_TEMPLATES = {
     scale: 1,
     desc: "38×25mm — Thermal Sticker",
   },
-  Large: { width: 130, height: 70, scale: 1.3, desc: "50×35mm — Large Label" },
-  Strip: { width: 160, height: 28, scale: 0.85, desc: "Strip Label (16×28mm)" },
-  Custom: { width: 100, height: 50, scale: 1, desc: "Custom Configuration" },
+  Large: {
+    width: 130,
+    height: 70,
+    scale: 1.3,
+    desc: "50×35mm — Large Label",
+  },
+  Strip: {
+    width: 160,
+    height: 28,
+    scale: 0.85,
+    desc: "Strip Label (16×28mm)",
+  },
+  Custom: {
+    width: 100,
+    height: 50,
+    scale: 1,
+    desc: "Custom Configuration",
+  },
 };
+function BarcodeEcosystemSection1({ setActiveTab, scannerConnected }) {
+  return (
+    <div className="barcode-features-grid">
+      <div className="feature-overview-card">
+        <div
+          className="feature-icon-circle"
+          style={{
+            background: "var(--primary-glow)",
+            color: "var(--primary)",
+          }}
+        >
+          <QrCode size={24} />
+        </div>
+        <div
+          style={{
+            fontWeight: 700,
+          }}
+        >
+          QR Verification
+        </div>
+        <p
+          className="result-meta"
+          style={{
+            fontSize: "13px",
+          }}
+        >
+          Scan any medicine QR to verify authenticity and view details.
+        </p>
+        <button
+          className="pos-btn teal"
+          style={{
+            width: "100%",
+          }}
+          onClick={() => setActiveTab("verify")}
+        >
+          Scan QR Code
+        </button>
+      </div>
+      <div className="feature-overview-card">
+        <div
+          className="feature-icon-circle"
+          style={{
+            background: "rgba(59, 130, 246, 0.1)",
+            color: "var(--info)",
+          }}
+        >
+          <Printer size={24} />
+        </div>
+        <div
+          style={{
+            fontWeight: 700,
+          }}
+        >
+          Label Printing
+        </div>
+        <p
+          className="result-meta"
+          style={{
+            fontSize: "13px",
+          }}
+        >
+          Generate and print barcode labels for any medicine or batch.
+        </p>
+        <button
+          className="pos-btn outline"
+          style={{
+            width: "100%",
+            borderColor: "var(--info)",
+            color: "var(--info)",
+          }}
+          onClick={() => setActiveTab("labels")}
+        >
+          Print Labels
+        </button>
+      </div>
+      <div className="feature-overview-card">
+        <div
+          className="feature-icon-circle"
+          style={{
+            background: scannerConnected
+              ? "rgba(10, 185, 129, 0.1)"
+              : "rgba(239, 68, 68, 0.1)",
+            color: scannerConnected ? "var(--success)" : "var(--danger)",
+          }}
+        >
+          {scannerConnected ? <ShieldCheck size={24} /> : <Zap size={24} />}
+        </div>
+        <div
+          style={{
+            fontWeight: 700,
+          }}
+        >
+          Scanner Status
+        </div>
+        <p
+          className="result-meta"
+          style={{
+            fontSize: "13px",
+          }}
+        >
+          {scannerConnected
+            ? "USB Scanner Connected — Ready to use"
+            : "No Scanner Detected — Connect device"}
+        </p>
+        <button
+          className="pos-btn outline"
+          style={{
+            width: "100%",
+          }}
+          onClick={() => setActiveTab("settings")}
+        >
+          Configure Scanner
+        </button>
+      </div>
+    </div>
+  );
+}
+function LabelPreviewPanel({
+  previewScale,
+  setPreviewScale,
+  selectedMedicine,
+  labelFields,
+}) {
+  return (
+    <div className="label-preview-panel">
+      <div
+        className="pos-card"
+        style={{
+          textAlign: "center",
+        }}
+      >
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            marginBottom: "20px",
+          }}
+        >
+          <div
+            style={{
+              fontWeight: 700,
+            }}
+          >
+            Label Preview
+          </div>
+          <div
+            style={{
+              display: "flex",
+              gap: "8px",
+            }}
+          >
+            {[0.5, 0.75, 1].map((s) => (
+              <button
+                key={s}
+                className={`micro-btn ${previewScale === s ? "active" : ""}`}
+                style={{
+                  fontSize: "10px",
+                  padding: "4px 8px",
+                }}
+                onClick={() => setPreviewScale(s)}
+              >
+                {s * 100}%
+              </button>
+            ))}
+          </div>
+        </div>
+        <div
+          style={{
+            transform: `scale(${previewScale})`,
+            transition: "transform 0.2s",
+          }}
+        >
+          {selectedMedicine ? (
+            <div className="label-preview-sticker">
+              {labelFields.medName && (
+                <div className="label-med-name">{selectedMedicine.name}</div>
+              )}
+              {labelFields.generic && (
+                <div className="label-generic">
+                  ({selectedMedicine.genericName || selectedMedicine.name})
+                </div>
+              )}
+              <div className="label-meta">
+                {labelFields.batch && (
+                  <span>Batch: {selectedMedicine.batchNumber || "—"}</span>
+                )}
+                {labelFields.expiry && (
+                  <span
+                    style={{
+                      color: "var(--danger)",
+                    }}
+                  >
+                    Exp:{" "}
+                    {selectedMedicine.expiryDate
+                      ? new Date(
+                          selectedMedicine.expiryDate,
+                        ).toLocaleDateString("en-IN", {
+                          month: "2-digit",
+                          year: "2-digit",
+                        })
+                      : "—"}
+                  </span>
+                )}
+              </div>
+              {labelFields.mrp && (
+                <div className="label-mrp">
+                  MRP: ₹{(selectedMedicine.mrp || 0).toFixed(2)}/tab
+                </div>
+              )}
+              {labelFields.barcode && (
+                <div className="label-barcode">
+                  <svg
+                    viewBox="0 0 100 20"
+                    preserveAspectRatio="none"
+                    style={{
+                      width: "100%",
+                      height: "100%",
+                    }}
+                  >
+                    {[...Array(30)].map((_, i) => (
+                      <rect
+                        key={`barcode-bar-${i}`}
+                        x={i * 3.3}
+                        y="0"
+                        width={(i * 7) % 10 > 4 ? 1 : 2}
+                        height="20"
+                        fill="black"
+                      />
+                    ))}
+                  </svg>
+                </div>
+              )}
+              {labelFields.qr && (
+                <div
+                  className="label-qr"
+                  style={{
+                    border: "2px solid black",
+                    padding: "2px",
+                  }}
+                >
+                  <QrCode size={24} color="black" />
+                </div>
+              )}
+            </div>
+          ) : (
+            <div
+              className="label-preview-sticker"
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                background: "var(--overlay-02)",
+                border: "2px dashed var(--outline-variant)",
+                color: "var(--text-muted)",
+              }}
+            >
+              <div
+                style={{
+                  textAlign: "center",
+                }}
+              >
+                <Printer
+                  size={28}
+                  style={{
+                    opacity: 0.3,
+                    marginBottom: "8px",
+                  }}
+                />
+                <div
+                  style={{
+                    fontSize: "12px",
+                    fontWeight: 600,
+                  }}
+                >
+                  No Medicine Selected
+                </div>
+                <div
+                  style={{
+                    fontSize: "10px",
+                    marginTop: "4px",
+                  }}
+                >
+                  Search and select a medicine above
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+        <p
+          className="result-meta"
+          style={{
+            marginTop: "24px",
+            fontSize: "12px",
+          }}
+        >
+          Labels are print-ready. Optimized for 38×25mm thermal stickers.
+        </p>
+      </div>
+    </div>
+  );
+}
 
+function BarcodeEcosystemSection2({
+  activeTab,
+  setShowMedDropdown,
+  showMedDropdown,
+  searchInputRef,
+  clearMedicine,
+  setMedicineSearch,
+  selectedMedicine,
+  selectMedicine,
+  template,
+  setTemplate,
+  labelFields,
+  setLabelFields,
+  setLabelQty,
+  previewScale,
+  setPreviewScale,
+  medicineSearch,
+  filteredMedicines,
+  medicines,
+  dropdownRef,
+  labelQty,
+  handlePreview,
+  handlePrintLabels,
+  isPrinting,
+}) {
+  return (
+    activeTab === "labels" && (
+      <>
+        <div className="label-print-panels">
+          <div className="label-config-panel">
+            <div className="pos-card">
+              <div
+                style={{
+                  fontWeight: 700,
+                  marginBottom: "16px",
+                }}
+              >
+                Label Configuration
+              </div>
+              <div
+                className="pos-input-group"
+                style={{
+                  marginBottom: "20px",
+                }}
+                ref={dropdownRef}
+              >
+                <span className="p-label">SEARCH MEDICINE</span>
+                <div
+                  style={{
+                    position: "relative",
+                  }}
+                >
+                  <div
+                    role="button"
+                    tabIndex={0}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      background: "var(--surface-container)",
+                      border: `1px solid ${selectedMedicine ? "var(--primary)" : "var(--outline-variant)"}`,
+                      borderRadius: "12px",
+                      padding: "8px 12px",
+                      gap: "8px",
+                      cursor: "pointer",
+                      transition: "border-color 0.2s",
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        e.currentTarget.click();
+                      }
+                    }}
+                    onClick={() => {
+                      setShowMedDropdown(!showMedDropdown);
+                      if (!showMedDropdown) {
+                        setTimeout(() => searchInputRef.current?.focus(), 50);
+                      }
+                    }}
+                  >
+                    <Search
+                      size={16}
+                      style={{
+                        color: "var(--text-muted)",
+                        flexShrink: 0,
+                      }}
+                    />
+                    {selectedMedicine && !showMedDropdown ? (
+                      <div
+                        style={{
+                          flex: 1,
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "8px",
+                        }}
+                      >
+                        <div
+                          style={{
+                            flex: 1,
+                          }}
+                        >
+                          <div
+                            style={{
+                              fontWeight: 700,
+                              fontSize: "14px",
+                              lineHeight: 1.3,
+                            }}
+                          >
+                            {selectedMedicine.name}
+                          </div>
+                          <div
+                            style={{
+                              fontSize: "11px",
+                              color: "var(--text-muted)",
+                              lineHeight: 1.2,
+                            }}
+                          >
+                            Batch: {selectedMedicine.batchNumber || "—"} · ₹
+                            {(selectedMedicine.mrp || 0).toFixed(2)}
+                          </div>
+                        </div>
+                        <button
+                          className="micro-btn"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            clearMedicine();
+                          }}
+                          title="Clear selection"
+                          style={{
+                            flexShrink: 0,
+                            width: "24px",
+                            height: "24px",
+                          }}
+                        >
+                          <X size={14} />
+                        </button>
+                      </div>
+                    ) : (
+                      <>
+                        <label htmlFor="field_x2961e" className="sr-only">
+                          Type to search medicines...
+                        </label>
+                        <input
+                          required
+                          ref={searchInputRef}
+                          type="text"
+                          placeholder="Type to search medicines..."
+                          value={medicineSearch}
+                          onChange={(e) => {
+                            setMedicineSearch(e.target.value);
+                            if (!showMedDropdown) setShowMedDropdown(true);
+                          }}
+                          onKeyDown={(e) => {
+                            if (e.key === "Escape") setShowMedDropdown(false);
+                          }}
+                          style={{
+                            flex: 1,
+                            background: "none",
+                            border: "none",
+                            outline: "none",
+                            color: "var(--text)",
+                            fontFamily: "'Outfit', sans-serif",
+                            fontSize: "14px",
+                            width: "100%",
+                          }}
+                          id="field_x2961e"
+                        />
+                      </>
+                    )}
+                    <ChevronDown
+                      size={16}
+                      style={{
+                        color: "var(--text-muted)",
+                        flexShrink: 0,
+                        transform: showMedDropdown
+                          ? "rotate(180deg)"
+                          : "rotate(0deg)",
+                        transition: "transform 0.2s",
+                      }}
+                    />
+                  </div>
+
+                  {/* Dropdown */}
+                  {showMedDropdown && (
+                    <div
+                      style={{
+                        position: "absolute",
+                        top: "100%",
+                        left: 0,
+                        right: 0,
+                        marginTop: "4px",
+                        background: "var(--surface)",
+                        border: "1px solid var(--outline-variant)",
+                        borderRadius: "12px",
+                        maxHeight: "280px",
+                        overflow: "auto",
+                        zIndex: 100,
+                        boxShadow: "0 12px 40px rgba(0,0,0,0.4)",
+                      }}
+                    >
+                      {filteredMedicines.length === 0 ? (
+                        <div
+                          style={{
+                            padding: "20px",
+                            textAlign: "center",
+                            color: "var(--text-muted)",
+                            fontSize: "13px",
+                          }}
+                        >
+                          No medicines found
+                        </div>
+                      ) : (
+                        filteredMedicines.map((m) => {
+                          const isSelected = selectedMedicine?.id === m.id;
+                          const mfgName =
+                            m.manufacturer?.name || m.manufacturer || "";
+                          return (
+                            <div
+                              role="button"
+                              tabIndex={0}
+                              key={m.id}
+                              onKeyDown={(e) => {
+                                if (e.key === "Enter" || e.key === " ") {
+                                  e.preventDefault();
+                                  e.currentTarget.click();
+                                }
+                              }}
+                              onClick={() => selectMedicine(m)}
+                              style={{
+                                padding: "10px 14px",
+                                cursor: "pointer",
+                                display: "flex",
+                                alignItems: "center",
+                                gap: "12px",
+                                borderBottom: "1px solid var(--overlay-05)",
+                                background: isSelected
+                                  ? "rgba(79, 219, 200, 0.08)"
+                                  : "transparent",
+                                transition: "background 0.15s",
+                              }}
+                              onMouseEnter={(e) => {
+                                if (!isSelected)
+                                  e.currentTarget.style.background =
+                                    "var(--overlay-03)";
+                              }}
+                              onMouseLeave={(e) => {
+                                if (!isSelected)
+                                  e.currentTarget.style.background =
+                                    "transparent";
+                              }}
+                            >
+                              <div
+                                style={{
+                                  flex: 1,
+                                }}
+                              >
+                                <div
+                                  style={{
+                                    fontWeight: 700,
+                                    fontSize: "13px",
+                                  }}
+                                >
+                                  {m.name}
+                                </div>
+                                <div
+                                  style={{
+                                    fontSize: "11px",
+                                    color: "var(--text-muted)",
+                                  }}
+                                >
+                                  Batch: {m.batchNumber || "—"} · ₹
+                                  {(m.mrp || 0).toFixed(2)} · {mfgName}
+                                </div>
+                              </div>
+                              <div
+                                style={{
+                                  fontSize: "11px",
+                                  color: "var(--text-muted)",
+                                  textAlign: "right",
+                                }}
+                              >
+                                <div>Qty: {m.stock ?? 0}</div>
+                                {m.expiryDate && (
+                                  <div
+                                    style={{
+                                      color:
+                                        new Date(m.expiryDate) < new Date()
+                                          ? "var(--danger)"
+                                          : "inherit",
+                                    }}
+                                  >
+                                    Exp:{" "}
+                                    {new Date(m.expiryDate).toLocaleDateString(
+                                      "en-IN",
+                                      {
+                                        month: "short",
+                                        year: "2-digit",
+                                      },
+                                    )}
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })
+                      )}
+                      {medicines.length > 0 && (
+                        <div
+                          style={{
+                            padding: "8px 14px",
+                            fontSize: "10px",
+                            color: "var(--text-muted)",
+                            textAlign: "center",
+                            borderTop: "1px solid var(--overlay-05)",
+                          }}
+                        >
+                          {filteredMedicines.length} of {medicines.length}{" "}
+                          medicines shown
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </div>
+              <div
+                className="pos-input-group"
+                style={{
+                  marginBottom: "20px",
+                }}
+              >
+                <span className="p-label">TEMPLATE SELECTOR</span>
+                <div
+                  className="purchases-tabs"
+                  style={{
+                    background: "none",
+                    border: "none",
+                    padding: 0,
+                  }}
+                >
+                  {["Standard", "Large", "Strip", "Custom"].map((t) => (
+                    <button
+                      key={t}
+                      className={`p-tab ${template === t ? "active" : ""}`}
+                      onClick={() => setTemplate(t)}
+                      title={LABEL_TEMPLATES[t]?.desc || ""}
+                    >
+                      {t}
+                    </button>
+                  ))}
+                </div>
+                <div
+                  className="result-meta"
+                  style={{
+                    fontSize: "11px",
+                    marginTop: "6px",
+                  }}
+                >
+                  {LABEL_TEMPLATES[template]?.desc || "Standard template"}
+                </div>
+              </div>
+              <div
+                className="pos-input-group"
+                style={{
+                  marginBottom: "20px",
+                }}
+              >
+                <span className="p-label">CONTENT FIELDS</span>
+                <div className="format-checkboxes">
+                  {Object.keys(labelFields).map((k) => (
+                    <label key={k} className="checkbox-item">
+                      <input
+                        required
+                        type="checkbox"
+                        checked={labelFields[k]}
+                        onChange={(e) =>
+                          setLabelFields({
+                            ...labelFields,
+                            [k]: e.target.checked,
+                          })
+                        }
+                      />
+                      {k.charAt(0).toUpperCase() +
+                        k.slice(1).replace(/([A-Z])/g, " $1")}
+                    </label>
+                  ))}
+                </div>
+              </div>
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "1fr 1fr",
+                  gap: "20px",
+                }}
+              >
+                <div className="pos-input-group">
+                  <label htmlFor="field_682bxu" className="p-label">
+                    LABEL QUANTITY
+                  </label>
+                  <input
+                    id="field_682bxu"
+                    type="number"
+                    min="1"
+                    max="100"
+                    value={labelQty}
+                    onChange={(e) =>
+                      setLabelQty(Math.max(1, parseInt(e.target.value) || 1))
+                    }
+                    className="pos-input"
+                    style={{
+                      background: "var(--surface-container)",
+                      border: "1px solid var(--outline-variant)",
+                      borderRadius: "12px",
+                      padding: "8px 12px",
+                      color: "var(--text)",
+                      fontFamily: "'Outfit', sans-serif",
+                      fontSize: "14px",
+                      width: "100%",
+                    }}
+                  />
+                </div>
+              </div>
+              <div
+                style={{
+                  display: "flex",
+                  gap: "12px",
+                  marginTop: "24px",
+                }}
+              >
+                <button
+                  className="pos-btn outline"
+                  style={{
+                    flex: 1,
+                  }}
+                  onClick={handlePreview}
+                >
+                  Preview
+                </button>
+                <button
+                  className="pos-btn teal"
+                  style={{
+                    flex: 2,
+                  }}
+                  onClick={handlePrintLabels}
+                  disabled={isPrinting || !selectedMedicine}
+                >
+                  {isPrinting ? (
+                    <>
+                      <Spinner size={16} /> Printing...
+                    </>
+                  ) : (
+                    <>
+                      <Printer size={18} /> Print Now
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+          <LabelPreviewPanel
+            previewScale={previewScale}
+            setPreviewScale={setPreviewScale}
+            selectedMedicine={selectedMedicine}
+            labelFields={labelFields}
+          />
+        </div>
+      </>
+    )
+  );
+}
+function BarcodeEcosystemSection3({
+  setBarcodeInput,
+  handleVerify,
+  navigate,
+  activeTab,
+  barcodeInput,
+  verifying,
+  verificationResult,
+  verifiedMedicine,
+  isExpiringSoon,
+}) {
+  return (
+    activeTab === "verify" && (
+      <>
+        <div className="scanner-view-card">
+          <div className="camera-frame">
+            <div className="scanner-laser-line" />
+            <Scan
+              size={48}
+              color="var(--primary)"
+              style={{
+                opacity: 0.5,
+              }}
+            />
+            <span className="result-meta">Point camera at QR or barcode</span>
+            <button
+              className="pos-btn outline"
+              style={{
+                position: "absolute",
+                bottom: "20px",
+                background: "rgba(0,0,0,0.5)",
+                backdropFilter: "blur(10px)",
+              }}
+            >
+              <Camera size={16} /> Use Rear Camera
+            </button>
+          </div>
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "20px",
+              width: "100%",
+            }}
+          >
+            <div
+              style={{
+                flex: 1,
+                height: "1px",
+                background: "var(--outline-variant)",
+              }}
+            />
+            <span
+              className="result-meta"
+              style={{
+                fontSize: "11px",
+                fontWeight: 800,
+              }}
+            >
+              OR ENTER MANUALLY
+            </span>
+            <div
+              style={{
+                flex: 1,
+                height: "1px",
+                background: "var(--outline-variant)",
+              }}
+            />
+          </div>
+          <div
+            style={{
+              display: "flex",
+              gap: "12px",
+              width: "100%",
+            }}
+          >
+            <>
+              <label htmlFor="field_y9av72" className="sr-only">
+                Enter 13-digit barcode...
+              </label>
+              <input
+                required
+                className="pos-input"
+                style={{
+                  flex: 1,
+                }}
+                placeholder="Enter 13-digit barcode..."
+                value={barcodeInput}
+                onChange={(e) => setBarcodeInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") handleVerify();
+                }}
+                id="field_y9av72"
+              />
+            </>
+            <button
+              className="pos-btn teal"
+              onClick={handleVerify}
+              disabled={verifying}
+            >
+              {verifying ? (
+                <>
+                  <Spinner size={16} /> Verifying...
+                </>
+              ) : (
+                "Verify"
+              )}
+            </button>
+          </div>
+        </div>
+
+        <AnimatePresence>
+          {verificationResult === "verified" && verifiedMedicine && (
+            <m.div
+              initial={{
+                opacity: 0,
+                y: 20,
+              }}
+              animate={{
+                opacity: 1,
+                y: 0,
+              }}
+              className="verify-result-card"
+              style={{
+                borderLeft: "4px solid var(--success)",
+              }}
+            >
+              <div className="verify-result-header">
+                <CheckCircle2 size={24} color="var(--success)" />
+                <span
+                  style={{
+                    fontFamily: "Outfit",
+                    fontWeight: 600,
+                    fontSize: "15px",
+                  }}
+                >
+                  VERIFIED — Medicine Found
+                </span>
+              </div>
+              <div className="verify-result-body">
+                <div
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: "1fr 1fr",
+                    gap: "24px",
+                  }}
+                >
+                  <div>
+                    <div className="p-label">NAME</div>
+                    <div
+                      style={{
+                        fontWeight: 700,
+                      }}
+                    >
+                      {verifiedMedicine.name}
+                    </div>
+                  </div>
+                  <div>
+                    <div className="p-label">GENERIC</div>
+                    <div
+                      style={{
+                        fontWeight: 700,
+                      }}
+                    >
+                      {verifiedMedicine.genericName || "—"}
+                    </div>
+                  </div>
+                  <div>
+                    <div className="p-label">BATCH / EXPIRY</div>
+                    <div
+                      style={{
+                        fontWeight: 700,
+                      }}
+                    >
+                      {verifiedMedicine.batchNumber || "—"} /{" "}
+                      {verifiedMedicine.expiryDate
+                        ? new Date(
+                            verifiedMedicine.expiryDate,
+                          ).toLocaleDateString("en-IN", {
+                            month: "short",
+                            year: "numeric",
+                          })
+                        : "—"}
+                    </div>
+                    {isExpiringSoon && (
+                      <div
+                        style={{
+                          color: "var(--warning)",
+                          fontSize: "12px",
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "4px",
+                          marginTop: "4px",
+                        }}
+                      >
+                        <AlertTriangle size={12} /> Expiring soon
+                      </div>
+                    )}
+                  </div>
+                  <div>
+                    <div className="p-label">STOCK</div>
+                    <div
+                      style={{
+                        fontWeight: 700,
+                      }}
+                    >
+                      {verifiedMedicine.stock || 0} units (MRP: ₹
+                      {(verifiedMedicine.mrp || 0).toFixed(2)})
+                    </div>
+                  </div>
+                </div>
+                <div
+                  style={{
+                    display: "flex",
+                    gap: "12px",
+                    marginTop: "12px",
+                  }}
+                >
+                  <button
+                    className="pos-btn teal"
+                    style={{
+                      flex: 1,
+                    }}
+                    onClick={() => navigate("/billing")}
+                  >
+                    Add to Bill →
+                  </button>
+                  <button
+                    className="pos-btn outline"
+                    style={{
+                      flex: 1,
+                    }}
+                  >
+                    View Full Details
+                  </button>
+                  <button className="pos-btn outline">
+                    <Printer size={16} />
+                  </button>
+                </div>
+              </div>
+            </m.div>
+          )}
+          {verificationResult === "notfound" && (
+            <m.div
+              initial={{
+                opacity: 0,
+                y: 20,
+              }}
+              animate={{
+                opacity: 1,
+                y: 0,
+              }}
+              className="verify-result-card"
+              style={{
+                borderLeft: "4px solid var(--danger)",
+              }}
+            >
+              <div className="verify-result-header">
+                <XCircle size={24} color="var(--danger)" />
+                <span
+                  style={{
+                    fontFamily: "Outfit",
+                    fontWeight: 600,
+                    fontSize: "15px",
+                  }}
+                >
+                  NOT FOUND — Barcode not registered
+                </span>
+              </div>
+            </m.div>
+          )}
+        </AnimatePresence>
+      </>
+    )
+  );
+}
+function BarcodeEcosystemSection4({
+  showToast,
+  activeTab,
+  handleSaveScannerSettings,
+  isSaving,
+}) {
+  return (
+    activeTab === "settings" && (
+      <div className="pos-card">
+        <div className="pos-card-title">Scanner Settings</div>
+        <div
+          className="settings-control-grid"
+          style={{
+            marginTop: "24px",
+          }}
+        >
+          <div className="config-section">
+            <div className="p-label">SCANNER TYPE</div>
+            <div
+              className="purchases-tabs"
+              style={{
+                background: "none",
+                border: "none",
+                padding: 0,
+              }}
+            >
+              {["USB", "Bluetooth", "Camera"].map((t) => (
+                <button
+                  key={t}
+                  className={`p-tab ${t === "USB" ? "active" : ""}`}
+                >
+                  {t}
+                </button>
+              ))}
+            </div>
+            <div
+              className="pos-card"
+              style={{
+                background: "var(--overlay-02)",
+                marginTop: "20px",
+              }}
+            >
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                }}
+              >
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "10px",
+                  }}
+                >
+                  <div
+                    style={{
+                      width: "8px",
+                      height: "8px",
+                      background: "var(--success)",
+                      borderRadius: "50%",
+                    }}
+                  />
+                  <span
+                    style={{
+                      fontWeight: 700,
+                    }}
+                  >
+                    MAGTEC USB Scanner
+                  </span>
+                </div>
+                <button className="micro-btn">
+                  <RefreshCw size={14} />
+                </button>
+              </div>
+              <div
+                className="result-meta"
+                style={{
+                  marginTop: "12px",
+                  fontSize: "12px",
+                }}
+              >
+                Port: COM3 | Baud: 9600
+              </div>
+              <button
+                className="pos-btn outline"
+                style={{
+                  width: "100%",
+                  marginTop: "16px",
+                  fontSize: "12px",
+                }}
+                onClick={() => showToast("Scanner test initiated", "info")}
+              >
+                Test Scanner
+              </button>
+            </div>
+          </div>
+          <div className="config-section">
+            <div className="p-label">FORMATS & PREFIX</div>
+            <div className="format-checkboxes">
+              {[
+                "EAN-13",
+                "EAN-8",
+                "QR Code",
+                "Code 128",
+                "Code 39",
+                "UPC-A",
+              ].map((f) => (
+                <label key={f} className="checkbox-item">
+                  <input required type="checkbox" defaultChecked /> {f}
+                </label>
+              ))}
+            </div>
+            <div
+              style={{
+                display: "flex",
+                gap: "12px",
+                marginTop: "20px",
+              }}
+            >
+              <div
+                className="pos-input-group"
+                style={{
+                  flex: 1,
+                }}
+              >
+                <label htmlFor="field_kbgipa" className="p-label">
+                  PREFIX TO STRIP
+                </label>
+                <input
+                  id="field_kbgipa"
+                  required
+                  className="pos-input"
+                  placeholder="e.g. GS1"
+                />
+              </div>
+              <div
+                className="pos-input-group"
+                style={{
+                  flex: 1,
+                }}
+              >
+                <label htmlFor="field_53p36d" className="p-label">
+                  SUFFIX TO STRIP
+                </label>
+                <input id="field_53p36d" required className="pos-input" />
+              </div>
+            </div>
+          </div>
+        </div>
+        <div
+          className="config-section"
+          style={{
+            marginTop: "24px",
+            borderTop: "1px solid var(--outline-variant)",
+            paddingTop: "24px",
+          }}
+        >
+          <div
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              gap: "12px",
+            }}
+          >
+            <label className="checkbox-item">
+              <input required type="checkbox" defaultChecked /> Auto-add scanned
+              medicine to bill (in /billing screen)
+            </label>
+            <label className="checkbox-item">
+              <input required type="checkbox" defaultChecked /> Beep sound on
+              successful scan
+            </label>
+            <label className="checkbox-item">
+              <input required type="checkbox" /> Vibrate (mobile only)
+            </label>
+          </div>
+          <button
+            className="pos-btn teal"
+            style={{
+              marginTop: "24px",
+            }}
+            onClick={handleSaveScannerSettings}
+            disabled={isSaving}
+          >
+            {isSaving ? (
+              <>
+                <Spinner size={16} /> Saving...
+              </>
+            ) : (
+              "Save Scanner Settings"
+            )}
+          </button>
+        </div>
+      </div>
+    )
+  );
+}
+function BarcodeEcosystemSection5({
+  activeTab,
+  historyLoading,
+  scanHistory,
+  handleDownloadScanLog,
+  isDownloading,
+}) {
+  return (
+    activeTab === "history" && (
+      <div className="purchase-table-card">
+        <table className="purchase-table">
+          <thead>
+            <tr>
+              <th>Date/Time</th>
+              <th>Barcode</th>
+              <th>Medicine Matched</th>
+              <th>Action Taken</th>
+              <th>Result</th>
+            </tr>
+          </thead>
+          <tbody>
+            {historyLoading ? (
+              <tr>
+                <td
+                  colSpan={5}
+                  style={{
+                    textAlign: "center",
+                    padding: "40px",
+                    color: "var(--text-dim)",
+                  }}
+                >
+                  <Spinner size={20} /> Loading scan history...
+                </td>
+              </tr>
+            ) : scanHistory.length === 0 ? (
+              <tr>
+                <td
+                  colSpan={5}
+                  style={{
+                    textAlign: "center",
+                    padding: "40px",
+                    color: "var(--text-dim)",
+                  }}
+                >
+                  No scan history available
+                </td>
+              </tr>
+            ) : (
+              scanHistory.map((h) => (
+                <tr key={h.id || h._id}>
+                  <td>
+                    {h.createdAt ? new Date(h.createdAt).toLocaleString() : "—"}
+                  </td>
+                  <td
+                    style={{
+                      fontWeight: 700,
+                    }}
+                  >
+                    {h.barcode || h.code || "—"}
+                  </td>
+                  <td>{h.medicineName || "—"}</td>
+                  <td>
+                    <span
+                      className={`p-status ${(h.action || "").indexOf("BILL") !== -1 ? "paid" : ""}`}
+                      style={{
+                        fontSize: "10px",
+                      }}
+                    >
+                      {(h.action || "SCAN").toUpperCase()}
+                    </span>
+                  </td>
+                  <td>
+                    <span
+                      className={`p-status ${h.verified ? "success" : "danger"}`}
+                    >
+                      {h.verified ? "VERIFIED" : "NOT FOUND"}
+                    </span>
+                  </td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
+        <div
+          style={{
+            padding: "16px",
+          }}
+        >
+          <button
+            className="pos-btn outline"
+            onClick={handleDownloadScanLog}
+            disabled={isDownloading || scanHistory.length === 0}
+          >
+            {isDownloading ? (
+              <>
+                <Spinner size={14} /> Downloading...
+              </>
+            ) : (
+              <>
+                <Download size={16} /> Download Scan Log
+              </>
+            )}
+          </button>
+        </div>
+      </div>
+    )
+  );
+}
 export default function BarcodeEcosystem({ showToast }) {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("labels");
@@ -60,7 +1431,6 @@ export default function BarcodeEcosystem({ showToast }) {
   const [isPrinting, setIsPrinting] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-
   const [labelFields, setLabelFields] = useState({
     medName: true,
     generic: true,
@@ -73,16 +1443,16 @@ export default function BarcodeEcosystem({ showToast }) {
     schedule: false,
     storage: false,
   });
-
   const [medicines, setMedicines] = useState([]);
   const [selectedMedicine, setSelectedMedicine] = useState(null);
   const [medicineSearch, setMedicineSearch] = useState("");
   const [showMedDropdown, setShowMedDropdown] = useState(false);
   const dropdownRef = useRef(null);
   const searchInputRef = useRef(null);
-
   useEffect(() => {
-    getMedicines({ limit: 100 })
+    getMedicines({
+      limit: 100,
+    })
       .then((res) => {
         const responseData = res.data?.data || res.data;
         const list =
@@ -96,7 +1466,6 @@ export default function BarcodeEcosystem({ showToast }) {
         setMedicines([]);
       });
   }, []);
-
   const filteredMedicines = useMemo(() => {
     if (!medicineSearch.trim()) return medicines.slice(0, 50);
     const q = medicineSearch.toLowerCase();
@@ -114,7 +1483,6 @@ export default function BarcodeEcosystem({ showToast }) {
       )
       .slice(0, 50);
   }, [medicines, medicineSearch]);
-
   useEffect(() => {
     const handleClickOutside = (e) => {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
@@ -124,21 +1492,18 @@ export default function BarcodeEcosystem({ showToast }) {
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
-
   const selectMedicine = (med) => {
     setSelectedMedicine(med);
     setMedicineSearch(med.name);
     setPreviewScale(1);
     setShowMedDropdown(false);
   };
-
   const clearMedicine = () => {
     setSelectedMedicine(null);
     setMedicineSearch("");
     setShowMedDropdown(true);
     setTimeout(() => searchInputRef.current?.focus(), 50);
   };
-
   const handleVerify = async () => {
     if (!barcodeInput.trim()) {
       showToast("Enter a barcode", "error");
@@ -177,22 +1542,17 @@ export default function BarcodeEcosystem({ showToast }) {
       setVerifying(false);
     }
   };
-
   useEffect(() => {
     if (activeTab !== "history") return;
-
     let mounted = true;
-
     const loadHistory = async () => {
       try {
         setHistoryLoading(true);
-
-        const res = await getBarcodes({ limit: 50 });
-
+        const res = await getBarcodes({
+          limit: 50,
+        });
         if (!mounted) return;
-
         const data = res.data.data || res.data;
-
         setScanHistory(Array.isArray(data) ? data : []);
       } catch {
         if (mounted) {
@@ -204,37 +1564,28 @@ export default function BarcodeEcosystem({ showToast }) {
         }
       }
     };
-
     loadHistory();
-
     return () => {
       mounted = false;
     };
   }, [activeTab]);
-
   const handlePrintLabels = async () => {
     if (!selectedMedicine) {
       showToast("Select a medicine first", "error");
       return;
     }
-
     setIsPrinting(true);
-
     try {
       const templateInfo =
         LABEL_TEMPLATES[template] || LABEL_TEMPLATES.Standard;
-
       const labelItem = selectedMedicine;
-
       const expiryStr = labelItem.expiryDate
         ? new Date(labelItem.expiryDate).toLocaleDateString("en-IN", {
             month: "2-digit",
             year: "2-digit",
           })
         : "—";
-
       let barcodeDataUri = "";
-
       if (labelFields.barcode) {
         try {
           const barcodeText =
@@ -242,39 +1593,28 @@ export default function BarcodeEcosystem({ showToast }) {
             labelItem.sku ||
             labelItem.batchNumber ||
             labelItem.id.substring(0, 8);
-
           const res = await generateBarcode(barcodeText);
-
           const blob = new Blob([res.data], {
             type: res.headers["content-type"] || "image/png",
           });
-
           barcodeDataUri = await new Promise((resolve) => {
             const reader = new FileReader();
-
             reader.onloadend = () => resolve(reader.result);
-
             reader.readAsDataURL(blob);
           });
         } catch (err) {
           console.error("Barcode fetch failed:", err);
         }
       }
-
       const printWindow = window.open("", "_blank");
-
       if (!printWindow) {
         showToast("Pop-up blocked. Please allow pop-ups.", "error");
         setIsPrinting(false);
         return;
       }
-
       const printDocument = printWindow.document;
-
       printDocument.title = `Print Label — ${String(labelItem.name)}`;
-
       const style = printDocument.createElement("style");
-
       style.textContent = `
       @page {
         size: ${templateInfo.width}mm ${templateInfo.height}mm;
@@ -360,29 +1700,21 @@ export default function BarcodeEcosystem({ showToast }) {
         font-size: 6px;
       }
     `;
-
       printDocument.head.appendChild(style);
-
       const createTextElement = (tagName, text, className) => {
         const element = printDocument.createElement(tagName);
-
         if (className) {
           element.className = className;
         }
-
         element.textContent = String(text);
-
         return element;
       };
-
       const createLabel = () => {
         const label = printDocument.createElement("div");
         label.className = "label";
-
         if (labelFields.medName) {
           label.appendChild(createTextElement("div", labelItem.name, "name"));
         }
-
         if (labelFields.generic) {
           label.appendChild(
             createTextElement(
@@ -392,11 +1724,9 @@ export default function BarcodeEcosystem({ showToast }) {
             ),
           );
         }
-
         if (labelFields.batch || labelFields.expiry) {
           const meta = printDocument.createElement("div");
           meta.className = "meta";
-
           if (labelFields.batch) {
             meta.appendChild(
               createTextElement(
@@ -405,14 +1735,11 @@ export default function BarcodeEcosystem({ showToast }) {
               ),
             );
           }
-
           if (labelFields.expiry) {
             meta.appendChild(createTextElement("span", `Exp: ${expiryStr}`));
           }
-
           label.appendChild(meta);
         }
-
         if (labelFields.mrp) {
           label.appendChild(
             createTextElement(
@@ -422,42 +1749,32 @@ export default function BarcodeEcosystem({ showToast }) {
             ),
           );
         }
-
         if (labelFields.barcode) {
           const barcode = printDocument.createElement("div");
           barcode.className = "barcode";
-
           if (barcodeDataUri) {
             const image = printDocument.createElement("img");
             image.src = barcodeDataUri;
             image.alt = "Barcode";
-
             barcode.appendChild(image);
           } else {
             barcode.textContent = "Barcode Error";
           }
-
           label.appendChild(barcode);
         }
-
         if (labelFields.qr) {
           label.appendChild(createTextElement("div", "QR", "qr-code"));
         }
-
         return label;
       };
-
       for (let index = 0; index < labelQty; index += 1) {
         printDocument.body.appendChild(createLabel());
       }
-
       printWindow.focus();
-
       printWindow.onafterprint = () => {
         printWindow.close();
         setIsPrinting(false);
       };
-
       setTimeout(() => {
         printWindow.print();
         showToast(`Printing ${labelQty} labels...`, "success");
@@ -468,7 +1785,6 @@ export default function BarcodeEcosystem({ showToast }) {
       setIsPrinting(false);
     }
   };
-
   const handlePreview = () => {
     if (!selectedMedicine) {
       showToast("Select a medicine first", "error");
@@ -476,11 +1792,13 @@ export default function BarcodeEcosystem({ showToast }) {
     }
     const previewPanel = document.querySelector(".label-preview-panel");
     if (previewPanel) {
-      previewPanel.scrollIntoView({ behavior: "smooth", block: "center" });
+      previewPanel.scrollIntoView({
+        behavior: "smooth",
+        block: "center",
+      });
       showToast(`Previewing: ${selectedMedicine.name}`, "success");
     }
   };
-
   const handleDownloadScanLog = () => {
     if (scanHistory.length === 0) {
       showToast("No scan history to download", "error");
@@ -525,7 +1843,6 @@ export default function BarcodeEcosystem({ showToast }) {
       setIsDownloading(false);
     }
   };
-
   const handleSaveScannerSettings = () => {
     setIsSaving(true);
     try {
@@ -552,18 +1869,20 @@ export default function BarcodeEcosystem({ showToast }) {
       setIsSaving(false);
     }
   };
-
   const isExpiringSoon =
     verifiedMedicine?.expiryDate &&
     new Date(verifiedMedicine.expiryDate) <
       new Date(new Date().setDate(new Date().getDate() + 30));
-
   return (
     <div className="barcode-container">
       <div className="purchases-header">
         <div>
           <h1
-            style={{ fontFamily: "Outfit", fontSize: "28px", fontWeight: 700 }}
+            style={{
+              fontFamily: "Outfit",
+              fontSize: "28px",
+              fontWeight: 700,
+            }}
           >
             Barcode & QR Ecosystem
           </h1>
@@ -604,1037 +1923,63 @@ export default function BarcodeEcosystem({ showToast }) {
         </div>
       </div>
 
-      <div className="barcode-features-grid">
-        <div className="feature-overview-card">
-          <div
-            className="feature-icon-circle"
-            style={{
-              background: "var(--primary-glow)",
-              color: "var(--primary)",
-            }}
-          >
-            <QrCode size={24} />
-          </div>
-          <div style={{ fontWeight: 700 }}>QR Verification</div>
-          <p className="result-meta" style={{ fontSize: "13px" }}>
-            Scan any medicine QR to verify authenticity and view details.
-          </p>
-          <button
-            className="pos-btn teal"
-            style={{ width: "100%" }}
-            onClick={() => setActiveTab("verify")}
-          >
-            Scan QR Code
-          </button>
-        </div>
-        <div className="feature-overview-card">
-          <div
-            className="feature-icon-circle"
-            style={{
-              background: "rgba(59, 130, 246, 0.1)",
-              color: "var(--info)",
-            }}
-          >
-            <Printer size={24} />
-          </div>
-          <div style={{ fontWeight: 700 }}>Label Printing</div>
-          <p className="result-meta" style={{ fontSize: "13px" }}>
-            Generate and print barcode labels for any medicine or batch.
-          </p>
-          <button
-            className="pos-btn outline"
-            style={{
-              width: "100%",
-              borderColor: "var(--info)",
-              color: "var(--info)",
-            }}
-            onClick={() => setActiveTab("labels")}
-          >
-            Print Labels
-          </button>
-        </div>
-        <div className="feature-overview-card">
-          <div
-            className="feature-icon-circle"
-            style={{
-              background: scannerConnected
-                ? "rgba(10, 185, 129, 0.1)"
-                : "rgba(239, 68, 68, 0.1)",
-              color: scannerConnected ? "var(--success)" : "var(--danger)",
-            }}
-          >
-            {scannerConnected ? <ShieldCheck size={24} /> : <Zap size={24} />}
-          </div>
-          <div style={{ fontWeight: 700 }}>Scanner Status</div>
-          <p className="result-meta" style={{ fontSize: "13px" }}>
-            {scannerConnected
-              ? "USB Scanner Connected — Ready to use"
-              : "No Scanner Detected — Connect device"}
-          </p>
-          <button
-            className="pos-btn outline"
-            style={{ width: "100%" }}
-            onClick={() => setActiveTab("settings")}
-          >
-            Configure Scanner
-          </button>
-        </div>
-      </div>
+      <BarcodeEcosystemSection1
+        setActiveTab={setActiveTab}
+        scannerConnected={scannerConnected}
+      />
 
-      {activeTab === "labels" && (
-        <>
-          <div className="label-print-panels">
-            <div className="label-config-panel">
-              <div className="pos-card">
-                <div style={{ fontWeight: 700, marginBottom: "16px" }}>
-                  Label Configuration
-                </div>
-                <div
-                  className="pos-input-group"
-                  style={{ marginBottom: "20px" }}
-                  ref={dropdownRef}
-                >
-                  <span className="p-label">SEARCH MEDICINE</span>
-                  <div style={{ position: "relative" }}>
-                    <div
-                      role="button"
-                      tabIndex={0}
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        background: "var(--surface-container)",
-                        border: `1px solid ${selectedMedicine ? "var(--primary)" : "var(--outline-variant)"}`,
-                        borderRadius: "12px",
-                        padding: "8px 12px",
-                        gap: "8px",
-                        cursor: "pointer",
-                        transition: "border-color 0.2s",
-                      }}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter" || e.key === " ") {
-                          e.preventDefault();
-                          e.currentTarget.click();
-                        }
-                      }}
-                      onClick={() => {
-                        setShowMedDropdown(!showMedDropdown);
-                        if (!showMedDropdown) {
-                          setTimeout(() => searchInputRef.current?.focus(), 50);
-                        }
-                      }}
-                    >
-                      <Search
-                        size={16}
-                        style={{ color: "var(--text-muted)", flexShrink: 0 }}
-                      />
-                      {selectedMedicine && !showMedDropdown ? (
-                        <div
-                          style={{
-                            flex: 1,
-                            display: "flex",
-                            alignItems: "center",
-                            gap: "8px",
-                          }}
-                        >
-                          <div style={{ flex: 1 }}>
-                            <div
-                              style={{
-                                fontWeight: 700,
-                                fontSize: "14px",
-                                lineHeight: 1.3,
-                              }}
-                            >
-                              {selectedMedicine.name}
-                            </div>
-                            <div
-                              style={{
-                                fontSize: "11px",
-                                color: "var(--text-muted)",
-                                lineHeight: 1.2,
-                              }}
-                            >
-                              Batch: {selectedMedicine.batchNumber || "—"} · ₹
-                              {(selectedMedicine.mrp || 0).toFixed(2)}
-                            </div>
-                          </div>
-                          <button
-                            className="micro-btn"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              clearMedicine();
-                            }}
-                            title="Clear selection"
-                            style={{
-                              flexShrink: 0,
-                              width: "24px",
-                              height: "24px",
-                            }}
-                          >
-                            <X size={14} />
-                          </button>
-                        </div>
-                      ) : (
-                        <input
-                          required
-                          ref={searchInputRef}
-                          type="text"
-                          placeholder="Type to search medicines..."
-                          value={medicineSearch}
-                          onChange={(e) => {
-                            setMedicineSearch(e.target.value);
-                            if (!showMedDropdown) setShowMedDropdown(true);
-                          }}
-                          onKeyDown={(e) => {
-                            if (e.key === "Escape") setShowMedDropdown(false);
-                          }}
-                          style={{
-                            flex: 1,
-                            background: "none",
-                            border: "none",
-                            outline: "none",
-                            color: "var(--text)",
-                            fontFamily: "'Outfit', sans-serif",
-                            fontSize: "14px",
-                            width: "100%",
-                          }}
-                        />
-                      )}
-                      <ChevronDown
-                        size={16}
-                        style={{
-                          color: "var(--text-muted)",
-                          flexShrink: 0,
-                          transform: showMedDropdown
-                            ? "rotate(180deg)"
-                            : "rotate(0deg)",
-                          transition: "transform 0.2s",
-                        }}
-                      />
-                    </div>
+      <BarcodeEcosystemSection2
+        activeTab={activeTab}
+        setShowMedDropdown={setShowMedDropdown}
+        showMedDropdown={showMedDropdown}
+        searchInputRef={searchInputRef}
+        clearMedicine={clearMedicine}
+        setMedicineSearch={setMedicineSearch}
+        selectedMedicine={selectedMedicine}
+        selectMedicine={selectMedicine}
+        template={template}
+        setTemplate={setTemplate}
+        labelFields={labelFields}
+        setLabelFields={setLabelFields}
+        setLabelQty={setLabelQty}
+        previewScale={previewScale}
+        setPreviewScale={setPreviewScale}
+        medicineSearch={medicineSearch}
+        filteredMedicines={filteredMedicines}
+        medicines={medicines}
+        dropdownRef={dropdownRef}
+        labelQty={labelQty}
+        handlePreview={handlePreview}
+        handlePrintLabels={handlePrintLabels}
+        isPrinting={isPrinting}
+      />
 
-                    {/* Dropdown */}
-                    {showMedDropdown && (
-                      <div
-                        style={{
-                          position: "absolute",
-                          top: "100%",
-                          left: 0,
-                          right: 0,
-                          marginTop: "4px",
-                          background: "var(--surface)",
-                          border: "1px solid var(--outline-variant)",
-                          borderRadius: "12px",
-                          maxHeight: "280px",
-                          overflow: "auto",
-                          zIndex: 100,
-                          boxShadow: "0 12px 40px rgba(0,0,0,0.4)",
-                        }}
-                      >
-                        {filteredMedicines.length === 0 ? (
-                          <div
-                            style={{
-                              padding: "20px",
-                              textAlign: "center",
-                              color: "var(--text-muted)",
-                              fontSize: "13px",
-                            }}
-                          >
-                            No medicines found
-                          </div>
-                        ) : (
-                          filteredMedicines.map((m) => {
-                            const isSelected = selectedMedicine?.id === m.id;
-                            const mfgName =
-                              m.manufacturer?.name || m.manufacturer || "";
+      <BarcodeEcosystemSection3
+        setBarcodeInput={setBarcodeInput}
+        handleVerify={handleVerify}
+        navigate={navigate}
+        activeTab={activeTab}
+        barcodeInput={barcodeInput}
+        verifying={verifying}
+        verificationResult={verificationResult}
+        verifiedMedicine={verifiedMedicine}
+        isExpiringSoon={isExpiringSoon}
+      />
 
-                            return (
-                              <div
-                                role="button"
-                                tabIndex={0}
-                                key={m.id}
-                                onKeyDown={(e) => {
-                                  if (e.key === "Enter" || e.key === " ") {
-                                    e.preventDefault();
-                                    e.currentTarget.click();
-                                  }
-                                }}
-                                onClick={() => selectMedicine(m)}
-                                style={{
-                                  padding: "10px 14px",
-                                  cursor: "pointer",
-                                  display: "flex",
-                                  alignItems: "center",
-                                  gap: "12px",
-                                  borderBottom: "1px solid var(--overlay-05)",
-                                  background: isSelected
-                                    ? "rgba(79, 219, 200, 0.08)"
-                                    : "transparent",
-                                  transition: "background 0.15s",
-                                }}
-                                onMouseEnter={(e) => {
-                                  if (!isSelected)
-                                    e.currentTarget.style.background =
-                                      "var(--overlay-03)";
-                                }}
-                                onMouseLeave={(e) => {
-                                  if (!isSelected)
-                                    e.currentTarget.style.background =
-                                      "transparent";
-                                }}
-                              >
-                                <div style={{ flex: 1 }}>
-                                  <div
-                                    style={{
-                                      fontWeight: 700,
-                                      fontSize: "13px",
-                                    }}
-                                  >
-                                    {m.name}
-                                  </div>
-                                  <div
-                                    style={{
-                                      fontSize: "11px",
-                                      color: "var(--text-muted)",
-                                    }}
-                                  >
-                                    Batch: {m.batchNumber || "—"} · ₹
-                                    {(m.mrp || 0).toFixed(2)} · {mfgName}
-                                  </div>
-                                </div>
-                                <div
-                                  style={{
-                                    fontSize: "11px",
-                                    color: "var(--text-muted)",
-                                    textAlign: "right",
-                                  }}
-                                >
-                                  <div>Qty: {m.stock ?? 0}</div>
-                                  {m.expiryDate && (
-                                    <div
-                                      style={{
-                                        color:
-                                          new Date(m.expiryDate) < new Date()
-                                            ? "var(--danger)"
-                                            : "inherit",
-                                      }}
-                                    >
-                                      Exp:{" "}
-                                      {new Date(
-                                        m.expiryDate,
-                                      ).toLocaleDateString("en-IN", {
-                                        month: "short",
-                                        year: "2-digit",
-                                      })}
-                                    </div>
-                                  )}
-                                </div>
-                              </div>
-                            );
-                          })
-                        )}
-                        {medicines.length > 0 && (
-                          <div
-                            style={{
-                              padding: "8px 14px",
-                              fontSize: "10px",
-                              color: "var(--text-muted)",
-                              textAlign: "center",
-                              borderTop: "1px solid var(--overlay-05)",
-                            }}
-                          >
-                            {filteredMedicines.length} of {medicines.length}{" "}
-                            medicines shown
-                          </div>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                </div>
-                <div
-                  className="pos-input-group"
-                  style={{ marginBottom: "20px" }}
-                >
-                  <span className="p-label">TEMPLATE SELECTOR</span>
-                  <div
-                    className="purchases-tabs"
-                    style={{ background: "none", border: "none", padding: 0 }}
-                  >
-                    {["Standard", "Large", "Strip", "Custom"].map((t) => (
-                      <button
-                        key={t}
-                        className={`p-tab ${template === t ? "active" : ""}`}
-                        onClick={() => setTemplate(t)}
-                        title={LABEL_TEMPLATES[t]?.desc || ""}
-                      >
-                        {t}
-                      </button>
-                    ))}
-                  </div>
-                  <div
-                    className="result-meta"
-                    style={{ fontSize: "11px", marginTop: "6px" }}
-                  >
-                    {LABEL_TEMPLATES[template]?.desc || "Standard template"}
-                  </div>
-                </div>
-                <div
-                  className="pos-input-group"
-                  style={{ marginBottom: "20px" }}
-                >
-                  <span className="p-label">CONTENT FIELDS</span>
-                  <div className="format-checkboxes">
-                    {Object.keys(labelFields).map((k) => (
-                      <label key={k} className="checkbox-item">
-                        <input
-                          required
-                          type="checkbox"
-                          checked={labelFields[k]}
-                          onChange={(e) =>
-                            setLabelFields({
-                              ...labelFields,
-                              [k]: e.target.checked,
-                            })
-                          }
-                        />
-                        {k.charAt(0).toUpperCase() +
-                          k.slice(1).replace(/([A-Z])/g, " $1")}
-                      </label>
-                    ))}
-                  </div>
-                </div>
-                <div
-                  style={{
-                    display: "grid",
-                    gridTemplateColumns: "1fr 1fr",
-                    gap: "20px",
-                  }}
-                >
-                  <div className="pos-input-group">
-                    <label htmlFor="field_682bxu" className="p-label">
-                      LABEL QUANTITY
-                    </label>
-                    <input
-                      id="field_682bxu"
-                      type="number"
-                      min="1"
-                      max="100"
-                      value={labelQty}
-                      onChange={(e) =>
-                        setLabelQty(Math.max(1, parseInt(e.target.value) || 1))
-                      }
-                      className="pos-input"
-                      style={{
-                        background: "var(--surface-container)",
-                        border: "1px solid var(--outline-variant)",
-                        borderRadius: "12px",
-                        padding: "8px 12px",
-                        color: "var(--text)",
-                        fontFamily: "'Outfit', sans-serif",
-                        fontSize: "14px",
-                        width: "100%",
-                      }}
-                    />
-                  </div>
-                </div>
-                <div
-                  style={{ display: "flex", gap: "12px", marginTop: "24px" }}
-                >
-                  <button
-                    className="pos-btn outline"
-                    style={{ flex: 1 }}
-                    onClick={handlePreview}
-                  >
-                    Preview
-                  </button>
-                  <button
-                    className="pos-btn teal"
-                    style={{ flex: 2 }}
-                    onClick={handlePrintLabels}
-                    disabled={isPrinting || !selectedMedicine}
-                  >
-                    {isPrinting ? (
-                      <>
-                        <Spinner size={16} /> Printing...
-                      </>
-                    ) : (
-                      <>
-                        <Printer size={18} /> Print Now
-                      </>
-                    )}
-                  </button>
-                </div>
-              </div>
-            </div>
-            <div className="label-preview-panel">
-              <div className="pos-card" style={{ textAlign: "center" }}>
-                <div
-                  style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                    marginBottom: "20px",
-                  }}
-                >
-                  <div style={{ fontWeight: 700 }}>Label Preview</div>
-                  <div style={{ display: "flex", gap: "8px" }}>
-                    {[0.5, 0.75, 1].map((s) => (
-                      <button
-                        key={s}
-                        className={`micro-btn ${previewScale === s ? "active" : ""}`}
-                        style={{ fontSize: "10px", padding: "4px 8px" }}
-                        onClick={() => setPreviewScale(s)}
-                      >
-                        {s * 100}%
-                      </button>
-                    ))}
-                  </div>
-                </div>
-                <div
-                  style={{
-                    transform: `scale(${previewScale})`,
-                    transition: "transform 0.2s",
-                  }}
-                >
-                  {selectedMedicine ? (
-                    <div className="label-preview-sticker">
-                      {labelFields.medName && (
-                        <div className="label-med-name">
-                          {selectedMedicine.name}
-                        </div>
-                      )}
-                      {labelFields.generic && (
-                        <div className="label-generic">
-                          (
-                          {selectedMedicine.genericName ||
-                            selectedMedicine.name}
-                          )
-                        </div>
-                      )}
-                      <div className="label-meta">
-                        {labelFields.batch && (
-                          <span>
-                            Batch: {selectedMedicine.batchNumber || "—"}
-                          </span>
-                        )}
-                        {labelFields.expiry && (
-                          <span style={{ color: "var(--danger)" }}>
-                            Exp:{" "}
-                            {selectedMedicine.expiryDate
-                              ? new Date(
-                                  selectedMedicine.expiryDate,
-                                ).toLocaleDateString("en-IN", {
-                                  month: "2-digit",
-                                  year: "2-digit",
-                                })
-                              : "—"}
-                          </span>
-                        )}
-                      </div>
-                      {labelFields.mrp && (
-                        <div className="label-mrp">
-                          MRP: ₹{(selectedMedicine.mrp || 0).toFixed(2)}/tab
-                        </div>
-                      )}
-                      {labelFields.barcode && (
-                        <div className="label-barcode">
-                          <svg
-                            viewBox="0 0 100 20"
-                            preserveAspectRatio="none"
-                            style={{ width: "100%", height: "100%" }}
-                          >
-                            {[...Array(30)].map((_, i) => (
-                              <rect
-                                key={`barcode-bar-${i}`}
-                                x={i * 3.3}
-                                y="0"
-                                width={(i * 7) % 10 > 4 ? 1 : 2}
-                                height="20"
-                                fill="black"
-                              />
-                            ))}
-                          </svg>
-                        </div>
-                      )}
-                      {labelFields.qr && (
-                        <div
-                          className="label-qr"
-                          style={{ border: "2px solid black", padding: "2px" }}
-                        >
-                          <QrCode size={24} color="black" />
-                        </div>
-                      )}
-                    </div>
-                  ) : (
-                    <div
-                      className="label-preview-sticker"
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        background: "var(--overlay-02)",
-                        border: "2px dashed var(--outline-variant)",
-                        color: "var(--text-muted)",
-                      }}
-                    >
-                      <div style={{ textAlign: "center" }}>
-                        <Printer
-                          size={28}
-                          style={{ opacity: 0.3, marginBottom: "8px" }}
-                        />
-                        <div style={{ fontSize: "12px", fontWeight: 600 }}>
-                          No Medicine Selected
-                        </div>
-                        <div style={{ fontSize: "10px", marginTop: "4px" }}>
-                          Search and select a medicine above
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                </div>
-                <p
-                  className="result-meta"
-                  style={{ marginTop: "24px", fontSize: "12px" }}
-                >
-                  Labels are print-ready. Optimized for 38×25mm thermal
-                  stickers.
-                </p>
-              </div>
-            </div>
-          </div>
-        </>
-      )}
+      <BarcodeEcosystemSection4
+        showToast={showToast}
+        activeTab={activeTab}
+        handleSaveScannerSettings={handleSaveScannerSettings}
+        isSaving={isSaving}
+      />
 
-      {activeTab === "verify" && (
-        <>
-          <div className="scanner-view-card">
-            <div className="camera-frame">
-              <div className="scanner-laser-line" />
-              <Scan size={48} color="var(--primary)" style={{ opacity: 0.5 }} />
-              <span className="result-meta">Point camera at QR or barcode</span>
-              <button
-                className="pos-btn outline"
-                style={{
-                  position: "absolute",
-                  bottom: "20px",
-                  background: "rgba(0,0,0,0.5)",
-                  backdropFilter: "blur(10px)",
-                }}
-              >
-                <Camera size={16} /> Use Rear Camera
-              </button>
-            </div>
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: "20px",
-                width: "100%",
-              }}
-            >
-              <div
-                style={{
-                  flex: 1,
-                  height: "1px",
-                  background: "var(--outline-variant)",
-                }}
-              />
-              <span
-                className="result-meta"
-                style={{ fontSize: "11px", fontWeight: 800 }}
-              >
-                OR ENTER MANUALLY
-              </span>
-              <div
-                style={{
-                  flex: 1,
-                  height: "1px",
-                  background: "var(--outline-variant)",
-                }}
-              />
-            </div>
-            <div style={{ display: "flex", gap: "12px", width: "100%" }}>
-              <input
-                required
-                className="pos-input"
-                style={{ flex: 1 }}
-                placeholder="Enter 13-digit barcode..."
-                value={barcodeInput}
-                onChange={(e) => setBarcodeInput(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") handleVerify();
-                }}
-              />
-              <button
-                className="pos-btn teal"
-                onClick={handleVerify}
-                disabled={verifying}
-              >
-                {verifying ? (
-                  <>
-                    <Spinner size={16} /> Verifying...
-                  </>
-                ) : (
-                  "Verify"
-                )}
-              </button>
-            </div>
-          </div>
-
-          <AnimatePresence>
-            {verificationResult === "verified" && verifiedMedicine && (
-              <m.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="verify-result-card"
-                style={{ borderLeft: "4px solid var(--success)" }}
-              >
-                <div className="verify-result-header">
-                  <CheckCircle2 size={24} color="var(--success)" />
-                  <span
-                    style={{
-                      fontFamily: "Outfit",
-                      fontWeight: 600,
-                      fontSize: "15px",
-                    }}
-                  >
-                    VERIFIED — Medicine Found
-                  </span>
-                </div>
-                <div className="verify-result-body">
-                  <div
-                    style={{
-                      display: "grid",
-                      gridTemplateColumns: "1fr 1fr",
-                      gap: "24px",
-                    }}
-                  >
-                    <div>
-                      <div className="p-label">NAME</div>
-                      <div style={{ fontWeight: 700 }}>
-                        {verifiedMedicine.name}
-                      </div>
-                    </div>
-                    <div>
-                      <div className="p-label">GENERIC</div>
-                      <div style={{ fontWeight: 700 }}>
-                        {verifiedMedicine.genericName || "—"}
-                      </div>
-                    </div>
-                    <div>
-                      <div className="p-label">BATCH / EXPIRY</div>
-                      <div style={{ fontWeight: 700 }}>
-                        {verifiedMedicine.batchNumber || "—"} /{" "}
-                        {verifiedMedicine.expiryDate
-                          ? new Date(
-                              verifiedMedicine.expiryDate,
-                            ).toLocaleDateString("en-IN", {
-                              month: "short",
-                              year: "numeric",
-                            })
-                          : "—"}
-                      </div>
-                      {isExpiringSoon && (
-                        <div
-                          style={{
-                            color: "var(--warning)",
-                            fontSize: "12px",
-                            display: "flex",
-                            alignItems: "center",
-                            gap: "4px",
-                            marginTop: "4px",
-                          }}
-                        >
-                          <AlertTriangle size={12} /> Expiring soon
-                        </div>
-                      )}
-                    </div>
-                    <div>
-                      <div className="p-label">STOCK</div>
-                      <div style={{ fontWeight: 700 }}>
-                        {verifiedMedicine.stock || 0} units (MRP: ₹
-                        {(verifiedMedicine.mrp || 0).toFixed(2)})
-                      </div>
-                    </div>
-                  </div>
-                  <div
-                    style={{ display: "flex", gap: "12px", marginTop: "12px" }}
-                  >
-                    <button
-                      className="pos-btn teal"
-                      style={{ flex: 1 }}
-                      onClick={() => navigate("/billing")}
-                    >
-                      Add to Bill →
-                    </button>
-                    <button className="pos-btn outline" style={{ flex: 1 }}>
-                      View Full Details
-                    </button>
-                    <button className="pos-btn outline">
-                      <Printer size={16} />
-                    </button>
-                  </div>
-                </div>
-              </m.div>
-            )}
-            {verificationResult === "notfound" && (
-              <m.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="verify-result-card"
-                style={{ borderLeft: "4px solid var(--danger)" }}
-              >
-                <div className="verify-result-header">
-                  <XCircle size={24} color="var(--danger)" />
-                  <span
-                    style={{
-                      fontFamily: "Outfit",
-                      fontWeight: 600,
-                      fontSize: "15px",
-                    }}
-                  >
-                    NOT FOUND — Barcode not registered
-                  </span>
-                </div>
-              </m.div>
-            )}
-          </AnimatePresence>
-        </>
-      )}
-
-      {activeTab === "settings" && (
-        <div className="pos-card">
-          <div className="pos-card-title">Scanner Settings</div>
-          <div className="settings-control-grid" style={{ marginTop: "24px" }}>
-            <div className="config-section">
-              <div className="p-label">SCANNER TYPE</div>
-              <div
-                className="purchases-tabs"
-                style={{ background: "none", border: "none", padding: 0 }}
-              >
-                {["USB", "Bluetooth", "Camera"].map((t) => (
-                  <button
-                    key={t}
-                    className={`p-tab ${t === "USB" ? "active" : ""}`}
-                  >
-                    {t}
-                  </button>
-                ))}
-              </div>
-              <div
-                className="pos-card"
-                style={{ background: "var(--overlay-02)", marginTop: "20px" }}
-              >
-                <div
-                  style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                  }}
-                >
-                  <div
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "10px",
-                    }}
-                  >
-                    <div
-                      style={{
-                        width: "8px",
-                        height: "8px",
-                        background: "var(--success)",
-                        borderRadius: "50%",
-                      }}
-                    />
-                    <span style={{ fontWeight: 700 }}>MAGTEC USB Scanner</span>
-                  </div>
-                  <button className="micro-btn">
-                    <RefreshCw size={14} />
-                  </button>
-                </div>
-                <div
-                  className="result-meta"
-                  style={{ marginTop: "12px", fontSize: "12px" }}
-                >
-                  Port: COM3 | Baud: 9600
-                </div>
-                <button
-                  className="pos-btn outline"
-                  style={{ width: "100%", marginTop: "16px", fontSize: "12px" }}
-                  onClick={() => showToast("Scanner test initiated", "info")}
-                >
-                  Test Scanner
-                </button>
-              </div>
-            </div>
-            <div className="config-section">
-              <div className="p-label">FORMATS & PREFIX</div>
-              <div className="format-checkboxes">
-                {[
-                  "EAN-13",
-                  "EAN-8",
-                  "QR Code",
-                  "Code 128",
-                  "Code 39",
-                  "UPC-A",
-                ].map((f) => (
-                  <label key={f} className="checkbox-item">
-                    <input required type="checkbox" defaultChecked /> {f}
-                  </label>
-                ))}
-              </div>
-              <div style={{ display: "flex", gap: "12px", marginTop: "20px" }}>
-                <div className="pos-input-group" style={{ flex: 1 }}>
-                  <label htmlFor="field_kbgipa" className="p-label">
-                    PREFIX TO STRIP
-                  </label>
-                  <input
-                    id="field_kbgipa"
-                    required
-                    className="pos-input"
-                    placeholder="e.g. GS1"
-                  />
-                </div>
-                <div className="pos-input-group" style={{ flex: 1 }}>
-                  <label htmlFor="field_53p36d" className="p-label">
-                    SUFFIX TO STRIP
-                  </label>
-                  <input id="field_53p36d" required className="pos-input" />
-                </div>
-              </div>
-            </div>
-          </div>
-          <div
-            className="config-section"
-            style={{
-              marginTop: "24px",
-              borderTop: "1px solid var(--outline-variant)",
-              paddingTop: "24px",
-            }}
-          >
-            <div
-              style={{ display: "flex", flexDirection: "column", gap: "12px" }}
-            >
-              <label className="checkbox-item">
-                <input required type="checkbox" defaultChecked /> Auto-add
-                scanned medicine to bill (in /billing screen)
-              </label>
-              <label className="checkbox-item">
-                <input required type="checkbox" defaultChecked /> Beep sound on
-                successful scan
-              </label>
-              <label className="checkbox-item">
-                <input required type="checkbox" /> Vibrate (mobile only)
-              </label>
-            </div>
-            <button
-              className="pos-btn teal"
-              style={{ marginTop: "24px" }}
-              onClick={handleSaveScannerSettings}
-              disabled={isSaving}
-            >
-              {isSaving ? (
-                <>
-                  <Spinner size={16} /> Saving...
-                </>
-              ) : (
-                "Save Scanner Settings"
-              )}
-            </button>
-          </div>
-        </div>
-      )}
-
-      {activeTab === "history" && (
-        <div className="purchase-table-card">
-          <table className="purchase-table">
-            <thead>
-              <tr>
-                <th>Date/Time</th>
-                <th>Barcode</th>
-                <th>Medicine Matched</th>
-                <th>Action Taken</th>
-                <th>Result</th>
-              </tr>
-            </thead>
-            <tbody>
-              {historyLoading ? (
-                <tr>
-                  <td
-                    colSpan={5}
-                    style={{
-                      textAlign: "center",
-                      padding: "40px",
-                      color: "var(--text-dim)",
-                    }}
-                  >
-                    <Spinner size={20} /> Loading scan history...
-                  </td>
-                </tr>
-              ) : scanHistory.length === 0 ? (
-                <tr>
-                  <td
-                    colSpan={5}
-                    style={{
-                      textAlign: "center",
-                      padding: "40px",
-                      color: "var(--text-dim)",
-                    }}
-                  >
-                    No scan history available
-                  </td>
-                </tr>
-              ) : (
-                scanHistory.map((h) => (
-                  <tr key={h.id || h._id}>
-                    <td>
-                      {h.createdAt
-                        ? new Date(h.createdAt).toLocaleString()
-                        : "—"}
-                    </td>
-                    <td style={{ fontWeight: 700 }}>
-                      {h.barcode || h.code || "—"}
-                    </td>
-                    <td>{h.medicineName || "—"}</td>
-                    <td>
-                      <span
-                        className={`p-status ${(h.action || "").indexOf("BILL") !== -1 ? "paid" : ""}`}
-                        style={{ fontSize: "10px" }}
-                      >
-                        {(h.action || "SCAN").toUpperCase()}
-                      </span>
-                    </td>
-                    <td>
-                      <span
-                        className={`p-status ${h.verified ? "success" : "danger"}`}
-                      >
-                        {h.verified ? "VERIFIED" : "NOT FOUND"}
-                      </span>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-          <div style={{ padding: "16px" }}>
-            <button
-              className="pos-btn outline"
-              onClick={handleDownloadScanLog}
-              disabled={isDownloading || scanHistory.length === 0}
-            >
-              {isDownloading ? (
-                <>
-                  <Spinner size={14} /> Downloading...
-                </>
-              ) : (
-                <>
-                  <Download size={16} /> Download Scan Log
-                </>
-              )}
-            </button>
-          </div>
-        </div>
-      )}
+      <BarcodeEcosystemSection5
+        activeTab={activeTab}
+        historyLoading={historyLoading}
+        scanHistory={scanHistory}
+        handleDownloadScanLog={handleDownloadScanLog}
+        isDownloading={isDownloading}
+      />
     </div>
   );
 }

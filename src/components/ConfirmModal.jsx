@@ -41,36 +41,27 @@ export default function ConfirmModal({
       }}
       onClick={onClose}
     >
-      <m.div
-        role="button"
-        tabIndex={0}
-        className="confirm-modal-content"
-        initial={{ opacity: 0, scale: 0.95, y: 20 }}
-        animate={{ opacity: 1, scale: 1, y: 0 }}
-        exit={{ opacity: 0, scale: 0.95, y: 20 }}
-        transition={{ duration: 0.2, ease: "easeOut" }}
-        onKeyDown={(e) => {
-          if (e.key === "Enter" || e.key === " ") {
-            e.preventDefault();
-            e.currentTarget.click();
-          }
-        }}
-        onClick={(e) => e.stopPropagation()}
-      >
+      <m.div className="confirm-modal-content" initial={{
+  opacity: 0,
+  scale: 0.95,
+  y: 20
+}} animate={{
+  opacity: 1,
+  scale: 1,
+  y: 0
+}} exit={{
+  opacity: 0,
+  scale: 0.95,
+  y: 20
+}} transition={{
+  duration: 0.2,
+  ease: "easeOut"
+}} onClick={e => e.stopPropagation()} role="presentation">
         <div className="confirm-modal-header">
-          <div
-            className="confirm-modal-icon"
-            style={{
-              background:
-                confirmVariant === "danger"
-                  ? "rgba(239, 68, 68, 0.1)"
-                  : "rgba(79, 219, 200, 0.1)",
-              color:
-                confirmVariant === "danger"
-                  ? "var(--danger)"
-                  : "var(--primary)",
-            }}
-          >
+          <div className="confirm-modal-icon" style={{
+      background: confirmVariant === "danger" ? "rgba(239, 68, 68, 0.1)" : "rgba(79, 219, 200, 0.1)",
+      color: confirmVariant === "danger" ? "var(--danger)" : "var(--primary)"
+    }}>
             <Icon size={24} />
           </div>
           <h3>{title}</h3>
@@ -82,25 +73,13 @@ export default function ConfirmModal({
           <p>{message}</p>
         </div>
         <div className="confirm-modal-footer">
-          <button
-            className="confirm-modal-btn cancel"
-            onClick={onClose}
-            disabled={loading}
-          >
+          <button className="confirm-modal-btn cancel" onClick={onClose} disabled={loading}>
             {cancelText}
           </button>
-          <button
-            className={confirmClass}
-            onClick={onConfirm}
-            disabled={loading}
-          >
-            {loading ? (
-              <>
+          <button className={confirmClass} onClick={onConfirm} disabled={loading}>
+            {loading ? <>
                 <Spinner size={16} /> Processing...
-              </>
-            ) : (
-              confirmText
-            )}
+              </> : confirmText}
           </button>
         </div>
       </m.div>

@@ -1,235 +1,133 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "../styles/LandingPage.css";
-
-const SECTIONS = [
-  { id: "privacy-policy-header", label: "Privacy Policy" },
-  { id: "introduction", label: "1. Introduction" },
-  { id: "about-us", label: "2. About Us" },
-  { id: "scope", label: "3. Scope" },
-  { id: "information-we-collect", label: "4. Information We Collect" },
-  {
-    id: "information-we-do-not-collect",
-    label: "5. Information We Do Not Collect",
-  },
-  { id: "cookies-local-storage", label: "6. Cookies & Local Storage" },
-  {
-    id: "how-we-use-your-information",
-    label: "7. How We Use Your Information",
-  },
-  { id: "legal-basis-for-processing", label: "8. Legal Basis for Processing" },
-  { id: "payment-processing", label: "9. Payment Processing" },
-  { id: "third-party-services", label: "10. Third-Party Services" },
-  { id: "sharing-of-information", label: "11. Sharing of Information" },
-  { id: "data-security", label: "12. Data Security" },
-  { id: "data-retention", label: "13. Data Retention" },
-  { id: "your-rights", label: "14. Your Rights" },
-  { id: "india-dpdp", label: "15. India (DPDP Act, 2023)" },
-  { id: "gdpr", label: "16. GDPR" },
-  { id: "california-privacy", label: "17. California Privacy Rights" },
-  { id: "childrens-privacy", label: "18. Children's Privacy" },
-  {
-    id: "international-data-transfers",
-    label: "19. International Data Transfers",
-  },
-  {
-    id: "data-controller-processor",
-    label: "20. Data Controller & Data Processor",
-  },
-  { id: "account-deletion", label: "21. Account Deletion" },
-  { id: "security-incident-response", label: "22. Security Incident Response" },
-  { id: "changes-to-policy", label: "23. Changes to This Privacy Policy" },
-  { id: "contact-us", label: "24. Contact Us" },
-  {
-    id: "acceptance-of-policy",
-    label: "25. Acceptance of This Privacy Policy",
-  },
-];
-
-export default function PrivacyPolicyPage() {
-  const navigate = useNavigate();
-  const [activeSection, setActiveSection] = useState("privacy-policy-header");
-  const [scrollProgress, setScrollProgress] = useState(0);
-  const [showBackToTop, setShowBackToTop] = useState(false);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [contentElement, setContentElement] = useState(null);
-
-  const contentRef = (node) => {
-    if (node !== null) {
-      setContentElement(node);
-    }
-  };
-
-  useEffect(() => {
-    window.scrollTo(0, 0);
-  }, []);
-
-  useEffect(() => {
-    if (!contentElement) return;
-
-    const handleScroll = () => {
-      const totalHeight =
-        contentElement.scrollHeight - contentElement.clientHeight;
-      if (totalHeight > 0) {
-        setScrollProgress((contentElement.scrollTop / totalHeight) * 100);
-      }
-      setShowBackToTop(contentElement.scrollTop > 400);
-    };
-
-    contentElement.addEventListener("scroll", handleScroll);
-    return () => contentElement.removeEventListener("scroll", handleScroll);
-  }, [contentElement]);
-
-  useEffect(() => {
-    if (contentElement) {
-      const sections = document.querySelectorAll(".legal-section");
-
-      const observer = new IntersectionObserver(
-        (entries) => {
-          entries.forEach((entry) => {
-            if (entry.isIntersecting) {
-              setActiveSection(entry.target.id);
-            }
-          });
-        },
-        {
-          root: contentElement,
-          rootMargin: "-20px 0px -60% 0px",
-        },
-      );
-
-      sections.forEach((section) => observer.observe(section));
-      return () => {
-        sections.forEach((section) => observer.unobserve(section));
-        observer.disconnect();
-      };
-    }
-  }, [contentElement]);
-
-  const handleScrollTo = (id) => {
-    const el = document.getElementById(id);
-    if (el) {
-      el.scrollIntoView({ behavior: "smooth", block: "start" });
-      el.classList.add("section-flash-highlight");
-      setTimeout(() => {
-        el.classList.remove("section-flash-highlight");
-      }, 1500);
-    }
-  };
-
-  const handleBackToTop = () => {
-    if (contentElement) {
-      contentElement.scrollTo({ top: 0, behavior: "smooth" });
-    }
-  };
-
-  const filteredSections = SECTIONS.filter((sec) =>
-    sec.label.toLowerCase().includes(searchQuery.toLowerCase()),
-  );
-
-  return (
-    <div className="lp-root privacy-page-container">
-      {/* Reading Progress Bar */}
-      <div
-        className="reading-progress-bar"
-        style={{ width: `${scrollProgress}%` }}
-      />
-
-      {/* Back to Top Button */}
-      {showBackToTop && (
-        <button
-          className="back-to-top"
-          onClick={handleBackToTop}
-          aria-label="Back to top"
-        >
-          ↑
-        </button>
-      )}
-
-      {/* Simplified Nav */}
-      <nav className="lp-nav lp-nav--scrolled">
-        <div className="lp-nav-inner">
-          <div
-            role="button"
-            tabIndex={0}
-            className="lp-logo"
-            onKeyDown={(e) => {
-              if (e.key === "Enter" || e.key === " ") {
-                e.preventDefault();
-                e.currentTarget.click();
-              }
-            }}
-            onClick={() => {
-              navigate("/");
-            }}
-          >
-            <img
-              src="/viyan_logo_new.webp"
-              className="lp-logo-img"
-              alt="MedAssist Logo"
-            />
-            <span className="lp-logo-text">MedAssist</span>
-          </div>
-          <div className="lp-nav-actions">
-            <button
-              className="lp-btn-ghost"
-              onClick={() => {
-                navigate("/");
-              }}
-            >
-              ← Back to Home
-            </button>
-          </div>
-        </div>
-      </nav>
-
-      {/* Content Layout */}
-      <div
-        style={{
-          paddingTop: "140px",
-          paddingBottom: "40px",
-          height: "100vh",
-          boxSizing: "border-box",
-          overflow: "hidden",
-        }}
-      >
-        <div className="lp-container" style={{ height: "100%" }}>
+const SECTIONS = [{
+  id: "privacy-policy-header",
+  label: "Privacy Policy"
+}, {
+  id: "introduction",
+  label: "1. Introduction"
+}, {
+  id: "about-us",
+  label: "2. About Us"
+}, {
+  id: "scope",
+  label: "3. Scope"
+}, {
+  id: "information-we-collect",
+  label: "4. Information We Collect"
+}, {
+  id: "information-we-do-not-collect",
+  label: "5. Information We Do Not Collect"
+}, {
+  id: "cookies-local-storage",
+  label: "6. Cookies & Local Storage"
+}, {
+  id: "how-we-use-your-information",
+  label: "7. How We Use Your Information"
+}, {
+  id: "legal-basis-for-processing",
+  label: "8. Legal Basis for Processing"
+}, {
+  id: "payment-processing",
+  label: "9. Payment Processing"
+}, {
+  id: "third-party-services",
+  label: "10. Third-Party Services"
+}, {
+  id: "sharing-of-information",
+  label: "11. Sharing of Information"
+}, {
+  id: "data-security",
+  label: "12. Data Security"
+}, {
+  id: "data-retention",
+  label: "13. Data Retention"
+}, {
+  id: "your-rights",
+  label: "14. Your Rights"
+}, {
+  id: "india-dpdp",
+  label: "15. India (DPDP Act, 2023)"
+}, {
+  id: "gdpr",
+  label: "16. GDPR"
+}, {
+  id: "california-privacy",
+  label: "17. California Privacy Rights"
+}, {
+  id: "childrens-privacy",
+  label: "18. Children's Privacy"
+}, {
+  id: "international-data-transfers",
+  label: "19. International Data Transfers"
+}, {
+  id: "data-controller-processor",
+  label: "20. Data Controller & Data Processor"
+}, {
+  id: "account-deletion",
+  label: "21. Account Deletion"
+}, {
+  id: "security-incident-response",
+  label: "22. Security Incident Response"
+}, {
+  id: "changes-to-policy",
+  label: "23. Changes to This Privacy Policy"
+}, {
+  id: "contact-us",
+  label: "24. Contact Us"
+}, {
+  id: "acceptance-of-policy",
+  label: "25. Acceptance of This Privacy Policy"
+}];
+const handleScrollTo = id => {
+  const el = document.getElementById(id);
+  if (el) {
+    el.scrollIntoView({
+      behavior: "smooth",
+      block: "start"
+    });
+    el.classList.add("section-flash-highlight");
+    setTimeout(() => {
+      el.classList.remove("section-flash-highlight");
+    }, 1500);
+  }
+};
+function PrivacyPolicyPageSection1({
+  setSearchQuery,
+  activeSection,
+  sec
+}) {
+  return <div style={{
+    paddingTop: "140px",
+    paddingBottom: "40px",
+    height: "100vh",
+    boxSizing: "border-box",
+    overflow: "hidden"
+  }}>
+        <div className="lp-container" style={{
+      height: "100%"
+    }}>
           <div className="legal-layout-container">
             {/* Sidebar Navigation */}
             <div className="legal-sidebar-wrapper">
               {/* Search Box */}
               <div className="legal-search-container">
                 <span className="legal-search-icon">🔍</span>
-                <input
-                  type="text"
-                  placeholder="Search policy..."
-                  className="legal-search-input"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                />
+                <><label htmlFor="field_4yns67" className="sr-only">Search policy...</label><input type="text" placeholder="Search policy..." className="legal-search-input" value={searchQuery} onChange={e => setSearchQuery(e.target.value)} id="field_4yns67" /></>
               </div>
 
               <aside className="legal-sidebar">
-                {filteredSections.map((sec) => (
-                  <button
-                    key={sec.id}
-                    className={`legal-sidebar-link ${activeSection === sec.id ? "active" : ""}`}
-                    onClick={() => handleScrollTo(sec.id)}
-                  >
+                {filteredSections.map(sec => <button key={sec.id} className={`legal-sidebar-link ${activeSection === sec.id ? "active" : ""}`} onClick={() => handleScrollTo(sec.id)}>
                     {sec.label}
-                  </button>
-                ))}
-                {filteredSections.length === 0 && (
-                  <div
-                    style={{
-                      padding: "8px 12px",
-                      color: "#9ca3af",
-                      fontSize: "0.85rem",
-                    }}
-                  >
+                  </button>)}
+                {filteredSections.length === 0 && <div style={{
+              padding: "8px 12px",
+              color: "#9ca3af",
+              fontSize: "0.85rem"
+            }}>
                     No matching sections
-                  </div>
-                )}
+                  </div>}
               </aside>
             </div>
 
@@ -265,11 +163,7 @@ export default function PrivacyPolicyPage() {
                 </p>
                 <p>
                   <strong>Website:</strong>{" "}
-                  <a
-                    href="https://medassist.viyaninfo.com/"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
+                  <a href="https://medassist.viyaninfo.com/" target="_blank" rel="noopener noreferrer">
                     https://medassist.viyaninfo.com/
                   </a>
                 </p>
@@ -326,11 +220,7 @@ export default function PrivacyPolicyPage() {
               <p>
                 Website:
                 <br />
-                <a
-                  href="https://medassist.viyaninfo.com/"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
+                <a href="https://medassist.viyaninfo.com/" target="_blank" rel="noopener noreferrer">
                   https://medassist.viyaninfo.com/
                 </a>
               </p>
@@ -976,11 +866,7 @@ export default function PrivacyPolicyPage() {
               <p>
                 Website:
                 <br />
-                <a
-                  href="https://medassist.viyaninfo.com/"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
+                <a href="https://medassist.viyaninfo.com/" target="_blank" rel="noopener noreferrer">
                   https://medassist.viyaninfo.com/
                 </a>
               </p>
@@ -1015,7 +901,100 @@ export default function PrivacyPolicyPage() {
             </main>
           </div>
         </div>
-      </div>
-    </div>
-  );
+      </div>;
+}
+export default function PrivacyPolicyPage() {
+  const navigate = useNavigate();
+  const [activeSection, setActiveSection] = useState("privacy-policy-header");
+  const [scrollProgress, setScrollProgress] = useState(0);
+  const [showBackToTop, setShowBackToTop] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [contentElement, setContentElement] = useState(null);
+  const contentRef = node => {
+    if (node !== null) {
+      setContentElement(node);
+    }
+  };
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
+  useEffect(() => {
+    if (!contentElement) return;
+    const handleScroll = () => {
+      const totalHeight = contentElement.scrollHeight - contentElement.clientHeight;
+      if (totalHeight > 0) {
+        setScrollProgress(contentElement.scrollTop / totalHeight * 100);
+      }
+      setShowBackToTop(contentElement.scrollTop > 400);
+    };
+    contentElement.addEventListener("scroll", handleScroll);
+    return () => contentElement.removeEventListener("scroll", handleScroll);
+  }, [contentElement]);
+  useEffect(() => {
+    if (contentElement) {
+      const sections = document.querySelectorAll(".legal-section");
+      const observer = new IntersectionObserver(entries => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            setActiveSection(entry.target.id);
+          }
+        });
+      }, {
+        root: contentElement,
+        rootMargin: "-20px 0px -60% 0px"
+      });
+      sections.forEach(section => observer.observe(section));
+      return () => {
+        sections.forEach(section => observer.unobserve(section));
+        observer.disconnect();
+      };
+    }
+  }, [contentElement]);
+  const handleBackToTop = () => {
+    if (contentElement) {
+      contentElement.scrollTo({
+        top: 0,
+        behavior: "smooth"
+      });
+    }
+  };
+  const filteredSections = SECTIONS.filter(sec => sec.label.toLowerCase().includes(searchQuery.toLowerCase()));
+  return <div className="lp-root privacy-page-container">
+      {/* Reading Progress Bar */}
+      <div className="reading-progress-bar" style={{
+      width: `${scrollProgress}%`
+    }} />
+
+      {/* Back to Top Button */}
+      {showBackToTop && <button className="back-to-top" onClick={handleBackToTop} aria-label="Back to top">
+          ↑
+        </button>}
+
+      {/* Simplified Nav */}
+      <nav className="lp-nav lp-nav--scrolled">
+        <div className="lp-nav-inner">
+          <div role="button" tabIndex={0} className="lp-logo" onKeyDown={e => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            e.currentTarget.click();
+          }
+        }} onClick={() => {
+          navigate("/");
+        }}>
+            <img src="/viyan_logo_new.webp" className="lp-logo-img" alt="MedAssist Logo" />
+            <span className="lp-logo-text">MedAssist</span>
+          </div>
+          <div className="lp-nav-actions">
+            <button className="lp-btn-ghost" onClick={() => {
+            navigate("/");
+          }}>
+              ← Back to Home
+            </button>
+          </div>
+        </div>
+      </nav>
+
+      {/* Content Layout */}
+      <PrivacyPolicyPageSection1 setSearchQuery={setSearchQuery} activeSection={activeSection} sec={sec} />
+    </div>;
 }

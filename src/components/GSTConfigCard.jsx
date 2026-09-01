@@ -167,77 +167,46 @@ function GSTModal({ onClose, onRefresh, showToast, storeProfile }) {
         if (e.target === overlayRef.current) onClose();
       }}
     >
-      <div
-        role="button"
-        tabIndex={0}
-        className="sys-modal"
-        style={{ textAlign: "left", maxWidth: 520 }}
-        onKeyDown={(e) => {
-          if (e.key === "Enter" || e.key === " ") {
-            e.preventDefault();
-            e.currentTarget.click();
-          }
-        }}
-        onClick={(e) => e.stopPropagation()}
-      >
+      <div className="sys-modal" style={{
+  textAlign: "left",
+  maxWidth: 520
+}} onClick={e => e.stopPropagation()} role="presentation">
         <>
-          <h2 style={{ marginBottom: 24 }}>Edit GST Configuration</h2>
+          <h2 style={{
+      marginBottom: 24
+    }}>Edit GST Configuration</h2>
 
           <div className="sys-form-group">
             <label htmlFor="field_lmmozb" className="sys-label">
               GSTIN
             </label>
-            <input
-              id="field_lmmozb"
-              className="sys-input"
-              value={form.gstin}
-              onChange={(e) => handleChange("gstin", e.target.value)}
-            />
+            <input id="field_lmmozb" className="sys-input" value={form.gstin} onChange={e => handleChange("gstin", e.target.value)} />
           </div>
           <div className="sys-form-group">
             <label htmlFor="field_z81581" className="sys-label">
               Business Name
             </label>
-            <input
-              id="field_z81581"
-              className="sys-input"
-              value={form.businessName}
-              onChange={(e) => handleChange("businessName", e.target.value)}
-            />
+            <input id="field_z81581" className="sys-input" value={form.businessName} onChange={e => handleChange("businessName", e.target.value)} />
           </div>
           <div className="sys-form-group">
             <label htmlFor="field_c3ytb5" className="sys-label">
               GST State
             </label>
-            <select
-              id="field_c3ytb5"
-              className="sys-select"
-              value={form.state}
-              onChange={(e) => handleChange("state", e.target.value)}
-            >
+            <select id="field_c3ytb5" className="sys-select" value={form.state} onChange={e => handleChange("state", e.target.value)}>
               <option value="">Select State</option>
-              {GST_STATES.map((s) => (
-                <option key={s} value={s}>
+              {GST_STATES.map(s => <option key={s} value={s}>
                   {s}
-                </option>
-              ))}
+                </option>)}
             </select>
           </div>
           <div className="sys-form-group">
             <label htmlFor="field_txwz0p" className="sys-label">
               Filing Frequency
             </label>
-            <select
-              id="field_txwz0p"
-              className="sys-select"
-              value={form.filingFrequency}
-              onChange={(e) => handleChange("filingFrequency", e.target.value)}
-            >
-              {FILING_FREQUENCIES.map((f) => (
-                <option key={f} value={f}>
+            <select id="field_txwz0p" className="sys-select" value={form.filingFrequency} onChange={e => handleChange("filingFrequency", e.target.value)}>
+              {FILING_FREQUENCIES.map(f => <option key={f} value={f}>
                   {f}
-                </option>
-              ))}
+                </option>)}
             </select>
           </div>
 
@@ -245,11 +214,7 @@ function GSTModal({ onClose, onRefresh, showToast, storeProfile }) {
             <button className="sys-btn-outline" onClick={onClose}>
               Cancel
             </button>
-            <button
-              className="sys-btn-fill"
-              onClick={handleSave}
-              disabled={saving}
-            >
+            <button className="sys-btn-fill" onClick={handleSave} disabled={saving}>
               {saving ? "Saving..." : "Save Changes"}
             </button>
           </div>

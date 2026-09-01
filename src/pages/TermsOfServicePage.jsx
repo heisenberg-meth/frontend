@@ -1,223 +1,142 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "../styles/LandingPage.css";
-
-const SECTIONS = [
-  { id: "terms-of-service-header", label: "Terms of Service" },
-  { id: "acceptance-of-terms", label: "1. Acceptance of Terms" },
-  { id: "definitions", label: "2. Definitions" },
-  { id: "eligibility", label: "3. Eligibility" },
-  { id: "user-accounts", label: "4. User Accounts" },
-  { id: "subscription-plans", label: "5. Subscription Plans" },
-  { id: "payments", label: "6. Payments" },
-  { id: "taxes", label: "7. Taxes" },
-  { id: "free-trial", label: "8. Free Trial" },
-  { id: "acceptable-use", label: "9. Acceptable Use" },
-  { id: "customer-responsibilities", label: "10. Customer Responsibilities" },
-  { id: "intellectual-property", label: "11. Intellectual Property" },
-  { id: "customer-data", label: "12. Customer Data" },
-  { id: "privacy", label: "13. Privacy" },
-  { id: "availability-of-service", label: "14. Availability of Service" },
-  { id: "updates", label: "15. Updates" },
-  { id: "suspension-termination", label: "16. Suspension and Termination" },
-  { id: "data-export", label: "17. Data Export" },
-  { id: "disclaimer-warranties", label: "18. Disclaimer of Warranties" },
-  { id: "limitation-liability", label: "19. Limitation of Liability" },
-  { id: "indemnification", label: "20. Indemnification" },
-  { id: "force-majeure", label: "21. Force Majeure" },
-  { id: "governing-law", label: "22. Governing Law" },
-  { id: "jurisdiction", label: "23. Jurisdiction" },
-  { id: "changes-to-terms", label: "24. Changes to These Terms" },
-  { id: "severability", label: "25. Severability" },
-  { id: "entire-agreement", label: "26. Entire Agreement" },
-  { id: "contact-us", label: "27. Contact Us" },
-  { id: "acceptance", label: "28. Acceptance" },
-];
-
-export default function TermsOfServicePage() {
-  const navigate = useNavigate();
-  const [activeSection, setActiveSection] = useState("terms-of-service-header");
-  const [scrollProgress, setScrollProgress] = useState(0);
-  const [showBackToTop, setShowBackToTop] = useState(false);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [contentElement, setContentElement] = useState(null);
-
-  const contentRef = (node) => {
-    if (node !== null) {
-      setContentElement(node);
-    }
-  };
-
-  useEffect(() => {
-    window.scrollTo(0, 0);
-  }, []);
-
-  useEffect(() => {
-    if (!contentElement) return;
-
-    const handleScroll = () => {
-      const totalHeight =
-        contentElement.scrollHeight - contentElement.clientHeight;
-      if (totalHeight > 0) {
-        setScrollProgress((contentElement.scrollTop / totalHeight) * 100);
-      }
-      setShowBackToTop(contentElement.scrollTop > 400);
-    };
-
-    contentElement.addEventListener("scroll", handleScroll);
-    return () => contentElement.removeEventListener("scroll", handleScroll);
-  }, [contentElement]);
-
-  useEffect(() => {
-    if (contentElement) {
-      const sections = document.querySelectorAll(".legal-section");
-
-      const observer = new IntersectionObserver(
-        (entries) => {
-          entries.forEach((entry) => {
-            if (entry.isIntersecting) {
-              setActiveSection(entry.target.id);
-            }
-          });
-        },
-        {
-          root: contentElement,
-          rootMargin: "-20px 0px -60% 0px",
-        },
-      );
-
-      sections.forEach((section) => observer.observe(section));
-      return () => {
-        sections.forEach((section) => observer.unobserve(section));
-        observer.disconnect();
-      };
-    }
-  }, [contentElement]);
-
-  const handleScrollTo = (id) => {
-    const el = document.getElementById(id);
-    if (el) {
-      el.scrollIntoView({ behavior: "smooth", block: "start" });
-      el.classList.add("section-flash-highlight");
-      setTimeout(() => {
-        el.classList.remove("section-flash-highlight");
-      }, 1500);
-    }
-  };
-
-  const handleBackToTop = () => {
-    if (contentElement) {
-      contentElement.scrollTo({ top: 0, behavior: "smooth" });
-    }
-  };
-
-  const filteredSections = SECTIONS.filter((sec) =>
-    sec.label.toLowerCase().includes(searchQuery.toLowerCase()),
-  );
-
-  return (
-    <div className="lp-root privacy-page-container">
-      {/* Reading Progress Bar */}
-      <div
-        className="reading-progress-bar"
-        style={{ width: `${scrollProgress}%` }}
-      />
-
-      {/* Back to Top Button */}
-      {showBackToTop && (
-        <button
-          className="back-to-top"
-          onClick={handleBackToTop}
-          aria-label="Back to top"
-        >
-          ↑
-        </button>
-      )}
-
-      {/* Simplified Nav */}
-      <nav className="lp-nav lp-nav--scrolled">
-        <div className="lp-nav-inner">
-          <div
-            role="button"
-            tabIndex={0}
-            className="lp-logo"
-            onKeyDown={(e) => {
-              if (e.key === "Enter" || e.key === " ") {
-                e.preventDefault();
-                e.currentTarget.click();
-              }
-            }}
-            onClick={() => {
-              navigate("/");
-            }}
-          >
-            <img
-              src="/viyan_logo_new.webp"
-              className="lp-logo-img"
-              alt="MedAssist Logo"
-            />
-            <span className="lp-logo-text">MedAssist</span>
-          </div>
-          <div className="lp-nav-actions">
-            <button
-              className="lp-btn-ghost"
-              onClick={() => {
-                navigate("/");
-              }}
-            >
-              ← Back to Home
-            </button>
-          </div>
-        </div>
-      </nav>
-
-      {/* Content Layout */}
-      <div
-        style={{
-          paddingTop: "140px",
-          paddingBottom: "40px",
-          height: "100vh",
-          boxSizing: "border-box",
-          overflow: "hidden",
-        }}
-      >
-        <div className="lp-container" style={{ height: "100%" }}>
+const SECTIONS = [{
+  id: "terms-of-service-header",
+  label: "Terms of Service"
+}, {
+  id: "acceptance-of-terms",
+  label: "1. Acceptance of Terms"
+}, {
+  id: "definitions",
+  label: "2. Definitions"
+}, {
+  id: "eligibility",
+  label: "3. Eligibility"
+}, {
+  id: "user-accounts",
+  label: "4. User Accounts"
+}, {
+  id: "subscription-plans",
+  label: "5. Subscription Plans"
+}, {
+  id: "payments",
+  label: "6. Payments"
+}, {
+  id: "taxes",
+  label: "7. Taxes"
+}, {
+  id: "free-trial",
+  label: "8. Free Trial"
+}, {
+  id: "acceptable-use",
+  label: "9. Acceptable Use"
+}, {
+  id: "customer-responsibilities",
+  label: "10. Customer Responsibilities"
+}, {
+  id: "intellectual-property",
+  label: "11. Intellectual Property"
+}, {
+  id: "customer-data",
+  label: "12. Customer Data"
+}, {
+  id: "privacy",
+  label: "13. Privacy"
+}, {
+  id: "availability-of-service",
+  label: "14. Availability of Service"
+}, {
+  id: "updates",
+  label: "15. Updates"
+}, {
+  id: "suspension-termination",
+  label: "16. Suspension and Termination"
+}, {
+  id: "data-export",
+  label: "17. Data Export"
+}, {
+  id: "disclaimer-warranties",
+  label: "18. Disclaimer of Warranties"
+}, {
+  id: "limitation-liability",
+  label: "19. Limitation of Liability"
+}, {
+  id: "indemnification",
+  label: "20. Indemnification"
+}, {
+  id: "force-majeure",
+  label: "21. Force Majeure"
+}, {
+  id: "governing-law",
+  label: "22. Governing Law"
+}, {
+  id: "jurisdiction",
+  label: "23. Jurisdiction"
+}, {
+  id: "changes-to-terms",
+  label: "24. Changes to These Terms"
+}, {
+  id: "severability",
+  label: "25. Severability"
+}, {
+  id: "entire-agreement",
+  label: "26. Entire Agreement"
+}, {
+  id: "contact-us",
+  label: "27. Contact Us"
+}, {
+  id: "acceptance",
+  label: "28. Acceptance"
+}];
+const handleScrollTo = id => {
+  const el = document.getElementById(id);
+  if (el) {
+    el.scrollIntoView({
+      behavior: "smooth",
+      block: "start"
+    });
+    el.classList.add("section-flash-highlight");
+    setTimeout(() => {
+      el.classList.remove("section-flash-highlight");
+    }, 1500);
+  }
+};
+function TermsOfServicePageSection1({
+  setSearchQuery,
+  activeSection,
+  sec
+}) {
+  return <div style={{
+    paddingTop: "140px",
+    paddingBottom: "40px",
+    height: "100vh",
+    boxSizing: "border-box",
+    overflow: "hidden"
+  }}>
+        <div className="lp-container" style={{
+      height: "100%"
+    }}>
           <div className="legal-layout-container">
             {/* Sidebar Navigation */}
             <div className="legal-sidebar-wrapper">
               {/* Search Box */}
               <div className="legal-search-container">
                 <span className="legal-search-icon">🔍</span>
-                <input
-                  type="text"
-                  placeholder="Search terms..."
-                  className="legal-search-input"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                />
+                <><label htmlFor="field_4youyk" className="sr-only">Search terms...</label><input type="text" placeholder="Search terms..." className="legal-search-input" value={searchQuery} onChange={e => setSearchQuery(e.target.value)} id="field_4youyk" /></>
               </div>
 
               <aside className="legal-sidebar">
-                {filteredSections.map((sec) => (
-                  <button
-                    key={sec.id}
-                    className={`legal-sidebar-link ${activeSection === sec.id ? "active" : ""}`}
-                    onClick={() => handleScrollTo(sec.id)}
-                  >
+                {filteredSections.map(sec => <button key={sec.id} className={`legal-sidebar-link ${activeSection === sec.id ? "active" : ""}`} onClick={() => handleScrollTo(sec.id)}>
                     {sec.label}
-                  </button>
-                ))}
-                {filteredSections.length === 0 && (
-                  <div
-                    style={{
-                      padding: "8px 12px",
-                      color: "#9ca3af",
-                      fontSize: "0.85rem",
-                    }}
-                  >
+                  </button>)}
+                {filteredSections.length === 0 && <div style={{
+              padding: "8px 12px",
+              color: "#9ca3af",
+              fontSize: "0.85rem"
+            }}>
                     No matching sections
-                  </div>
-                )}
+                  </div>}
               </aside>
             </div>
 
@@ -252,11 +171,7 @@ export default function TermsOfServicePage() {
                 </p>
                 <p>
                   <strong>Website:</strong>{" "}
-                  <a
-                    href="https://medassist.viyaninfo.com/"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
+                  <a href="https://medassist.viyaninfo.com/" target="_blank" rel="noopener noreferrer">
                     https://medassist.viyaninfo.com/
                   </a>
                 </p>
@@ -780,11 +695,7 @@ export default function TermsOfServicePage() {
               <p>
                 Website:
                 <br />
-                <a
-                  href="https://medassist.viyaninfo.com/"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
+                <a href="https://medassist.viyaninfo.com/" target="_blank" rel="noopener noreferrer">
                   https://medassist.viyaninfo.com/
                 </a>
               </p>
@@ -811,7 +722,100 @@ export default function TermsOfServicePage() {
             </main>
           </div>
         </div>
-      </div>
-    </div>
-  );
+      </div>;
+}
+export default function TermsOfServicePage() {
+  const navigate = useNavigate();
+  const [activeSection, setActiveSection] = useState("terms-of-service-header");
+  const [scrollProgress, setScrollProgress] = useState(0);
+  const [showBackToTop, setShowBackToTop] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [contentElement, setContentElement] = useState(null);
+  const contentRef = node => {
+    if (node !== null) {
+      setContentElement(node);
+    }
+  };
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
+  useEffect(() => {
+    if (!contentElement) return;
+    const handleScroll = () => {
+      const totalHeight = contentElement.scrollHeight - contentElement.clientHeight;
+      if (totalHeight > 0) {
+        setScrollProgress(contentElement.scrollTop / totalHeight * 100);
+      }
+      setShowBackToTop(contentElement.scrollTop > 400);
+    };
+    contentElement.addEventListener("scroll", handleScroll);
+    return () => contentElement.removeEventListener("scroll", handleScroll);
+  }, [contentElement]);
+  useEffect(() => {
+    if (contentElement) {
+      const sections = document.querySelectorAll(".legal-section");
+      const observer = new IntersectionObserver(entries => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            setActiveSection(entry.target.id);
+          }
+        });
+      }, {
+        root: contentElement,
+        rootMargin: "-20px 0px -60% 0px"
+      });
+      sections.forEach(section => observer.observe(section));
+      return () => {
+        sections.forEach(section => observer.unobserve(section));
+        observer.disconnect();
+      };
+    }
+  }, [contentElement]);
+  const handleBackToTop = () => {
+    if (contentElement) {
+      contentElement.scrollTo({
+        top: 0,
+        behavior: "smooth"
+      });
+    }
+  };
+  const filteredSections = SECTIONS.filter(sec => sec.label.toLowerCase().includes(searchQuery.toLowerCase()));
+  return <div className="lp-root privacy-page-container">
+      {/* Reading Progress Bar */}
+      <div className="reading-progress-bar" style={{
+      width: `${scrollProgress}%`
+    }} />
+
+      {/* Back to Top Button */}
+      {showBackToTop && <button className="back-to-top" onClick={handleBackToTop} aria-label="Back to top">
+          ↑
+        </button>}
+
+      {/* Simplified Nav */}
+      <nav className="lp-nav lp-nav--scrolled">
+        <div className="lp-nav-inner">
+          <div role="button" tabIndex={0} className="lp-logo" onKeyDown={e => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            e.currentTarget.click();
+          }
+        }} onClick={() => {
+          navigate("/");
+        }}>
+            <img src="/viyan_logo_new.webp" className="lp-logo-img" alt="MedAssist Logo" />
+            <span className="lp-logo-text">MedAssist</span>
+          </div>
+          <div className="lp-nav-actions">
+            <button className="lp-btn-ghost" onClick={() => {
+            navigate("/");
+          }}>
+              ← Back to Home
+            </button>
+          </div>
+        </div>
+      </nav>
+
+      {/* Content Layout */}
+      <TermsOfServicePageSection1 setSearchQuery={setSearchQuery} activeSection={activeSection} sec={sec} />
+    </div>;
 }
