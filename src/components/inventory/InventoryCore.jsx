@@ -465,16 +465,18 @@ function MedicineModalSection1({
             )}
           </div>
           <div className="form-group">
-            <label htmlFor="field_8yi3yp">Schedule</label>
+            <label htmlFor="field_8yi3yp">Regulatory Classification</label>
             <select
               id="field_8yi3yp"
-              value={form.schedule || ""}
+              value={form.schedule || "OTC"}
               onChange={(e) => set("schedule", e.target.value)}
             >
-              <option value="OTC">OTC</option>
+              <option value="OTC">Non-Scheduled / OTC</option>
+              <option value="G">Schedule G</option>
               <option value="H">Schedule H</option>
               <option value="H1">Schedule H1</option>
               <option value="X">Schedule X</option>
+              <option value="OTHER">Other / Special</option>
             </select>
           </div>
 

@@ -67,6 +67,12 @@ const fieldKeywords = {
   strengthColumn: ["strength", "mg", "ml", "dose", "concentration"],
   dosageFormColumn: ["dosage", "form", "type", "drug_form"],
   hsnCodeColumn: ["hsn", "hsn_code", "hsncode", "sac", "tariff"],
+  scheduleColumn: [
+    "schedule",
+    "regulatory",
+    "regulatory_classification",
+    "drug_schedule",
+  ],
   gstPercentageColumn: ["gst", "gst%", "tax", "tax_percent"],
 };
 const fieldExcludes = {
@@ -186,6 +192,21 @@ const fieldExcludes = {
     "batch",
     "barcode",
   ],
+  scheduleColumn: [
+    "name",
+    "med",
+    "price",
+    "qty",
+    "quantity",
+    "stock",
+    "expiry",
+    "date",
+    "batch",
+    "barcode",
+    "category",
+    "manufacturer",
+    "generic",
+  ],
   gstPercentageColumn: [
     "name",
     "med",
@@ -209,6 +230,7 @@ const fieldOrder = [
   "genericNameColumn",
   "strengthColumn",
   "dosageFormColumn",
+  "scheduleColumn",
   "hsnCodeColumn",
   "gstPercentageColumn",
 ];
@@ -256,6 +278,10 @@ const fields = [
   {
     key: "dosageFormColumn",
     label: "Dosage Form",
+  },
+  {
+    key: "scheduleColumn",
+    label: "Regulatory Classification",
   },
   {
     key: "hsnCodeColumn",
@@ -1440,6 +1466,7 @@ export default function BulkImport({ fetchData, showToast }) {
         genericNameColumn: "generic_name",
         strengthColumn: "strength",
         dosageFormColumn: "dosage_form",
+        scheduleColumn: "schedule",
         hsnCodeColumn: "hsn_code",
         gstPercentageColumn: "gst_percent",
       },
@@ -1774,6 +1801,7 @@ export default function BulkImport({ fetchData, showToast }) {
         genericName: String(row[mapping.genericNameColumn] || "").trim(),
         strength: String(row[mapping.strengthColumn] || "").trim(),
         dosageForm: String(row[mapping.dosageFormColumn] || "").trim(),
+        schedule: String(row[mapping.scheduleColumn] || "").trim(),
         hsnCode: String(row[mapping.hsnCodeColumn] || "").trim(),
         gstPercentage: String(row[mapping.gstPercentageColumn] || "").trim(),
       };
@@ -2030,6 +2058,7 @@ export default function BulkImport({ fetchData, showToast }) {
       genericNameColumn: "",
       strengthColumn: "",
       dosageFormColumn: "",
+      scheduleColumn: "",
       hsnCodeColumn: "",
       gstPercentageColumn: "",
     });
