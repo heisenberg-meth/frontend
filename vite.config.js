@@ -8,8 +8,6 @@ export default defineConfig(({ mode }) => {
   const proxyTarget =
     env.VITE_PROXY_TARGET || "https://api.medassist.viyaninfo.com";
 
-  console.log(`[Vite] Proxy target: ${proxyTarget}`);
-
   return {
     plugins: [
       tailwindcss(),
