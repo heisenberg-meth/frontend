@@ -1,6 +1,5 @@
 import { useMemo, useState, useEffect, useCallback, useRef } from "react";
-import api, { getBaseUrl, invalidateCsrfToken } from "../api";
-import axios from "axios";
+import api, { refreshSession, invalidateCsrfToken } from "../api";
 import { API_ROUTES } from "../constants/api.routes.js";
 import { clearAllAuth, getStoredUser, setUser } from "../utils/authStorage";
 import { AuthContext } from "./authContextInstance";
@@ -78,30 +77,7 @@ export function AuthProvider({ children }) {
 
   const refreshToken = useCallback(async () => {
     try {
-      const headers = {
-        ...(import.meta.env.DEV && {
-          "ngrok-skip-browser-warning": "69420",
-        }),
-      };
-
-      // /auth/refresh is CSRF-exempt — authenticated solely by the
-      // HttpOnly refresh_token cookie. No CSRF header needed.
-      const res = await axios.post(
-        `${getBaseUrl()}/auth/refresh`,
-        {},
-        {
-          withCredentials: true,
-          timeout: 60000,
-          headers,
-        },
-      );
-
-      if (res.status !== 200) {
-        throw new Error("Token refresh failed.");
-      }
-
-      invalidateCsrfToken();
-
+      await refreshSession();
       return true;
     } catch (error) {
       console.error("[AUTH] Token refresh failed:", error.message || error);

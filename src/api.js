@@ -75,6 +75,42 @@ let refreshAttempts = 0;
 const MAX_REFRESH_ATTEMPTS = 3;
 let csrfToken = null;
 let csrfPromise = null;
+let refreshPromise = null;
+
+export async function refreshSession() {
+  if (refreshPromise) {
+    return refreshPromise;
+  }
+
+  refreshPromise = axios
+    .post(
+      `${getBaseUrl()}/auth/refresh`,
+      {},
+      {
+        withCredentials: true,
+        timeout: 60000,
+        headers: {
+          ...(import.meta.env.DEV && {
+            "ngrok-skip-browser-warning": "69420",
+          }),
+        },
+      },
+    )
+    .then((res) => {
+      if (res.status !== 200) {
+        throw new Error("Token refresh failed.");
+      }
+
+      invalidateCsrfToken();
+      refreshAttempts = 0;
+      return true;
+    })
+    .finally(() => {
+      refreshPromise = null;
+    });
+
+  return refreshPromise;
+}
 
 /**
  * Invalidate the cached CSRF token so the next getCsrfToken() call
@@ -228,20 +264,7 @@ api.interceptors.response.use(
       isRefreshing = true;
       refreshAttempts++;
       try {
-        await axios.post(
-          `${getBaseUrl()}/auth/refresh`,
-          {},
-          {
-            withCredentials: true,
-            timeout: 60000,
-            headers: {
-              ...(import.meta.env.DEV && {
-                "ngrok-skip-browser-warning": "69420",
-              }),
-            },
-          },
-        );
-        refreshAttempts = 0;
+        await refreshSession();
         isRefreshing = false;
         processQueue(null);
 
