@@ -395,6 +395,14 @@ select.pos-input option {
 }
 
 /* Medicine Entry */
+.medicine-search-full {
+  width: 100%;
+}
+
+.medicine-search-full .search-wrapper {
+  margin-bottom: 0;
+}
+
 .search-wrapper {
   position: relative;
   margin-bottom: 20px;
