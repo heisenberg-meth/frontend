@@ -567,7 +567,10 @@ export function BulkDisposalSection2({
                     <input
                       type="checkbox"
                       checked={selected.has(b.batchId)}
-                      onChange={() => toggleSelect(b.batchId)}
+                      onChange={(e) => {
+                        e.stopPropagation();
+                        toggleSelect(b.batchId);
+                      }}
                       style={{
                         accentColor: "var(--primary)",
                         cursor: "pointer",

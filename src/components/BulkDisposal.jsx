@@ -242,6 +242,7 @@ export default function BulkDisposal({ showToast }) {
         disposing={disposing}
         showConfirmModal={showConfirmModal}
         handleDispose={handleDispose}
+        selected={selected}
         selectedStats={selectedStats}
         disposeProgress={disposeProgress}
         reason={reason}
