@@ -15,6 +15,7 @@ function ShopModalSection1({
       style={{
         textAlign: "left",
       }}
+      onKeyDown={(e) => e.stopPropagation()}
       onClick={(e) => e.stopPropagation()}
       role="presentation"
     >
@@ -115,111 +116,75 @@ function ShopModalSection1({
         <div className="modal-toggles">
           <div className="sys-toggle-row">
             <span className="sys-toggle-label">Show Logo</span>
-            <div
-              role="button"
-              tabIndex={0}
+            <button
+              type="button"
               className={`sys-toggle ${form.showLogo ? "on" : ""}`}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" || e.key === " ") {
-                  e.preventDefault();
-                  e.currentTarget.click();
-                }
-              }}
               onClick={() => handleChange("showLogo", !form.showLogo)}
+              aria-label="Toggle Show Logo"
             >
               <div className="sys-toggle-thumb" />
-            </div>
+            </button>
           </div>
           <div className="sys-toggle-row">
             <span className="sys-toggle-label">Show Doctor Name</span>
-            <div
-              role="button"
-              tabIndex={0}
+            <button
+              type="button"
               className={`sys-toggle ${form.showDoctorName ? "on" : ""}`}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" || e.key === " ") {
-                  e.preventDefault();
-                  e.currentTarget.click();
-                }
-              }}
               onClick={() =>
                 handleChange("showDoctorName", !form.showDoctorName)
               }
+              aria-label="Toggle Show Doctor Name"
             >
               <div className="sys-toggle-thumb" />
-            </div>
+            </button>
           </div>
           <div className="sys-toggle-row">
             <span className="sys-toggle-label">QR Code</span>
-            <div
-              role="button"
-              tabIndex={0}
+            <button
+              type="button"
               className={`sys-toggle ${form.showQRCode ? "on" : ""}`}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" || e.key === " ") {
-                  e.preventDefault();
-                  e.currentTarget.click();
-                }
-              }}
               onClick={() => handleChange("showQRCode", !form.showQRCode)}
+              aria-label="Toggle QR Code"
             >
               <div className="sys-toggle-thumb" />
-            </div>
+            </button>
           </div>
           <div className="sys-toggle-row">
             <span className="sys-toggle-label">HSN Code</span>
-            <div
-              role="button"
-              tabIndex={0}
+            <button
+              type="button"
               className={`sys-toggle ${form.showHSNCode ? "on" : ""}`}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" || e.key === " ") {
-                  e.preventDefault();
-                  e.currentTarget.click();
-                }
-              }}
               onClick={() => handleChange("showHSNCode", !form.showHSNCode)}
+              aria-label="Toggle HSN Code"
             >
               <div className="sys-toggle-thumb" />
-            </div>
+            </button>
           </div>
           <div className="sys-toggle-row">
             <span className="sys-toggle-label">Expiry Date</span>
-            <div
-              role="button"
-              tabIndex={0}
+            <button
+              type="button"
               className={`sys-toggle ${form.showExpiryDate ? "on" : ""}`}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" || e.key === " ") {
-                  e.preventDefault();
-                  e.currentTarget.click();
-                }
-              }}
               onClick={() =>
                 handleChange("showExpiryDate", !form.showExpiryDate)
               }
+              aria-label="Toggle Expiry Date"
             >
               <div className="sys-toggle-thumb" />
-            </div>
+            </button>
           </div>
           <div className="sys-toggle-row">
             <span className="sys-toggle-label">GST Breakdown</span>
-            <div
-              role="button"
-              tabIndex={0}
+            <button
+              type="button"
               className={`sys-toggle ${form.showGSTBreakdown ? "on" : ""}`}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" || e.key === " ") {
-                  e.preventDefault();
-                  e.currentTarget.click();
-                }
-              }}
               onClick={() =>
                 handleChange("showGSTBreakdown", !form.showGSTBreakdown)
               }
+              aria-label="Toggle GST Breakdown"
             >
               <div className="sys-toggle-thumb" />
-            </div>
+            </button>
           </div>
         </div>
 
@@ -388,14 +353,13 @@ function ShopModal({
   };
   return (
     <div
-      role="button"
-      tabIndex={0}
       className="sys-modal-overlay"
+      role="presentation"
       ref={overlayRef}
       onKeyDown={(e) => {
         if (e.key === "Enter" || e.key === " ") {
           e.preventDefault();
-          e.currentTarget.click();
+          if (e.target === overlayRef.current) onClose();
         }
       }}
       onClick={(e) => {

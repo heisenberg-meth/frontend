@@ -81,7 +81,7 @@ export default function PricingPage() {
       {/* Header */}
       <header className="fixed top-0 w-full z-50 flex justify-between items-center px-6 py-4 bg-white/85 dark:bg-[#0c1321]/90 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-800/55 shadow-sm">
         <div className="flex items-center gap-3">
-          <button
+          <button aria-label="Action"
             onClick={() => navigate("/")}
             className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-100 transition-colors cursor-pointer"
           >

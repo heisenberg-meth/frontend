@@ -69,6 +69,7 @@ function AdminSubscriptionsSection1({
           />
         </>
         <button
+          aria-label="Search"
           type="submit"
           className="admin-btn admin-btn-primary"
           style={{
@@ -79,6 +80,7 @@ function AdminSubscriptionsSection1({
         </button>
       </form>
       <select
+        aria-label="select field"
         value={statusFilter}
         onChange={(e) => {
           setStatusFilter(e.target.value);
@@ -200,6 +202,7 @@ function AdminSubscriptionsSection2({
                       {s.status === "TRIAL" && (
                         <>
                           <button
+                            aria-label="Extend Trial"
                             className="admin-icon-btn"
                             style={{
                               color: "#22c55e",
@@ -210,6 +213,7 @@ function AdminSubscriptionsSection2({
                             <Plus size={14} />
                           </button>
                           <button
+                            aria-label="Reduce Trial"
                             className="admin-icon-btn"
                             style={{
                               color: "#f59e0b",
@@ -223,6 +227,7 @@ function AdminSubscriptionsSection2({
                       )}
                       {s.status !== "TRIAL" && (
                         <button
+                          aria-label="Renew"
                           className="admin-icon-btn"
                           style={{
                             color: "#22c55e",
@@ -234,6 +239,7 @@ function AdminSubscriptionsSection2({
                         </button>
                       )}
                       <button
+                        aria-label="History"
                         className="admin-icon-btn"
                         style={{
                           color: "#8b5cf6",
@@ -245,6 +251,7 @@ function AdminSubscriptionsSection2({
                       </button>
                       {s.status !== "EXPIRED" && s.status !== "CANCELLED" && (
                         <button
+                          aria-label="Cancel"
                           className="admin-icon-btn"
                           style={{
                             color: "#ef4444",
@@ -320,21 +327,15 @@ function AdminSubscriptionsSection3({
   return (
     historySub && (
       <div
-        role="button"
-        tabIndex={0}
         className="admin-overlay"
-        onKeyDown={(e) => {
-          if (e.key === "Enter" || e.key === " ") {
-            e.preventDefault();
-            e.currentTarget.click();
-          }
-        }}
+        role="presentation"
         onClick={() => {
           setHistorySub(null);
           setHistoryData([]);
         }}
       >
         <div
+          role="presentation"
           className="admin-modal"
           onClick={(e) => e.stopPropagation()}
           style={{
@@ -342,7 +343,6 @@ function AdminSubscriptionsSection3({
             maxHeight: "80vh",
             overflow: "auto",
           }}
-          role="presentation"
         >
           <h3>Subscription History — {historySub.tenant?.name}</h3>
           {historyData.length === 0 ? (
@@ -432,27 +432,20 @@ function AdminSubscriptionsSection4({
     actionSub &&
     actionType && (
       <div
-        role="button"
-        tabIndex={0}
         className="admin-overlay"
-        onKeyDown={(e) => {
-          if (e.key === "Enter" || e.key === " ") {
-            e.preventDefault();
-            e.currentTarget.click();
-          }
-        }}
+        role="presentation"
         onClick={() => {
           setActionSub(null);
           setActionType(null);
         }}
       >
         <div
+          role="presentation"
           className="admin-modal"
           onClick={(e) => e.stopPropagation()}
           style={{
             maxWidth: 420,
           }}
-          role="presentation"
         >
           <h3>
             {actionType === "renew"

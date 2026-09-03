@@ -38,9 +38,8 @@ function PatientsSection1({
       {showDrawer && selectedPatient && (
         <>
           <m.div
-            role="button"
-            tabIndex={0}
             className="drawer-overlay"
+            role="presentation"
             initial={{
               opacity: 0,
             }}
@@ -49,12 +48,6 @@ function PatientsSection1({
             }}
             exit={{
               opacity: 0,
-            }}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" || e.key === " ") {
-                e.preventDefault();
-                e.currentTarget.click();
-              }
             }}
             onClick={() => setShowDrawer(false)}
           />
@@ -84,6 +77,7 @@ function PatientsSection1({
                 </div>
               </div>
               <button
+                aria-label="Close"
                 className="micro-btn"
                 onClick={() => setShowDrawer(false)}
               >
@@ -201,6 +195,7 @@ function PatientsSection1({
               ) : (
                 <div className="prescriptions-stack">
                   <input
+                    aria-label="input field"
                     required
                     type="file"
                     ref={prescriptionFileRef}
@@ -377,14 +372,14 @@ export default function Patients({ showToast }) {
         <div className="patient-grid-v2">
           {filteredPatients.map((p) => (
             <m.div
-              role="button"
-              tabIndex={0}
               key={p.id}
               className="patient-card-v2"
+              role="button"
+              tabIndex={0}
               onKeyDown={(e) => {
                 if (e.key === "Enter" || e.key === " ") {
                   e.preventDefault();
-                  e.currentTarget.click();
+                  handleOpenPatient(p);
                 }
               }}
               onClick={() => handleOpenPatient(p)}
@@ -402,9 +397,9 @@ export default function Patients({ showToast }) {
                     <Phone size={10} /> {p.phone}
                   </span>
                 </div>
-                <button className="p-action-btn">
+                <span className="p-action-btn">
                   <ChevronRight size={16} />
-                </button>
+                </span>
               </div>
               <div className="p-stats-row">
                 <div className="p-stat">

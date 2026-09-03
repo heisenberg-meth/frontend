@@ -43,22 +43,11 @@ function POModal({ supplier, onClose, onSuccess, saving }) {
     onSuccess(supplier, qty, note);
   };
   return (
-    <div
-      role="button"
-      tabIndex={0}
-      className="lsa-modal-overlay"
-      onKeyDown={(e) => {
-        if (e.key === "Enter" || e.key === " ") {
-          e.preventDefault();
-          e.currentTarget.click();
-        }
-      }}
-      onClick={onClose}
-    >
+    <div role="presentation" className="lsa-modal-overlay" onClick={onClose}>
       <div
+        role="presentation"
         className="lsa-modal-box"
         onClick={(e) => e.stopPropagation()}
-        role="presentation"
       >
         <div className="lsa-modal-header">
           <h3
@@ -76,7 +65,11 @@ function POModal({ supplier, onClose, onSuccess, saving }) {
             />
             Create PO — {supplier.name}
           </h3>
-          <button className="lsa-modal-close" onClick={onClose}>
+          <button
+            aria-label="Close"
+            className="lsa-modal-close"
+            onClick={onClose}
+          >
             <X size={15} />
           </button>
         </div>

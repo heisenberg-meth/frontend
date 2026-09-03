@@ -14,6 +14,7 @@ import {
   Check,
 } from "lucide-react";
 import { AnimatePresence, m } from "framer-motion";
+import { TableHeader } from "../common/TableHeader.jsx";
 import { safeNumber } from "../../utils/number.js";
 import { formatDate } from "../../utils/formUtils.js";
 
@@ -152,6 +153,7 @@ export function PurchaseManagementSection1({
             required
             className="filter-input"
             type="date"
+            aria-label="Start date"
             value={filters.date}
             onChange={(e) =>
               setFilters({
@@ -164,6 +166,7 @@ export function PurchaseManagementSection1({
         <select
           className="filter-input"
           value={filters.supplier}
+          aria-label="Filter supplier"
           onChange={(e) =>
             setFilters({
               ...filters,
@@ -181,6 +184,7 @@ export function PurchaseManagementSection1({
         <select
           className="filter-input"
           value={filters.status}
+          aria-label="Filter status"
           onChange={(e) =>
             setFilters({
               ...filters,
@@ -223,6 +227,7 @@ export function PurchaseManagementSection1({
             <input
               required
               className="filter-input"
+              aria-label="Search by ID or Supplier..."
               placeholder="Search by ID or Supplier..."
               style={{
                 width: "100%",
@@ -253,37 +258,26 @@ export function PurchaseManagementSection1({
       ) : (
         activeTab === "invoices" && (
           <table className="purchase-table">
-            <thead>
-              <tr>
-                <th>Date</th>
-                <th>Supplier Inv #</th>
-                <th>Supplier</th>
-                <th>Medicines</th>
-                <th>Batch</th>
-                <th>Expiry</th>
-                <th>Price ₹</th>
-                <th>Total ₹</th>
-                <th>GST ₹</th>
-                <th>Payment</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
+            <TableHeader
+              columns={[
+                "Date",
+                "Supplier Inv #",
+                "Supplier",
+                "Medicines",
+                "Batch",
+                "Expiry",
+                "Price ₹",
+                "Total ₹",
+                "GST ₹",
+                "Payment",
+                "Actions",
+              ]}
+            />
             <tbody>
               {filteredInvoices.map((inv) => {
                 const summary = renderInvoiceItemsSummary(inv);
                 return (
-                  <tr
-                    role="button"
-                    tabIndex={0}
-                    key={inv.id}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter" || e.key === " ") {
-                        e.preventDefault();
-                        e.currentTarget.click();
-                      }
-                    }}
-                    onClick={() => handleOpenDrawer("invoice-detail", inv)}
-                  >
+                  <tr key={inv.id}>
                     <td>{inv.date || formatDate(inv.createdAt)}</td>
                     <td
                       style={{
@@ -331,14 +325,13 @@ export function PurchaseManagementSection1({
                         },
                       )}
                     </td>
-                    <td
-                      onClick={(e) => e.stopPropagation()}
-                      role="presentation"
-                    >
+                    <td>
                       <select
                         className="payment-status-dropdown"
                         value={inv.paymentStatus || "PENDING"}
+                        aria-label="Payment status"
                         disabled={inv.paymentStatus === "PAID"}
+                        onClick={(e) => e.stopPropagation()}
                         onChange={(e) =>
                           updatePaymentStatus(inv.id, e.target.value)
                         }
@@ -356,6 +349,7 @@ export function PurchaseManagementSection1({
                         }}
                       >
                         <button
+                          aria-label="View"
                           className="micro-btn"
                           title="View"
                           onClick={(e) => {
@@ -366,6 +360,7 @@ export function PurchaseManagementSection1({
                           <Eye size={14} />
                         </button>
                         <button
+                          aria-label="Edit"
                           className="micro-btn"
                           title="Edit"
                           onClick={(e) => {
@@ -376,6 +371,7 @@ export function PurchaseManagementSection1({
                           <Edit2 size={14} />
                         </button>
                         <button
+                          aria-label="Return"
                           className="micro-btn"
                           title="Return"
                           style={{
@@ -415,29 +411,12 @@ export function PurchaseManagementSection1({
 
       {!loading && activeTab === "orders" && (
         <table className="purchase-table">
-          <thead>
-            <tr>
-              <th>Supplier</th>
-              <th>Date</th>
-              <th>Items</th>
-              <th>Status</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
+          <TableHeader
+            columns={["Supplier", "Date", "Items", "Status", "Actions"]}
+          />
           <tbody>
             {filteredOrders.map((po) => (
-              <tr
-                role="button"
-                tabIndex={0}
-                key={po.id}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" || e.key === " ") {
-                    e.preventDefault();
-                    e.currentTarget.click();
-                  }
-                }}
-                onClick={() => handleOpenDrawer("invoice-detail", po)}
-              >
+              <tr key={po.id}>
                 <td
                   style={{
                     fontWeight: 700,
@@ -462,6 +441,7 @@ export function PurchaseManagementSection1({
                     }}
                   >
                     <button
+                      aria-label="View"
                       className="micro-btn"
                       title="View"
                       onClick={(e) => {
@@ -554,33 +534,22 @@ export function PurchaseManagementSection1({
 
       {!loading && activeTab === "returns" && (
         <table className="purchase-table">
-          <thead>
-            <tr>
-              <th>Date</th>
-              <th>Return #</th>
-              <th>Supplier</th>
-              <th>Orig Inv</th>
-              <th>Items</th>
-              <th>Value</th>
-              <th>Reason</th>
-              <th>Status</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
+          <TableHeader
+            columns={[
+              "Date",
+              "Return #",
+              "Supplier",
+              "Orig Inv",
+              "Items",
+              "Value",
+              "Reason",
+              "Status",
+              "Actions",
+            ]}
+          />
           <tbody>
             {filteredReturns.map((ret) => (
-              <tr
-                role="button"
-                tabIndex={0}
-                key={ret.id}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" || e.key === " ") {
-                    e.preventDefault();
-                    e.currentTarget.click();
-                  }
-                }}
-                onClick={() => handleOpenDrawer("invoice-detail", ret)}
-              >
+              <tr key={ret.id}>
                 <td>{ret.date || formatDate(ret.createdAt)}</td>
                 <td
                   style={{
@@ -633,6 +602,7 @@ export function PurchaseManagementSection1({
                 </td>
                 <td>
                   <button
+                    aria-label="View"
                     className="micro-btn"
                     title="View"
                     onClick={(e) => {
@@ -763,15 +733,13 @@ export function PurchaseManagementSection2({
   isFormInvalid,
   handleSavePurchase,
   downloadPurchasePDF,
-  handleKeyDown,
 }) {
   return (
     <AnimatePresence>
       {drawer && (
         <m.div
-          role="button"
-          tabIndex={0}
           className="stock-modal-overlay"
+          role="presentation"
           initial={{
             opacity: 0,
           }}
@@ -781,7 +749,6 @@ export function PurchaseManagementSection2({
           exit={{
             opacity: 0,
           }}
-          onKeyDown={handleKeyDown}
           onClick={(e) => {
             if (e.target === e.currentTarget) {
               closeDrawer();
@@ -831,7 +798,11 @@ export function PurchaseManagementSection2({
                   </span>
                 )}
               </div>
-              <button className="micro-btn" onClick={closeDrawer}>
+              <button
+                className="micro-btn"
+                onClick={closeDrawer}
+                aria-label="Close drawer"
+              >
                 <X size={20} />
               </button>
             </div>
@@ -844,6 +815,7 @@ export function PurchaseManagementSection2({
                     <div className="pos-input-group">
                       <select
                         className="pos-input"
+                        aria-label="Select Supplier"
                         style={{
                           width: "100%",
                         }}
@@ -875,6 +847,7 @@ export function PurchaseManagementSection2({
                         <select
                           required
                           className="pos-input"
+                          aria-label="Select Branch"
                           style={{
                             width: "100%",
                           }}
@@ -972,6 +945,7 @@ export function PurchaseManagementSection2({
                           <input
                             required
                             className="pos-input medicine-search-input"
+                            aria-label="Search medicine to add..."
                             placeholder="Search medicine to add..."
                             value={medicineSearch}
                             onChange={(e) => setMedicineSearch(e.target.value)}
@@ -1002,17 +976,10 @@ export function PurchaseManagementSection2({
                           filteredMedicines.length > 0 && (
                             <div className="medicine-suggestions">
                               {filteredMedicines.map((m) => (
-                                <div
-                                  role="button"
-                                  tabIndex={0}
+                                <button
+                                  type="button"
                                   key={m.id}
                                   className="medicine-suggestion-item"
-                                  onKeyDown={(e) => {
-                                    if (e.key === "Enter" || e.key === " ") {
-                                      e.preventDefault();
-                                      e.currentTarget.click();
-                                    }
-                                  }}
                                   onClick={() => addMedicine(m)}
                                 >
                                   <span>{m.name}</span>
@@ -1024,7 +991,7 @@ export function PurchaseManagementSection2({
                                   >
                                     ₹{m.purchasePrice}
                                   </span>
-                                </div>
+                                </button>
                               ))}
                             </div>
                           )
@@ -1101,6 +1068,7 @@ export function PurchaseManagementSection2({
                                 <input
                                   required
                                   className="p-cost-input"
+                                  aria-label="Required quantity"
                                   style={{
                                     width: "60px",
                                   }}
@@ -1114,6 +1082,7 @@ export function PurchaseManagementSection2({
                               </td>
                               <td>
                                 <button
+                                  aria-label="Close"
                                   className="micro-btn"
                                   style={{
                                     color: "var(--danger)",

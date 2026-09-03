@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { TableHeader } from "./common/TableHeader.jsx";
 import {
   Calculator,
   Download,
@@ -232,18 +233,12 @@ function AccountingTaxSection3({
     <AnimatePresence>
       {showExpenseModal && (
         <div
-          role="button"
-          tabIndex={0}
           className="modal-overlay"
-          onKeyDown={(e) => {
-            if (e.key === "Enter" || e.key === " ") {
-              e.preventDefault();
-              e.currentTarget.click();
-            }
-          }}
+          role="presentation"
           onClick={() => setShowExpenseModal(false)}
         >
           <m.div
+            role="presentation"
             className="modal-content"
             initial={{
               opacity: 0,
@@ -261,7 +256,6 @@ function AccountingTaxSection3({
             style={{
               maxWidth: 480,
             }}
-            role="presentation"
           >
             <div className="modal-header">
               <h3>{editExpense ? "Edit Expense" : "Add Expense"}</h3>
@@ -443,17 +437,17 @@ function AccountingTaxSection2Section1({
           </div>
         ) : (
           <table className="acc-table">
-            <thead>
-              <tr>
-                <th>DATE</th>
-                <th>CATEGORY</th>
-                <th>DESCRIPTION</th>
-                <th>AMOUNT</th>
-                <th>PAYMENT</th>
-                <th>RECEIPT</th>
-                <th>ACTIONS</th>
-              </tr>
-            </thead>
+            <TableHeader
+              columns={[
+                "DATE",
+                "CATEGORY",
+                "DESCRIPTION",
+                "AMOUNT",
+                "PAYMENT",
+                "RECEIPT",
+                "ACTIONS",
+              ]}
+            />
             <tbody>
               {filteredExpenses.length === 0 ? (
                 <tr>
@@ -575,17 +569,17 @@ function AccountingTaxSection2Section2({
           </div>
         ) : (
           <table className="acc-table">
-            <thead>
-              <tr>
-                <th>GST RATE</th>
-                <th>SALES</th>
-                <th>OUTPUT CGST</th>
-                <th>OUTPUT SGST</th>
-                <th>INPUT CGST</th>
-                <th>INPUT SGST</th>
-                <th>NET LIABILITY</th>
-              </tr>
-            </thead>
+            <TableHeader
+              columns={[
+                "GST RATE",
+                "SALES",
+                "OUTPUT CGST",
+                "OUTPUT SGST",
+                "INPUT CGST",
+                "INPUT SGST",
+                "NET LIABILITY",
+              ]}
+            />
             <tbody>
               {gstData.length === 0 ? (
                 <tr>

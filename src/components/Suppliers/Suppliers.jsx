@@ -23,6 +23,7 @@ import { safeNumber } from "../../utils/number.js";
 import api from "../../api.js";
 import { getErrorMessage } from "../../utils/formUtils.js";
 import { Loading, Badge, Pagination } from "../../utils/Formdata.jsx";
+import { TableHeader } from "../common/TableHeader.jsx";
 
 const STATUS_BADGE = {
   DRAFT: {
@@ -220,6 +221,7 @@ export function SupplierReturnsSection2({
               </>
             </div>
             <select
+              aria-label="select field"
               className="filter-select"
               value={statusFilter}
               onChange={(e) => {
@@ -245,18 +247,18 @@ export function SupplierReturnsSection2({
           ) : (
             <div className="table-container">
               <table className="data-table">
-                <thead>
-                  <tr>
-                    <th>Return</th>
-                    <th>Supplier</th>
-                    <th>Items</th>
-                    <th>Amount</th>
-                    <th>Status</th>
-                    <th>Dispatch</th>
-                    <th>Created</th>
-                    <th>Actions</th>
-                  </tr>
-                </thead>
+                <TableHeader
+                  columns={[
+                    "Return",
+                    "Supplier",
+                    "Items",
+                    "Amount",
+                    "Status",
+                    "Dispatch",
+                    "Created",
+                    "Actions",
+                  ]}
+                />
                 <tbody>
                   {returns.map((r) => (
                     <tr key={r.id}>
@@ -315,6 +317,7 @@ export function SupplierReturnsSection2({
                       </td>
                       <td>
                         <select
+                          aria-label="select field"
                           className="filter-select"
                           value={r.dispatchStatus || "PENDING"}
                           onChange={async (e) => {
@@ -389,17 +392,17 @@ export function SupplierReturnsSection2({
           ) : (
             <div className="table-container">
               <table className="data-table">
-                <thead>
-                  <tr>
-                    <th>CN #</th>
-                    <th>Supplier</th>
-                    <th>Return</th>
-                    <th>Amount</th>
-                    <th>Status</th>
-                    <th>Issued</th>
-                    <th>Actions</th>
-                  </tr>
-                </thead>
+                <TableHeader
+                  columns={[
+                    "CN #",
+                    "Supplier",
+                    "Return",
+                    "Amount",
+                    "Status",
+                    "Issued",
+                    "Actions",
+                  ]}
+                />
                 <tbody>
                   {creditNotes.map((cn) => (
                     <tr key={cn.id}>
@@ -548,17 +551,17 @@ export function SupplierReturnsSection2({
                   {expandedGroup === idx && (
                     <div className="supplier-group-items">
                       <table className="data-table">
-                        <thead>
-                          <tr>
-                            <th>Medicine</th>
-                            <th>Batch</th>
-                            <th>Expiry</th>
-                            <th>Qty</th>
-                            <th>Price</th>
-                            <th>Loss</th>
-                            <th>Status</th>
-                          </tr>
-                        </thead>
+                        <TableHeader
+                          columns={[
+                            "Medicine",
+                            "Batch",
+                            "Expiry",
+                            "Qty",
+                            "Price",
+                            "Loss",
+                            "Status",
+                          ]}
+                        />
                         <tbody>
                           {group.items.map((item) => (
                             <tr key={item.id}>
@@ -623,21 +626,14 @@ export function SupplierReturnsSection3({
   return (
     selectedReturn && (
       <div
-        role="button"
-        tabIndex={0}
         className="modal-overlay"
-        onKeyDown={(e) => {
-          if (e.key === "Enter" || e.key === " ") {
-            e.preventDefault();
-            e.currentTarget.click();
-          }
-        }}
+        role="presentation"
         onClick={() => setSelectedReturn(null)}
       >
         <div
+          role="presentation"
           className="modal-content wide-modal"
           onClick={(e) => e.stopPropagation()}
-          role="presentation"
         >
           <div className="modal-header">
             <h2>{selectedReturn.returnNumber}</h2>
@@ -696,15 +692,9 @@ export function SupplierReturnsSection3({
             )}
             <h3>Items</h3>
             <table className="data-table">
-              <thead>
-                <tr>
-                  <th>Medicine</th>
-                  <th>Qty</th>
-                  <th>Price</th>
-                  <th>Loss</th>
-                  <th>Reason</th>
-                </tr>
-              </thead>
+              <TableHeader
+                columns={["Medicine", "Qty", "Price", "Loss", "Reason"]}
+              />
               <tbody>
                 {(selectedReturn.items || []).map((item) => (
                   <tr key={item.id}>
@@ -809,21 +799,14 @@ export function SupplierReturnsSection4({
   return (
     showCreateModal && (
       <div
-        role="button"
-        tabIndex={0}
         className="modal-overlay"
-        onKeyDown={(e) => {
-          if (e.key === "Enter" || e.key === " ") {
-            e.preventDefault();
-            e.currentTarget.click();
-          }
-        }}
+        role="presentation"
         onClick={() => setShowCreateModal(false)}
       >
         <div
+          role="presentation"
           className="modal-content wide-modal"
           onClick={(e) => e.stopPropagation()}
-          role="presentation"
         >
           <div className="modal-header">
             <h2>Create Supplier Return</h2>
@@ -921,6 +904,7 @@ export function SupplierReturnsSection4({
                                 >
                                   <td>
                                     <input
+                                      aria-label="input field"
                                       type="checkbox"
                                       checked={!!selected}
                                       onChange={(e) => {
@@ -963,6 +947,7 @@ export function SupplierReturnsSection4({
                                   <td>
                                     {selected && (
                                       <input
+                                        aria-label="input field"
                                         type="number"
                                         className="form-control"
                                         style={{

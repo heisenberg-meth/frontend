@@ -437,7 +437,7 @@ export default function InvoiceModal({
                 ? "Hide Real-time Preview"
                 : "Show Real-time Preview"}
             </button>
-            <button
+            <button aria-label="Close"
               onClick={onClose}
               className="w-8 h-8 rounded-lg bg-slate-50 hover:bg-slate-100 flex items-center justify-center text-slate-500 transition focus:outline-none dark:bg-slate-800 dark:hover:bg-slate-750 dark:text-slate-300"
             >

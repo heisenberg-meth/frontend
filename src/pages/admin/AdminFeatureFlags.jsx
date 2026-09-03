@@ -125,6 +125,7 @@ export default function AdminFeatureFlags() {
               />
             </>
             <select
+              aria-label="select field"
               value={form.targetType}
               onChange={(e) =>
                 setForm({
@@ -224,6 +225,9 @@ export default function AdminFeatureFlags() {
                   <td>{new Date(f.updatedAt).toLocaleDateString()}</td>
                   <td>
                     <button
+                      aria-label={
+                        f.enabled ? `Disable ${f.name}` : `Enable ${f.name}`
+                      }
                       className="admin-icon-btn"
                       onClick={() => handleToggle(f.id, f.enabled)}
                     >

@@ -76,6 +76,7 @@ function PurchaseManagementSection3({
                 Process Supplier Return
               </h3>
               <button
+                aria-label="Close"
                 className="micro-btn"
                 onClick={() => setShowReturnModal(false)}
               >
@@ -157,6 +158,7 @@ function PurchaseManagementSection3({
                             }}
                           >
                             <select
+                              aria-label="select field"
                               className="pos-input"
                               style={{
                                 width: "100%",
@@ -333,6 +335,7 @@ function PurchaseManagementSection4({
                 Confirm Order Receipt
               </h3>
               <button
+                aria-label="Close"
                 className="micro-btn"
                 onClick={() => {
                   setShowReceiveModal(false);
@@ -437,6 +440,7 @@ function PurchaseManagementSection4({
                           <td>{item.pendingQuantity}</td>
                           <td>
                             <input
+                              aria-label="input field"
                               required
                               className="p-cost-input"
                               style={{
@@ -474,6 +478,7 @@ function PurchaseManagementSection4({
                           </td>
                           <td>
                             <input
+                              aria-label="input field"
                               required
                               className="p-cost-input"
                               type="date"
@@ -487,6 +492,7 @@ function PurchaseManagementSection4({
                           </td>
                           <td>
                             <input
+                              aria-label="input field"
                               required
                               className="p-cost-input"
                               style={{
@@ -504,6 +510,7 @@ function PurchaseManagementSection4({
                           </td>
                           <td>
                             <input
+                              aria-label="input field"
                               required
                               className="p-cost-input"
                               style={{
@@ -521,6 +528,7 @@ function PurchaseManagementSection4({
                           </td>
                           <td>
                             <input
+                              aria-label="input field"
                               required
                               className="p-cost-input"
                               style={{
@@ -1518,7 +1526,8 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
         .includes(lowerSearch) ||
       supplierName.toLowerCase().includes(lowerSearch);
     const matchesDate =
-      !filters.date || (inv.date || inv.createdAt || "").includes(filters.date);
+      !filters.date ||
+      (inv.date || inv.createdAt || "").startsWith(filters.date);
     return matchesSupplier && matchesStatus && matchesSearch && matchesDate;
   });
   const filteredOrders = orders.filter((po) => {
@@ -1537,7 +1546,7 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
       (po.id || po.poNumber || "").toLowerCase().includes(lowerSearch) ||
       supplierName.toLowerCase().includes(lowerSearch);
     const matchesDate =
-      !filters.date || (po.date || po.createdAt || "").includes(filters.date);
+      !filters.date || (po.date || po.createdAt || "").startsWith(filters.date);
     return matchesSupplier && matchesStatus && matchesSearch && matchesDate;
   });
   const filteredReturns = returns.filter((ret) => {
@@ -1554,7 +1563,8 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
       (ret.id || ret.returnNumber || "").toLowerCase().includes(lowerSearch) ||
       supplierName.toLowerCase().includes(lowerSearch);
     const matchesDate =
-      !filters.date || (ret.date || ret.createdAt || "").includes(filters.date);
+      !filters.date ||
+      (ret.date || ret.createdAt || "").startsWith(filters.date);
     return matchesSupplier && matchesStatus && matchesSearch && matchesDate;
   });
   const handleReceiveOrder = async () => {

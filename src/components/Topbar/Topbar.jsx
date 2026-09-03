@@ -103,32 +103,34 @@ export function TopbarSection1({
   return (
     <header className="top-app-bar">
       <div className="search-container">
-        <div
-          role="button"
-          tabIndex={0}
+        <button
+          type="button"
+          aria-label="Global Search"
           className="search-box"
-          onKeyDown={(e) => {
-            if (e.key === "Enter" || e.key === " ") {
-              e.preventDefault();
-              e.currentTarget.click();
-            }
-          }}
           onClick={() => setShowSearchOverlay(true)}
+          style={{
+            background: "none",
+            border: "none",
+            width: "100%",
+            padding: 0,
+            textAlign: "left",
+            cursor: "pointer",
+            display: "block",
+          }}
         >
           <Search size={18} className="search-icon" />
-          <>
-            <label htmlFor="field_1zkw4x" className="sr-only">
-              Search analytics, stock, or clinical logs...
-            </label>
-            <input
-              required
-              type="text"
-              placeholder="Search analytics, stock, or clinical logs..."
-              readOnly
-              id="field_1zkw4x"
-            />
-          </>
-        </div>
+          <span
+            aria-hidden="true"
+            style={{
+              pointerEvents: "none",
+              color: "var(--text-muted, #9ca3af)",
+              marginLeft: "8px",
+              flex: 1,
+            }}
+          >
+            Search analytics, stock, or clinical logs...
+          </span>
+        </button>
       </div>
 
       <div className="top-bar-actions">
@@ -454,8 +456,6 @@ export function TopbarSection2({
     <AnimatePresence>
       {showSearchOverlay && (
         <m.div
-          role="button"
-          tabIndex={0}
           className="global-search-overlay"
           initial={{
             opacity: 0,
@@ -465,12 +465,6 @@ export function TopbarSection2({
           }}
           exit={{
             opacity: 0,
-          }}
-          onKeyDown={(e) => {
-            if (e.key === "Enter" || e.key === " ") {
-              e.preventDefault();
-              e.currentTarget.click();
-            }
           }}
           onClick={handleCloseSearch}
         >
@@ -493,7 +487,6 @@ export function TopbarSection2({
               ease: "easeOut",
             }}
             onClick={(e) => e.stopPropagation()}
-            role="presentation"
           >
             {/* Search Header */}
             <div className="search-input-wrap">
@@ -516,6 +509,7 @@ export function TopbarSection2({
               <div className="search-input-actions">
                 {searchQuery && (
                   <button
+                    aria-label="Clear query"
                     className="clear-query-btn"
                     onClick={() => handleSearchChange("")}
                     title="Clear query"
@@ -625,22 +619,30 @@ export function TopbarSection2({
                               ? `recent-search-${item}`
                               : item?.id || `recent-search-${label}`;
                           return (
-                            <div
-                              role="button"
-                              tabIndex={0}
-                              key={key}
-                              className="recent-search-item"
-                              onKeyDown={(e) => {
-                                if (e.key === "Enter" || e.key === " ") {
-                                  e.preventDefault();
-                                  e.currentTarget.click();
-                                }
-                              }}
-                              onClick={() => handleSearchChange(label)}
-                            >
-                              <Clock size={14} />
-                              <span className="recent-text">{label}</span>
+                            <div key={key} className="recent-search-item">
                               <button
+                                type="button"
+                                className="recent-search-btn"
+                                onClick={() => handleSearchChange(label)}
+                                style={{
+                                  background: "none",
+                                  border: "none",
+                                  display: "flex",
+                                  alignItems: "center",
+                                  gap: "8px",
+                                  flex: 1,
+                                  color: "inherit",
+                                  font: "inherit",
+                                  cursor: "pointer",
+                                  padding: 0,
+                                  textAlign: "left",
+                                }}
+                              >
+                                <Clock size={14} />
+                                <span className="recent-text">{label}</span>
+                              </button>
+                              <button
+                                aria-label="Remove"
                                 className="remove-recent-btn"
                                 onClick={(e) => removeRecentSearch(item, e)}
                                 title="Remove"

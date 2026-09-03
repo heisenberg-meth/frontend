@@ -30,16 +30,15 @@ export default function ConfirmModal({
 
   return (
     <div
-      role="button"
-      tabIndex={0}
+      role="presentation"
       className="confirm-modal-overlay"
+      onClick={onClose}
       onKeyDown={(e) => {
         if (e.key === "Enter" || e.key === " ") {
           e.preventDefault();
-          e.currentTarget.click();
+          onClose();
         }
       }}
-      onClick={onClose}
     >
       <m.div
         className="confirm-modal-content"
@@ -62,6 +61,7 @@ export default function ConfirmModal({
           duration: 0.2,
           ease: "easeOut",
         }}
+        onKeyDown={(e) => e.stopPropagation()}
         onClick={(e) => e.stopPropagation()}
         role="presentation"
       >
@@ -82,7 +82,11 @@ export default function ConfirmModal({
             <Icon size={24} />
           </div>
           <h3>{title}</h3>
-          <button className="confirm-modal-close" onClick={onClose}>
+          <button
+            className="confirm-modal-close"
+            onClick={onClose}
+            aria-label="Close modal"
+          >
             <X size={18} />
           </button>
         </div>

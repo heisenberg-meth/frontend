@@ -181,7 +181,9 @@ export function MedicineModal({
       } catch (err) {
         if (!ignore) showToast("Failed to load suppliers", err);
       } finally {
-        if (!ignore) setLoadingSuppliers(false);
+        if (!ignore) {
+          setLoadingSuppliers(false);
+        }
       }
     };
     loadSuppliers();
@@ -272,13 +274,12 @@ export function MedicineModal({
   };
   return (
     <div
-      role="button"
-      tabIndex={0}
       className="inv-modal-overlay"
+      role="presentation"
       onKeyDown={(e) => {
         if (e.key === "Enter" || e.key === " ") {
           e.preventDefault();
-          e.currentTarget.click();
+          onClose();
         }
       }}
       onClick={onClose}
@@ -309,19 +310,14 @@ export function MedicineViewModal({
 
   // Use centralized status calculation
   const medicineStatus = getMedicineStatus(medicine);
-  const isExpired = medicineStatus === "Expired";
-  const isExpiringSoon = medicineStatus === "Expiring Soon";
-  const isLowStock = medicineStatus === "Low Stock";
-  const isOutOfStock = medicineStatus === "Out of Stock";
   return (
     <div
-      role="button"
-      tabIndex={0}
       className="inv-modal-overlay"
+      role="presentation"
       onKeyDown={(e) => {
         if (e.key === "Enter" || e.key === " ") {
           e.preventDefault();
-          e.currentTarget.click();
+          onClose();
         }
       }}
       onClick={onClose}
@@ -331,10 +327,7 @@ export function MedicineViewModal({
         medicine={medicine}
         onEditBatch={onEditBatch}
         onClose={onClose}
-        isExpired={isExpired}
-        isExpiringSoon={isExpiringSoon}
-        isOutOfStock={isOutOfStock}
-        isLowStock={isLowStock}
+        status={medicineStatus}
       />
     </div>
   );
@@ -353,6 +346,7 @@ function MedicineModalSection1({
 }) {
   return (
     <m.div
+      role="presentation"
       className="inv-modal-content"
       initial={{
         opacity: 0,
@@ -370,7 +364,6 @@ function MedicineModalSection1({
         y: 20,
       }}
       onClick={(e) => e.stopPropagation()}
-      role="presentation"
     >
       <div className="inv-modal-header">
         <div className="header-title-group">
@@ -382,7 +375,11 @@ function MedicineModalSection1({
           />
           <h3>{editData ? "Edit Medicine" : "Add New Medicine"}</h3>
         </div>
-        <button className="inv-modal-close-btn" onClick={onClose}>
+        <button
+          aria-label="Close"
+          className="inv-modal-close-btn"
+          onClick={onClose}
+        >
           <X size={18} />
         </button>
       </div>
@@ -738,13 +735,15 @@ function MedicineViewModalSection2({
   medicine,
   onEditBatch,
   onClose,
-  isExpired,
-  isExpiringSoon,
-  isOutOfStock,
-  isLowStock,
+  status,
 }) {
+  const isExpired = status === "Expired";
+  const isExpiringSoon = status === "Expiring Soon";
+  const isOutOfStock = status === "Out of Stock";
+  const isLowStock = status === "Low Stock";
   return (
     <m.div
+      role="presentation"
       className="inv-modal-content inv-view-modal"
       style={{
         width: "800px",
@@ -765,7 +764,6 @@ function MedicineViewModalSection2({
         y: 20,
       }}
       onClick={(e) => e.stopPropagation()}
-      role="presentation"
     >
       <div className="inv-view-header">
         <div className="inv-view-avatar">{getInitials(medicine.name)}</div>
@@ -777,6 +775,7 @@ function MedicineViewModalSection2({
           </span>
         </div>
         <button
+          aria-label="Action"
           className="inv-modal-close-btn"
           onClick={onClose}
           style={{
@@ -1019,6 +1018,7 @@ function MedicineViewModalSection2({
                         }}
                       >
                         <button
+                          aria-label="Edit Batch"
                           className="inv-row-btn"
                           style={{
                             width: "28px",

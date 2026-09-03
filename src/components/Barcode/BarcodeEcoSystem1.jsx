@@ -10,6 +10,7 @@ import {
   Download,
 } from "lucide-react";
 import { AnimatePresence, m } from "framer-motion";
+import { TableHeader } from "../common/TableHeader.jsx";
 import "../../styles/BarcodeEcosystem.css";
 
 function Spinner({ size = 14 }) {
@@ -512,15 +513,15 @@ export function BarcodeEcosystemSection5({
     activeTab === "history" && (
       <div className="purchase-table-card">
         <table className="purchase-table">
-          <thead>
-            <tr>
-              <th>Date/Time</th>
-              <th>Barcode</th>
-              <th>Medicine Matched</th>
-              <th>Action Taken</th>
-              <th>Result</th>
-            </tr>
-          </thead>
+          <TableHeader
+            columns={[
+              "Date/Time",
+              "Barcode",
+              "Medicine Matched",
+              "Action Taken",
+              "Result",
+            ]}
+          />
           <tbody>
             {historyLoading ? (
               <tr>
@@ -564,7 +565,7 @@ export function BarcodeEcosystemSection5({
                   <td>{h.medicineName || "—"}</td>
                   <td>
                     <span
-                      className={`p-status ${(h.action || "").includes("BILL") ? "paid" : ""}`}
+                      className={`p-status ${(h.action || "").startsWith("BILL") ? "paid" : ""}`}
                       style={{
                         fontSize: "10px",
                       }}

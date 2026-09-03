@@ -18,6 +18,7 @@ import {
   TrendingUp,
 } from "lucide-react";
 import { AnimatePresence, m } from "framer-motion";
+import { StatCard } from "./common/StatCard.jsx";
 import {
   normalizeArrayResponse,
   normalizeObjectResponse,
@@ -1517,21 +1518,13 @@ export default function BillingPOS({
             col: "var(--warning)",
           },
         ].map((s) => (
-          <div key={s.label} className="pos-stat-card">
-            <div className="stat-card-header">
-              <span className="stat-label">{s.label}</span>
-              <div
-                className="stat-icon"
-                style={{
-                  backgroundColor: `${s.col}15`,
-                  color: s.col,
-                }}
-              >
-                <s.icon size={16} />
-              </div>
-            </div>
-            <div className="stat-value">{s.val}</div>
-          </div>
+          <StatCard
+            key={s.label}
+            label={s.label}
+            val={s.val}
+            icon={s.icon}
+            col={s.col}
+          />
         ))}
       </div>
 

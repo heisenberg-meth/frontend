@@ -63,7 +63,11 @@ export function DisposalHistorySection1({
             />
           </>
           {searchQuery && (
-            <button className="search-clear" onClick={() => setSearchQuery("")}>
+            <button
+              className="search-clear"
+              onClick={() => setSearchQuery("")}
+              aria-label="Clear search"
+            >
               <X size={14} />
             </button>
           )}
@@ -71,6 +75,7 @@ export function DisposalHistorySection1({
         <input
           type="date"
           value={startDate}
+          aria-label="Start date"
           onChange={(e) => {
             setStartDate(e.target.value);
             setPage(1);
@@ -87,6 +92,7 @@ export function DisposalHistorySection1({
         <input
           type="date"
           value={endDate}
+          aria-label="End date"
           onChange={(e) => {
             setEndDate(e.target.value);
             setPage(1);
@@ -282,7 +288,6 @@ export function DisposalHistorySection2({ filtered, items, setSelectedItem }) {
                   key={item.id}
                   style={{
                     borderBottom: "1px solid var(--outline-variant)",
-                    cursor: "pointer",
                     transition: "background 0.15s",
                   }}
                   onMouseEnter={(e) => {
@@ -291,13 +296,6 @@ export function DisposalHistorySection2({ filtered, items, setSelectedItem }) {
                   onMouseLeave={(e) => {
                     e.currentTarget.style.background = "transparent";
                   }}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" || e.key === " ") {
-                      e.preventDefault();
-                      e.currentTarget.click();
-                    }
-                  }}
-                  onClick={() => setSelectedItem(item)}
                 >
                   <td
                     style={{
@@ -549,18 +547,12 @@ export function DisposalHistorySection4({ selectedItem, setSelectedItem }) {
     <AnimatePresence>
       {selectedItem && (
         <div
-          role="button"
-          tabIndex={0}
           className="stock-modal-overlay"
-          onKeyDown={(e) => {
-            if (e.key === "Enter" || e.key === " ") {
-              e.preventDefault();
-              e.currentTarget.click();
-            }
-          }}
+          role="presentation"
           onClick={() => setSelectedItem(null)}
         >
           <m.div
+            role="presentation"
             className="stock-modal-content"
             style={{
               maxWidth: 520,
@@ -581,13 +573,13 @@ export function DisposalHistorySection4({ selectedItem, setSelectedItem }) {
               y: 20,
             }}
             onClick={(e) => e.stopPropagation()}
-            role="presentation"
           >
             <div className="stock-modal-header">
               <h3>Disposal Record Details</h3>
               <button
                 className="micro-btn"
                 onClick={() => setSelectedItem(null)}
+                aria-label="Close modal"
               >
                 <X size={18} />
               </button>

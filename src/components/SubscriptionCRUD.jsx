@@ -3,6 +3,7 @@ import api from "../api.js";
 import { API_ROUTES } from "../constants/api.routes.js";
 import { useAuth } from "../hooks/useAuth";
 import { ShieldCheck, Loader2, Sparkles } from "lucide-react";
+import { TableHeader } from "./common/TableHeader.jsx";
 import ConfirmModal from "./ConfirmModal";
 import { loadRazorpay } from "../utils/razorpay";
 import { safeNumber } from "../utils/number.js";
@@ -509,15 +510,7 @@ export default function SubscriptionCRUD({ showToast, user }) {
       <div className="sub-payment-section">
         <h3>History</h3>
         <table className="sub-payment-table">
-          <thead>
-            <tr>
-              <th>ID</th>
-              <th>DATE</th>
-              <th>PLAN</th>
-              <th>AMOUNT</th>
-              <th>STATUS</th>
-            </tr>
-          </thead>
+          <TableHeader columns={["ID", "DATE", "PLAN", "AMOUNT", "STATUS"]} />
           <tbody>
             {paymentHistory.map((pay) => (
               <tr key={pay.id}>

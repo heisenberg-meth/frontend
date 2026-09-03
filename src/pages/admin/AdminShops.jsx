@@ -66,6 +66,7 @@ function AdminShopsSection1({
           />
         </>
         <button
+          aria-label="Search"
           type="submit"
           className="admin-btn admin-btn-primary"
           style={{
@@ -88,6 +89,7 @@ function AdminShopsSection1({
         <Download size={14} /> Export CSV
       </button>
       <select
+        aria-label="select field"
         value={statusFilter}
         onChange={(e) => {
           setStatusFilter(e.target.value);
@@ -225,6 +227,7 @@ function AdminShopsSection2({
                       }}
                     >
                       <button
+                        aria-label="View"
                         onClick={() =>
                           setSelected(selected?.id === shop.id ? null : shop)
                         }
@@ -235,6 +238,7 @@ function AdminShopsSection2({
                       </button>
                       {!shop.isVerified && !shop.blacklisted && (
                         <button
+                          aria-label="Approve"
                           onClick={() =>
                             doAction(adminApi.verifyTenant, shop.id)
                           }
@@ -249,6 +253,7 @@ function AdminShopsSection2({
                       )}
                       {shop.status !== "SUSPENDED" ? (
                         <button
+                          aria-label="Suspend"
                           onClick={() =>
                             doAction(adminApi.suspendShop, shop.id)
                           }
@@ -262,6 +267,7 @@ function AdminShopsSection2({
                         </button>
                       ) : (
                         <button
+                          aria-label="Activate"
                           onClick={() =>
                             doAction(
                               adminApi.updateUserStatus,
@@ -280,6 +286,7 @@ function AdminShopsSection2({
                       )}
                       {!shop.blacklisted ? (
                         <button
+                          aria-label="Block"
                           onClick={() => {
                             setSelected(shop);
                             setReason("");
@@ -294,6 +301,7 @@ function AdminShopsSection2({
                         </button>
                       ) : null}
                       <button
+                        aria-label="Delete"
                         onClick={() => doAction(adminApi.deleteShop, shop.id)}
                         className="admin-icon-btn"
                         style={{
@@ -456,24 +464,17 @@ export default function AdminShops() {
         selected !== null &&
         reason !== undefined && (
           <div
-            role="button"
-            tabIndex={0}
             className="admin-overlay"
-            onKeyDown={(e) => {
-              if (e.key === "Enter" || e.key === " ") {
-                e.preventDefault();
-                e.currentTarget.click();
-              }
-            }}
+            role="presentation"
             onClick={() => {
               setSelected(null);
               setReason("");
             }}
           >
             <div
+              role="presentation"
               className="admin-modal"
               onClick={(e) => e.stopPropagation()}
-              role="presentation"
             >
               <h3>Block Shop — {selected?.name || selected?.shopName}</h3>
               <div className="admin-form-group">

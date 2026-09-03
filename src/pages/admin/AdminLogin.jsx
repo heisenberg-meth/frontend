@@ -66,6 +66,7 @@ export default function AdminLogin() {
             <button
               type="button"
               className="pw-toggle"
+              aria-label={showPw ? "Hide password" : "Show password"}
               onClick={() => setShowPw(!showPw)}
             >
               {showPw ? <EyeOff size={16} /> : <Eye size={16} />}

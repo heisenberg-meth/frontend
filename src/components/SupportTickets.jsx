@@ -207,6 +207,7 @@ function SupportTicketsSection2({
             <div className="modal-header-v2">
               <h3>Create Support Ticket</h3>
               <button
+                aria-label="Close"
                 className="modal-close-btn"
                 onClick={() => setShowCreate(false)}
               >
@@ -373,6 +374,7 @@ function SupportTicketsSection3({
                 </span>
               </div>
               <button
+                aria-label="Close"
                 className="modal-close-btn"
                 onClick={() => setSelectedTicket(null)}
               >
@@ -583,7 +585,11 @@ function SupportTicketsSection3({
                         id="field_xjoaon"
                       />
                     </>
-                    <button className="sub-upgrade-btn" onClick={sendReply}>
+                    <button
+                      aria-label="Action"
+                      className="sub-upgrade-btn"
+                      onClick={sendReply}
+                    >
                       <Send size={14} />
                     </button>
                   </div>
@@ -839,6 +845,7 @@ export default function SupportTickets({ user, showToast }) {
         }}
       >
         <select
+          aria-label="select field"
           value={filter.status}
           onChange={(e) =>
             setFilter({
@@ -859,6 +866,7 @@ export default function SupportTickets({ user, showToast }) {
           ))}
         </select>
         <select
+          aria-label="select field"
           value={filter.priority}
           onChange={(e) =>
             setFilter({

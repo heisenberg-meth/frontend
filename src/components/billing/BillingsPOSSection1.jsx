@@ -10,6 +10,7 @@ import {
   Trash2,
 } from "lucide-react";
 import { AnimatePresence, m } from "framer-motion";
+import { TableHeader } from "../common/TableHeader.jsx";
 import "../../styles/BillingPOS.css";
 
 const fieldMap = {
@@ -84,10 +85,12 @@ export function BillingPOSSection2({
     <AnimatePresence>
       {showNewBillConfirm && (
         <div
+          role="presentation"
           className="stock-modal-overlay"
           onClick={() => setShowNewBillConfirm(false)}
         >
           <m.div
+            role="presentation"
             className="stock-modal-content confirm-modal"
             initial={{
               opacity: 0,
@@ -102,7 +105,6 @@ export function BillingPOSSection2({
               scale: 0.9,
             }}
             onClick={(e) => e.stopPropagation()}
-            role="presentation"
           >
             <div
               className="stock-modal-body"
@@ -213,10 +215,12 @@ export function BillingPOSSection3({
     <AnimatePresence>
       {showAllBillsModal && (
         <div
+          role="presentation"
           className="stock-modal-overlay"
           onClick={() => setShowAllBillsModal(false)}
         >
           <m.div
+            role="presentation"
             className="stock-modal-content all-bills-modal"
             initial={{
               opacity: 0,
@@ -231,7 +235,6 @@ export function BillingPOSSection3({
               scale: 0.95,
             }}
             onClick={(e) => e.stopPropagation()}
-            role="presentation"
           >
             <div className="stock-modal-header">
               <h3
@@ -243,6 +246,7 @@ export function BillingPOSSection3({
                 All Bills — {todayStr}
               </h3>
               <button
+                aria-label="Close"
                 className="micro-btn"
                 onClick={() => setShowAllBillsModal(false)}
               >
@@ -302,18 +306,18 @@ export function BillingPOSSection3({
               </div>
               <div className="all-bills-table-wrap">
                 <table className="all-bills-table">
-                  <thead>
-                    <tr>
-                      <th>INV#</th>
-                      <th>Time</th>
-                      <th>Patient</th>
-                      <th>Phone</th>
-                      <th>Items</th>
-                      <th>Amount</th>
-                      <th>Status</th>
-                      <th>Actions</th>
-                    </tr>
-                  </thead>
+                  <TableHeader
+                    columns={[
+                      "INV#",
+                      "Time",
+                      "Patient",
+                      "Phone",
+                      "Items",
+                      "Amount",
+                      "Status",
+                      "Actions",
+                    ]}
+                  />
                   <tbody>
                     {(bills || []).reduce((acc, bill) => {
                       let keep;
@@ -366,6 +370,7 @@ export function BillingPOSSection3({
                                 {bill.status === "DRAFT" ? (
                                   <>
                                     <button
+                                      aria-label="Resume Draft"
                                       className="all-bills-action-btn"
                                       onClick={() =>
                                         handleResumeDraftClick(bill)
@@ -378,6 +383,7 @@ export function BillingPOSSection3({
                                       <Play size={14} fill="currentColor" />
                                     </button>
                                     <button
+                                      aria-label="Delete Draft"
                                       className="all-bills-action-btn"
                                       onClick={() =>
                                         handleDeleteDraftConfirm(bill)
@@ -393,6 +399,7 @@ export function BillingPOSSection3({
                                 ) : (
                                   <>
                                     <button
+                                      aria-label="View"
                                       className="all-bills-action-btn"
                                       onClick={() => {
                                         openBillDetail(bill);
@@ -403,6 +410,7 @@ export function BillingPOSSection3({
                                       <Eye size={14} />
                                     </button>
                                     <button
+                                      aria-label="Print"
                                       className="all-bills-action-btn"
                                       onClick={() => handleBillPrint(bill)}
                                       title="Print"
@@ -410,6 +418,7 @@ export function BillingPOSSection3({
                                       <Printer size={14} />
                                     </button>
                                     <button
+                                      aria-label="WhatsApp"
                                       className="all-bills-action-btn"
                                       onClick={() => handleBillWhatsApp(bill)}
                                       title="WhatsApp"
@@ -417,6 +426,7 @@ export function BillingPOSSection3({
                                       <MessageCircle size={14} />
                                     </button>
                                     <button
+                                      aria-label="Return"
                                       className="all-bills-action-btn"
                                       onClick={() => handleBillReturn(bill)}
                                       title="Return"
@@ -457,6 +467,7 @@ export function BillingPOSSection4({
       {showBillDetailDrawer && selectedBill && (
         <>
           <m.div
+            role="presentation"
             className="drawer-backdrop"
             initial={{
               opacity: 0,
@@ -470,6 +481,7 @@ export function BillingPOSSection4({
             onClick={() => setShowBillDetailDrawer(false)}
           />
           <m.div
+            role="presentation"
             className="bill-detail-drawer"
             initial={{
               x: "100%",
@@ -485,7 +497,6 @@ export function BillingPOSSection4({
               duration: 0.3,
             }}
             onClick={(e) => e.stopPropagation()}
-            role="presentation"
           >
             <div className="drawer-header">
               <div>
@@ -512,6 +523,7 @@ export function BillingPOSSection4({
                 </span>
               </div>
               <button
+                aria-label="Close"
                 className="micro-btn"
                 onClick={() => setShowBillDetailDrawer(false)}
               >
@@ -556,20 +568,14 @@ export function BillingPOSSection4({
                 </div>
               </div>
               <table className="drawer-items-table">
-                <thead>
-                  <tr>
-                    <th>Medicine</th>
-                    <th>Qty</th>
-                    <th>MRP</th>
-                    <th
-                      style={{
-                        textAlign: "right",
-                      }}
-                    >
-                      Amount
-                    </th>
-                  </tr>
-                </thead>
+                <TableHeader
+                  columns={[
+                    "Medicine",
+                    "Qty",
+                    "MRP",
+                    { label: "Amount", style: { textAlign: "right" } },
+                  ]}
+                />
                 <tbody>
                   {(selectedBill.itemsList || []).map((rawItem) => {
                     const item = normalizeInvoiceItem(rawItem);
@@ -747,10 +753,12 @@ export function BillingPOSSection5({
     <AnimatePresence>
       {showReturnBillModal && selectedBill && (
         <div
+          role="presentation"
           className="stock-modal-overlay"
           onClick={() => setShowReturnBillModal(false)}
         >
           <m.div
+            role="presentation"
             className="stock-modal-content return-modal"
             initial={{
               opacity: 0,
@@ -765,7 +773,6 @@ export function BillingPOSSection5({
               y: 20,
             }}
             onClick={(e) => e.stopPropagation()}
-            role="presentation"
           >
             <div className="stock-modal-header">
               <h3
@@ -782,6 +789,7 @@ export function BillingPOSSection5({
                 )}
               </h3>
               <button
+                aria-label="Close"
                 className="micro-btn"
                 onClick={() => setShowReturnBillModal(false)}
               >
@@ -790,14 +798,9 @@ export function BillingPOSSection5({
             </div>
             <div className="stock-modal-body">
               <table className="return-items-table">
-                <thead>
-                  <tr>
-                    <th>Item</th>
-                    <th>Qty</th>
-                    <th>Return Qty</th>
-                    <th>Amount</th>
-                  </tr>
-                </thead>
+                <TableHeader
+                  columns={["Item", "Qty", "Return Qty", "Amount"]}
+                />
                 <tbody>
                   {resolveInvoiceItems(selectedBill).map((rawItem, idx) => {
                     const item = normalizeInvoiceItem(rawItem);
@@ -807,6 +810,7 @@ export function BillingPOSSection5({
                         <td>{item.qty}</td>
                         <td>
                           <input
+                            aria-label="input field"
                             required
                             className="pos-input return-qty-input"
                             type="number"
@@ -939,10 +943,12 @@ export function BillingPOSSection6({
     <AnimatePresence>
       {showReturnModal && (
         <div
+          role="presentation"
           className="stock-modal-overlay"
           onClick={() => setShowReturnModal(false)}
         >
           <m.div
+            role="presentation"
             className="stock-modal-content"
             style={{
               width: "580px",
@@ -960,7 +966,6 @@ export function BillingPOSSection6({
               y: 20,
             }}
             onClick={(e) => e.stopPropagation()}
-            role="presentation"
           >
             <div className="stock-modal-header">
               <h3
@@ -972,6 +977,7 @@ export function BillingPOSSection6({
                 Process Sales Return
               </h3>
               <button
+                aria-label="Close"
                 className="micro-btn"
                 onClick={() => setShowReturnModal(false)}
               >
@@ -1130,6 +1136,7 @@ export function BillingPOSSection6({
                       </span>
                     </div>
                     <button
+                      aria-label="Action"
                       className="micro-btn"
                       onClick={() => setReturnModalSelectedBill(null)}
                     >
@@ -1158,6 +1165,7 @@ export function BillingPOSSection6({
                             }}
                           >
                             <input
+                              aria-label="input field"
                               required
                               type="checkbox"
                               checked={returnModalItems[idx]?.checked ?? true}
@@ -1179,6 +1187,7 @@ export function BillingPOSSection6({
                               {item.name}
                             </div>
                             <input
+                              aria-label="input field"
                               required
                               className="p-cost-input"
                               style={{

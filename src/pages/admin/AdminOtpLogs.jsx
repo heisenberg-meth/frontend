@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { adminApi } from "../../services/admin.service";
 import { Filter, Search, Eye, X } from "lucide-react";
+import { TableHeader } from "../../components/common/TableHeader.jsx";
 const STATUS_COLORS = {
   GENERATED: {
     bg: "#1e3a8a",
@@ -27,16 +28,9 @@ function AdminOtpLogsSection1({ loading, logs }) {
   return (
     <div className="admin-table-container">
       <table className="admin-table">
-        <thead>
-          <tr>
-            <th>Time</th>
-            <th>User</th>
-            <th>Email</th>
-            <th>Purpose</th>
-            <th>OTP</th>
-            <th>Status</th>
-          </tr>
-        </thead>
+        <TableHeader
+          columns={["Time", "User", "Email", "Purpose", "OTP", "Status"]}
+        />
         <tbody>
           {loading ? (
             <tr>
@@ -278,6 +272,7 @@ export default function AdminOtpLogs() {
           </>
           {search && (
             <button
+              aria-label="Close"
               className="admin-filter-clear"
               onClick={() => setSearch("")}
             >
@@ -288,6 +283,7 @@ export default function AdminOtpLogs() {
         <div className="admin-filter-group">
           <Filter size={16} />
           <select
+            aria-label="select field"
             value={statusFilter}
             onChange={(e) => {
               setStatusFilter(e.target.value);
@@ -305,6 +301,7 @@ export default function AdminOtpLogs() {
         <div className="admin-filter-group">
           <Filter size={16} />
           <select
+            aria-label="select field"
             value={purposeFilter}
             onChange={(e) => {
               setPurposeFilter(e.target.value);

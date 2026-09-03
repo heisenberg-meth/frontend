@@ -153,14 +153,13 @@ function GSTModal({ onClose, onRefresh, showToast, storeProfile }) {
 
   return (
     <div
-      role="button"
-      tabIndex={0}
+      role="presentation"
       className="sys-modal-overlay"
       ref={overlayRef}
       onKeyDown={(e) => {
         if (e.key === "Enter" || e.key === " ") {
           e.preventDefault();
-          e.currentTarget.click();
+          if (e.target === overlayRef.current) onClose();
         }
       }}
       onClick={(e) => {
@@ -173,6 +172,7 @@ function GSTModal({ onClose, onRefresh, showToast, storeProfile }) {
           textAlign: "left",
           maxWidth: 520,
         }}
+        onKeyDown={(e) => e.stopPropagation()}
         onClick={(e) => e.stopPropagation()}
         role="presentation"
       >

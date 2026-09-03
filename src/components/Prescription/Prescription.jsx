@@ -23,6 +23,7 @@ import {
 import { m } from "framer-motion";
 import api from "../../api";
 import { API_ROUTES } from "../../constants/api.routes.js";
+import { TableHeader } from "../common/TableHeader.jsx";
 
 const EMPTY = {
   patientName: "",
@@ -215,16 +216,15 @@ export function PrescriptionModal({
   };
   return (
     <div
-      role="button"
-      tabIndex={0}
+      role="presentation"
       className="rx-modal-overlay"
+      onClick={onClose}
       onKeyDown={(e) => {
         if (e.key === "Enter" || e.key === " ") {
           e.preventDefault();
-          e.currentTarget.click();
+          onClose();
         }
       }}
-      onClick={onClose}
     >
       <PrescriptionModalSection1
         set={set}
@@ -256,18 +256,18 @@ export function PrescriptionViewModal({
   const meds = rx.medications || rx.meds || [];
   return (
     <div
-      role="button"
-      tabIndex={0}
+      role="presentation"
       className="rx-modal-overlay"
+      onClick={onClose}
       onKeyDown={(e) => {
         if (e.key === "Enter" || e.key === " ") {
           e.preventDefault();
-          e.currentTarget.click();
+          onClose();
         }
       }}
-      onClick={onClose}
     >
       <m.div
+        role="presentation"
         className="rx-modal-content rx-view-modal"
         initial={{
           opacity: 0,
@@ -285,7 +285,6 @@ export function PrescriptionViewModal({
           y: 20,
         }}
         onClick={(e) => e.stopPropagation()}
-        role="presentation"
       >
         <div className="rx-view-header">
           <div className="rx-view-icon">
@@ -298,7 +297,11 @@ export function PrescriptionViewModal({
               {rx.doctorName || rx.doctor || "—"}
             </span>
           </div>
-          <button className="rx-modal-close-btn" onClick={onClose}>
+          <button
+            aria-label="Close"
+            className="rx-modal-close-btn"
+            onClick={onClose}
+          >
             <X size={20} />
           </button>
         </div>
@@ -453,18 +456,18 @@ export function EditNotesModal({ rx, onClose, onSave, saving }) {
   const [notes, setNotes] = useState(rx.notes || "");
   return (
     <div
-      role="button"
-      tabIndex={0}
+      role="presentation"
       className="rx-modal-overlay"
+      onClick={onClose}
       onKeyDown={(e) => {
         if (e.key === "Enter" || e.key === " ") {
           e.preventDefault();
-          e.currentTarget.click();
+          onClose();
         }
       }}
-      onClick={onClose}
     >
       <m.div
+        role="presentation"
         className="rx-modal-content rx-notes-modal"
         initial={{
           opacity: 0,
@@ -482,7 +485,6 @@ export function EditNotesModal({ rx, onClose, onSave, saving }) {
           y: 20,
         }}
         onClick={(e) => e.stopPropagation()}
-        role="presentation"
       >
         <div className="rx-modal-header">
           <div className="header-title-group">
@@ -494,7 +496,11 @@ export function EditNotesModal({ rx, onClose, onSave, saving }) {
             />
             <h3>Edit Prescription Notes</h3>
           </div>
-          <button className="rx-modal-close-btn" onClick={onClose}>
+          <button
+            aria-label="Close"
+            className="rx-modal-close-btn"
+            onClick={onClose}
+          >
             <X size={18} />
           </button>
         </div>
@@ -550,6 +556,7 @@ function PrescriptionModalSection1({
 }) {
   return (
     <m.div
+      role="presentation"
       className="rx-modal-content"
       initial={{
         opacity: 0,
@@ -567,7 +574,6 @@ function PrescriptionModalSection1({
         y: 20,
       }}
       onClick={(e) => e.stopPropagation()}
-      role="presentation"
     >
       <div className="rx-modal-header">
         <div className="header-title-group">
@@ -596,7 +602,11 @@ function PrescriptionModalSection1({
               onChange={handleFileUpload}
             />
           </label>
-          <button className="rx-modal-close-btn" onClick={onClose}>
+          <button
+            aria-label="Close"
+            className="rx-modal-close-btn"
+            onClick={onClose}
+          >
             <X size={18} />
           </button>
         </div>
@@ -705,6 +715,7 @@ function PrescriptionModalSection1({
               <span>Medication #{idx + 1}</span>
               {form.medications.length > 1 && (
                 <button
+                  aria-label="Close"
                   className="rx-med-remove"
                   onClick={() => removeMedication(idx)}
                 >
@@ -762,6 +773,7 @@ function PrescriptionModalSection1({
                   />
                   <select
                     value={med.durationUnit}
+                    aria-label="Duration unit"
                     onChange={(e) =>
                       updateMedication(idx, "durationUnit", e.target.value)
                     }
@@ -860,22 +872,20 @@ export function PrescriptionsCRUDSection2({
     <div className="rx-table-card">
       <div className="rx-table-header">
         <div className="rx-search-box">
-          <Search size={20} className="search-icon" />
-          <>
-            <label htmlFor="field_nh93a8" className="sr-only">
-              Search by patient, Rx ID, or doctor...
-            </label>
+          <label htmlFor="rx-search-input" className="rx-search-box">
+            <Search size={18} />
             <input
-              required
-              placeholder="Search by patient, Rx ID, or doctor..."
+              id="rx-search-input"
+              type="text"
+              placeholder="Search patient, doctor, Rx ID, or doctor..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              id="field_nh93a8"
             />
-          </>
+          </label>
         </div>
         <div className="rx-filter-group">
           <select
+            aria-label="select field"
             className="rx-select-filter"
             value={filterStatus}
             onChange={(e) => setFilterStatus(e.target.value)}
@@ -890,17 +900,17 @@ export function PrescriptionsCRUDSection2({
 
       <div className="rx-table-wrapper">
         <table className="rx-table">
-          <thead>
-            <tr>
-              <th>RX ID</th>
-              <th>PATIENT</th>
-              <th>DOCTOR</th>
-              <th>MEDICATIONS</th>
-              <th>DATE</th>
-              <th>STATUS</th>
-              <th>ACTIONS</th>
-            </tr>
-          </thead>
+          <TableHeader
+            columns={[
+              "RX ID",
+              "PATIENT",
+              "DOCTOR",
+              "MEDICATIONS",
+              "DATE",
+              "STATUS",
+              "ACTIONS",
+            ]}
+          />
           <tbody>
             {loading ? (
               <tr>
@@ -973,6 +983,7 @@ export function PrescriptionsCRUDSection2({
                   <td>
                     <div className="rx-row-actions">
                       <button
+                        aria-label="View Details"
                         className="rx-row-btn"
                         title="View Details"
                         onClick={() => setSelectedRx(rx)}
@@ -980,6 +991,7 @@ export function PrescriptionsCRUDSection2({
                         <Eye size={16} />
                       </button>
                       <button
+                        aria-label="Edit Notes"
                         className="rx-row-btn"
                         title="Edit Notes"
                         onClick={() => setNotesEditTarget(rx)}
@@ -1001,6 +1013,7 @@ export function PrescriptionsCRUDSection2({
                         </button>
                       )}
                       <button
+                        aria-label="Delete"
                         className="rx-row-btn danger"
                         title="Delete"
                         onClick={() => setDeleteTarget(rx)}

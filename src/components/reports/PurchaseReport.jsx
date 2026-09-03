@@ -169,7 +169,9 @@ export default function PurchaseReport({ from, to }) {
           );
         }
       } finally {
-        if (!ignore) setLoading(false);
+        if (!ignore) {
+          setLoading(false);
+        }
       }
     };
     if (from && to) {

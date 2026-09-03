@@ -22,6 +22,7 @@ import {
   MoreVertical,
 } from "lucide-react";
 import { AnimatePresence, m } from "framer-motion";
+import { TableHeader } from "../common/TableHeader.jsx";
 
 const PAYMENT_TERMS_MAP = {
   "Net 15": 15,
@@ -115,21 +116,14 @@ function TagInput({ tags = [], onChange }) {
       ref={wrapRef}
     >
       <div
-        role="button"
-        tabIndex={0}
         className={`sup-tag-input-wrap ${focused ? "focused" : ""}`}
-        onKeyDown={(e) => {
-          if (e.key === "Enter" || e.key === " ") {
-            e.preventDefault();
-            e.currentTarget.click();
-          }
-        }}
         onClick={() => wrapRef.current?.querySelector("input")?.focus()}
       >
         {tags.map((tag) => (
           <span key={tag} className="sup-tag-chip">
             {tag}
             <button
+              aria-label="Close"
               className="sup-tag-chip-remove"
               onClick={() => removeTag(tag)}
               type="button"
@@ -167,15 +161,14 @@ function TagInput({ tags = [], onChange }) {
       {suggestions.length > 0 && (
         <div className="sup-tag-suggestions">
           {suggestions.map((s) => (
-            <div
-              role="button"
-              tabIndex={0}
+            <button
+              type="button"
               key={s}
               className="sup-tag-suggestion-item"
               onMouseDown={() => addTag(s)}
             >
               {s}
-            </div>
+            </button>
           ))}
         </div>
       )}
@@ -372,6 +365,7 @@ function SupplierActionMenu({
   return (
     <div className="custom-dropdown-container">
       <button
+        aria-label="Actions"
         ref={buttonRef}
         className="sup-row-btn"
         onClick={toggleMenu}
@@ -412,16 +406,9 @@ function SupplierActionMenu({
                 position: "fixed",
               }}
             >
-              <div
-                role="button"
-                tabIndex={0}
+              <button
+                type="button"
                 className="custom-dropdown-item"
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" || e.key === " ") {
-                    e.preventDefault();
-                    e.currentTarget.click();
-                  }
-                }}
                 onClick={() => {
                   setIsOpen(false);
                   handleView(supplier);
@@ -434,17 +421,10 @@ function SupplierActionMenu({
                   }}
                 />{" "}
                 View Details
-              </div>
-              <div
-                role="button"
-                tabIndex={0}
+              </button>
+              <button
+                type="button"
                 className="custom-dropdown-item"
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" || e.key === " ") {
-                    e.preventDefault();
-                    e.currentTarget.click();
-                  }
-                }}
                 onClick={() => {
                   setIsOpen(false);
                   setEditTarget(supplier);
@@ -458,17 +438,10 @@ function SupplierActionMenu({
                   }}
                 />{" "}
                 Edit Profile
-              </div>
-              <div
-                role="button"
-                tabIndex={0}
+              </button>
+              <button
+                type="button"
                 className="custom-dropdown-item"
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" || e.key === " ") {
-                    e.preventDefault();
-                    e.currentTarget.click();
-                  }
-                }}
                 onClick={() => {
                   setIsOpen(false);
                   handleToggleStatus(supplier);
@@ -492,17 +465,10 @@ function SupplierActionMenu({
                 {(supplier.status || "").toLowerCase() === "active"
                   ? "Deactivate"
                   : "Activate"}
-              </div>
-              <div
-                role="button"
-                tabIndex={0}
+              </button>
+              <button
+                type="button"
                 className="custom-dropdown-item"
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" || e.key === " ") {
-                    e.preventDefault();
-                    e.currentTarget.click();
-                  }
-                }}
                 onClick={() => {
                   setIsOpen(false);
                   navigate("/purchases", {
@@ -520,17 +486,10 @@ function SupplierActionMenu({
                   }}
                 />{" "}
                 Raise PO
-              </div>
-              <div
-                role="button"
-                tabIndex={0}
+              </button>
+              <button
+                type="button"
                 className="custom-dropdown-item"
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" || e.key === " ") {
-                    e.preventDefault();
-                    e.currentTarget.click();
-                  }
-                }}
                 onClick={() => {
                   setIsOpen(false);
                   handleDelete(supplier.id, supplier.name);
@@ -546,7 +505,7 @@ function SupplierActionMenu({
                   }}
                 />{" "}
                 Delete
-              </div>
+              </button>
             </m.div>
           )}
         </AnimatePresence>,
@@ -624,7 +583,11 @@ function SupplierModal({ onClose, onSave, editData, showToast, saving }) {
             />
             <h3>{editData ? "Edit Supplier" : "Add New Supplier"}</h3>
           </div>
-          <button className="modal-close-btn" onClick={onClose}>
+          <button
+            aria-label="Close"
+            className="modal-close-btn"
+            onClick={onClose}
+          >
             <X size={18} />
           </button>
         </div>
@@ -889,17 +852,17 @@ export function SuppliersSection2({
 
       <div className="sup-table-wrapper">
         <table className="sup-table">
-          <thead>
-            <tr>
-              <th>SUPPLIER IDENTITY</th>
-              <th>CONTACT PERSON</th>
-              <th>PHONE</th>
-              <th>DRUG SPECIALTIES</th>
-              <th>PAYMENT TERMS</th>
-              <th>STATUS</th>
-              <th>ACTIONS</th>
-            </tr>
-          </thead>
+          <TableHeader
+            columns={[
+              "SUPPLIER IDENTITY",
+              "CONTACT PERSON",
+              "PHONE",
+              "DRUG SPECIALTIES",
+              "PAYMENT TERMS",
+              "STATUS",
+              "ACTIONS",
+            ]}
+          />
           <tbody>
             {loading ? (
               <tr>
@@ -1036,18 +999,12 @@ export function SuppliersSection3({
       )}
       {viewTarget && (
         <div
-          role="button"
-          tabIndex={0}
           className="modal-overlay"
-          onKeyDown={(e) => {
-            if (e.key === "Enter" || e.key === " ") {
-              e.preventDefault();
-              e.currentTarget.click();
-            }
-          }}
+          role="presentation"
           onClick={() => setViewTarget(null)}
         >
           <m.div
+            role="presentation"
             className="modal-content sup-view-modal"
             initial={{
               opacity: 0,
@@ -1071,7 +1028,6 @@ export function SuppliersSection3({
               flexDirection: "column",
               overflow: "hidden",
             }}
-            role="presentation"
           >
             <div className="modal-header">
               <div className="flex items-start gap-5">
@@ -1092,6 +1048,7 @@ export function SuppliersSection3({
                   </div>
                 </div>
                 <button
+                  aria-label="Close"
                   className="modal-close-btn"
                   onClick={() => setViewTarget(null)}
                 >

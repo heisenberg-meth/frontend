@@ -292,7 +292,9 @@ export default function SalesReport({ from, to, showToast }) {
           );
         }
       } finally {
-        if (!ignore) setLoading(false);
+        if (!ignore) {
+          setLoading(false);
+        }
       }
     };
     if (from && to) {

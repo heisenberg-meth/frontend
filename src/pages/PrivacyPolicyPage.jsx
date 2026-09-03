@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
 import "../styles/LandingPage.css";
+import { TableHeader } from "../components/common/TableHeader.jsx";
+import LegalHeaderNav from "../components/common/LegalHeaderNav.jsx";
 const SECTIONS = [
   {
     id: "privacy-policy-header",
@@ -684,12 +685,7 @@ function PrivacyPolicyPageSection1({
             </h2>
             <p>We retain information only as long as necessary.</p>
             <table className="legal-table">
-              <thead>
-                <tr>
-                  <th>Data Type</th>
-                  <th>Retention Period</th>
-                </tr>
-              </thead>
+              <TableHeader columns={["Data Type", "Retention Period"]} />
               <tbody>
                 <tr>
                   <td>GST Records</td>
@@ -968,7 +964,6 @@ function PrivacyPolicyPageSection1({
   );
 }
 export default function PrivacyPolicyPage() {
-  const navigate = useNavigate();
   const [activeSection, setActiveSection] = useState("privacy-policy-header");
   const [scrollProgress, setScrollProgress] = useState(0);
   const [showBackToTop, setShowBackToTop] = useState(false);
@@ -1051,41 +1046,7 @@ export default function PrivacyPolicyPage() {
       )}
 
       {/* Simplified Nav */}
-      <nav className="lp-nav lp-nav--scrolled">
-        <div className="lp-nav-inner">
-          <div
-            role="button"
-            tabIndex={0}
-            className="lp-logo"
-            onKeyDown={(e) => {
-              if (e.key === "Enter" || e.key === " ") {
-                e.preventDefault();
-                e.currentTarget.click();
-              }
-            }}
-            onClick={() => {
-              navigate("/");
-            }}
-          >
-            <img
-              src="/viyan_logo_new.webp"
-              className="lp-logo-img"
-              alt="MedAssist Logo"
-            />
-            <span className="lp-logo-text">MedAssist</span>
-          </div>
-          <div className="lp-nav-actions">
-            <button
-              className="lp-btn-ghost"
-              onClick={() => {
-                navigate("/");
-              }}
-            >
-              ← Back to Home
-            </button>
-          </div>
-        </div>
-      </nav>
+      <LegalHeaderNav />
 
       {/* Content Layout */}
       <PrivacyPolicyPageSection1

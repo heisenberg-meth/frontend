@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
 import "../styles/LandingPage.css";
+import LegalHeaderNav from "../components/common/LegalHeaderNav.jsx";
 const SECTIONS = [
   {
     id: "terms-of-service-header",
@@ -786,7 +786,6 @@ function TermsOfServicePageSection1({
   );
 }
 export default function TermsOfServicePage() {
-  const navigate = useNavigate();
   const [activeSection, setActiveSection] = useState("terms-of-service-header");
   const [scrollProgress, setScrollProgress] = useState(0);
   const [showBackToTop, setShowBackToTop] = useState(false);
@@ -869,41 +868,7 @@ export default function TermsOfServicePage() {
       )}
 
       {/* Simplified Nav */}
-      <nav className="lp-nav lp-nav--scrolled">
-        <div className="lp-nav-inner">
-          <div
-            role="button"
-            tabIndex={0}
-            className="lp-logo"
-            onKeyDown={(e) => {
-              if (e.key === "Enter" || e.key === " ") {
-                e.preventDefault();
-                e.currentTarget.click();
-              }
-            }}
-            onClick={() => {
-              navigate("/");
-            }}
-          >
-            <img
-              src="/viyan_logo_new.webp"
-              className="lp-logo-img"
-              alt="MedAssist Logo"
-            />
-            <span className="lp-logo-text">MedAssist</span>
-          </div>
-          <div className="lp-nav-actions">
-            <button
-              className="lp-btn-ghost"
-              onClick={() => {
-                navigate("/");
-              }}
-            >
-              ← Back to Home
-            </button>
-          </div>
-        </div>
-      </nav>
+      <LegalHeaderNav />
 
       {/* Content Layout */}
       <TermsOfServicePageSection1

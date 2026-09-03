@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
 import "../styles/LandingPage.css";
+import { TableHeader } from "../components/common/TableHeader.jsx";
+import LegalHeaderNav from "../components/common/LegalHeaderNav.jsx";
 const SECTIONS = [
   {
     id: "cookie-policy-header",
@@ -371,14 +372,9 @@ function CookiePolicyPageSection1({
               be used by MedAssist.
             </p>
             <table className="legal-table">
-              <thead>
-                <tr>
-                  <th>Name / Category</th>
-                  <th>Purpose</th>
-                  <th>Provider</th>
-                  <th>Required</th>
-                </tr>
-              </thead>
+              <TableHeader
+                columns={["Name / Category", "Purpose", "Provider", "Required"]}
+              />
               <tbody>
                 <tr>
                   <td>Authentication Token</td>
@@ -617,7 +613,6 @@ function CookiePolicyPageSection1({
   );
 }
 export default function CookiePolicyPage() {
-  const navigate = useNavigate();
   const [activeSection, setActiveSection] = useState("cookie-policy-header");
   const [scrollProgress, setScrollProgress] = useState(0);
   const [showBackToTop, setShowBackToTop] = useState(false);
@@ -699,41 +694,7 @@ export default function CookiePolicyPage() {
       )}
 
       {/* Simplified Nav */}
-      <nav className="lp-nav lp-nav--scrolled">
-        <div className="lp-nav-inner">
-          <div
-            role="button"
-            tabIndex={0}
-            className="lp-logo"
-            onKeyDown={(e) => {
-              if (e.key === "Enter" || e.key === " ") {
-                e.preventDefault();
-                e.currentTarget.click();
-              }
-            }}
-            onClick={() => {
-              navigate("/");
-            }}
-          >
-            <img
-              src="/viyan_logo_new.webp"
-              className="lp-logo-img"
-              alt="MedAssist Logo"
-            />
-            <span className="lp-logo-text">MedAssist</span>
-          </div>
-          <div className="lp-nav-actions">
-            <button
-              className="lp-btn-ghost"
-              onClick={() => {
-                navigate("/");
-              }}
-            >
-              ← Back to Home
-            </button>
-          </div>
-        </div>
-      </nav>
+      <LegalHeaderNav />
 
       {/* Content Layout */}
       <CookiePolicyPageSection1

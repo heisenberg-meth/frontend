@@ -71,20 +71,12 @@ export default function LogoutModal({
   return (
     <AnimatePresence>
       {isOpen && (
-        <m.div
-          role="button"
-          tabIndex={0}
+        <m.div role="presentation"
           className="logout-overlay"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.25 }}
-          onKeyDown={(e) => {
-            if (e.key === "Enter" || e.key === " ") {
-              e.preventDefault();
-              e.currentTarget.click();
-            }
-          }}
           onClick={handleOverlayClick}
         >
           <m.div

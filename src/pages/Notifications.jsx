@@ -96,8 +96,6 @@ function NotificationsSection1({
           {!loading &&
             filteredNotifications.map((notif, index) => (
               <m.div
-                role="button"
-                tabIndex={0}
                 key={notif.id || notif._id}
                 layout
                 initial={{
@@ -116,38 +114,50 @@ function NotificationsSection1({
                   delay: index * 0.05,
                 }}
                 className={`notif-card ${!notif.isRead ? "unread" : ""}`}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" || e.key === " ") {
-                    e.preventDefault();
-                    e.currentTarget.click();
-                  }
-                }}
-                onClick={() => !notif.isRead && handleMarkRead(notif.id)}
               >
-                {!notif.isRead && <div className="unread-dot"></div>}
+                <button
+                  type="button"
+                  className="notif-card-body-btn"
+                  onClick={() => !notif.isRead && handleMarkRead(notif.id)}
+                  style={{
+                    background: "none",
+                    border: "none",
+                    textAlign: "left",
+                    width: "100%",
+                    padding: 0,
+                    cursor: "pointer",
+                    display: "flex",
+                    gap: "14px",
+                    alignItems: "flex-start",
+                    flex: 1,
+                    color: "inherit",
+                  }}
+                >
+                  {!notif.isRead && <div className="unread-dot"></div>}
 
-                <div className="notif-card-icon-wrap">
-                  {getNotificationIcon(notif.type)}
-                </div>
-
-                <div className="notif-card-content">
-                  <div className="notif-card-header">
-                    <h4 className="notif-card-title">
-                      {notif.title || notif.message}
-                    </h4>
-                    <span className="notif-card-time">
-                      <Calendar size={12} className="inline mr-1" />
-                      {new Date(notif.createdAt).toLocaleDateString()}
-                    </span>
+                  <div className="notif-card-icon-wrap">
+                    {getNotificationIcon(notif.type)}
                   </div>
-                  {notif.title && (
-                    <p className="notif-card-desc">{notif.message}</p>
-                  )}
 
-                  <div className="notif-card-footer">
-                    <span className="notif-type-badge">{notif.type}</span>
+                  <div className="notif-card-content">
+                    <div className="notif-card-header">
+                      <h4 className="notif-card-title">
+                        {notif.title || notif.message}
+                      </h4>
+                      <span className="notif-card-time">
+                        <Calendar size={12} className="inline mr-1" />
+                        {new Date(notif.createdAt).toLocaleDateString()}
+                      </span>
+                    </div>
+                    {notif.title && (
+                      <p className="notif-card-desc">{notif.message}</p>
+                    )}
+
+                    <div className="notif-card-footer">
+                      <span className="notif-type-badge">{notif.type}</span>
+                    </div>
                   </div>
-                </div>
+                </button>
 
                 <button
                   className="notif-delete-btn"
@@ -232,7 +242,9 @@ export default function Notifications({ showToast }) {
         console.error("Error fetching notifications:", err);
         if (!ignore) showToast?.("Failed to load notifications", "error");
       } finally {
-        if (!ignore) setLoading(false);
+        if (!ignore) {
+          setLoading(false);
+        }
       }
     };
     loadData();
@@ -353,6 +365,7 @@ export default function Notifications({ showToast }) {
             </>
             {searchQuery && (
               <button
+                aria-label="Close"
                 className="clear-search"
                 onClick={() => setSearchQuery("")}
               >

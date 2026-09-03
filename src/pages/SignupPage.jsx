@@ -70,16 +70,9 @@ function SignupPageSection1({ navigate }) {
       </div>
 
       <div className="relative z-10 flex items-center justify-between">
-        <div
-          role="button"
-          tabIndex={0}
-          className="flex items-center gap-3 cursor-pointer"
-          onKeyDown={(e) => {
-            if (e.key === "Enter" || e.key === " ") {
-              e.preventDefault();
-              e.currentTarget.click();
-            }
-          }}
+        <button
+          type="button"
+          className="flex items-center gap-3 cursor-pointer bg-transparent border-0 p-0"
           onClick={() => navigate("/")}
         >
           <img
@@ -87,7 +80,7 @@ function SignupPageSection1({ navigate }) {
             alt="Viyan MedAssist"
             className="h-10 w-auto object-contain"
           />
-        </div>
+        </button>
         <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold tracking-wider bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 uppercase">
           <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
           HIPAA Compliant

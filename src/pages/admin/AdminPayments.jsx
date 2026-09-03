@@ -105,7 +105,7 @@ export default function AdminPayments() {
           </>
         </form>
         <div className="admin-filter-group">
-          <select
+          <select aria-label="select field"
             value={filterStatus}
             onChange={(e) => {
               setFilterStatus(e.target.value);
@@ -180,7 +180,7 @@ export default function AdminPayments() {
                   <td>{new Date(p.createdAt).toLocaleDateString()}</td>
                   <td className="admin-actions-cell">
                     {p.status === "SUCCESS" && (
-                      <button
+                      <button aria-label="Refund"
                         className="admin-icon-btn warn"
                         title="Refund"
                         onClick={() => handleRefund(p.id)}
@@ -190,14 +190,14 @@ export default function AdminPayments() {
                     )}
                     {p.status === "PENDING" && (
                       <>
-                        <button
+                        <button aria-label="Mark Paid"
                           className="admin-icon-btn success"
                           title="Mark Paid"
                           onClick={() => handleStatusChange(p.id, "SUCCESS")}
                         >
                           <CheckCircle size={16} />
                         </button>
-                        <button
+                        <button aria-label="Mark Failed"
                           className="admin-icon-btn danger"
                           title="Mark Failed"
                           onClick={() => handleStatusChange(p.id, "FAILED")}

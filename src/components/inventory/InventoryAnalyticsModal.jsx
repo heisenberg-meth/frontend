@@ -335,18 +335,12 @@ export default function InventoryAnalyticsModal({ isOpen, onClose }) {
   return createPortal(
     <AnimatePresence>
       <div
-        role="button"
-        tabIndex={0}
         className="inventory-analytics-overlay"
-        onKeyDown={(e) => {
-          if (e.key === "Enter" || e.key === " ") {
-            e.preventDefault();
-            e.currentTarget.click();
-          }
-        }}
+        role="presentation"
         onClick={handleClose}
       >
         <m.div
+          role="presentation"
           className="inventory-analytics-modal"
           initial={{
             opacity: 0,
@@ -368,7 +362,6 @@ export default function InventoryAnalyticsModal({ isOpen, onClose }) {
             ease: "easeOut",
           }}
           onClick={(e) => e.stopPropagation()}
-          role="presentation"
         >
           {/* Header */}
           <div className="inventory-analytics-header">

@@ -853,7 +853,7 @@ export default function BulkImport({ fetchData, showToast }) {
             <UploadCloud size={12} />
             <span>SMART IMPORT HUB</span>
           </div>
-          <h1>Bulk Inventory Import</h1>
+          <h1 className="text-xl font-bold">Bulk Inventory Import</h1>
           <p>
             Upload CSV or XLSX files to synchronize pharmacy stock with live
             data mapping.
@@ -940,7 +940,7 @@ export default function BulkImport({ fetchData, showToast }) {
           <div className="modal-content-v2">
             <div className="modal-header">
               <h3>Save Mapping Template</h3>
-              <button
+              <button aria-label="Close"
                 type="button"
                 onClick={() => setShowSaveMappingModal(false)}
               >
@@ -952,7 +952,7 @@ export default function BulkImport({ fetchData, showToast }) {
                 <label htmlFor="field_himsdq" className="p-label">
                   TEMPLATE NAME
                 </label>
-                <input
+                <input aria-label="e.g. Cipla Invoice Format"
                   id="field_himsdq"
                   required
                   className="pos-input"
@@ -965,7 +965,7 @@ export default function BulkImport({ fetchData, showToast }) {
                 <label htmlFor="field_vvjc94" className="p-label">
                   DESCRIPTION
                 </label>
-                <textarea
+                <textarea aria-label="Optional notes..."
                   id="field_vvjc94"
                   className="pos-input"
                   placeholder="Optional notes..."
@@ -1011,7 +1011,7 @@ export default function BulkImport({ fetchData, showToast }) {
           <div className="modal-content-v2">
             <div className="modal-header">
               <h3>Load Mapping Template</h3>
-              <button
+              <button aria-label="Close"
                 type="button"
                 onClick={() => setShowLoadMappingModal(false)}
               >

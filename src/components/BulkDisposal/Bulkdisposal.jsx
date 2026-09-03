@@ -383,6 +383,7 @@ export function BulkDisposalSection2({
               <button
                 className="search-clear"
                 onClick={() => setSearchQuery("")}
+                aria-label="Clear search"
               >
                 <X size={14} />
               </button>
@@ -467,6 +468,7 @@ export function BulkDisposalSection2({
                   type="checkbox"
                   checked={selectAll}
                   onChange={toggleSelectAll}
+                  aria-label="Select all batches"
                   style={{
                     accentColor: "var(--primary)",
                     cursor: "pointer",
@@ -551,12 +553,6 @@ export function BulkDisposalSection2({
                     if (!selected.has(b.batchId))
                       e.currentTarget.style.background = "transparent";
                   }}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" || e.key === " ") {
-                      e.preventDefault();
-                      e.currentTarget.click();
-                    }
-                  }}
                   onClick={() => toggleSelect(b.batchId)}
                 >
                   <td
@@ -571,6 +567,7 @@ export function BulkDisposalSection2({
                         e.stopPropagation();
                         toggleSelect(b.batchId);
                       }}
+                      aria-label={`Select ${b.medicineName || "batch"}`}
                       style={{
                         accentColor: "var(--primary)",
                         cursor: "pointer",
@@ -727,6 +724,7 @@ export function BulkDisposalSection3({
       {showConfirmModal && (
         <div className="modal-overlay">
           <m.div
+            role="presentation"
             className="urgent-disposal-modal"
             style={{
               maxWidth: 520,
@@ -747,7 +745,6 @@ export function BulkDisposalSection3({
               y: 20,
             }}
             onClick={(e) => e.stopPropagation()}
-            role="presentation"
           >
             <div
               style={{

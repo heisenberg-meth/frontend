@@ -12,6 +12,7 @@ import {
   Banknote,
 } from "lucide-react";
 import { AnimatePresence, m } from "framer-motion";
+import { TableHeader } from "../common/TableHeader.jsx";
 import { X } from "lucide-react";
 import { format, subDays } from "date-fns";
 import { getMedicineName } from "../../utils/apiNormalizer.js";
@@ -65,13 +66,21 @@ export function SalesManagementSection1({
       <>
         {!dateRange.start && !dateRange.end && (
           <div className="date-navigator">
-            <button className="micro-btn" onClick={handlePrevDate}>
+            <button
+              className="micro-btn"
+              onClick={handlePrevDate}
+              aria-label="Previous date"
+            >
               <ChevronLeft size={18} />
             </button>
             <span className="date-display">
               {format(currentDate, "dd MMM yyyy")}
             </span>
-            <button className="micro-btn" onClick={handleNextDate}>
+            <button
+              className="micro-btn"
+              onClick={handleNextDate}
+              aria-label="Next date"
+            >
               <ChevronRight size={18} />
             </button>
           </div>
@@ -99,20 +108,20 @@ export function SalesManagementSection1({
 
         <div className="sales-table-card">
           <table className="purchase-table">
-            <thead>
-              <tr>
-                <th>Time</th>
-                <th>Bill #</th>
-                <th>Patient</th>
-                <th>Medicines</th>
-                <th>Disc</th>
-                <th>GST</th>
-                <th>Total</th>
-                <th>Payment Type</th>
-                <th>Payment Status</th>
-                <th>Invoice Status</th>
-              </tr>
-            </thead>
+            <TableHeader
+              columns={[
+                "Time",
+                "Bill #",
+                "Patient",
+                "Medicines",
+                "Disc",
+                "GST",
+                "Total",
+                "Payment Type",
+                "Payment Status",
+                "Invoice Status",
+              ]}
+            />
             <tbody>
               {dailySales.length === 0 ? (
                 <tr>
@@ -410,6 +419,7 @@ export function SalesManagementSection2({
             <input
               required
               className="sales-input"
+              aria-label="Search Invoice # or Patient..."
               placeholder="Search Invoice # or Patient..."
               style={{
                 flex: 1,
@@ -427,6 +437,7 @@ export function SalesManagementSection2({
           <select
             className="sales-input"
             value={filters.payment}
+            aria-label="Filter by payment method"
             onChange={(e) =>
               setFilters({
                 ...filters,
@@ -442,6 +453,7 @@ export function SalesManagementSection2({
           <select
             className="sales-input"
             value={filters.status}
+            aria-label="Filter by status"
             onChange={(e) =>
               setFilters({
                 ...filters,
@@ -455,18 +467,18 @@ export function SalesManagementSection2({
           </select>
         </div>
         <table className="purchase-table">
-          <thead>
-            <tr>
-              <th>Date</th>
-              <th>Invoice #</th>
-              <th>Patient</th>
-              <th>Medicines</th>
-              <th>Amount</th>
-              <th>Payment Method</th>
-              <th>Payment Status</th>
-              <th>Invoice Status</th>
-            </tr>
-          </thead>
+          <TableHeader
+            columns={[
+              "Date",
+              "Invoice #",
+              "Patient",
+              "Medicines",
+              "Amount",
+              "Payment Method",
+              "Payment Status",
+              "Invoice Status",
+            ]}
+          />
           <tbody>
             {filteredSales.length === 0 ? (
               <tr>
@@ -612,18 +624,18 @@ export function SalesManagementSection3({
     activeTab === "returns" && (
       <div className="sales-table-card">
         <table className="purchase-table">
-          <thead>
-            <tr>
-              <th>Date</th>
-              <th>Return #</th>
-              <th>Orig Invoice #</th>
-              <th>Patient</th>
-              <th>Items</th>
-              <th>Return Value</th>
-              <th>Reason</th>
-              <th>Status</th>
-            </tr>
-          </thead>
+          <TableHeader
+            columns={[
+              "Date",
+              "Return #",
+              "Orig Invoice #",
+              "Patient",
+              "Items",
+              "Return Value",
+              "Reason",
+              "Status",
+            ]}
+          />
           <tbody>
             {filteredReturns.length === 0 ? (
               <tr>
@@ -748,6 +760,7 @@ export function SalesManagementSection4({
                 Sale Details: {selectedSale.invoiceNumber || selectedSale.id}
               </h3>
               <button
+                aria-label="Close"
                 className="micro-btn"
                 onClick={() => setShowDetailModal(false)}
               >
@@ -1180,6 +1193,7 @@ export function SalesManagementSection5({
                 Share Bill via WhatsApp
               </h3>
               <button
+                aria-label="Close"
                 className="micro-btn"
                 onClick={() => setShowWhatsAppModal(false)}
               >
@@ -1288,6 +1302,7 @@ export function SalesManagementSection6({
                 Process Sales Return
               </h3>
               <button
+                aria-label="Close"
                 className="micro-btn"
                 onClick={() => setShowReturnModal(false)}
               >
@@ -1323,6 +1338,7 @@ export function SalesManagementSection6({
                     <input
                       required
                       type="checkbox"
+                      aria-label="Select item for return"
                       checked={returnChecked[idx] ?? true}
                       onChange={(e) =>
                         setReturnChecked((prev) => ({
@@ -1370,6 +1386,7 @@ export function SalesManagementSection6({
                       <input
                         required
                         className="p-cost-input"
+                        aria-label="Return quantity"
                         style={{
                           width: "60px",
                           padding: "4px 8px",
@@ -1496,6 +1513,7 @@ export function SalesManagementSection7({
                 Select Date Range
               </h3>
               <button
+                aria-label="Close"
                 className="micro-btn"
                 onClick={() => setShowDateRangeModal(false)}
               >

@@ -195,13 +195,12 @@ export default function AdminLayout() {
 
       {sidebarOpen && (
         <div
-          role="button"
-          tabIndex={0}
           className="admin-overlay"
+          role="presentation"
           onKeyDown={(e) => {
             if (e.key === "Enter" || e.key === " ") {
               e.preventDefault();
-              e.currentTarget.click();
+              setSidebarOpen(false);
             }
           }}
           onClick={() => setSidebarOpen(false)}
@@ -211,6 +210,7 @@ export default function AdminLayout() {
       <div className="admin-main">
         <header className="admin-topbar">
           <button
+            aria-label="Action"
             className="admin-hamburger"
             onClick={() => setSidebarOpen(true)}
           >

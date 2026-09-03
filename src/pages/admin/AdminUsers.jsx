@@ -120,6 +120,7 @@ function AdminUsersSection1({
       </form>
       <div className="admin-filter-group">
         <select
+          aria-label="select field"
           value={filterVerified}
           onChange={(e) => {
             setFilterVerified(e.target.value);
@@ -133,6 +134,7 @@ function AdminUsersSection1({
       </div>
       <div className="admin-filter-group">
         <select
+          aria-label="select field"
           value={filterBlacklisted}
           onChange={(e) => {
             setFilterBlacklisted(e.target.value);
@@ -146,6 +148,7 @@ function AdminUsersSection1({
       </div>
       <div className="admin-filter-group">
         <select
+          aria-label="select field"
           value={pageSize}
           onChange={(e) => {
             setPageSize(safeNumber(e.target.value));
@@ -299,6 +302,7 @@ function AdminUsersSection2({
                 <td>{new Date(u.createdAt).toLocaleDateString()}</td>
                 <td className="admin-actions-cell">
                   <button
+                    aria-label="View Details"
                     className="admin-icon-btn"
                     title="View Details"
                     onClick={() => openDetail(u.id)}
@@ -307,6 +311,7 @@ function AdminUsersSection2({
                   </button>
                   {!u.isVerified && !u.blacklisted && (
                     <button
+                      aria-label="Verify Shop"
                       className="admin-icon-btn success"
                       title="Verify Shop"
                       onClick={() => handleVerify(u.id)}
@@ -316,6 +321,7 @@ function AdminUsersSection2({
                   )}
                   {u.status === "ACTIVE" ? (
                     <button
+                      aria-label="Suspend"
                       className="admin-icon-btn warn"
                       title="Suspend"
                       onClick={() => handleStatusChange(u.id, "SUSPENDED")}
@@ -324,6 +330,7 @@ function AdminUsersSection2({
                     </button>
                   ) : (
                     <button
+                      aria-label="Activate"
                       className="admin-icon-btn success"
                       title="Activate"
                       onClick={() => handleStatusChange(u.id, "ACTIVE")}
@@ -333,6 +340,7 @@ function AdminUsersSection2({
                   )}
                   {u.blacklisted ? (
                     <button
+                      aria-label="Remove Blacklist"
                       className="admin-icon-btn success"
                       title="Remove Blacklist"
                       onClick={() => handleUnblacklist(u.id)}
@@ -341,6 +349,7 @@ function AdminUsersSection2({
                     </button>
                   ) : (
                     <button
+                      aria-label="Blacklist"
                       className="admin-icon-btn danger"
                       title="Blacklist"
                       onClick={() => handleBlacklist(u.id)}
@@ -375,13 +384,13 @@ function AdminUsersSection3({
   return (
     selectedUser && (
       <div
-        role="button"
-        tabIndex={0}
         className="admin-modal-overlay"
+        role="presentation"
         onKeyDown={(e) => {
           if (e.key === "Enter" || e.key === " ") {
             e.preventDefault();
-            e.currentTarget.click();
+            setSelectedUser(null);
+            setDetail(null);
           }
         }}
         onClick={() => {
@@ -391,6 +400,7 @@ function AdminUsersSection3({
       >
         <div
           className="admin-modal admin-modal-wide"
+          onKeyDown={(e) => e.stopPropagation()}
           onClick={(e) => e.stopPropagation()}
           role="presentation"
         >
@@ -401,6 +411,7 @@ function AdminUsersSection3({
               <div className="admin-modal-header">
                 <h3>{detail.name || "Unnamed Shop"}</h3>
                 <button
+                  aria-label="Close"
                   className="admin-icon-btn"
                   onClick={() => {
                     setSelectedUser(null);
@@ -671,6 +682,7 @@ function AdminUsersSection3({
                               >
                                 {u.status === "BLOCKED" ? (
                                   <button
+                                    aria-label="Unblock User"
                                     className="admin-icon-btn"
                                     style={{
                                       color: "#22c55e",
@@ -688,6 +700,7 @@ function AdminUsersSection3({
                                   </button>
                                 ) : u.status === "SUSPENDED" ? (
                                   <button
+                                    aria-label="Activate User"
                                     className="admin-icon-btn"
                                     style={{
                                       color: "#22c55e",
@@ -706,6 +719,7 @@ function AdminUsersSection3({
                                 ) : (
                                   <>
                                     <button
+                                      aria-label="Suspend User"
                                       className="admin-icon-btn"
                                       style={{
                                         color: "#f59e0b",
@@ -722,6 +736,7 @@ function AdminUsersSection3({
                                       <PauseCircle size={14} />
                                     </button>
                                     <button
+                                      aria-label="Block User"
                                       className="admin-icon-btn"
                                       style={{
                                         color: "#dc2626",
@@ -740,6 +755,7 @@ function AdminUsersSection3({
                                   </>
                                 )}
                                 <button
+                                  aria-label="Reset Password"
                                   className="admin-icon-btn"
                                   style={{
                                     color: "#f59e0b",
@@ -752,6 +768,7 @@ function AdminUsersSection3({
                                   <Key size={14} />
                                 </button>
                                 <button
+                                  aria-label="Reset Device"
                                   className="admin-icon-btn"
                                   style={{
                                     color: "#3b82f6",
@@ -764,6 +781,7 @@ function AdminUsersSection3({
                                   <Smartphone size={14} />
                                 </button>
                                 <button
+                                  aria-label="Delete User"
                                   className="admin-icon-btn"
                                   style={{
                                     color: "#ef4444",

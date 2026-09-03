@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { TableHeader } from "./common/TableHeader.jsx";
 import {
   ArrowLeft,
   Shield,
@@ -537,13 +538,7 @@ function DataRetention() {
 
       <h2>Retention Schedule</h2>
       <table className="legal-table">
-        <thead>
-          <tr>
-            <th>Data Category</th>
-            <th>Retention Period</th>
-            <th>Basis</th>
-          </tr>
-        </thead>
+        <TableHeader columns={["Data Category", "Retention Period", "Basis"]} />
         <tbody>
           <tr>
             <td>Sales Invoices & Billing Records</td>
@@ -735,14 +730,14 @@ function SLAPolicy() {
 
       <h2>3. Support Response Times</h2>
       <table className="legal-table">
-        <thead>
-          <tr>
-            <th>Priority</th>
-            <th>Description</th>
-            <th>Response Time</th>
-            <th>Resolution Target</th>
-          </tr>
-        </thead>
+        <TableHeader
+          columns={[
+            "Priority",
+            "Description",
+            "Response Time",
+            "Resolution Target",
+          ]}
+        />
         <tbody>
           <tr>
             <td>Critical</td>

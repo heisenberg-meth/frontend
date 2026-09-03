@@ -16,6 +16,7 @@ import {
   Trash2,
 } from "lucide-react";
 import { AnimatePresence } from "framer-motion";
+import { TableHeader } from "../common/TableHeader.jsx";
 import { normalizeInvoice } from "../../utils/billingNormalizer";
 import "../../styles/BillingPOS.css";
 
@@ -240,6 +241,7 @@ export function BillingPOSSection1({
           <div
             className="search-wrapper"
             style={{ marginBottom: 0 }}
+            role="presentation"
             onClick={(e) => e.stopPropagation()}
           >
             <Barcode className="barcode-icon" size={24} />
@@ -284,6 +286,7 @@ export function BillingPOSSection1({
             <AnimatePresence>
               {showDropdown && medResults.length > 0 && (
                 <m.div
+                  role="presentation"
                   className="autocomplete-dropdown"
                   initial={{
                     opacity: 0,
@@ -298,7 +301,6 @@ export function BillingPOSSection1({
                     y: -10,
                   }}
                   onClick={(e) => e.stopPropagation()}
-                  role="presentation"
                 >
                   {medResults.map((res) => {
                     const availQty = res.availableStock ?? 0;
@@ -576,16 +578,9 @@ export function BillingPOSSection1({
           <div className="pos-card">
             <div className="table-scroll-container">
               <table className="line-items-table">
-                <thead>
-                  <tr>
-                    <th>Item</th>
-                    <th>Qty</th>
-                    <th>MRP</th>
-                    <th>GST%</th>
-                    <th>Total</th>
-                    <th></th>
-                  </tr>
-                </thead>
+                <TableHeader
+                  columns={["Item", "Qty", "MRP", "GST%", "Total", ""]}
+                />
                 <tbody>
                   {lineItems.map((item) => (
                     <tr key={item.id}>
@@ -658,6 +653,7 @@ export function BillingPOSSection1({
                             }}
                           />
                           <button
+                            aria-label="Add"
                             className="step-btn"
                             onClick={() => updateQty(item.batchId, 1)}
                           >
@@ -667,6 +663,7 @@ export function BillingPOSSection1({
                       </td>
                       <td>
                         <input
+                          aria-label="input field"
                           required
                           className="pos-input"
                           type="number"
@@ -725,6 +722,7 @@ export function BillingPOSSection1({
                         }}
                       >
                         <button
+                          aria-label="Close"
                           className="step-btn"
                           style={{
                             color: "var(--danger)",
@@ -786,6 +784,7 @@ export function BillingPOSSection1({
                     }}
                   >
                     <input
+                      aria-label="input field"
                       required
                       className="pos-input"
                       style={{
@@ -1094,6 +1093,14 @@ export function BillingPOSSection1({
                     transition={{
                       duration: 0.3,
                       ease: "easeOut",
+                    }}
+                    role="button"
+                    tabIndex={0}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        openBillDetail(bill);
+                      }
                     }}
                     onClick={() => openBillDetail(bill)}
                   >

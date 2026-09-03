@@ -222,7 +222,7 @@ function ReportsHubSection2({
                 />
                 Select Date Range
               </h3>
-              <button
+              <button aria-label="Close"
                 className="micro-btn"
                 onClick={() => setShowDateRangeModal(false)}
               >

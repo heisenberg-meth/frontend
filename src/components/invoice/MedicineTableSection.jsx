@@ -386,7 +386,7 @@ function MedicineRow({
             <Loader2 size={12} className="animate-spin" /> Loading…
           </div>
         ) : (
-          <select
+          <select aria-label="select field"
             className="form-input"
             disabled={!isSelected || (item.batches || []).length === 0}
             value={item.batchId || ""}
@@ -421,7 +421,7 @@ function MedicineRow({
 
       {/* ── Qty ── */}
       <div className="med-cell med-cell-qty">
-        <input
+        <input aria-label="input field"
           required
           type="number"
           className="form-input text-center"
@@ -446,7 +446,7 @@ function MedicineRow({
 
       {/* ── MRP ── */}
       <div className="med-cell med-cell-mrp">
-        <input
+        <input aria-label="input field"
           required
           type="text"
           className="form-input text-right"
@@ -486,7 +486,7 @@ function MedicineRow({
 
       {/* ── GST ── */}
       <div className="med-cell med-cell-gst">
-        <select
+        <select aria-label="select field"
           className="form-input"
           value={item.gst || 0}
           disabled={!isSelected}
@@ -507,7 +507,7 @@ function MedicineRow({
 
       {/* ── Delete ── */}
       <div className="med-cell med-cell-del">
-        <button
+        <button aria-label="Remove row"
           type="button"
           className="btn-row-delete"
           onClick={() => onRemove(idx)}

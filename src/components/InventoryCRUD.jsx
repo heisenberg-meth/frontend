@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { AnimatePresence } from "framer-motion";
 import { getMedicineStatus, STATUS_OPTIONS } from "../utils/inventoryStatus";
+import { TableHeader } from "./common/TableHeader.jsx";
 import {
   CreateMedicineSchema,
   UpdateMedicineSchema,
@@ -79,17 +80,11 @@ function InventoryCRUDSection1({
 }) {
   return (
     <div className="inv-stats-row">
-      <div
-        role="button"
-        tabIndex={0}
+      <button
+        type="button"
         className="inv-stat-card"
+        style={{ textAlign: "left" }}
         onMouseMove={handleMouseMove}
-        onKeyDown={(e) => {
-          if (e.key === "Enter" || e.key === " ") {
-            e.preventDefault();
-            e.currentTarget.click();
-          }
-        }}
         onClick={() => {
           setStatusFilter("All Status");
           setCurrentPage(1);
@@ -105,18 +100,12 @@ function InventoryCRUDSection1({
         <div className="inv-stat-value text-primary">
           {loading ? "..." : stats.total}
         </div>
-      </div>
-      <div
-        role="button"
-        tabIndex={0}
+      </button>
+      <button
+        type="button"
         className={`inv-stat-card${statusFilter === "In Stock" ? " active-filter" : ""}`}
+        style={{ textAlign: "left" }}
         onMouseMove={handleMouseMove}
-        onKeyDown={(e) => {
-          if (e.key === "Enter" || e.key === " ") {
-            e.preventDefault();
-            e.currentTarget.click();
-          }
-        }}
         onClick={() => {
           setStatusFilter(
             statusFilter === "In Stock" ? "All Status" : "In Stock",
@@ -132,18 +121,12 @@ function InventoryCRUDSection1({
           </div>
         </div>
         <div className="inv-stat-value text-success">{stats.inStock}</div>
-      </div>
-      <div
-        role="button"
-        tabIndex={0}
+      </button>
+      <button
+        type="button"
         className={`inv-stat-card${statusFilter === "Low Stock" ? " active-filter" : ""}`}
+        style={{ textAlign: "left" }}
         onMouseMove={handleMouseMove}
-        onKeyDown={(e) => {
-          if (e.key === "Enter" || e.key === " ") {
-            e.preventDefault();
-            e.currentTarget.click();
-          }
-        }}
         onClick={() => {
           setStatusFilter(
             statusFilter === "Low Stock" ? "All Status" : "Low Stock",
@@ -159,18 +142,12 @@ function InventoryCRUDSection1({
           </div>
         </div>
         <div className="inv-stat-value text-warning">{stats.lowStock}</div>
-      </div>
-      <div
-        role="button"
-        tabIndex={0}
+      </button>
+      <button
+        type="button"
         className={`inv-stat-card${statusFilter === "Out of Stock" ? " active-filter" : ""}`}
+        style={{ textAlign: "left" }}
         onMouseMove={handleMouseMove}
-        onKeyDown={(e) => {
-          if (e.key === "Enter" || e.key === " ") {
-            e.preventDefault();
-            e.currentTarget.click();
-          }
-        }}
         onClick={() => {
           setStatusFilter(
             statusFilter === "Out of Stock" ? "All Status" : "Out of Stock",
@@ -186,18 +163,12 @@ function InventoryCRUDSection1({
           </div>
         </div>
         <div className="inv-stat-value text-danger">{stats.outOfStock}</div>
-      </div>
-      <div
-        role="button"
-        tabIndex={0}
+      </button>
+      <button
+        type="button"
         className={`inv-stat-card${statusFilter === "Expired" ? " active-filter" : ""}`}
+        style={{ textAlign: "left" }}
         onMouseMove={handleMouseMove}
-        onKeyDown={(e) => {
-          if (e.key === "Enter" || e.key === " ") {
-            e.preventDefault();
-            e.currentTarget.click();
-          }
-        }}
         onClick={() => {
           setStatusFilter(
             statusFilter === "Expired" ? "All Status" : "Expired",
@@ -213,18 +184,12 @@ function InventoryCRUDSection1({
           </div>
         </div>
         <div className="inv-stat-value text-danger">{stats.expired}</div>
-      </div>
-      <div
-        role="button"
-        tabIndex={0}
+      </button>
+      <button
+        type="button"
         className="inv-stat-card cursor-pointer hover:shadow-lg transition-transform hover:-translate-y-1"
+        style={{ textAlign: "left" }}
         onMouseMove={handleMouseMove}
-        onKeyDown={(e) => {
-          if (e.key === "Enter" || e.key === " ") {
-            e.preventDefault();
-            e.currentTarget.click();
-          }
-        }}
         onClick={() => setShowAnalyticsModal(true)}
         title="Click to view detailed inventory analytics"
       >
@@ -240,7 +205,7 @@ function InventoryCRUDSection1({
             maximumFractionDigits: 0,
           })}
         </div>
-      </div>
+      </button>
     </div>
   );
 }
@@ -315,18 +280,18 @@ function InventoryCRUDSection2({
       {/* Table */}
       <div className="inv-table-wrapper">
         <table className="inv-table">
-          <thead>
-            <tr>
-              <th>MEDICINE</th>
-              <th>CATEGORY</th>
-              <th>BATCH</th>
-              <th>EXPIRY</th>
-              <th>STOCK</th>
-              <th>MRP</th>
-              <th>STATUS</th>
-              <th>ACTIONS</th>
-            </tr>
-          </thead>
+          <TableHeader
+            columns={[
+              "MEDICINE",
+              "CATEGORY",
+              "BATCH",
+              "EXPIRY",
+              "STOCK",
+              "MRP",
+              "STATUS",
+              "ACTIONS",
+            ]}
+          />
           <tbody>
             {loading ? (
               <tr>
@@ -425,6 +390,7 @@ function InventoryCRUDSection2({
                           <span>Edit Stock</span>
                         </button>
                         <button
+                          aria-label="View Details"
                           className="inv-row-btn"
                           title="View Details"
                           onClick={() => setViewTarget(m)}
@@ -432,6 +398,7 @@ function InventoryCRUDSection2({
                           <Eye size={14} />
                         </button>
                         <button
+                          aria-label="Edit"
                           className="inv-row-btn"
                           title="Edit"
                           onClick={() => {
@@ -442,6 +409,7 @@ function InventoryCRUDSection2({
                           <Pencil size={14} />
                         </button>
                         <button
+                          aria-label="Delete"
                           className="inv-row-btn danger"
                           title="Delete"
                           onClick={() => setDeleteTarget(m)}

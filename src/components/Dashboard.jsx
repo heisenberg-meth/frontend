@@ -51,16 +51,10 @@ function DashboardSection1({
 }) {
   return (
     <div className="hub-stats-row-v2">
-      <div
-        role="button"
-        tabIndex={0}
+      <button
+        type="button"
         className="stat-card-v2"
-        onKeyDown={(e) => {
-          if (e.key === "Enter" || e.key === " ") {
-            e.preventDefault();
-            e.currentTarget.click();
-          }
-        }}
+        style={{ textAlign: "left" }}
         onClick={() => navigate("/stock")}
         onMouseMove={handleMouseMove}
       >
@@ -71,18 +65,12 @@ function DashboardSection1({
           </div>
         </div>
         <div className="stat-v2-val teal text-primary">{stats.total}</div>
-      </div>
+      </button>
 
-      <div
-        role="button"
-        tabIndex={0}
+      <button
+        type="button"
         className="stat-card-v2"
-        onKeyDown={(e) => {
-          if (e.key === "Enter" || e.key === " ") {
-            e.preventDefault();
-            e.currentTarget.click();
-          }
-        }}
+        style={{ textAlign: "left" }}
         onClick={() => navigate("/lowstock")}
         onMouseMove={handleMouseMove}
       >
@@ -98,18 +86,12 @@ function DashboardSection1({
           </div>
           {stats.lowStock > 0 && <div className="pulsing-dot-orange" />}
         </div>
-      </div>
+      </button>
 
-      <div
-        role="button"
-        tabIndex={0}
+      <button
+        type="button"
         className="stat-card-v2"
-        onKeyDown={(e) => {
-          if (e.key === "Enter" || e.key === " ") {
-            e.preventDefault();
-            e.currentTarget.click();
-          }
-        }}
+        style={{ textAlign: "left" }}
         onClick={() => navigate("/expiry")}
         onMouseMove={handleMouseMove}
       >
@@ -120,18 +102,12 @@ function DashboardSection1({
           </div>
         </div>
         <div className="stat-v2-val danger text-rose-500">{stats.expiring}</div>
-      </div>
+      </button>
 
-      <div
-        role="button"
-        tabIndex={0}
+      <button
+        type="button"
         className="stat-card-v2"
-        onKeyDown={(e) => {
-          if (e.key === "Enter" || e.key === " ") {
-            e.preventDefault();
-            e.currentTarget.click();
-          }
-        }}
+        style={{ textAlign: "left" }}
         onClick={() => navigate("/billing")}
         onMouseMove={handleMouseMove}
       >
@@ -142,18 +118,12 @@ function DashboardSection1({
           </div>
         </div>
         <div className="stat-v2-val teal text-primary">{fmt(revenueToday)}</div>
-      </div>
+      </button>
 
-      <div
-        role="button"
-        tabIndex={0}
+      <button
+        type="button"
         className="stat-card-v2"
-        onKeyDown={(e) => {
-          if (e.key === "Enter" || e.key === " ") {
-            e.preventDefault();
-            e.currentTarget.click();
-          }
-        }}
+        style={{ textAlign: "left" }}
         onClick={() => navigate("/billing")}
         onMouseMove={handleMouseMove}
       >
@@ -164,18 +134,12 @@ function DashboardSection1({
           </div>
         </div>
         <div className="stat-v2-val blue text-blue-400">{billsToday}</div>
-      </div>
+      </button>
 
-      <div
-        role="button"
-        tabIndex={0}
+      <button
+        type="button"
         className="stat-card-v2"
-        onKeyDown={(e) => {
-          if (e.key === "Enter" || e.key === " ") {
-            e.preventDefault();
-            e.currentTarget.click();
-          }
-        }}
+        style={{ textAlign: "left" }}
         onClick={() => navigate("/purchases")}
         onMouseMove={handleMouseMove}
       >
@@ -188,7 +152,7 @@ function DashboardSection1({
         <div className="stat-v2-val purple text-purple-400">
           {dashboardData?.alerts?.active ?? 0}
         </div>
-      </div>
+      </button>
     </div>
   );
 }
@@ -229,23 +193,27 @@ function DashboardSection2({
             <div className="mini-table-body flex flex-col gap-1">
               {needsReorderList.length > 0 ? (
                 needsReorderList.map((item) => (
-                  <div
-                    role="button"
-                    tabIndex={0}
-                    key={item.id}
-                    className="mini-table-row"
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter" || e.key === " ") {
-                        e.preventDefault();
-                        e.currentTarget.click();
-                      }
-                    }}
-                    onClick={() => navigate("/stock")}
-                  >
-                    <span className="row-med">{item.name}</span>
-                    <span className="row-stock text-yellow-500 font-bold">
-                      {item.stock ?? item.currentStock ?? 0} units
-                    </span>
+                  <div key={item.id} className="mini-table-row">
+                    <button
+                      type="button"
+                      onClick={() => navigate("/stock")}
+                      style={{
+                        background: "none",
+                        border: "none",
+                        display: "flex",
+                        flex: 1,
+                        alignItems: "center",
+                        textAlign: "left",
+                        cursor: "pointer",
+                        color: "inherit",
+                        padding: 0,
+                      }}
+                    >
+                      <span className="row-med">{item.name}</span>
+                      <span className="row-stock text-yellow-500 font-bold">
+                        {item.stock ?? item.currentStock ?? 0} units
+                      </span>
+                    </button>
                     <span className="row-act">
                       <button
                         className="micro-btn-teal"
@@ -653,6 +621,7 @@ export default function Dashboard({
             <button
               className="banner-dismiss"
               onClick={() => setShowBanner(false)}
+              aria-label="Dismiss banner"
             >
               <BadgeX size={24} />
             </button>

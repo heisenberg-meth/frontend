@@ -230,6 +230,7 @@ function ManageTeamSection1({
                         <div
                           role="button"
                           tabIndex={0}
+                          aria-label={`Change avatar for ${m.fullName || m.username}`}
                           className="avatar-wrap"
                           onKeyDown={(e) => {
                             if (e.key === "Enter" || e.key === " ") {
@@ -318,11 +319,12 @@ function ManageTeamSection1({
                     </td>
                     <td>
                       <div className="action-row">
-                        <button className="icon-btn">
+                        <button aria-label="Action" className="icon-btn">
                           <MoreVertical size={14} />
                         </button>
                         {user.role === "OWNER" && m.id !== user.id && (
                           <button
+                            aria-label="Delete"
                             className="icon-btn delete"
                             onClick={() => removeMemberFn(m.id)}
                           >
@@ -467,6 +469,7 @@ function ManageTeamSection3({
                 <h3>Personnel Asset Update</h3>
               </div>
               <button
+                aria-label="Close"
                 className="modal-close-btn"
                 onClick={() => setShowAvatarModal(false)}
               >
@@ -478,13 +481,13 @@ function ManageTeamSection3({
               <div
                 role="button"
                 tabIndex={0}
-                className="upload-zone"
                 onKeyDown={(e) => {
                   if (e.key === "Enter" || e.key === " ") {
                     e.preventDefault();
-                    e.currentTarget.click();
+                    fileInputRef.current?.click();
                   }
                 }}
+                className="upload-zone"
                 onClick={() => fileInputRef.current?.click()}
               >
                 {uploading ? (
@@ -496,15 +499,16 @@ function ManageTeamSection3({
                     <span>Supports JPG, PNG, WEBP (Max 2MB)</span>
                   </>
                 )}
-                <input
-                  required
-                  type="file"
-                  ref={fileInputRef}
-                  hidden
-                  accept="image/*"
-                  onChange={handleFileUpload}
-                />
               </div>
+              <input
+                aria-label="input field"
+                required
+                type="file"
+                ref={fileInputRef}
+                hidden
+                accept="image/*"
+                onChange={handleFileUpload}
+              />
             </div>
           </m.div>
         </div>
@@ -543,6 +547,7 @@ function ManageTeamSection3({
                 <h3>Credential Generated</h3>
               </div>
               <button
+                aria-label="Close"
                 className="modal-close-btn"
                 onClick={() => setShowSuccessModal(false)}
               >
@@ -562,6 +567,7 @@ function ManageTeamSection3({
                   <div className="val-box">
                     <span>{newCredentials?.loginUrl}</span>
                     <button
+                      aria-label="Action"
                       onClick={() => copyToClipboard(newCredentials?.loginUrl)}
                     >
                       <Clipboard size={14} />
@@ -573,6 +579,7 @@ function ManageTeamSection3({
                   <div className="val-box">
                     <span>{newCredentials?.email}</span>
                     <button
+                      aria-label="Action"
                       onClick={() => copyToClipboard(newCredentials?.email)}
                     >
                       <Clipboard size={14} />
@@ -597,6 +604,7 @@ function ManageTeamSection3({
                       {newCredentials?.password}
                     </span>
                     <button
+                      aria-label="Action"
                       onClick={() => copyToClipboard(newCredentials?.password)}
                     >
                       <Clipboard size={14} />

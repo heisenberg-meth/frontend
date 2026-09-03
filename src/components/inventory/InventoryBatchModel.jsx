@@ -71,13 +71,12 @@ export function ReorderModal({ medicine, onClose, showToast }) {
   };
   return (
     <div
-      role="button"
-      tabIndex={0}
       className="inv-modal-overlay"
+      role="presentation"
       onKeyDown={(e) => {
         if (e.key === "Enter" || e.key === " ") {
           e.preventDefault();
-          e.currentTarget.click();
+          onClose();
         }
       }}
       onClick={onClose}
@@ -239,13 +238,12 @@ export function BatchModal({
   const totalStock = batches.reduce((sum, b) => sum + (b.quantity || 0), 0);
   return (
     <div
-      role="button"
-      tabIndex={0}
       className="inv-modal-overlay"
+      role="presentation"
       onKeyDown={(e) => {
         if (e.key === "Enter" || e.key === " ") {
           e.preventDefault();
-          e.currentTarget.click();
+          onClose();
         }
       }}
       onClick={onClose}
@@ -290,6 +288,7 @@ function ReorderModalSection1({
 }) {
   return (
     <m.div
+      role="presentation"
       className="inv-modal-content"
       style={{
         width: "480px",
@@ -311,7 +310,6 @@ function ReorderModalSection1({
         y: 20,
       }}
       onClick={(e) => e.stopPropagation()}
-      role="presentation"
     >
       <div
         className="inv-modal-scroll"
@@ -622,6 +620,7 @@ function BatchModalSection2({
 }) {
   return (
     <m.div
+      role="presentation"
       className="inv-modal-content"
       style={{
         width: "600px",
@@ -645,7 +644,6 @@ function BatchModalSection2({
         y: 20,
       }}
       onClick={(e) => e.stopPropagation()}
-      role="presentation"
     >
       <div
         className="inv-modal-header"
@@ -666,7 +664,11 @@ function BatchModalSection2({
               : "Edit Stock"}
           </h3>
         </div>
-        <button className="inv-modal-close-btn" onClick={onClose}>
+        <button
+          aria-label="Close"
+          className="inv-modal-close-btn"
+          onClick={onClose}
+        >
           <X size={18} />
         </button>
       </div>
@@ -763,9 +765,9 @@ function BatchModalSection2({
                     <tbody>
                       {batches.map((b) => (
                         <tr
+                          key={b.id}
                           role="button"
                           tabIndex={0}
-                          key={b.id}
                           className={`batch-row ${selectedBatch?.id === b.id ? "selected" : ""}`}
                           style={{
                             background:
@@ -777,7 +779,21 @@ function BatchModalSection2({
                           onKeyDown={(e) => {
                             if (e.key === "Enter" || e.key === " ") {
                               e.preventDefault();
-                              e.currentTarget.click();
+                              setSelectedBatch(b);
+                              setForm({
+                                batchNumber: b.batchNumber || "",
+                                expiryDate: b.expiryDate
+                                  ? b.expiryDate.split("T")[0]
+                                  : "",
+                                mrp: b.mrp ? String(b.mrp) : "",
+                                sellingPrice: b.sellingPrice
+                                  ? String(b.sellingPrice)
+                                  : "",
+                                quantity: b.quantity ? String(b.quantity) : "",
+                                purchasePrice: b.purchasePrice
+                                  ? String(b.purchasePrice)
+                                  : "",
+                              });
                             }
                           }}
                           onClick={() => {

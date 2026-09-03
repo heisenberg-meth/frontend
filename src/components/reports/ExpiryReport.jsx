@@ -41,19 +41,13 @@ function ExpiryReportSection1({
         marginTop: "20px",
       }}
     >
-      <div
-        role="button"
-        tabIndex={0}
+      <button
+        type="button"
         className="report-kpi-card"
-        onKeyDown={(e) => {
-          if (e.key === "Enter" || e.key === " ") {
-            e.preventDefault();
-            e.currentTarget.click();
-          }
-        }}
         onClick={() => setExpiryFilter("Expired")}
         style={{
           cursor: "pointer",
+          textAlign: "left",
         }}
       >
         <div
@@ -65,20 +59,14 @@ function ExpiryReportSection1({
           ALREADY EXPIRED
         </div>
         <div className="stat-value">{expiredCount} items</div>
-      </div>
-      <div
-        role="button"
-        tabIndex={0}
+      </button>
+      <button
+        type="button"
         className="report-kpi-card"
-        onKeyDown={(e) => {
-          if (e.key === "Enter" || e.key === " ") {
-            e.preventDefault();
-            e.currentTarget.click();
-          }
-        }}
         onClick={() => setExpiryFilter("< 7 Days")}
         style={{
           cursor: "pointer",
+          textAlign: "left",
         }}
       >
         <div
@@ -90,20 +78,14 @@ function ExpiryReportSection1({
           EXPIRING &lt; 7 DAYS
         </div>
         <div className="stat-value">{expiring7DaysCount}</div>
-      </div>
-      <div
-        role="button"
-        tabIndex={0}
+      </button>
+      <button
+        type="button"
         className="report-kpi-card"
-        onKeyDown={(e) => {
-          if (e.key === "Enter" || e.key === " ") {
-            e.preventDefault();
-            e.currentTarget.click();
-          }
-        }}
         onClick={() => setExpiryFilter("7-30 Days")}
         style={{
           cursor: "pointer",
+          textAlign: "left",
         }}
       >
         <div
@@ -115,20 +97,14 @@ function ExpiryReportSection1({
           EXPIRING 7-30 DAYS
         </div>
         <div className="stat-value">{expiring7To30DaysCount}</div>
-      </div>
-      <div
-        role="button"
-        tabIndex={0}
+      </button>
+      <button
+        type="button"
         className="report-kpi-card"
-        onKeyDown={(e) => {
-          if (e.key === "Enter" || e.key === " ") {
-            e.preventDefault();
-            e.currentTarget.click();
-          }
-        }}
         onClick={() => setExpiryFilter("30-90 Days")}
         style={{
           cursor: "pointer",
+          textAlign: "left",
         }}
       >
         <div
@@ -140,7 +116,7 @@ function ExpiryReportSection1({
           EXPIRING &lt; 90 DAYS
         </div>
         <div className="stat-value">{expiring90DaysCount}</div>
-      </div>
+      </button>
     </div>
   );
 }
@@ -256,6 +232,7 @@ function ExpiryReportSection2({
                     }}
                   >
                     <button
+                      aria-label="Return"
                       className="micro-btn"
                       style={{
                         color: "var(--warning)",
@@ -266,6 +243,7 @@ function ExpiryReportSection2({
                       <ArrowLeft size={12} />
                     </button>
                     <button
+                      aria-label="Discount"
                       className="micro-btn"
                       style={{
                         color: "var(--info)",
@@ -276,6 +254,7 @@ function ExpiryReportSection2({
                       <TrendingUp size={12} />
                     </button>
                     <button
+                      aria-label="Dispose"
                       className="micro-btn"
                       style={{
                         color: "var(--danger)",
@@ -359,6 +338,7 @@ function ExpiryReportSection3({
                 </h3>
               </div>
               <button
+                aria-label="Close"
                 className="micro-btn"
                 onClick={() => setShowActionModal(false)}
               >

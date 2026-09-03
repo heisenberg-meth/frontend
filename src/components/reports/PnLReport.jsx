@@ -354,7 +354,7 @@ export default function PnLReport({ from, to, showToast }) {
             >
               Add New Expense
             </h3>
-            <button
+            <button aria-label="Close"
               className="micro-btn"
               onClick={() => setShowExpenseModal(false)}
             >

@@ -1590,7 +1590,11 @@ export default function ExpiryBatchIntelligence({ showToast }) {
             >
               Take Action
             </button>
-            <button className="micro-btn" onClick={() => setShowBanner(false)}>
+            <button
+              aria-label="Close"
+              className="micro-btn"
+              onClick={() => setShowBanner(false)}
+            >
               <X size={18} />
             </button>
           </div>
@@ -1604,36 +1608,48 @@ export default function ExpiryBatchIntelligence({ showToast }) {
             <div
               key={s.key}
               className="pos-stat-card"
-              onClick={() => setFilter(s.key)}
               style={{
                 borderLeft:
                   filter === s.key
                     ? `4px solid ${s.col}`
                     : "1px solid var(--outline-variant)",
-                cursor: "pointer",
                 position: "relative",
               }}
             >
-              <div className="stat-card-header">
-                <span className="stat-label">{s.label}</span>
-                <div
-                  className="stat-icon"
-                  style={{
-                    backgroundColor: `${s.col}15`,
-                    color: s.col,
-                  }}
-                >
-                  <s.icon size={16} />
+              <button
+                type="button"
+                className="stat-card-clickable"
+                onClick={() => setFilter(s.key)}
+                style={{
+                  background: "none",
+                  border: "none",
+                  width: "100%",
+                  textAlign: "left",
+                  cursor: "pointer",
+                  padding: 0,
+                  color: "inherit",
+                }}
+              >
+                <div className="stat-card-header">
+                  <span className="stat-label">{s.label}</span>
+                  <div
+                    className="stat-icon"
+                    style={{
+                      backgroundColor: `${s.col}15`,
+                      color: s.col,
+                    }}
+                  >
+                    <s.icon size={16} />
+                  </div>
                 </div>
-              </div>
-              <div className="stat-value">{s.val}</div>
+                <div className="stat-value">{s.val}</div>
+              </button>
               {isExpiredCard && (
                 <div
                   style={{
                     marginTop: 8,
                   }}
                   onClick={(e) => e.stopPropagation()}
-                  role="presentation"
                 >
                   <ClearExpiredButton
                     showToast={showToast}
@@ -1711,52 +1727,67 @@ export default function ExpiryBatchIntelligence({ showToast }) {
 
       {/* ───────────────────── CONFIG MODAL ───────────────────── */}
       <ExpiryBatchIntelligenceSection5
-        setShowConfigModal={setShowConfigModal}
-        setAlertSettings={setAlertSettings}
-        alertSettings={alertSettings}
-        frequency={frequency}
-        setFrequency={setFrequency}
-        isSavingConfigRef={isSavingConfigRef}
-        showToast={showToast}
-        setShowActionModal={setShowActionModal}
-        setReturnReason={setReturnReason}
-        setReturnQty={setReturnQty}
-        setDiscountPct={setDiscountPct}
-        setDiscountDuration={setDiscountDuration}
-        setDisposalMethod={setDisposalMethod}
-        setDisposalNotes={setDisposalNotes}
-        setShowViewBatchModal={setShowViewBatchModal}
-        setShowEditBatchModal={setShowEditBatchModal}
-        setEditBatch={setEditBatch}
-        editBatch={editBatch}
-        setShowAddBatchModal={setShowAddBatchModal}
-        setNewBatch={setNewBatch}
-        newBatch={newBatch}
-        setShowFifoConfirm={setShowFifoConfirm}
-        setFifoEnabled={setFifoEnabled}
-        setShowDeleteModal={setShowDeleteModal}
-        showConfigModal={showConfigModal}
-        showActionModal={showActionModal}
-        actionType={actionType}
-        processing={processing}
-        selectedItem={selectedItem}
-        returnReason={returnReason}
-        returnQty={returnQty}
-        discountPct={discountPct}
-        discountDuration={discountDuration}
-        disposalMethod={disposalMethod}
-        disposalNotes={disposalNotes}
-        confirmAction={confirmAction}
-        showViewBatchModal={showViewBatchModal}
-        viewBatch={viewBatch}
-        showEditBatchModal={showEditBatchModal}
-        saveEditBatch={saveEditBatch}
-        showAddBatchModal={showAddBatchModal}
-        addNewBatch={addNewBatch}
-        showFifoConfirm={showFifoConfirm}
-        showDeleteModal={showDeleteModal}
-        selectedBatchForDelete={selectedBatchForDelete}
-        confirmDeleteBatch={confirmDeleteBatch}
+        configState={{
+          show: showConfigModal,
+          setShow: setShowConfigModal,
+          settings: alertSettings,
+          setSettings: setAlertSettings,
+          frequency,
+          setFrequency,
+          isSavingRef: isSavingConfigRef,
+          showToast,
+        }}
+        actionState={{
+          show: showActionModal,
+          setShow: setShowActionModal,
+          type: actionType,
+          processing,
+          item: selectedItem,
+          returnReason,
+          setReturnReason,
+          returnQty,
+          setReturnQty,
+          discountPct,
+          setDiscountPct,
+          discountDuration,
+          setDiscountDuration,
+          disposalMethod,
+          setDisposalMethod,
+          disposalNotes,
+          setDisposalNotes,
+          confirm: confirmAction,
+        }}
+        viewState={{
+          show: showViewBatchModal,
+          setShow: setShowViewBatchModal,
+          batch: viewBatch,
+        }}
+        editState={{
+          show: showEditBatchModal,
+          setShow: setShowEditBatchModal,
+          batch: editBatch,
+          setBatch: setEditBatch,
+          save: saveEditBatch,
+        }}
+        addState={{
+          show: showAddBatchModal,
+          setShow: setShowAddBatchModal,
+          batch: newBatch,
+          setBatch: setNewBatch,
+          add: addNewBatch,
+        }}
+        fifoState={{
+          show: showFifoConfirm,
+          setShow: setShowFifoConfirm,
+          setFifoEnabled,
+          showToast,
+        }}
+        deleteState={{
+          show: showDeleteModal,
+          setShow: setShowDeleteModal,
+          batch: selectedBatchForDelete,
+          confirm: confirmDeleteBatch,
+        }}
       />
 
       {/* ── Disposal Confirmation Modal ── */}

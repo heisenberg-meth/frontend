@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { adminApi } from "../../services/admin.service";
 import { Filter, Calendar } from "lucide-react";
+import { TableHeader } from "../../components/common/TableHeader.jsx";
 
 const ACTION_COLORS = {
   ADMIN_LOGIN: "#3b82f6",
@@ -59,6 +60,7 @@ export default function AdminAuditLogs() {
         <div className="admin-filter-group">
           <Filter size={16} />
           <select
+            aria-label="select field"
             value={filters.action}
             onChange={(e) => {
               setFilters((f) => ({ ...f, action: e.target.value }));
@@ -76,6 +78,7 @@ export default function AdminAuditLogs() {
         <div className="admin-filter-group">
           <Calendar size={16} />
           <select
+            aria-label="select field"
             value={filters.targetType}
             onChange={(e) => {
               setFilters((f) => ({ ...f, targetType: e.target.value }));
@@ -93,16 +96,9 @@ export default function AdminAuditLogs() {
 
       <div className="admin-table-container">
         <table className="admin-table">
-          <thead>
-            <tr>
-              <th>Time</th>
-              <th>Action</th>
-              <th>Target</th>
-              <th>Admin</th>
-              <th>IP</th>
-              <th>Metadata</th>
-            </tr>
-          </thead>
+          <TableHeader
+            columns={["Time", "Action", "Target", "Admin", "IP", "Metadata"]}
+          />
           <tbody>
             {loading ? (
               <tr>

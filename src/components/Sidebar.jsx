@@ -13,7 +13,6 @@ import {
   CalendarClock,
   QrCode,
   Trash2,
-  PackageX,
   History,
 } from "lucide-react";
 
@@ -118,14 +117,14 @@ export default function Sidebar({ user, onSignOut }) {
           >
             <QrCode size={18} />
             <span>Barcode & QR</span>
-          </NavLink> */}
+          </NavLink>
           <NavLink
             to="/supplier-returns"
             className={({ isActive }) => `nav-link ${isActive ? "active" : ""}`}
           >
             <PackageX size={18} />
             <span>Supplier Returns</span>
-          </NavLink>
+          </NavLink> */}
           <NavLink
             to="/support"
             className={({ isActive }) => `nav-link ${isActive ? "active" : ""}`}
@@ -165,11 +164,10 @@ export default function Sidebar({ user, onSignOut }) {
             href="https://www.viyaninfo.com/contact"
             target="_blank"
             rel="noopener noreferrer"
+            className="footer-link"
           >
-            <button className="footer-link">
-              <HelpCircle size={14} />
-              <span>Help Center</span>
-            </button>
+            <HelpCircle size={14} />
+            <span>Help Center</span>
           </a>
           <button className="footer-link logout" onClick={onSignOut}>
             <LogOut size={14} />

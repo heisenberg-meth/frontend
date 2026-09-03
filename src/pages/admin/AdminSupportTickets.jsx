@@ -470,7 +470,7 @@ export default function AdminSupportTickets() {
               id="field_d2dv2d"
             />
           </>
-          <button
+          <button aria-label="Search"
             type="submit"
             className="admin-btn admin-btn-primary"
             style={{
@@ -480,7 +480,7 @@ export default function AdminSupportTickets() {
             <Search size={16} />
           </button>
         </form>
-        <select
+        <select aria-label="select field"
           value={statusFilter}
           onChange={(e) => {
             setStatusFilter(e.target.value);

@@ -250,16 +250,9 @@ function LandingPageSection1({
   return (
     <nav className={`lp-nav ${scrolled ? "lp-nav--scrolled" : ""}`}>
       <div className="lp-nav-inner">
-        <div
-          role="button"
-          tabIndex={0}
+        <button
+          type="button"
           className="lp-logo"
-          onKeyDown={(e) => {
-            if (e.key === "Enter" || e.key === " ") {
-              e.preventDefault();
-              e.currentTarget.click();
-            }
-          }}
           onClick={() =>
             window.scrollTo({
               top: 0,
@@ -273,7 +266,7 @@ function LandingPageSection1({
             alt="MedAssist Logo"
           />
           <span className="lp-logo-text">MedAssist</span>
-        </div>
+        </button>
         <div className={`lp-nav-links ${menuOpen ? "lp-nav-links--open" : ""}`}>
           <button className="lp-nav-link" onClick={() => scrollTo("features")}>
             Features
@@ -530,16 +523,9 @@ function LandingPageSection3({ scrollTo, navigate }) {
       <div className="lp-container">
         <div className="lp-footer-top">
           <div className="lp-footer-brand">
-            <div
-              role="button"
-              tabIndex={0}
+            <button
+              type="button"
               className="lp-logo"
-              onKeyDown={(e) => {
-                if (e.key === "Enter" || e.key === " ") {
-                  e.preventDefault();
-                  e.currentTarget.click();
-                }
-              }}
               onClick={() =>
                 window.scrollTo({
                   top: 0,
@@ -553,7 +539,7 @@ function LandingPageSection3({ scrollTo, navigate }) {
                 alt="MedAssist Logo"
               />
               <span className="lp-logo-text">MedAssist</span>
-            </div>
+            </button>
             <p className="lp-footer-tagline">
               Helping pharmacies simplify inventory, billing, purchases, GST,
               reports, and daily operations with one intelligent cloud platform.

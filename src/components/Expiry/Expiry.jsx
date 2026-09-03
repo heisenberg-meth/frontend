@@ -15,6 +15,7 @@ import {
   Truck,
 } from "lucide-react";
 import { AnimatePresence, m } from "framer-motion";
+import { TableHeader } from "../common/TableHeader.jsx";
 
 const INV_FILTER_OPTIONS = [
   {
@@ -371,6 +372,11 @@ export function ExpiryBatchIntelligenceSection1({
                       <td>
                         {isExpiredRow ? (
                           <button
+                            aria-label={
+                              isChecked
+                                ? `Deselect ${b.med} batch ${b.batchNumber || b.batch}`
+                                : `Select ${b.med} batch ${b.batchNumber || b.batch}`
+                            }
                             style={{
                               background: "none",
                               border: "none",
@@ -465,6 +471,7 @@ export function ExpiryBatchIntelligenceSection1({
                       <td>
                         <div className="action-buttons">
                           <button
+                            aria-label="Return"
                             className="micro-btn action-btn"
                             style={{
                               color: "var(--warning)",
@@ -475,6 +482,7 @@ export function ExpiryBatchIntelligenceSection1({
                             <RotateCcw size={14} />
                           </button>
                           <button
+                            aria-label="Discount"
                             className="micro-btn action-btn"
                             style={{
                               color: "var(--info)",
@@ -486,6 +494,7 @@ export function ExpiryBatchIntelligenceSection1({
                           </button>
                           {isExpiredRow && (
                             <button
+                              aria-label="Dispose this batch"
                               className="micro-btn action-btn"
                               style={{
                                 color: "var(--danger)",
@@ -575,6 +584,7 @@ export function ExpiryBatchIntelligenceSection2({
               {showInvFilterDropdown && (
                 <>
                   <div
+                    role="presentation"
                     style={{
                       position: "fixed",
                       inset: 0,
@@ -651,19 +661,19 @@ export function ExpiryBatchIntelligenceSection2({
         </div>
         <div className="expiry-table-card">
           <table className="expiry-table">
-            <thead>
-              <tr>
-                <th>Medicine / Molecule</th>
-                <th>Batch #</th>
-                <th>Expiry</th>
-                <th>Received</th>
-                <th>Qty Remaining</th>
-                <th>Supplier</th>
-                <th>FIFO Order</th>
-                <th>Status</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
+            <TableHeader
+              columns={[
+                "Medicine / Molecule",
+                "Batch #",
+                "Expiry",
+                "Received",
+                "Qty Remaining",
+                "Supplier",
+                "FIFO Order",
+                "Status",
+                "Actions",
+              ]}
+            />
             <tbody>
               {invFilteredBatches.length === 0 ? (
                 <tr>
@@ -741,6 +751,7 @@ export function ExpiryBatchIntelligenceSection2({
                     <td>
                       <div className="action-buttons">
                         <button
+                          aria-label="View Details"
                           className="micro-btn action-btn"
                           style={{
                             color: "var(--info)",
@@ -751,6 +762,7 @@ export function ExpiryBatchIntelligenceSection2({
                           <Eye size={14} />
                         </button>
                         <button
+                          aria-label="Edit"
                           className="micro-btn action-btn"
                           style={{
                             color: "var(--primary)",
@@ -761,6 +773,7 @@ export function ExpiryBatchIntelligenceSection2({
                           <Edit3 size={14} />
                         </button>
                         <button
+                          aria-label="Delete"
                           className="micro-btn action-btn"
                           style={{
                             color: "var(--danger)",
@@ -947,16 +960,16 @@ export function ExpiryBatchIntelligenceSection3({
                             background: "none",
                           }}
                         >
-                          <thead>
-                            <tr>
-                              <th>FIFO RANK</th>
-                              <th>BATCH #</th>
-                              <th>EXPIRY</th>
-                              <th>QTY</th>
-                              <th>DAYS LEFT</th>
-                              <th>AVAILABILITY</th>
-                            </tr>
-                          </thead>
+                          <TableHeader
+                            columns={[
+                              "FIFO RANK",
+                              "BATCH #",
+                              "EXPIRY",
+                              "QTY",
+                              "DAYS LEFT",
+                              "AVAILABILITY",
+                            ]}
+                          />
                           <tbody>
                             {medBatches.map((b) => {
                               const pct = Math.min(

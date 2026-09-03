@@ -67,21 +67,14 @@ function ProfileSection1({
                 }}
                 alt="Profile"
               />
-              <div
-                role="button"
-                tabIndex={0}
+              <button
+                type="button"
                 className="avatar-overlay"
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" || e.key === " ") {
-                    e.preventDefault();
-                    e.currentTarget.click();
-                  }
-                }}
                 onClick={() => toggleModal("photo")}
               >
                 <Camera size={24} />
                 <span>Change Photo</span>
-              </div>
+              </button>
             </div>
             <div className="verification-stack">
               <div className="verify-badge verified">
@@ -171,6 +164,7 @@ function ProfileSection1({
                 <div className="input-actions">
                   <CheckCircle2 size={14} className="text-success" />
                   <button
+                    aria-label="Action"
                     className="action-icon-btn"
                     onClick={() => copyToClipboard(formData.email)}
                   >
@@ -367,6 +361,7 @@ function ProfileSection2({
                 />
                 <button
                   className="action-icon-btn"
+                  aria-label={showPassword ? "Hide password" : "Show password"}
                   onClick={() => setShowPassword(!showPassword)}
                 >
                   {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
@@ -728,7 +723,11 @@ function Modal({ title, children, onClose }) {
       >
         <div className="modal-header-v2">
           <h3>{title}</h3>
-          <button className="modal-close-btn" onClick={onClose}>
+          <button
+            className="modal-close-btn"
+            aria-label="Close"
+            onClick={onClose}
+          >
             ×
           </button>
         </div>

@@ -3,6 +3,7 @@ import { adminApi } from "../../services/admin.service";
 import { downloadCsv } from "../../utils/exportCsv";
 import { Search, ShieldOff, ShieldCheck, Unlink, Download } from "lucide-react";
 import toast from "react-hot-toast";
+import { TableHeader } from "../../components/common/TableHeader.jsx";
 const getRiskBadge = (score) => {
   if (score >= 80)
     return (
@@ -164,20 +165,20 @@ export default function AdminDevices() {
 
       <div className="admin-table-container">
         <table className="admin-table">
-          <thead>
-            <tr>
-              <th>Fingerprint</th>
-              <th>Shop</th>
-              <th>Browser / OS</th>
-              <th>IP</th>
-              <th>Risk</th>
-              <th>Login Days</th>
-              <th>Status</th>
-              <th>First Seen</th>
-              <th>Last Seen</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
+          <TableHeader
+            columns={[
+              "Fingerprint",
+              "Shop",
+              "Browser / OS",
+              "IP",
+              "Risk",
+              "Login Days",
+              "Status",
+              "First Seen",
+              "Last Seen",
+              "Actions",
+            ]}
+          />
           <tbody>
             {loading ? (
               <tr>
@@ -237,6 +238,7 @@ export default function AdminDevices() {
                   <td className="admin-actions-cell">
                     {d.isBlocked ? (
                       <button
+                        aria-label="Unblock"
                         className="admin-icon-btn success"
                         title="Unblock"
                         onClick={() => handleUnblock(d.id)}
@@ -245,6 +247,7 @@ export default function AdminDevices() {
                       </button>
                     ) : (
                       <button
+                        aria-label="Block"
                         className="admin-icon-btn warn"
                         title="Block"
                         onClick={() => handleBlock(d.id)}
@@ -253,6 +256,7 @@ export default function AdminDevices() {
                       </button>
                     )}
                     <button
+                      aria-label="Unlink"
                       className="admin-icon-btn"
                       style={{
                         color: "#8b5cf6",

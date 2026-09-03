@@ -12,6 +12,38 @@ import {
   Activity,
 } from "lucide-react";
 const formatCurrency = (val) => `₹${safeNumber(val).toLocaleString()}`;
+function AdminStatCard({
+  label,
+  value,
+  icon: Icon,
+  color,
+  padding,
+  valueFontSize,
+  iconSize = 20,
+}) {
+  return (
+    <div className="admin-stat-card" style={padding ? { padding } : undefined}>
+      <div
+        className="admin-stat-icon"
+        style={{
+          color,
+        }}
+      >
+        <Icon size={iconSize} />
+      </div>
+      <div className="admin-stat-body">
+        <span
+          className="admin-stat-value"
+          style={valueFontSize ? { fontSize: valueFontSize } : undefined}
+        >
+          {value}
+        </span>
+        <span className="admin-stat-label">{label}</span>
+      </div>
+    </div>
+  );
+}
+
 export default function AdminRevenue() {
   const [overview, setOverview] = useState(null);
   const [monthly, setMonthly] = useState([]);
@@ -121,25 +153,9 @@ export default function AdminRevenue() {
   return (
     <div className="admin-page">
       <div className="admin-dashboard-stats">
-        {cards.map((card) => {
-          const Icon = card.icon;
-          return (
-            <div key={card.label} className="admin-stat-card">
-              <div
-                className="admin-stat-icon"
-                style={{
-                  color: card.color,
-                }}
-              >
-                <Icon size={24} />
-              </div>
-              <div className="admin-stat-body">
-                <span className="admin-stat-value">{card.value}</span>
-                <span className="admin-stat-label">{card.label}</span>
-              </div>
-            </div>
-          );
-        })}
+        {cards.map((card) => (
+          <AdminStatCard key={card.label} {...card} iconSize={24} />
+        ))}
       </div>
 
       <div className="admin-dashboard-section">
@@ -150,38 +166,14 @@ export default function AdminRevenue() {
             gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))",
           }}
         >
-          {metricCards.map((card) => {
-            const Icon = card.icon;
-            return (
-              <div
-                key={card.label}
-                className="admin-stat-card"
-                style={{
-                  padding: "12px 16px",
-                }}
-              >
-                <div
-                  className="admin-stat-icon"
-                  style={{
-                    color: card.color,
-                  }}
-                >
-                  <Icon size={20} />
-                </div>
-                <div className="admin-stat-body">
-                  <span
-                    className="admin-stat-value"
-                    style={{
-                      fontSize: 18,
-                    }}
-                  >
-                    {card.value}
-                  </span>
-                  <span className="admin-stat-label">{card.label}</span>
-                </div>
-              </div>
-            );
-          })}
+          {metricCards.map((card) => (
+            <AdminStatCard
+              key={card.label}
+              {...card}
+              padding="12px 16px"
+              valueFontSize={18}
+            />
+          ))}
         </div>
       </div>
 
@@ -193,38 +185,14 @@ export default function AdminRevenue() {
             gridTemplateColumns: "repeat(auto-fill, minmax(150px, 1fr))",
           }}
         >
-          {subCards.map((card) => {
-            const Icon = card.icon;
-            return (
-              <div
-                key={card.label}
-                className="admin-stat-card"
-                style={{
-                  padding: "12px 16px",
-                }}
-              >
-                <div
-                  className="admin-stat-icon"
-                  style={{
-                    color: card.color,
-                  }}
-                >
-                  <Icon size={20} />
-                </div>
-                <div className="admin-stat-body">
-                  <span
-                    className="admin-stat-value"
-                    style={{
-                      fontSize: 18,
-                    }}
-                  >
-                    {card.value}
-                  </span>
-                  <span className="admin-stat-label">{card.label}</span>
-                </div>
-              </div>
-            );
-          })}
+          {subCards.map((card) => (
+            <AdminStatCard
+              key={card.label}
+              {...card}
+              padding="12px 16px"
+              valueFontSize={18}
+            />
+          ))}
         </div>
       </div>
 

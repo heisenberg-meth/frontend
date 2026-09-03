@@ -237,6 +237,7 @@ export default function SystemSettings({
             <MessageCircle size={18} /> Delivery Timeline
           </h3>
           <button
+            aria-label="Refresh"
             className="micro-btn"
             onClick={refreshOpsData}
             disabled={isOpsLoading}
@@ -333,15 +334,14 @@ export default function SystemSettings({
                 {subscription?.status || "PENDING"}
               </div>
             </div>
-            <div
-              role="button"
-              tabIndex={0}
+            <button
+              type="button"
               className="enterprise-grad-card"
-              onKeyDown={(e) => {
-                if (e.key === "Enter" || e.key === " ") {
-                  e.preventDefault();
-                  e.currentTarget.click();
-                }
+              style={{
+                width: "100%",
+                textAlign: "left",
+                border: "none",
+                cursor: "pointer",
               }}
               onClick={() => setCurrentView("subscription")}
             >
@@ -396,7 +396,7 @@ export default function SystemSettings({
                   </div>
                 </>
               )}
-            </div>
+            </button>
             <button
               className="sys-btn-outline"
               style={{ width: "100%", marginTop: 16 }}
@@ -421,37 +421,25 @@ export default function SystemSettings({
             </h3>
             <div className="sys-toggle-row">
               <span className="sys-toggle-label">Email</span>
-              <div
-                role="button"
-                tabIndex={0}
+              <button
+                type="button"
                 className={`sys-toggle ${notifEmail ? "on" : ""}`}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" || e.key === " ") {
-                    e.preventDefault();
-                    e.currentTarget.click();
-                  }
-                }}
                 onClick={() => setNotifEmail(!notifEmail)}
+                aria-label="Toggle Email notifications"
               >
                 <div className="sys-toggle-thumb" />
-              </div>
+              </button>
             </div>
             <div className="sys-toggle-row">
               <span className="sys-toggle-label">WhatsApp</span>
-              <div
-                role="button"
-                tabIndex={0}
+              <button
+                type="button"
                 className={`sys-toggle ${notifWa ? "on" : ""}`}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" || e.key === " ") {
-                    e.preventDefault();
-                    e.currentTarget.click();
-                  }
-                }}
                 onClick={() => setNotifWa(!notifWa)}
+                aria-label="Toggle WhatsApp notifications"
               >
                 <div className="sys-toggle-thumb" />
-              </div>
+              </button>
             </div>
           </div>
 

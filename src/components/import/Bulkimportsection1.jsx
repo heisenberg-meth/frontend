@@ -8,6 +8,7 @@ import {
   FileSpreadsheet,
 } from "lucide-react";
 import { AnimatePresence, m } from "framer-motion";
+import { TableHeader } from "../common/TableHeader.jsx";
 
 const fields = [
   {
@@ -167,15 +168,15 @@ export function BulkImportSection1({
             }}
           >
             <table className="results-table">
-              <thead>
-                <tr>
-                  <th>Row #</th>
-                  <th>Medicine Name</th>
-                  <th>Field</th>
-                  <th>Received</th>
-                  <th>Error</th>
-                </tr>
-              </thead>
+              <TableHeader
+                columns={[
+                  "Row #",
+                  "Medicine Name",
+                  "Field",
+                  "Received",
+                  "Error",
+                ]}
+              />
               <tbody>
                 {commitResult.errors.map((err, errIdx) => (
                   <tr
@@ -275,7 +276,7 @@ export function BulkImportSection1({
               {...getRootProps()}
               className={`dropzone-inner-v2 ${isDragActive ? "active" : ""}`}
             >
-              <input required {...getInputProps()} />
+              <input aria-label="input field" required {...getInputProps()} />
               {file ? (
                 <div className="file-selected-state">
                   <div className="file-info-row">
@@ -288,7 +289,7 @@ export function BulkImportSection1({
                         {(file.size / 1024).toFixed(1)} KB · CSV File
                       </div>
                     </div>
-                    <button
+                    <button aria-label="Close"
                       type="button"
                       className="remove-file-btn"
                       onClick={(e) => {
@@ -630,16 +631,16 @@ export function BulkImportSection1({
               </h4>
               <div className="table-overflow">
                 <table className="duplicate-list-table">
-                  <thead>
-                    <tr>
-                      <th>ROW #</th>
-                      <th>IMPORTED NAME</th>
-                      <th>MATCHES IN SYSTEM</th>
-                      <th>MATCH TYPE</th>
-                      <th>DIFFERENCE</th>
-                      <th>ACTION</th>
-                    </tr>
-                  </thead>
+                  <TableHeader
+                    columns={[
+                      "ROW #",
+                      "IMPORTED NAME",
+                      "MATCHES IN SYSTEM",
+                      "MATCH TYPE",
+                      "DIFFERENCE",
+                      "ACTION",
+                    ]}
+                  />
                   <tbody>
                     {duplicateResults.rows.map((r, rIdx) => (
                       <tr
@@ -755,14 +756,14 @@ export function BulkImportSection1({
                   }}
                 >
                   <table className="duplicate-list-table">
-                    <thead>
-                      <tr>
-                        <th>ROW #</th>
-                        <th>MEDICATION NAME</th>
-                        <th>FIELD / COLUMN</th>
-                        <th>ERROR DETAILS</th>
-                      </tr>
-                    </thead>
+                    <TableHeader
+                      columns={[
+                        "ROW #",
+                        "MEDICATION NAME",
+                        "FIELD / COLUMN",
+                        "ERROR DETAILS",
+                      ]}
+                    />
                     <tbody>
                       {duplicateResults.errors.map((err, errIdx) => (
                         <tr
