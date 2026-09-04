@@ -28,40 +28,47 @@ const LazyRechartsWrapper = lazy(() =>
       ];
 
       return (
-        <m.ResponsiveContainer width="100%" height="100%">
-          <m.PieChart>
-            <m.Pie
-              data={categories}
-              cx="50%"
-              cy="50%"
-              innerRadius="48%"
-              outerRadius="72%"
-              paddingAngle={3}
-              dataKey="value"
-              nameKey="category"
-              stroke="var(--surface)"
-              strokeWidth={2}
-            >
-              {categories.map((entry, index) => (
-                <m.Cell
-                  key={`cell-${entry.category}-${index}`}
-                  fill={COLORS[index % COLORS.length]}
-                />
-              ))}
-            </m.Pie>
+        <div className="inventory-category-chart w-full h-full">
+          <m.ResponsiveContainer width="100%" height="100%">
+            <m.PieChart>
+              <m.Pie
+                data={categories}
+                cx="50%"
+                cy="50%"
+                innerRadius="48%"
+                outerRadius="72%"
+                paddingAngle={3}
+                dataKey="value"
+                nameKey="category"
+                stroke="var(--surface)"
+                strokeWidth={2}
+              >
+                {categories.map((entry, index) => {
+                  const color = COLORS[index % COLORS.length];
 
-            <m.Tooltip
-              formatter={(value) => formatIndianCurrency(value)}
-              contentStyle={{
-                backgroundColor: "var(--surface)",
-                border: "1px solid var(--surface-container-highest)",
-                borderRadius: "10px",
-                color: "var(--on-surface)",
-                boxShadow: "0 8px 24px rgba(0,0,0,0.12)",
-              }}
-            />
-          </m.PieChart>
-        </m.ResponsiveContainer>
+                  return (
+                    <m.Cell
+                      key={`cell-${entry.category}-${index}`}
+                      fill={color}
+                      style={{ fill: color }}
+                    />
+                  );
+                })}
+              </m.Pie>
+
+              <m.Tooltip
+                formatter={(value) => formatIndianCurrency(value)}
+                contentStyle={{
+                  backgroundColor: "var(--surface)",
+                  borderRadius: "10px",
+                  border: "1px solid var(--surface-container-highest)",
+                  color: "var(--on-surface)",
+                  boxShadow: "0 8px 24px rgba(0,0,0,0.12)",
+                }}
+              />
+            </m.PieChart>
+          </m.ResponsiveContainer>
+        </div>
       );
     },
   })),
@@ -83,14 +90,6 @@ const formatIndianCurrency = (value) => {
 
 // Re-using the design language from the modal
 
-const COLORS = [
-  "#4fdbc8",
-  "#3b82f6",
-  "#10b981",
-  "#f59e0b",
-  "#ef4444",
-  "#8b5cf6",
-];
 function InventoryAnalyticsFullSection1({
   summary,
   highValueStock,
@@ -245,7 +244,7 @@ function InventoryAnalyticsFullSection1({
                 </div>
               }
             >
-              <LazyRechartsWrapper categories={categories} COLORS={COLORS} />
+              <LazyRechartsWrapper categories={categories} />
             </Suspense>
           </div>
         </section>
