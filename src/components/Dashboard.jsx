@@ -6,7 +6,6 @@ import {
   Package,
   IndianRupee,
   Receipt,
-  Zap,
   Calendar,
   BadgeX,
   CheckCircle,
@@ -42,13 +41,7 @@ const handleMouseMove = (e) => {
   e.currentTarget.style.setProperty("--x", `${x}px`);
   e.currentTarget.style.setProperty("--y", `${y}px`);
 };
-function DashboardSection1({
-  navigate,
-  stats,
-  revenueToday,
-  billsToday,
-  dashboardData,
-}) {
+function DashboardSection1({ navigate, stats, revenueToday, billsToday }) {
   return (
     <div className="hub-stats-row-v2">
       <button
@@ -134,24 +127,6 @@ function DashboardSection1({
           </div>
         </div>
         <div className="stat-v2-val blue text-blue-400">{billsToday}</div>
-      </button>
-
-      <button
-        type="button"
-        className="stat-card-v2"
-        style={{ textAlign: "left" }}
-        onClick={() => navigate("/purchases")}
-        onMouseMove={handleMouseMove}
-      >
-        <div className="stat-v2-header">
-          <span className="stat-v2-label">ALERTS</span>
-          <div className="stat-v2-icon purple bg-purple-500/10 text-purple-400">
-            <Zap size={18} />
-          </div>
-        </div>
-        <div className="stat-v2-val purple text-purple-400">
-          {dashboardData?.alerts?.active ?? 0}
-        </div>
       </button>
     </div>
   );
