@@ -4,65 +4,78 @@ import { API_ROUTES } from "../constants/api.routes.js";
 import { loadRazorpay } from "../utils/razorpay";
 import { safeNumber } from "../utils/number.js";
 import { useAuth } from "../hooks/useAuth";
+
 function PaymentGatewaySection1({
   setMethod,
   amount,
   method,
   paymentError,
   handlePay,
+  status,
+  selectedPlan,
 }) {
+  const displayAmount = selectedPlan ? selectedPlan.price : amount || 599;
+  const displayPlanName = selectedPlan
+    ? `${selectedPlan.name} (${selectedPlan.billingCycle === "28_DAYS" ? "28 Days" : "Monthly"})`
+    : "Paid Plan (Monthly)";
+
   return (
     <main className="pt-24 pb-12 px-6 max-w-7xl mx-auto">
-      <div className="flex flex-col md:flex-row gap-8">
-        <div className="w-full md:w-5/12 lg:w-4/12">
+      <div className="flex flex-col lg:flex-row gap-8">
+        {/* Summary Column */}
+        <div className="w-full lg:w-4/12">
           <div className="bg-(--surface) rounded-xl border border-(--surface) p-6 sticky top-24 shadow-2xl">
             <h3 className="text-2xl font-bold mb-6 text-on-surface">
               Order Summary
             </h3>
             <div className="flex items-center justify-between py-4 border-b border-(--surface)">
               <div className="flex items-center gap-3">
-                <div className="w-12 h-12 rounded bg-primary/10 flex items-center justify-center">
-                  <span className="material-symbols-outlined text-primary">
+                <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+                  <span className="material-symbols-outlined text-primary text-2xl">
                     medical_services
                   </span>
                 </div>
                 <div>
                   <p className="font-bold text-on-surface">Subscription</p>
                   <p className="text-xs text-on-surface-variant">
-                    {sessionStorage.getItem("selectedPlanId") === "starter"
-                      ? "Starter Plan (Monthly)"
-                      : "Professional Plan (Monthly)"}
+                    {displayPlanName}
                   </p>
                 </div>
               </div>
-              <p className="font-bold text-primary">₹{amount}</p>
+              <p className="font-bold text-primary">₹{displayAmount}</p>
             </div>
             <div className="mt-6 space-y-3">
               <div className="flex justify-between text-sm text-on-surface-variant">
                 <span>Subtotal</span>
-                <span>₹{amount}.00</span>
+                <span>₹{displayAmount}.00</span>
               </div>
               <div className="pt-4 border-t border-(--surface) flex justify-between items-center">
                 <span className="text-lg font-bold text-on-surface">Total</span>
                 <span className="text-3xl font-extrabold text-primary">
-                  ₹{amount}
+                  ₹{displayAmount}
                 </span>
               </div>
             </div>
           </div>
         </div>
 
-        <div className="w-full md:w-7/12 lg:w-8/12">
+        {/* Payment Column */}
+        <div className="w-full lg:w-8/12">
           <div className="bg-(--surface) rounded-xl border border-(--surface) p-8 shadow-2xl">
             <h2 className="text-3xl font-bold mb-8 text-on-surface">
               Complete Payment
             </h2>
-            <div className="grid grid-cols-3 gap-4 mb-8">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
               <button
+                type="button"
                 onClick={() => setMethod("card")}
-                className={`flex flex-col items-center justify-center p-4 rounded-xl border-2 transition ${method === "card" ? "border-primary bg-primary/10 text-primary" : "border-(--surface) bg-(--bg-dark) text-on-surface-variant"}`}
+                className={`min-h-26 px-6 py-5 flex flex-col items-center justify-center gap-2 rounded-xl border-2 cursor-pointer transition-all ${
+                  method === "card"
+                    ? "border-primary bg-primary/10 text-primary shadow-md"
+                    : "border-(--surface) bg-(--bg-dark) text-on-surface-variant hover:border-primary/50 hover:bg-primary/5"
+                }`}
               >
-                <span className="material-symbols-outlined text-3xl mb-1">
+                <span className="material-symbols-outlined text-3xl">
                   credit_card
                 </span>
                 <span className="text-xs font-bold uppercase tracking-wider">
@@ -70,10 +83,15 @@ function PaymentGatewaySection1({
                 </span>
               </button>
               <button
+                type="button"
                 onClick={() => setMethod("upi")}
-                className={`flex flex-col items-center justify-center p-4 rounded-xl border-2 transition ${method === "upi" ? "border-primary bg-primary/10 text-primary" : "border-(--surface) bg-(--bg-dark) text-on-surface-variant"}`}
+                className={`min-h-26 px-6 py-5 flex flex-col items-center justify-center gap-2 rounded-xl border-2 cursor-pointer transition-all ${
+                  method === "upi"
+                    ? "border-primary bg-primary/10 text-primary shadow-md"
+                    : "border-(--surface) bg-(--bg-dark) text-on-surface-variant hover:border-primary/50 hover:bg-primary/5"
+                }`}
               >
-                <span className="material-symbols-outlined text-3xl mb-1">
+                <span className="material-symbols-outlined text-3xl">
                   account_balance
                 </span>
                 <span className="text-xs font-bold uppercase tracking-wider">
@@ -81,10 +99,15 @@ function PaymentGatewaySection1({
                 </span>
               </button>
               <button
+                type="button"
                 onClick={() => setMethod("qr")}
-                className={`flex flex-col items-center justify-center p-4 rounded-xl border-2 transition ${method === "qr" ? "border-primary bg-primary/10 text-primary" : "border-(--surface) bg-(--bg-dark) text-on-surface-variant"}`}
+                className={`min-h-26 px-6 py-5 flex flex-col items-center justify-center gap-2 rounded-xl border-2 cursor-pointer transition-all ${
+                  method === "qr"
+                    ? "border-primary bg-primary/10 text-primary shadow-md"
+                    : "border-(--surface) bg-(--bg-dark) text-on-surface-variant hover:border-primary/50 hover:bg-primary/5"
+                }`}
               >
-                <span className="material-symbols-outlined text-3xl mb-1">
+                <span className="material-symbols-outlined text-3xl">
                   qr_code_2
                 </span>
                 <span className="text-xs font-bold uppercase tracking-wider">
@@ -94,7 +117,7 @@ function PaymentGatewaySection1({
             </div>
 
             <div className="p-6 bg-(--surface) rounded-xl border border-primary/20 text-center">
-              <p className="text-on-surface-variant text-sm mb-6 italic">
+              <p className="text-on-surface-variant text-sm mb-6 font-medium">
                 Razorpay secure checkout will launch to handle your{" "}
                 {method.toUpperCase()} payment safely.
               </p>
@@ -105,7 +128,7 @@ function PaymentGatewaySection1({
                     border: "1px solid #EF4444",
                     borderRadius: "8px",
                     padding: "12px 16px",
-                    marginBottom: "12px",
+                    marginBottom: "16px",
                     color: "#EF4444",
                     fontSize: "13px",
                   }}
@@ -114,13 +137,14 @@ function PaymentGatewaySection1({
                 </div>
               )}
               <button
+                type="button"
                 onClick={handlePay}
                 disabled={status === "processing"}
-                className="w-full bg-primary hover:brightness-110 text-(--bg-dark) font-extrabold py-5 rounded-xl shadow-lg flex items-center justify-center gap-3 active:scale-[0.98] transition disabled:opacity-50"
+                className="min-h-14 w-full bg-primary hover:brightness-110 text-(--bg-dark) font-extrabold py-4 px-6 rounded-xl shadow-lg flex items-center justify-center gap-3 active:scale-[0.98] transition disabled:opacity-50 cursor-pointer"
               >
                 {status === "processing"
                   ? "Initializing..."
-                  : `Pay ₹${amount} Now`}
+                  : `Pay ₹${displayAmount} Now`}
               </button>
             </div>
           </div>
@@ -129,19 +153,69 @@ function PaymentGatewaySection1({
     </main>
   );
 }
+
 export default function PaymentGateway({ user, onPaymentComplete, amount }) {
   const { refreshUser } = useAuth();
-  const [status, setStatus] = useState("checkout");
+  const [status, setStatus] = useState("loading");
   const [method, setMethod] = useState("card");
   const [paymentError, setPaymentError] = useState(null);
+  const [selectedPlan, setSelectedPlan] = useState(null);
+
   const retryCountRef = useRef(0);
   const razorpayRef = useRef(null);
   const pollRef = useRef(null);
   const authorizedRef = useRef(false);
   const MAX_RETRIES = 3;
   const isProcessingRef = useRef(false);
+
   useEffect(() => {
+    let isMounted = true;
+
+    async function checkPlanAndBypass() {
+      const planId = sessionStorage.getItem("selectedPlanId") || "paid";
+      let fetchedPlan = null;
+      try {
+        const res = await api.get(API_ROUTES.AUTH_PLANS);
+        const plansData = res.data?.data || res.data || [];
+        if (Array.isArray(plansData)) {
+          fetchedPlan = plansData.find((p) => p.id === planId);
+        }
+      } catch (err) {
+        console.error("Failed to load plans in PaymentGateway", err);
+      }
+
+      if (!isMounted) return;
+
+      if (fetchedPlan) {
+        setSelectedPlan(fetchedPlan);
+      }
+
+      const isFree =
+        (fetchedPlan && fetchedPlan.price === 0) ||
+        planId === "free" ||
+        planId === "free-trial" ||
+        amount === 0;
+
+      if (isFree) {
+        setStatus("activating_free");
+        try {
+          await api.post(API_ROUTES.SUBSCRIPTIONS_TRIAL);
+          if (refreshUser) await refreshUser();
+          if (isMounted) setStatus("success");
+        } catch (err) {
+          console.error("Free plan activation error:", err);
+          if (refreshUser) await refreshUser();
+          if (isMounted) setStatus("success");
+        }
+      } else {
+        if (isMounted) setStatus("checkout");
+      }
+    }
+
+    checkPlanAndBypass();
+
     return () => {
+      isMounted = false;
       if (razorpayRef.current) {
         try {
           razorpayRef.current.close();
@@ -155,7 +229,8 @@ export default function PaymentGateway({ user, onPaymentComplete, amount }) {
         pollRef.current = null;
       }
     };
-  }, []);
+  }, [amount, refreshUser]);
+
   const handlePay = useCallback(async () => {
     if (isProcessingRef.current || status === "processing") return;
     if (retryCountRef.current >= MAX_RETRIES) {
@@ -175,18 +250,18 @@ export default function PaymentGateway({ user, onPaymentComplete, amount }) {
         }
         razorpayRef.current = null;
       }
-      const selectedPlanId =
-        sessionStorage.getItem("selectedPlanId") || "starter";
-      const planName =
-        selectedPlanId === "starter" ? "Starter Plan" : "MedAssist Basic";
-      const planId = selectedPlanId;
+
+      const planId =
+        selectedPlan?.id || sessionStorage.getItem("selectedPlanId") || "paid";
+      const planName = selectedPlan?.name || "Paid Plan";
       const orderRes = await api.post(API_ROUTES.PAYMENTS_CREATE_ORDER, {
-        amount: safeNumber(amount) || 599,
+        amount: safeNumber(selectedPlan?.price || amount) || 599,
         planName,
         planId,
-        billingCycle: "monthly",
+        billingCycle: selectedPlan?.billingCycle || "monthly",
         _ts: Date.now(),
       });
+
       const resData = orderRes.data?.data || orderRes.data;
       const key = resData.key || orderRes.data?.key;
       const order = resData.order || resData;
@@ -317,7 +392,26 @@ export default function PaymentGateway({ user, onPaymentComplete, amount }) {
       setPaymentError(errorMessage);
       isProcessingRef.current = false;
     }
-  }, [user, amount, status, refreshUser]);
+  }, [user, amount, status, refreshUser, selectedPlan]);
+
+  if (status === "loading" || status === "activating_free") {
+    return (
+      <div className="dark bg-(--bg-dark) min-h-screen flex items-center justify-center p-6 font-['Manrope']">
+        <div className="bg-(--surface) border border-(--surface) rounded-2xl p-12 max-w-md w-full text-center shadow-2xl">
+          <div className="w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-6"></div>
+          <h2 className="text-2xl font-bold text-on-surface mb-2">
+            {status === "activating_free"
+              ? "Activating Free Plan..."
+              : "Loading Checkout..."}
+          </h2>
+          <p className="text-sm text-on-surface-variant">
+            Please wait while we process your workspace access.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   if (status === "success") {
     return (
       <div className="dark bg-(--bg-dark) min-h-screen flex items-center justify-center p-6 font-['Manrope']">
@@ -336,11 +430,11 @@ export default function PaymentGateway({ user, onPaymentComplete, amount }) {
             Licensing Authorized
           </h2>
           <p className="text-on-surface-variant mb-10">
-            Your facility has been upgraded successfully.
+            Your facility workspace has been activated successfully.
           </p>
           <button
             onClick={onPaymentComplete}
-            className="w-full bg-primary text-(--bg-dark) py-4 rounded-xl font-extrabold shadow-lg hover:brightness-110 transition flex items-center justify-center gap-3"
+            className="w-full bg-primary text-(--bg-dark) py-4 rounded-xl font-extrabold shadow-lg hover:brightness-110 transition flex items-center justify-center gap-3 cursor-pointer"
           >
             <span>Enter Dashboard</span>
             <span className="material-symbols-outlined">arrow_forward</span>
@@ -349,6 +443,7 @@ export default function PaymentGateway({ user, onPaymentComplete, amount }) {
       </div>
     );
   }
+
   return (
     <div className="dark bg-(--bg-dark) h-screen text-on-surface font-['Manrope'] antialiased overflow-y-auto">
       <header className="fixed top-0 w-full z-50 flex justify-between items-center px-6 py-3 bg-(--bg-dark)/90 backdrop-blur-md border-b border-(--surface) shadow-xl">
@@ -373,6 +468,8 @@ export default function PaymentGateway({ user, onPaymentComplete, amount }) {
         method={method}
         paymentError={paymentError}
         handlePay={handlePay}
+        status={status}
+        selectedPlan={selectedPlan}
       />
     </div>
   );

@@ -94,19 +94,16 @@ function PlanSelectionSection1({ handleTrialClick, handleProClick }) {
           </div>
 
           <div className="space-y-3 mb-8 grow">
-            {[
-              "Unlimited Medicines",
-              "Basic Analytics",
-              "Up to 3 Users",
-              "Standard Support",
-            ].map((feature) => (
-              <div key={feature} className="flex items-center gap-3">
-                <span className="material-symbols-outlined text-primary text-lg">
-                  check_circle
-                </span>
-                <span className="text-sm text-on-surface/80">{feature}</span>
-              </div>
-            ))}
+            {["Unlimited Medicines", "Basic Analytics", "Standard Support"].map(
+              (feature) => (
+                <div key={feature} className="flex items-center gap-3">
+                  <span className="material-symbols-outlined text-primary text-lg">
+                    check_circle
+                  </span>
+                  <span className="text-sm text-on-surface/80">{feature}</span>
+                </div>
+              ),
+            )}
           </div>
 
           <div className="mt-auto pt-6 border-t border-(--surface)">

@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useSearchParams, Link } from "react-router-dom";
 import {
-  Lock,
   Shield,
   Eye,
   EyeOff,
@@ -14,6 +13,13 @@ import {
 } from "lucide-react";
 import { useAuth } from "../hooks/useAuth";
 const PLAN_META = {
+  free: {
+    name: "Free Tier",
+    price: 0,
+    duration: "28 Days Free",
+    icon: Zap,
+    color: "#10b981",
+  },
   "free-trial": {
     name: "Free Trial",
     price: 0,
@@ -21,8 +27,15 @@ const PLAN_META = {
     icon: Zap,
     color: "#10b981",
   },
+  paid: {
+    name: "Paid Plan",
+    price: 599,
+    duration: "/month",
+    icon: Star,
+    color: "#3ecfcf",
+  },
   starter: {
-    name: "Starter",
+    name: "Starter Plan",
     price: 599,
     duration: "/month",
     icon: Star,
@@ -112,17 +125,6 @@ function SignupPageSection1({ navigate }) {
               99.9% Uptime SLA
             </div>
           </div>
-          <div className="p-4 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-md">
-            <div className="w-8 h-8 rounded-lg bg-emerald-500/15 flex items-center justify-center mb-2.5">
-              <Lock className="w-4 h-4 text-emerald-400" />
-            </div>
-            <div className="text-[11px] font-bold text-emerald-400 uppercase tracking-wider">
-              GST Compliance
-            </div>
-            <div className="text-base font-bold text-white mt-0.5">
-              Automated Filing
-            </div>
-          </div>
         </div>
       </div>
 
@@ -151,6 +153,8 @@ function SignupPageSection2({
   updateField,
   setShowPassword,
   showPassword,
+  setShowConfirmPassword,
+  showConfirmPassword,
   setAgreedToTerms,
   plan,
   PlanIcon,
@@ -247,7 +251,6 @@ function SignupPageSection2({
               onChange={(e) => updateField("fullName", e.target.value)}
             />
           </div>
-
           <div>
             <label
               htmlFor="shopName"
@@ -265,7 +268,6 @@ function SignupPageSection2({
               onChange={(e) => updateField("shopName", e.target.value)}
             />
           </div>
-
           <div>
             <label
               htmlFor="email"
@@ -284,7 +286,6 @@ function SignupPageSection2({
               autoComplete="off"
             />
           </div>
-
           <div>
             <label
               htmlFor="password"
@@ -312,7 +313,6 @@ function SignupPageSection2({
               </button>
             </div>
           </div>
-
           <div>
             <label
               htmlFor="confirmPassword"
@@ -320,17 +320,32 @@ function SignupPageSection2({
             >
               Confirm Password
             </label>
-            <input
-              id="confirmPassword"
-              required
-              type="password"
-              className="w-full px-4 py-3.5 rounded-xl bg-white dark:bg-[#151b2a] border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500 transition shadow-2xs"
-              placeholder="Re-enter password"
-              value={form.confirmPassword}
-              onChange={(e) => updateField("confirmPassword", e.target.value)}
-            />
-          </div>
 
+            <div className="relative">
+              <input
+                id="confirmPassword"
+                required
+                type={showConfirmPassword ? "text" : "password"}
+                className="w-full px-4 py-3.5 pr-12 rounded-xl bg-white dark:bg-[#151b2a] border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500 transition shadow-2xs"
+                placeholder="Re-enter password"
+                value={form.confirmPassword}
+                onChange={(e) => updateField("confirmPassword", e.target.value)}
+              />
+
+              <button
+                type="button"
+                className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors"
+                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                aria-label={
+                  showConfirmPassword
+                    ? "Hide confirm password"
+                    : "Show confirm password"
+                }
+              >
+                {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+              </button>
+            </div>
+          </div>
           {/* Terms Consent */}
           <div className="flex items-start gap-3 pt-2">
             <input
@@ -363,7 +378,6 @@ function SignupPageSection2({
               .
             </label>
           </div>
-
           {/* Submit Button - Guaranteed High Visibility in Light & Dark Mode */}
           <div className="pt-3">
             <button
@@ -418,6 +432,7 @@ export default function SignupPage() {
     confirmPassword: "",
   });
   const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [agreedToTerms, setAgreedToTerms] = useState(false);
@@ -540,6 +555,8 @@ export default function SignupPage() {
         updateField={updateField}
         setShowPassword={setShowPassword}
         showPassword={showPassword}
+        setShowConfirmPassword={setShowConfirmPassword}
+        showConfirmPassword={showConfirmPassword}
         setAgreedToTerms={setAgreedToTerms}
         plan={plan}
         PlanIcon={PlanIcon}

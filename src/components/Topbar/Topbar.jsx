@@ -112,7 +112,7 @@ export function TopbarSection1({
             background: "none",
             border: "none",
             width: "100%",
-            padding: 0,
+            padding: "0 36px",
             textAlign: "left",
             cursor: "pointer",
             display: "block",
