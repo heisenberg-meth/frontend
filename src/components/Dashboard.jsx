@@ -190,6 +190,7 @@ function DashboardSection2({
               <span>STOCK</span>
               <span>ACTION</span>
             </div>
+
             <div className="mini-table-body flex flex-col gap-1">
               {needsReorderList.length > 0 ? (
                 needsReorderList.map((item) => (
@@ -197,28 +198,22 @@ function DashboardSection2({
                     <button
                       type="button"
                       onClick={() => navigate("/stock")}
-                      style={{
-                        background: "none",
-                        border: "none",
-                        display: "flex",
-                        flex: 1,
-                        alignItems: "center",
-                        textAlign: "left",
-                        cursor: "pointer",
-                        color: "inherit",
-                        padding: 0,
-                      }}
+                      className="row-medicine-btn"
                     >
                       <span className="row-med">{item.name}</span>
-                      <span className="row-stock text-yellow-500 font-bold">
-                        {item.stock ?? item.currentStock ?? 0} units
-                      </span>
                     </button>
+
+                    <span className="row-stock text-yellow-500 font-bold">
+                      {item.stock ?? item.currentStock ?? 0} units
+                    </span>
+
                     <span className="row-act">
                       <button
+                        type="button"
                         className="micro-btn-teal"
                         onClick={(e) => {
                           e.stopPropagation();
+
                           navigate("/purchases", {
                             state: {
                               action: "raise-po",
