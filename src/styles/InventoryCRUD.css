@@ -419,25 +419,6 @@
   gap: 16px;
 }
 
-.inv-avatar {
-  width: 44px;
-  height: 44px;
-  border-radius: 14px;
-  background: linear-gradient(
-    135deg,
-    var(--primary-glow) 0%,
-    rgba(59, 130, 246, 0.1) 100%
-  );
-  color: var(--primary);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-family: "Outfit", sans-serif;
-  font-weight: 800;
-  font-size: 14px;
-  border: 1px solid var(--primary-glow);
-}
-
 .inv-name {
   font-family: "Outfit", sans-serif;
   font-size: 15px;

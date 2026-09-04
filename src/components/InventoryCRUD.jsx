@@ -58,13 +58,6 @@ const headers = [
   "GST",
   "Status",
 ];
-const getInitials = (name) =>
-  name
-    .split(" ")
-    .map((w) => w[0])
-    .slice(0, 2)
-    .join("")
-    .toUpperCase();
 const handleMouseMove = (e) => {
   const rect = e.currentTarget.getBoundingClientRect();
   e.currentTarget.style.setProperty("--x", `${e.clientX - rect.left}px`);
@@ -94,7 +87,7 @@ function InventoryCRUDSection1({
         <div className="inv-stat-header">
           <span className="inv-stat-label">TOTAL SKU</span>
           <div className="inv-stat-icon bg-primary">
-            <Package size={14} />
+            <Package size={18} />
           </div>
         </div>
         <div className="inv-stat-value text-primary">
@@ -117,7 +110,7 @@ function InventoryCRUDSection1({
         <div className="inv-stat-header">
           <span className="inv-stat-label">IN STOCK</span>
           <div className="inv-stat-icon bg-success">
-            <CheckCircle2 size={14} />
+            <CheckCircle2 size={18} />
           </div>
         </div>
         <div className="inv-stat-value text-success">{stats.inStock}</div>
@@ -138,7 +131,7 @@ function InventoryCRUDSection1({
         <div className="inv-stat-header">
           <span className="inv-stat-label">LOW STOCK</span>
           <div className="inv-stat-icon bg-warning">
-            <AlertTriangle size={14} />
+            <AlertTriangle size={18} />
           </div>
         </div>
         <div className="inv-stat-value text-warning">{stats.lowStock}</div>
@@ -159,7 +152,7 @@ function InventoryCRUDSection1({
         <div className="inv-stat-header">
           <span className="inv-stat-label">OUT OF STOCK</span>
           <div className="inv-stat-icon bg-danger">
-            <PackageOpen size={14} />
+            <PackageOpen size={18} />
           </div>
         </div>
         <div className="inv-stat-value text-danger">{stats.outOfStock}</div>
@@ -180,7 +173,7 @@ function InventoryCRUDSection1({
         <div className="inv-stat-header">
           <span className="inv-stat-label">EXPIRED BATCHES</span>
           <div className="inv-stat-icon bg-danger">
-            <Calendar size={14} />
+            <Calendar size={18} />
           </div>
         </div>
         <div className="inv-stat-value text-danger">{stats.expired}</div>
@@ -196,7 +189,7 @@ function InventoryCRUDSection1({
         <div className="inv-stat-header">
           <span className="inv-stat-label">INVENTORY VALUE</span>
           <div className="inv-stat-icon bg-primary">
-            <DollarSign size={14} />
+            <DollarSign size={18} />
           </div>
         </div>
         <div className="inv-stat-value text-primary">
@@ -327,7 +320,6 @@ function InventoryCRUDSection2({
                   <tr key={m.id}>
                     <td>
                       <div className="inv-identity">
-                        <div className="inv-avatar">{getInitials(m.name)}</div>
                         <div className="inv-info">
                           <span className="inv-name">{m.name}</span>
                           <span className="inv-generic">
@@ -386,7 +378,7 @@ function InventoryCRUDSection2({
                           title="Edit Stock"
                           onClick={() => handleEditStock(m)}
                         >
-                          <PackageOpen size={14} />
+                          <PackageOpen size={18} />
                           <span>Edit Stock</span>
                         </button>
                         <button
@@ -395,7 +387,7 @@ function InventoryCRUDSection2({
                           title="View Details"
                           onClick={() => setViewTarget(m)}
                         >
-                          <Eye size={14} />
+                          <Eye size={18} />
                         </button>
                         <button
                           aria-label="Edit"
@@ -406,7 +398,7 @@ function InventoryCRUDSection2({
                             setModalOpen(true);
                           }}
                         >
-                          <Pencil size={14} />
+                          <Pencil size={18} />
                         </button>
                         <button
                           aria-label="Delete"
@@ -414,7 +406,7 @@ function InventoryCRUDSection2({
                           title="Delete"
                           onClick={() => setDeleteTarget(m)}
                         >
-                          <Trash2 size={14} />
+                          <Trash2 size={18} />
                         </button>
                       </div>
                     </td>
