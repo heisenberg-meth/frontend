@@ -61,7 +61,7 @@ function DashboardSection1({
         <div className="stat-v2-header">
           <span className="stat-v2-label">TOTAL SKU</span>
           <div className="stat-v2-icon teal bg-primary/10 text-primary">
-            <Package size={14} />
+            <Package size={18} />
           </div>
         </div>
         <div className="stat-v2-val teal text-primary">{stats.total}</div>
@@ -77,7 +77,7 @@ function DashboardSection1({
         <div className="stat-v2-header">
           <span className="stat-v2-label">LOW STOCK</span>
           <div className="stat-v2-icon warning bg-yellow-500/10 text-yellow-500">
-            <AlertTriangle size={14} />
+            <AlertTriangle size={18} />
           </div>
         </div>
         <div className="flex items-center gap-3">
@@ -98,7 +98,7 @@ function DashboardSection1({
         <div className="stat-v2-header">
           <span className="stat-v2-label">EXPIRING 30D</span>
           <div className="stat-v2-icon danger bg-rose-500/10 text-rose-500">
-            <Calendar size={14} />
+            <Calendar size={18} />
           </div>
         </div>
         <div className="stat-v2-val danger text-rose-500">{stats.expiring}</div>
@@ -114,7 +114,7 @@ function DashboardSection1({
         <div className="stat-v2-header">
           <span className="stat-v2-label">TODAY'S REVENUE</span>
           <div className="stat-v2-icon teal bg-primary/10 text-primary">
-            <IndianRupee size={14} />
+            <IndianRupee size={18} />
           </div>
         </div>
         <div className="stat-v2-val teal text-primary">{fmt(revenueToday)}</div>
@@ -130,7 +130,7 @@ function DashboardSection1({
         <div className="stat-v2-header">
           <span className="stat-v2-label">BILLS TODAY</span>
           <div className="stat-v2-icon blue bg-blue-500/10 text-blue-400">
-            <Receipt size={14} />
+            <Receipt size={18} />
           </div>
         </div>
         <div className="stat-v2-val blue text-blue-400">{billsToday}</div>
@@ -146,7 +146,7 @@ function DashboardSection1({
         <div className="stat-v2-header">
           <span className="stat-v2-label">ALERTS</span>
           <div className="stat-v2-icon purple bg-purple-500/10 text-purple-400">
-            <Zap size={14} />
+            <Zap size={18} />
           </div>
         </div>
         <div className="stat-v2-val purple text-purple-400">
@@ -318,7 +318,7 @@ function DashboardSection2({
                 }}
               >
                 <Trash2
-                  size={14}
+                  size={18}
                   style={{
                     marginRight: 7,
                   }}
@@ -386,7 +386,7 @@ function DashboardSection2({
                   }}
                 >
                   <AlertTriangle
-                    size={14}
+                    size={18}
                     style={{
                       marginRight: 6,
                     }}
@@ -608,7 +608,6 @@ export default function Dashboard({
       {showBanner && user?.subscriptionStatus === "TRIAL" && (
         <div className="announcement-banner">
           <div className="banner-left">
-            <Zap size={14} className="banner-icon" />
             <span>FREE TRIAL ACTIVE: Full access to all features.</span>
           </div>
           <div className="banner-right">
