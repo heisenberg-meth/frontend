@@ -766,8 +766,6 @@ function BatchModalSection2({
                       {batches.map((b) => (
                         <tr
                           key={b.id}
-                          role="button"
-                          tabIndex={0}
                           className={`batch-row ${selectedBatch?.id === b.id ? "selected" : ""}`}
                           style={{
                             background:
@@ -775,26 +773,6 @@ function BatchModalSection2({
                                 ? "var(--hover-bg)"
                                 : "transparent",
                             cursor: "pointer",
-                          }}
-                          onKeyDown={(e) => {
-                            if (e.key === "Enter" || e.key === " ") {
-                              e.preventDefault();
-                              setSelectedBatch(b);
-                              setForm({
-                                batchNumber: b.batchNumber || "",
-                                expiryDate: b.expiryDate
-                                  ? b.expiryDate.split("T")[0]
-                                  : "",
-                                mrp: b.mrp ? String(b.mrp) : "",
-                                sellingPrice: b.sellingPrice
-                                  ? String(b.sellingPrice)
-                                  : "",
-                                quantity: b.quantity ? String(b.quantity) : "",
-                                purchasePrice: b.purchasePrice
-                                  ? String(b.purchasePrice)
-                                  : "",
-                              });
-                            }
                           }}
                           onClick={() => {
                             setSelectedBatch(b);

@@ -1085,55 +1085,59 @@ export function BillingPOSSection1({
                       duration: 0.3,
                       ease: "easeOut",
                     }}
-                    role="button"
-                    tabIndex={0}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter" || e.key === " ") {
-                        e.preventDefault();
-                        openBillDetail(bill);
-                      }
-                    }}
-                    onClick={() => openBillDetail(bill)}
                   >
-                    <div className="bill-card-header">
-                      <span
-                        style={{
-                          fontFamily: "Outfit",
-                          fontWeight: 600,
-                          fontSize: "13px",
-                        }}
-                      >
-                        {resolveInvoiceField(bill, "invoiceNumber", bill.id)}
-                      </span>
-                      <span className="result-meta">{bill.time}</span>
-                    </div>
-                    <div className="bill-card-body">
-                      <div
-                        style={{
-                          fontWeight: 600,
-                        }}
-                      >
-                        {bill.patient ||
-                          resolveInvoiceField(
-                            bill,
-                            "patientName",
-                            "Walk-in Customer",
-                          )}
+                    <div
+                      role="button"
+                      tabIndex={0}
+                      style={{ cursor: "pointer" }}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" || e.key === " ") {
+                          e.preventDefault();
+                          openBillDetail(bill);
+                        }
+                      }}
+                      onClick={() => openBillDetail(bill)}
+                    >
+                      <div className="bill-card-header">
+                        <span
+                          style={{
+                            fontFamily: "Outfit",
+                            fontWeight: 600,
+                            fontSize: "13px",
+                          }}
+                        >
+                          {resolveInvoiceField(bill, "invoiceNumber", bill.id)}
+                        </span>
+                        <span className="result-meta">{bill.time}</span>
                       </div>
-                      <div className="result-meta">
-                        {bill.phone ||
-                          resolveInvoiceField(bill, "patientPhone", "-")}
+                      <div className="bill-card-body">
+                        <div
+                          style={{
+                            fontWeight: 600,
+                          }}
+                        >
+                          {bill.patient ||
+                            resolveInvoiceField(
+                              bill,
+                              "patientName",
+                              "Walk-in Customer",
+                            )}
+                        </div>
+                        <div className="result-meta">
+                          {bill.phone ||
+                            resolveInvoiceField(bill, "patientPhone", "-")}
+                        </div>
                       </div>
-                    </div>
-                    <div className="bill-card-footer">
-                      <div className="result-meta">
-                        {bill.items.length} medicines · ₹
-                        {safeNumber(bill.total).toFixed(2)}
-                      </div>
-                      <div
-                        className={`status-badge ${bill.status === "DRAFT" ? "badge-draft" : bill.status === "RETURNED" ? "badge-returned" : "badge-paid"}`}
-                      >
-                        {bill.status}
+                      <div className="bill-card-footer">
+                        <div className="result-meta">
+                          {bill.items.length} medicines · ₹
+                          {safeNumber(bill.total).toFixed(2)}
+                        </div>
+                        <div
+                          className={`status-badge ${bill.status === "DRAFT" ? "badge-draft" : bill.status === "RETURNED" ? "badge-returned" : "badge-paid"}`}
+                        >
+                          {bill.status}
+                        </div>
                       </div>
                     </div>
                     <div

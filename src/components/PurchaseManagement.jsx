@@ -6,6 +6,7 @@ import { API_ROUTES } from "../constants/api.routes.js";
 import { getMedicines } from "../services/inventory.service";
 import {
   createPurchaseOrder,
+  updatePurchaseOrder,
   receivePurchaseOrder,
 } from "../services/purchases.service.js";
 import {
@@ -1296,7 +1297,7 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
         })),
       };
       if (drawer === "edit-purchase" && selectedRow?.id) {
-        await api.put(`/purchase-orders/${selectedRow.id}`, payload);
+        await updatePurchaseOrder(selectedRow.id, payload);
         showToast("Purchase order updated", "success");
       } else {
         await createPurchaseOrder(payload);
