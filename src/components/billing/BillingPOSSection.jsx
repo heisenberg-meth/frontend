@@ -3,7 +3,7 @@ import { API_ROUTES } from "../../constants/api.routes.js";
 import {
   Plus,
   Minus,
-  Search,
+  // Search,
   RefreshCw,
   Barcode,
   X,
@@ -222,7 +222,7 @@ export function BillingPOSSection1({
   visibleBills,
   allBillsLoaded,
   newPatientMsg,
-  handleFindPatient,
+  // handleFindPatient,
   draftSaving,
   findError,
   loyaltyProfile,
@@ -231,7 +231,7 @@ export function BillingPOSSection1({
   discount,
   loadMoreLoading,
   draftSaved,
-  findLoading,
+  // findLoading,
   todayBills,
 }) {
   return (
@@ -330,18 +330,13 @@ export function BillingPOSSection1({
                           if (!isOOS) addToLineItems(res);
                         }}
                       >
-                        <div className="result-info">
+                        <div className="result-medicine">
                           <span className="result-name">{res.name}</span>
                           <span className="result-meta">
-                            {res.genericName || res.generic}
+                            {res.genericName || res.generic || "—"}
                           </span>
                         </div>
-                        <div
-                          className="result-info"
-                          style={{
-                            textAlign: "center",
-                          }}
-                        >
+                        <div className="result-batch">
                           <span className="result-meta">
                             Batch:{" "}
                             {res.batchNumber ||
@@ -358,11 +353,7 @@ export function BillingPOSSection1({
                               : res.exp || res.expiry || "N/A"}
                           </span>
                         </div>
-                        <div
-                          style={{
-                            textAlign: "right",
-                          }}
-                        >
+                        <div className="result-stock">
                           <div
                             className="result-name"
                             style={{
@@ -469,7 +460,7 @@ export function BillingPOSSection1({
                   required
                   id="patient-phone-input"
                   className={`pos-input ${phoneFieldError ? "input-error" : ""}`}
-                  placeholder="98765 43210"
+                  placeholder="6379723465"
                   value={patient.phone}
                   onChange={(e) => {
                     setPatient({
@@ -483,7 +474,7 @@ export function BillingPOSSection1({
                   <span className="field-error-text">{phoneFieldError}</span>
                 )}
               </div>
-              <button
+              {/* <button
                 className={`pos-btn outline ${findLoading ? "btn-loading" : ""}`}
                 style={{
                   marginTop: "auto",
@@ -501,7 +492,7 @@ export function BillingPOSSection1({
                     <Search size={16} /> Find
                   </>
                 )}
-              </button>
+              </button> */}
             </div>
 
             <AnimatePresence>

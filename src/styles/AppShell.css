@@ -248,13 +248,13 @@
   display: flex;
   align-items: center;
   gap: 12px;
-  z-index: 9999;
+  z-index: var(--z-toast, 14000);
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
   font-family: var(--font-sans);
   font-size: 14px;
   font-weight: 600;
   min-width: 300px;
-  pointer-events: none;
+  pointer-events: auto;
 }
 
 .toast-v2.success {

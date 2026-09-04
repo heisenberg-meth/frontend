@@ -193,13 +193,21 @@ export default function PaymentGateway({ user, onPaymentComplete, amount }) {
       const isFree =
         (fetchedPlan && fetchedPlan.price === 0) ||
         planId === "free" ||
-        planId === "free-trial" ||
-        amount === 0;
+        planId === "free-trial";
 
-      if (isFree) {
+      // For ₹1 verification flow (amount === 1), don't auto-activate trial
+      // We'll activate it after successful payment verification
+      if (isFree && amount === 0) {
         setStatus("activating_free");
-        if (refreshUser) await refreshUser();
-        if (isMounted) setStatus("success");
+        try {
+          await api.post(API_ROUTES.SUBSCRIPTIONS_TRIAL);
+          if (refreshUser) await refreshUser();
+          if (isMounted) setStatus("success");
+        } catch (err) {
+          console.error("Free plan activation error:", err);
+          if (refreshUser) await refreshUser();
+          if (isMounted) setStatus("success");
+        }
       } else {
         if (isMounted) setStatus("checkout");
       }
@@ -300,6 +308,23 @@ export default function PaymentGateway({ user, onPaymentComplete, amount }) {
                   clearInterval(pollRef.current);
                   setStatus("success");
                   isProcessingRef.current = false;
+
+                  // Activate free trial for ₹1 verification flow
+                  const planId = selectedPlan?.id || sessionStorage.getItem("selectedPlanId") || "paid";
+                  const isFreePlan =
+                    (selectedPlan && selectedPlan.price === 0) ||
+                    planId === "free" ||
+                    planId === "free-trial";
+
+                  if (isFreePlan) {
+                    try {
+                      await api.post(API_ROUTES.SUBSCRIPTIONS_TRIAL);
+                    } catch (trialErr) {
+                      console.error("Free trial activation error after payment:", trialErr);
+                      // Continue with refreshUser even if trial activation fails
+                    }
+                  }
+
                   try {
                     await refreshUser();
                   } catch (e) {

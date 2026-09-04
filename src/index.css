@@ -44,6 +44,15 @@
   --font-sans: "Inter", "Manrope", system-ui, -apple-system, sans-serif;
   --font-mono: "JetBrains Mono", "Fira Code", monospace;
 
+  /* Global Z-Index Hierarchy */
+  --z-base: 1;
+  --z-dropdown: 1000;
+  --z-sticky: 2000;
+  --z-overlay: 12000;
+  --z-modal: 13000;
+  --z-modal-content: 13001;
+  --z-toast: 14000;
+
   color-scheme: dark;
 }
 
