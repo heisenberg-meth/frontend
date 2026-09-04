@@ -174,7 +174,9 @@ export default function PricingPage() {
             showToast("Free plan activated successfully", "success");
           navigate("/dashboard", { replace: true });
         } catch (err) {
-          console.error("Failed to activate free plan:", err);
+          // Trial may already be active - refresh user and proceed to dashboard
+          console.error("Free plan activation error:", err);
+          if (refreshUser) await refreshUser();
           navigate("/dashboard", { replace: true });
         }
       } else {

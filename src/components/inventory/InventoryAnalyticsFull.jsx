@@ -11,7 +11,22 @@ import {
 import { lazy, Suspense } from "react";
 const LazyRechartsWrapper = lazy(() =>
   import("recharts").then((m) => ({
-    default: function Chart({ categories, COLORS }) {
+    default: function Chart({ categories }) {
+      const COLORS = [
+        "#0D9488",
+        "#14B8A6",
+        "#06B6D4",
+        "#3B82F6",
+        "#6366F1",
+        "#8B5CF6",
+        "#A855F7",
+        "#EC4899",
+        "#F43F5E",
+        "#F97316",
+        "#EAB308",
+        "#84CC16",
+      ];
+
       return (
         <m.ResponsiveContainer width="100%" height="100%">
           <m.PieChart>
@@ -19,26 +34,30 @@ const LazyRechartsWrapper = lazy(() =>
               data={categories}
               cx="50%"
               cy="50%"
-              innerRadius={60}
-              outerRadius={100}
-              paddingAngle={5}
+              innerRadius="48%"
+              outerRadius="72%"
+              paddingAngle={3}
               dataKey="value"
               nameKey="category"
+              stroke="var(--surface)"
+              strokeWidth={2}
             >
               {categories.map((entry, index) => (
                 <m.Cell
-                  key={`cell-${entry.category}`}
+                  key={`cell-${entry.category}-${index}`}
                   fill={COLORS[index % COLORS.length]}
                 />
               ))}
             </m.Pie>
+
             <m.Tooltip
               formatter={(value) => formatIndianCurrency(value)}
               contentStyle={{
                 backgroundColor: "var(--surface)",
-                borderRadius: "8px",
                 border: "1px solid var(--surface-container-highest)",
+                borderRadius: "10px",
                 color: "var(--on-surface)",
+                boxShadow: "0 8px 24px rgba(0,0,0,0.12)",
               }}
             />
           </m.PieChart>

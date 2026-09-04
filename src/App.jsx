@@ -273,7 +273,10 @@ function useAppActions({
       showToast("Trial activated successfully", "success");
       navigate("/dashboard", { replace: true });
     } catch (err) {
-      showToast("Failed to activate trial", err);
+      // Trial may already be active - still refresh and proceed
+      console.error("Trial activation error:", err);
+      await refreshUser();
+      navigate("/dashboard", { replace: true });
     }
   }, [navigate, refreshUser, showToast]);
 

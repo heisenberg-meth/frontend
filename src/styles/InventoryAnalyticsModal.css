@@ -353,8 +353,10 @@
   gap: 0.5rem;
 }
 
+/* Table container */
 .inventory-table-scroll {
-  overflow-x: auto;
+  overflow: auto;
+  border-radius: 16px;
   max-height: 400px;
 }
 
@@ -375,18 +377,45 @@
   border-collapse: collapse;
 }
 
+/* Sticky blurred header */
+.inventory-analytics-table thead th,
 .inventory-analytics-table th {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+
+  background: rgba(243, 247, 249, 0.82); /* light glass effect */
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+
+  border-bottom: 1px solid rgba(15, 23, 42, 0.08);
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.06);
+
+  padding: 14px 18px;
   text-align: left;
-  padding: 12px 24px;
   font-size: 0.75rem;
   text-transform: uppercase;
   letter-spacing: 0.05em;
   color: var(--on-surface-variant);
-  background-color: var(--surface-variant);
   font-weight: 600;
-  position: sticky;
-  top: 0;
-  z-index: 10;
+}
+
+.dark .inventory-analytics-table thead th,
+.dark .inventory-analytics-table th {
+  background: rgba(15, 23, 42, 0.82);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+/* Optional: slightly rounded top corners */
+.inventory-analytics-table thead th:first-child,
+.inventory-analytics-table th:first-child {
+  border-top-left-radius: 14px;
+}
+
+.inventory-analytics-table thead th:last-child,
+.inventory-analytics-table th:last-child {
+  border-top-right-radius: 14px;
 }
 
 .inventory-analytics-table td {

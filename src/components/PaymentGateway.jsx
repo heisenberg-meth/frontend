@@ -198,15 +198,8 @@ export default function PaymentGateway({ user, onPaymentComplete, amount }) {
 
       if (isFree) {
         setStatus("activating_free");
-        try {
-          await api.post(API_ROUTES.SUBSCRIPTIONS_TRIAL);
-          if (refreshUser) await refreshUser();
-          if (isMounted) setStatus("success");
-        } catch (err) {
-          console.error("Free plan activation error:", err);
-          if (refreshUser) await refreshUser();
-          if (isMounted) setStatus("success");
-        }
+        if (refreshUser) await refreshUser();
+        if (isMounted) setStatus("success");
       } else {
         if (isMounted) setStatus("checkout");
       }

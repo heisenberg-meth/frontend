@@ -17,10 +17,8 @@ import {
   Activity,
   FileText,
   Clock,
-  Layers,
   Loader2,
   DollarSign,
-  PieChart as PieChartIcon,
 } from "lucide-react";
 import { toast } from "react-hot-toast";
 import { AnimatePresence, m } from "framer-motion";
@@ -389,21 +387,18 @@ export default function InventoryAnalyticsModal({ isOpen, onClose }) {
               className={`inventory-analytics-tab ${activeTab === "overview" ? "active" : ""}`}
               onClick={() => setActiveTab("overview")}
             >
-              <Activity size={18} />
               Summary & Insights
             </button>
             <button
               className={`inventory-analytics-tab ${activeTab === "categories" ? "active" : ""}`}
               onClick={() => setActiveTab("categories")}
             >
-              <PieChartIcon size={18} />
               Category Breakdown
             </button>
             <button
               className={`inventory-analytics-tab ${activeTab === "risk" ? "active" : ""}`}
               onClick={() => setActiveTab("risk")}
             >
-              <Layers size={18} />
               Risk & Dead Stock
             </button>
           </div>
