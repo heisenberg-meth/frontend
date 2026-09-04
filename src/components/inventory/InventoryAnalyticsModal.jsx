@@ -42,8 +42,11 @@ const LazyModalChart = lazy(() =>
               stroke="var(--surface)"
               strokeWidth={2}
             >
-              {categories.map((entry) => (
-                <m.Cell key={entry.category} fill={entry.color} />
+              {categories.map((entry, index) => (
+                <m.Cell
+                  key={`cell-${entry.category}-${index}`}
+                  fill={entry.color}
+                />
               ))}
             </m.Pie>
             <m.Tooltip
@@ -79,6 +82,21 @@ const INR_FORMATTER = new Intl.NumberFormat("en-IN", {
 });
 
 const fmt = (val) => INR_FORMATTER.format(val || 0);
+
+const CATEGORY_COLORS = [
+  "#0D9488",
+  "#14B8A6",
+  "#06B6D4",
+  "#3B82F6",
+  "#6366F1",
+  "#8B5CF6",
+  "#A855F7",
+  "#EC4899",
+  "#F43F5E",
+  "#F97316",
+  "#EAB308",
+  "#84CC16",
+];
 
 export default function InventoryAnalyticsModal({ isOpen, onClose }) {
   const [analyticsState, dispatchAnalytics] = useReducer(
@@ -203,7 +221,13 @@ export default function InventoryAnalyticsModal({ isOpen, onClose }) {
         deadStockValue: expiryRiskData.expired?.value || 0,
       });
 
-      setCategories(categoriesData);
+      setCategories(
+        categoriesData.map((category, index) => ({
+          ...category,
+          color:
+            category.color || CATEGORY_COLORS[index % CATEGORY_COLORS.length],
+        })),
+      );
       setHighValueStock(highValueData);
       setExpiryRisk(expiryRiskData);
     } catch (err) {
