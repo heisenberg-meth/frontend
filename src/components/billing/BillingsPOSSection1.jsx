@@ -9,7 +9,8 @@ import {
   Play,
   Trash2,
 } from "lucide-react";
-import { AnimatePresence, m, useState, useEffect } from "framer-motion";
+import { useState } from "react";
+import { AnimatePresence, m } from "framer-motion";
 import { TableHeader } from "../common/TableHeader.jsx";
 import "../../styles/BillingPOS.css";
 
@@ -479,9 +480,6 @@ export function BillingPOSSection4({
   showBillDetailDrawer,
 }) {
   const [medicinePage, setMedicinePage] = useState(1);
-  useEffect(() => {
-    setMedicinePage(1);
-  }, [selectedBill]);
 
   const items = selectedBill.itemsList || selectedBill.items || [];
   const totalPages = Math.ceil(items.length / ITEMS_PER_PAGE);

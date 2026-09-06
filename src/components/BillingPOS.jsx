@@ -1687,6 +1687,7 @@ export default function BillingPOS({
       />
 
       <BillingPOSSection4
+        key={selectedBill?.id ?? "no-selected-bill"}
         setShowBillDetailDrawer={setShowBillDetailDrawer}
         handleResumeDraftClick={handleResumeDraftClick}
         selectedBill={selectedBill}
