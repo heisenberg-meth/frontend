@@ -9,7 +9,7 @@ import {
   Play,
   Trash2,
 } from "lucide-react";
-import { AnimatePresence, m } from "framer-motion";
+import { AnimatePresence, m, useState, useEffect } from "framer-motion";
 import { TableHeader } from "../common/TableHeader.jsx";
 import "../../styles/BillingPOS.css";
 
@@ -25,6 +25,7 @@ const fieldMap = {
   discount: ["discountAmount", "discount"],
 };
 
+const ITEMS_PER_PAGE = 10;
 const safeNumber = (value) => {
   if (value === null || value === undefined || value === "") {
     return 0;
@@ -371,7 +372,7 @@ export function BillingPOSSection3({
                                 fontWeight: 700,
                               }}
                             >
-                              ₹{safeNumber(bill.total).toFixed(2)}
+                              ₹{safeNumber(bill.paidAmount ?? bill.total).toFixed(2)}
                             </td>
                             <td>
                               <span
@@ -474,6 +475,19 @@ export function BillingPOSSection4({
   handleBillReturn,
   showBillDetailDrawer,
 }) {
+  const [medicinePage, setMedicinePage] = useState(1);
+  useEffect(() => {
+    setMedicinePage(1);
+  }, [selectedBill]);
+
+  const items = selectedBill.itemsList || selectedBill.items || [];
+  const totalPages = Math.ceil(items.length / ITEMS_PER_PAGE);
+
+  const paginatedItems = items.slice(
+    (medicinePage - 1) * ITEMS_PER_PAGE,
+    medicinePage * ITEMS_PER_PAGE,
+  );
+
   return (
     <AnimatePresence>
       {showBillDetailDrawer && selectedBill && (
@@ -591,31 +605,29 @@ export function BillingPOSSection4({
                   ]}
                 />
                 <tbody>
-                  {(selectedBill.itemsList || selectedBill.items || []).map(
-                    (rawItem) => {
-                      const item = normalizeInvoiceItem(rawItem);
-                      const iPrice = safeNumber(item.price);
-                      const iQty = safeNumber(item.qty);
-                      const iDisc = safeNumber(item.discPercent);
-                      const lineAmt = iPrice * iQty * (1 - iDisc / 100);
-                      return (
-                        <tr key={item.id || item.medicineId}>
-                          <td>{item.name}</td>
-                          <td>{item.batchNumber || "—"}</td>
-                          <td>{iQty}</td>
-                          <td>₹{iPrice.toFixed(2)}</td>
-                          <td>{iDisc > 0 ? `${iDisc}%` : "—"}</td>
-                          <td
-                            style={{
-                              textAlign: "right",
-                            }}
-                          >
-                            ₹{lineAmt.toFixed(2)}
-                          </td>
-                        </tr>
-                      );
-                    },
-                  )}
+                  {paginatedItems.map((rawItem) => {
+                    const item = normalizeInvoiceItem(rawItem);
+                    const iPrice = safeNumber(item.price);
+                    const iQty = safeNumber(item.qty);
+                    const iDisc = safeNumber(item.discPercent);
+                    const lineAmt = iPrice * iQty * (1 - iDisc / 100);
+                    return (
+                      <tr key={item.id || item.medicineId}>
+                        <td>{item.name}</td>
+                        <td>{item.batchNumber || "—"}</td>
+                        <td>{iQty}</td>
+                        <td>₹{iPrice.toFixed(2)}</td>
+                        <td>{iDisc > 0 ? `${iDisc}%` : "—"}</td>
+                        <td
+                          style={{
+                            textAlign: "right",
+                          }}
+                        >
+                          ₹{lineAmt.toFixed(2)}
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
               <div className="drawer-summary">
@@ -650,6 +662,35 @@ export function BillingPOSSection4({
                   <span>TOTAL</span>
                   <span>₹{safeNumber(selectedBill.total).toFixed(2)}</span>
                 </div>
+              </div>
+              <div className="medicine-pagination">
+                {items.length > ITEMS_PER_PAGE ? (
+                  <>
+                    <button
+                      className="pagination-btn"
+                      onClick={() => setMedicinePage(medicinePage - 1)}
+                      disabled={medicinePage <= 1}
+                    >
+                      ← Previous
+                    </button>
+                    <span>
+                      Showing{" "}
+                      {((medicinePage - 1) * ITEMS_PER_PAGE +
+                        1)}–{" "}
+                      {medicinePage * ITEMS_PER_PAGE > items.length
+                        ? items.length
+                        : medicinePage * ITEMS_PER_PAGE} of{" "}
+                      {items.length} medicines
+                    </span>
+                    <button
+                      className="pagination-btn"
+                      onClick={() => setMedicinePage(medicinePage + 1)}
+                      disabled={medicinePage >= totalPages}
+                    >
+                      Next →
+                    </button>
+                  </>
+                ) : null}
               </div>
               <div className="drawer-timeline">
                 <div

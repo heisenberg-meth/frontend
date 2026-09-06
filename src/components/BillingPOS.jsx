@@ -1315,6 +1315,7 @@ export default function BillingPOS({
               ? {
                   ...b,
                   status: "RETURNED",
+                  refundedAmount: refund,
                 }
               : b,
           ),

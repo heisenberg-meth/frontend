@@ -59,6 +59,9 @@ export function normalizeInvoice(invoice) {
   const total = safeNumber(
     invoice.total ?? invoice.totalAmount ?? invoice.grandTotal ?? 0,
   );
+  const paidAmount = safeNumber(
+    invoice.paidAmount ?? invoice.totalAmount ?? invoice.total ?? 0,
+  );
   const discountAmount = safeNumber(
     invoice.discountAmount ?? invoice.discount ?? 0,
   );
@@ -81,6 +84,7 @@ export function normalizeInvoice(invoice) {
     discountAmount,
     discountPercentage,
     total,
+    paidAmount,
     amount: total,
     paymentMethod: invoice.paymentMethod || invoice.paymentMode || "CASH",
     status: invoice.status || "PAID",
