@@ -441,6 +441,75 @@
   background: rgba(239, 68, 68, 0.1);
 }
 
+/* ── PAGE HEADER DESIGN TOKENS ─────────────────────────── */
+.page-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 24px;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+}
+
+.page-header-content {
+  min-width: 0;
+  flex: 1 1 400px;
+}
+
+.page-title {
+  margin: 0;
+  font-family: "Outfit", sans-serif;
+  font-size: 32px;
+  line-height: 1.15;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--text, #e2e8f0);
+}
+
+.page-subtitle {
+  margin: 8px 0 0;
+  font-family: "Outfit", sans-serif;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--text-muted, #94a3b8);
+}
+
+.page-header-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+@media (max-width: 768px) {
+  .page-header {
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .page-header-content {
+    flex: 1 1 auto;
+  }
+
+  .page-header-actions {
+    width: 100%;
+    justify-content: flex-start;
+    flex-wrap: wrap;
+  }
+}
+
+@media (max-width: 640px) {
+  .page-title {
+    font-size: 24px;
+    line-height: 1.2;
+  }
+
+  .page-subtitle {
+    font-size: 13px;
+  }
+}
+
 /* Content Scroll Area */
 .main-content-scroll {
   flex: 1;

@@ -300,11 +300,13 @@ export default function SystemSettings({
       <div className="settings-page-header">
         <div className="header-left">
           <div className="breadcrumb-pill">⚙ FACILITY CONTROL CENTER</div>
-          <h1>System Configuration</h1>
-          <p>
-            Orchestrate global clinical thresholds, manage enterprise licensing,
-            and maintain architectural integrity.
-          </p>
+          <div>
+            <h1 className="page-title">System Configuration</h1>
+            <p className="page-subtitle">
+              Orchestrate global clinical thresholds, manage enterprise licensing,
+              and maintain architectural integrity.
+            </p>
+          </div>
         </div>
         <div className="header-right">
           <button

@@ -751,19 +751,21 @@ export default function ManageTeam({ user, showToast }) {
   };
   return (
     <div className="team-container-v2">
-      <div className="team-header-v2">
-        <div className="header-content">
+      <div className="team-header-v2 page-header">
+        <div className="header-content page-header-content">
           <div className="clinical-badge-row">
             <span className="badge-primary">SYSTEM NODE</span>
             <span className="badge-secondary">ADMINISTRATIVE CONTROL</span>
           </div>
-          <h1>Clinical Personnel &amp; RBAC</h1>
-          <p>
-            Orchestrate pharmacy staff, manage biometric access, and audit
-            real-time system interactions.
-          </p>
+          <div>
+            <h1 className="page-title">Clinical Personnel &amp; RBAC</h1>
+            <p className="page-subtitle">
+              Orchestrate pharmacy staff, manage biometric access, and audit
+              real-time system interactions.
+            </p>
+          </div>
         </div>
-        <div className="header-stats">
+        <div className="header-stats page-header-actions">
           <div className="header-stat-box">
             <span>TOTAL STAFF</span>
             <div className="val-row">

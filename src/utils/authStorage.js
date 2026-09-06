@@ -1,4 +1,6 @@
 const USER_KEY = "viyan_user:v1";
+const TOKEN_KEY = "viyan_token:v1";
+const REFRESH_TOKEN_KEY = "viyan_refresh_token:v1";
 
 export function setUser(user) {
   try {
@@ -27,11 +29,47 @@ export function getStoredUser() {
   }
 }
 
+export function setToken(token) {
+  try {
+    localStorage.setItem(TOKEN_KEY, token);
+  } catch {
+    /* noop */
+  }
+}
+
+export function getToken() {
+  try {
+    localStorage.removeItem("viyan_token");
+    const raw = localStorage.getItem(TOKEN_KEY);
+    return raw && raw !== "undefined" && raw !== "null" ? raw : null;
+  } catch {
+    return null;
+  }
+}
+
+export function setRefreshToken(token) {
+  try {
+    localStorage.setItem(REFRESH_TOKEN_KEY, token);
+  } catch {
+    /* noop */
+  }
+}
+
+export function getRefreshToken() {
+  try {
+    const raw = localStorage.getItem(REFRESH_TOKEN_KEY);
+    return raw && raw !== "undefined" && raw !== "null" ? raw : null;
+  } catch {
+    return null;
+  }
+}
+
 function clearUser() {
   try {
     localStorage.removeItem("viyan_user");
     localStorage.removeItem(USER_KEY);
-    localStorage.removeItem("viyan_token");
+    localStorage.removeItem(TOKEN_KEY);
+    localStorage.removeItem(REFRESH_TOKEN_KEY);
   } catch {
     /* noop */
   }
@@ -39,9 +77,4 @@ function clearUser() {
 
 export function clearAllAuth() {
   clearUser();
-  try {
-    localStorage.removeItem("viyan_token");
-  } catch {
-    /* noop */
-  }
 }

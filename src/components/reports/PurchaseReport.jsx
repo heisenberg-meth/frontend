@@ -4,6 +4,14 @@ import api from "../../api.js";
 import { API_ROUTES } from "../../constants/api.routes.js";
 import { useNavigate } from "react-router-dom";
 function PurchaseReportSection1({ comparisonData, navigate, supplierSpend }) {
+  const activeComparisonData = comparisonData.filter(
+    (d) => Number(d.amount || 0) > 0,
+  );
+  const maxPurchaseAmount = Math.max(
+    ...activeComparisonData.map((d) => Number(d.amount || 0)),
+    1,
+  );
+
   return (
     <div className="report-charts-grid">
       <div className="pos-card">
@@ -12,48 +20,84 @@ function PurchaseReportSection1({ comparisonData, navigate, supplierSpend }) {
         </div>
         <div
           style={{
-            height: "200px",
+            height: "240px",
             marginTop: "32px",
             display: "flex",
             alignItems: "flex-end",
-            gap: "20px",
+            gap: "18px",
+            padding: "0 12px",
           }}
         >
-          {comparisonData.length === 0 ? (
-            <div
-              style={{
-                flex: 1,
-                textAlign: "center",
-                color: "var(--text-muted)",
-              }}
-            >
-              No trend comparison data available.
-            </div>
-          ) : (
-            comparisonData.map((val) => {
-              const maxVal = Math.max(...comparisonData, 100);
-              const heightPct = Math.round((val / maxVal) * 100);
+          {activeComparisonData.length > 0 ? (
+            activeComparisonData.map((item, index) => {
+              const percentage = Math.max(
+                8,
+                Math.round(
+                  (Number(item.amount || 0) / maxPurchaseAmount) * 100,
+                ),
+              );
               return (
                 <div
-                  key={val}
+                  key={`${item.period}-${index}`}
                   style={{
                     flex: 1,
+                    minWidth: 0,
+                    height: "100%",
                     display: "flex",
-                    gap: "4px",
-                    alignItems: "flex-end",
+                    flexDirection: "column",
+                    justifyContent: "flex-end",
+                    alignItems: "center",
+                    gap: "8px",
                   }}
                 >
+                  <span
+                    style={{
+                      fontSize: "12px",
+                      fontWeight: 700,
+                      whiteSpace: "nowrap",
+                      color: "var(--text-primary)",
+                    }}
+                  >
+                    ₹{Number(item.amount || 0).toLocaleString()}
+                  </span>
+
                   <div
                     style={{
                       width: "100%",
-                      height: `${heightPct}%`,
+                      maxWidth: "70px",
+                      height: `${percentage}%`,
+                      minHeight: "8px",
                       background: "var(--info)",
-                      borderRadius: "4px 4px 0 0",
+                      borderRadius: "6px 6px 0 0",
+                      transition: "height 0.35s ease",
                     }}
                   />
+
+                  <span
+                    style={{
+                      fontSize: "11px",
+                      color: "var(--text-muted)",
+                      whiteSpace: "nowrap",
+                      textAlign: "center",
+                    }}
+                  >
+                    {item.period}
+                  </span>
                 </div>
               );
             })
+          ) : (
+            <div
+              style={{
+                height: "240px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                color: "var(--text-muted)",
+              }}
+            >
+              No purchase data available for this period
+            </div>
           )}
         </div>
         <div

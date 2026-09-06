@@ -504,18 +504,10 @@ export default function BarcodeEcosystem({ showToast }) {
       new Date(new Date().setDate(new Date().getDate() + 30));
   return (
     <div className="barcode-container">
-      <div className="purchases-header">
-        <div>
-          <h1
-            style={{
-              fontFamily: "Outfit",
-              fontSize: "28px",
-              fontWeight: 700,
-            }}
-          >
-            Barcode & QR Ecosystem
-          </h1>
-          <p className="result-meta">
+      <div className="page-header">
+        <div className="page-header-content">
+          <h1 className="page-title">Barcode & QR Ecosystem</h1>
+          <p className="page-subtitle">
             Label printing, medicine verification, and scanner integration.
           </p>
           <div className="purchases-tabs">
@@ -536,7 +528,7 @@ export default function BarcodeEcosystem({ showToast }) {
             ))}
           </div>
         </div>
-        <div className="header-actions">
+        <div className="page-header-actions">
           <button
             className="pos-btn outline"
             onClick={() => setActiveTab("labels")}

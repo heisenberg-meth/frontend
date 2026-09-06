@@ -7,10 +7,8 @@ import {
   useRef,
 } from "react";
 import {
-  AlertTriangle,
   Bell,
   Download,
-  X,
   CalendarCheck,
   CalendarDays,
   CalendarX,
@@ -110,7 +108,6 @@ export default function ExpiryBatchIntelligence({ showToast }) {
     activeTab,
     filter,
     searchQuery,
-    showBanner,
     showConfigModal,
     showActionModal,
     actionType,
@@ -189,15 +186,6 @@ export default function ExpiryBatchIntelligence({ showToast }) {
       dispatchIntelligence({
         type: "SET_FIELD",
         field: "searchQuery",
-        value: val,
-      }),
-    [],
-  );
-  const setShowBanner = useCallback(
-    (val) =>
-      dispatchIntelligence({
-        type: "SET_FIELD",
-        field: "showBanner",
         value: val,
       }),
     [],
@@ -893,9 +881,6 @@ export default function ExpiryBatchIntelligence({ showToast }) {
     });
     return grouped;
   }, [batches]);
-  const expiredCount = batches.filter(
-    (b) => b.status === "expired" || b.days < 0,
-  ).length;
   const exportExpiryReport = async () => {
     if (isExportingRef.current) return;
     isExportingRef.current = true;
@@ -1367,6 +1352,10 @@ export default function ExpiryBatchIntelligence({ showToast }) {
       setImporting(false);
     }
   };
+  const handleExpiredCleared = useCallback(() => {
+    setClearReloadKey((k) => k + 1);
+  }, [setClearReloadKey]);
+
   const backfillingRef = useRef(false);
   const handleBackfillSuppliers = async () => {
     if (backfillingRef.current) return;
@@ -1444,9 +1433,8 @@ export default function ExpiryBatchIntelligence({ showToast }) {
     setShowDeleteModal(true);
   };
   const confirmDeleteBatch = async () => {
-    if (isDeletingBatchRef.current) return;
+    if (isDeletingBatchRef.current || !selectedBatchForDelete) return;
     isDeletingBatchRef.current = true;
-    if (!selectedBatchForDelete) return;
     try {
       await api.delete(`/inventory/batches/${selectedBatchForDelete.batchId}`);
       setBatches((prev) =>
@@ -1507,18 +1495,10 @@ export default function ExpiryBatchIntelligence({ showToast }) {
   };
   return (
     <div className="expiry-container">
-      <div className="expiry-header">
-        <div>
-          <h1
-            style={{
-              fontFamily: "Outfit",
-              fontSize: "28px",
-              fontWeight: 700,
-            }}
-          >
-            Expiry & Batch Intelligence
-          </h1>
-          <p className="result-meta">
+      <div className="page-header">
+        <div className="page-header-content">
+          <h1 className="page-title">Expiry & Batch Intelligence</h1>
+          <p className="page-subtitle">
             FIFO-enforced tracking, auto-alerts, and near-expiry action
             suggestions.
           </p>
@@ -1534,7 +1514,7 @@ export default function ExpiryBatchIntelligence({ showToast }) {
             ))}
           </div>
         </div>
-        <div className="expiry-header-actions">
+        <div className="page-header-actions expiry-header-actions">
           <button
             className="pos-btn outline"
             onClick={() => setShowConfigModal(true)}
@@ -1546,60 +1526,6 @@ export default function ExpiryBatchIntelligence({ showToast }) {
           </button>
         </div>
       </div>
-
-      {/* ── Alert Banner ── */}
-      {showBanner && expiredCount > 0 && (
-        <div className="expiry-alert-banner">
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "12px",
-            }}
-          >
-            <AlertTriangle size={24} color="var(--danger)" />
-            <span
-              style={{
-                fontFamily: "Outfit",
-                fontWeight: 600,
-                fontSize: "14px",
-                color: "var(--danger)",
-              }}
-            >
-              {expiredCount}{" "}
-              {expiredCount === 1 ? "medicine has" : "medicines have"} EXPIRED —
-              Immediate action required
-            </span>
-          </div>
-          <div
-            style={{
-              display: "flex",
-              gap: "12px",
-            }}
-          >
-            <button
-              className="pos-btn danger"
-              style={{
-                padding: "6px 12px",
-                fontSize: "12px",
-              }}
-              onClick={() => {
-                setFilter("EXPIRED");
-                setActiveTab("timeline");
-              }}
-            >
-              Take Action
-            </button>
-            <button
-              aria-label="Close"
-              className="micro-btn"
-              onClick={() => setShowBanner(false)}
-            >
-              <X size={18} />
-            </button>
-          </div>
-        </div>
-      )}
 
       <div className="expiry-stats-grid">
         {dynamicStats.map((s) => {
@@ -1653,10 +1579,7 @@ export default function ExpiryBatchIntelligence({ showToast }) {
                 >
                   <ClearExpiredButton
                     showToast={showToast}
-                    onCleared={() => {
-                      // Refresh batch list after clearing
-                      setClearReloadKey((k) => k + 1);
-                    }}
+                    onCleared={handleExpiredCleared}
                   />
                 </div>
               )}

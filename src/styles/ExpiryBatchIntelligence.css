@@ -738,3 +738,89 @@
     flex: 1;
   }
 }
+
+
+.expiry-actions-dropdown button.danger {
+  color: var(--danger, #ef4444);
+}
+
+.expiry-actions-dropdown button.danger:hover {
+  background: rgba(239, 68, 68, 0.08);
+}
+
+.inventory-table-wrapper,
+.inventory-table-scroll {
+  overflow: visible;
+}
+
+/* ── Expiry Batch Intelligence Table Row Actions ──────────────────────── */
+.expiry-actions-cell {
+  position: relative;
+  width: 72px;
+  text-align: center;
+}
+
+.expiry-actions-menu {
+  position: relative;
+  display: inline-flex;
+  justify-content: center;
+}
+
+.expiry-actions-trigger {
+  width: 32px;
+  height: 32px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--on-surface, #334155);
+  font-size: 22px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.expiry-actions-trigger:hover {
+  background: var(--surface-container-high, #f1f5f9);
+  border-color: var(--outline-variant, #cbd5e1);
+}
+
+.expiry-actions-dropdown {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  min-width: 120px;
+  padding: 5px;
+  background: var(--surface, #ffffff);
+  border: 1px solid var(--outline-variant, #dbe2ea);
+  border-radius: 10px;
+  box-shadow: 0 10px 28px rgba(15, 23, 42, 0.14);
+  z-index: 100;
+}
+
+.expiry-actions-dropdown button {
+  width: 100%;
+  display: block;
+  padding: 9px 11px;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--on-surface, #1e293b);
+  text-align: left;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.expiry-actions-dropdown button:hover {
+  background: var(--surface-container-high, #f1f5f9);
+}
+
+.expiry-actions-dropdown button.danger {
+  color: var(--danger, #ef4444);
+}
+
+.expiry-actions-dropdown button.danger:hover {
+  background: rgba(239, 68, 68, 0.08);
+}

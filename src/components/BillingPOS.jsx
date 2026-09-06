@@ -1346,13 +1346,6 @@ export default function BillingPOS({
           "success",
         );
         window.dispatchEvent(new CustomEvent("dashboard:refresh"));
-        setShowReturnBillModal(false);
-        setSelectedBill(null);
-        showToast(
-          `Return processed successfully. Refund: ₹${Number(refund).toFixed(2)}`,
-          "success",
-        );
-        window.dispatchEvent(new CustomEvent("dashboard:refresh"));
       }
     } catch (err) {
       console.error("[RETURN] Failed:", err);
@@ -1451,15 +1444,15 @@ export default function BillingPOS({
   }, []);
   return (
     <div className="pos-container">
-      <div className="pos-header">
-        <div>
-          <h1>Enterprise Billing / POS</h1>
-          <p>
+      <div className="page-header">
+        <div className="page-header-content">
+          <h1 className="page-title">Enterprise Billing / POS</h1>
+          <p className="page-subtitle">
             Full financial lifecycle: Drafts, FEFO Batching, and Secure
             Distribution.
           </p>
         </div>
-        <div className="header-actions">
+        <div className="page-header-actions">
           <button
             className="pos-btn outline"
             onClick={() => navigate("/analytics")}

@@ -300,8 +300,8 @@ export default function SupplierReturns({ showToast }) {
         <div className="page-header-left">
           <PackageX size={28} />
           <div>
-            <h1>Supplier Returns</h1>
-            <p>Manage returns, credit notes & expired inventory</p>
+            <h1 className="page-title">Supplier Returns</h1>
+            <p className="page-subtitle">Manage returns, credit notes & expired inventory</p>
           </div>
         </div>
         <div className="page-header-actions">

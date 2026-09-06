@@ -940,18 +940,10 @@ export default function SalesManagement({ showToast, storeProfile }) {
   return (
     <div className="sales-container">
       {/* ── Page Header ── */}
-      <div className="purchases-header">
-        <div>
-          <h1
-            style={{
-              fontFamily: "Outfit",
-              fontSize: "28px",
-              fontWeight: 700,
-            }}
-          >
-            Sales Management
-          </h1>
-          <p className="result-meta">
+      <div className="page-header">
+        <div className="page-header-content">
+          <h1 className="page-title">Sales Management</h1>
+          <p className="page-subtitle">
             Daily records, customer bills, and return processing.
           </p>
 
@@ -971,7 +963,7 @@ export default function SalesManagement({ showToast, storeProfile }) {
             ))}
           </div>
         </div>
-        <div className="header-actions">
+        <div className="page-header-actions">
           <button
             className="pos-btn outline"
             onClick={() => {

@@ -64,11 +64,13 @@ export default function AuditLogs() {
         </button>
       </div>
 
-      <div className="audit-header">
-        <h1>Clinical Audit Trail</h1>
-        <p>
-          Comprehensive record of all facility operations and security events.
-        </p>
+      <div className="page-header">
+        <div className="page-header-content">
+          <h1 className="page-title">Clinical Audit Trail</h1>
+          <p className="page-subtitle">
+            Comprehensive record of all facility operations and security events.
+          </p>
+        </div>
       </div>
 
       <div className="log-stack">

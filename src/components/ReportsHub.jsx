@@ -42,46 +42,15 @@ function ReportsHubSection1({
         gap: "24px",
       }}
     >
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          flexWrap: "wrap",
-          gap: "16px",
-        }}
-      >
-        <div>
-          <h1
-            style={{
-              fontFamily: "Outfit",
-              fontSize: "28px",
-              fontWeight: 700,
-              margin: 0,
-            }}
-          >
-            Reports & Analytics
-          </h1>
-          <p
-            className="result-meta"
-            style={{
-              marginTop: "8px",
-              marginBottom: 0,
-            }}
-          >
-            Real-time business intelligence: sales aggregates, supply spend, net
-            profit, and expiry risks.
+      <div className="page-header">
+        <div className="page-header-content">
+          <h1 className="page-title">Reports & Analytics</h1>
+          <p className="page-subtitle">
+            Real-time business intelligence: sales aggregates, supply spend,
+            net profit, and expiry risks.
           </p>
         </div>
-
-        <div
-          className="header-actions"
-          style={{
-            display: "flex",
-            gap: "12px",
-            alignItems: "center",
-          }}
-        >
+        <div className="page-header-actions">
           {activeTab !== "expiry" && (
             <div
               style={{

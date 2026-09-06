@@ -599,12 +599,12 @@ export default function Dashboard({
       )}
 
       {/* 2. PAGE HEADER */}
-      <div className="hub-header">
-        <div className="hub-title-group">
-          <h2>Intelligence Hub</h2>
-          <p>Live overview — medicines, billing, stock, and supply chain</p>
+      <div className="page-header">
+        <div className="page-header-content">
+          <h1 className="page-title">Intelligence Hub</h1>
+          <p className="page-subtitle">Live overview — medicines, billing, stock, and supply chain</p>
         </div>
-        <div className="hub-status-group">
+        <div className="hub-status-group page-header-actions">
           <div className="status-item">
             <Clock size={12} className="text-on-surface-variant" />
             <span className="text-on-surface-variant">

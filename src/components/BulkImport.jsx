@@ -481,7 +481,11 @@ export default function BulkImport({ fetchData, showToast }) {
     };
   }, [showHistoryDrawer, showToast]);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const isAnalyzingRef = useRef(false);
+const isAnalyzingRef = useRef(false);
+/* eslint-disable no-unused-vars */
+  const [parsingProgress, setParsingProgress] = useState(0);
+  const [parsingStatus, setParsingStatus] = useState("");
+/* eslint-enable no-unused-vars */
   const handleAnalyzeImport = useCallback(async () => {
     if (isAnalyzingRef.current) return;
     if (!file) {
@@ -575,7 +579,26 @@ export default function BulkImport({ fetchData, showToast }) {
             const workbook = new ExcelJS.Workbook();
             await workbook.xlsx.load(buffer);
             const worksheet = workbook.getWorksheet(1);
-            const totalRowsCount = worksheet.rowCount - 1;
+            const parsedHeaders = [];
+            const parsedData = [];
+
+            // Read headers first
+            const headerRow = worksheet.getRow(1);
+
+            headerRow.eachCell(
+              {
+                includeEmpty: true,
+              },
+              (cell) => {
+                parsedHeaders.push(String(cell.value || "").trim());
+              },
+            );
+
+            setHeaders(parsedHeaders);
+
+            // Parse rows progressively
+            const totalRowsCount = Math.max(worksheet.rowCount - 1, 0);
+
             if (totalRowsCount > 10000) {
               showToast(
                 `Import exceeds maximum supported size (10,000 rows). Your file has ${totalRowsCount.toLocaleString()} rows. Please split the file or reduce the size.`,
@@ -584,47 +607,71 @@ export default function BulkImport({ fetchData, showToast }) {
               setFile(null);
               return;
             }
-            const parsedHeaders = [];
-            const parsedData = [];
-            worksheet.eachRow(
-              {
-                includeEmpty: false,
-              },
-              (row, rowNumber) => {
-                if (rowNumber === 1) {
-                  row.eachCell(
-                    {
-                      includeEmpty: true,
-                    },
-                    (cell) => {
-                      parsedHeaders.push(String(cell.value || "").trim());
-                    },
-                  );
-                } else {
-                  const rowObj = {};
-                  parsedHeaders.forEach((header, index) => {
-                    const cell = row.getCell(index + 1);
-                    let val = cell.value;
-                    if (val && typeof val === "object") {
-                      if (val.result !== undefined) val = val.result;
-                      else if (val.richText)
-                        val = val.richText.map((t) => t.text).join("");
-                      else if (val instanceof Date)
-                        val = val.toISOString().split("T")[0];
-                    }
-                    rowObj[header] =
-                      val !== null && val !== undefined
-                        ? String(val).trim()
-                        : "";
-                  });
-                  parsedData.push(rowObj);
+
+            setParsingStatus(`Parsing Excel data... 0 of ${totalRowsCount.toLocaleString()} rows`);
+
+            for (let rowNumber = 2; rowNumber <= worksheet.rowCount; rowNumber++) {
+              const row = worksheet.getRow(rowNumber);
+
+              const rowObj = {};
+
+              parsedHeaders.forEach((header, index) => {
+                const cell = row.getCell(index + 1);
+                let val = cell.value;
+
+                if (val && typeof val === "object") {
+                  if (val.result !== undefined) val = val.result;
+                  else if (val.richText)
+                    val = val.richText.map((t) => t.text).join("");
+                  else if (val instanceof Date)
+                    val = val.toISOString().split("T")[0];
                 }
-              },
-            );
-            setHeaders(parsedHeaders);
+
+                rowObj[header] =
+                  val !== null && val !== undefined
+                    ? String(val).trim()
+                    : "";
+              });
+
+              parsedData.push(rowObj);
+
+              // Update progress while parsing (approx 100 updates max)
+              const parsedCount = rowNumber - 1;
+
+              if (
+                parsedCount === totalRowsCount ||
+                parsedCount % Math.max(1, Math.floor(totalRowsCount / 100)) === 0
+              ) {
+                const percentage =
+                  totalRowsCount > 0
+                    ? Math.round((parsedCount / totalRowsCount) * 60)
+                    : 60;
+
+                setParsingProgress(percentage);
+                setImportProgress(percentage);
+
+                setParsingStatus(
+                  `Parsing Excel data... ${parsedCount.toLocaleString()} of ${totalRowsCount.toLocaleString()} rows`,
+                );
+
+                // Give React/browser a chance to render the progress update
+                await new Promise((resolve) => setTimeout(resolve, 0));
+              }
+            }
+
             setParsedRows(parsedData);
             setDataPreview(parsedData.slice(0, 5));
+
+            setParsingProgress(60);
+            setImportProgress(60);
+            setParsingStatus(
+              `Excel parsing complete — ${parsedData.length.toLocaleString()} rows loaded`,
+            );
+
             autoMapHeaders(parsedHeaders);
+
+            setImportStatus("idle");
+
             showToast(`Excel File ${f.name} loaded successfully`, "success");
           };
           reader.readAsArrayBuffer(f);
@@ -641,6 +688,8 @@ export default function BulkImport({ fetchData, showToast }) {
       setDataPreview,
       autoMapHeaders,
       showToast,
+      setImportProgress,
+      setImportStatus,
     ],
   );
   const { getRootProps, getInputProps, isDragActive, open } = useDropzone({
@@ -853,13 +902,13 @@ export default function BulkImport({ fetchData, showToast }) {
             <UploadCloud size={12} />
             <span>SMART IMPORT HUB</span>
           </div>
-          <h1 className="text-xl font-bold">Bulk Inventory Import</h1>
-          <p>
+          <h1 className="page-title">Bulk Inventory Import</h1>
+          <p className="page-subtitle">
             Upload CSV or XLSX files to synchronize pharmacy stock with live
             data mapping.
           </p>
         </div>
-        <div className="header-actions">
+        <div className="page-header-actions header-actions">
           <button
             type="button"
             className="pos-btn outline"

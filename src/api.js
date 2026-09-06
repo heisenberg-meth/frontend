@@ -1,5 +1,5 @@
 import axios from "axios";
-import { clearAllAuth } from "./utils/authStorage";
+import { setToken, setRefreshToken, clearAllAuth } from "./utils/authStorage";
 const PRIVATE_IP_PATTERNS = [
   /^http:\/\/localhost/i,
   /^http:\/\/127\.0\.0\.1/i,
@@ -99,6 +99,23 @@ export async function refreshSession() {
     .then((res) => {
       if (res.status !== 200) {
         throw new Error("Token refresh failed.");
+      }
+
+      // Save new access token from refresh response
+      const newToken =
+        res.data?.data?.token ||
+        res.data?.token ||
+        res.data?.accessToken;
+      if (newToken) {
+        setToken(newToken);
+      }
+
+      // Backend rotates refresh tokens — save the new one
+      const newRefreshToken =
+        res.data?.data?.refreshToken ||
+        res.data?.refreshToken;
+      if (newRefreshToken) {
+        setRefreshToken(newRefreshToken);
       }
 
       invalidateCsrfToken();

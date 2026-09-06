@@ -20,7 +20,6 @@ import { AnimatePresence, m } from "framer-motion";
 import api from "../api";
 
 /* ─── tiny helpers ─────────────────────────────────────────────── */
-const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 function ClearExpiredButtonSection1({
   showConfirm,
   phase,
@@ -637,16 +636,14 @@ export default function ClearExpiredButton({
       const res = await api.post(`/inventory/expired/clear${params}`);
       const data = res?.data?.data ?? res?.data ?? {};
 
-      // Small artificial delay so the progress bar feels real
-      await sleep(600);
       setResult(data);
       setPhase("done");
 
-      // Refresh the count
-      await fetchCount();
-
-      // Notify parent
+      // Notify parent first so it can refresh page-level data.
+      // Refresh our own badge count after; if the parent also reloaded
+      // the page this will be overwritten by the useEffect on branchId.
       onCleared?.();
+      await fetchCount();
     } catch (err) {
       const msg =
         err?.response?.data?.error?.message ||

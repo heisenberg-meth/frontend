@@ -318,14 +318,14 @@ export default function Patients({ showToast }) {
   }, [patients, search]);
   return (
     <div className="patients-container">
-      <div className="patients-header">
-        <div>
-          <h1>Patient Relationships</h1>
-          <p className="result-meta">
+      <div className="page-header">
+        <div className="page-header-content">
+          <h1 className="page-title">Patient Relationships</h1>
+          <p className="page-subtitle">
             Manage medical history, loyalty rewards, and credit accounts.
           </p>
         </div>
-        <div className="header-actions">
+        <div className="page-header-actions header-actions">
           <button className="pos-btn outline">
             <Download size={16} /> Export
           </button>

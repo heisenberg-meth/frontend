@@ -1954,18 +1954,10 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
   return (
     <div className="purchases-container">
       {/* ── Page Header ── */}
-      <div className="purchases-header">
-        <div>
-          <h1
-            style={{
-              fontFamily: "Outfit",
-              fontSize: "28px",
-              fontWeight: 700,
-            }}
-          >
-            Purchase Management
-          </h1>
-          <p className="result-meta">
+      <div className="page-header">
+        <div className="page-header-content">
+          <h1 className="page-title">Purchase Management</h1>
+          <p className="page-subtitle">
             Supplier invoices, purchase orders, and supplier returns — all in
             one place.
           </p>
@@ -1986,7 +1978,7 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
             ))}
           </div>
         </div>
-        <div className="header-actions">
+        <div className="page-header-actions">
           <button
             className="pos-btn teal purchase-create-btn"
             onClick={() => handleOpenDrawer("new-purchase")}

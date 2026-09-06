@@ -1,7 +1,14 @@
 import { useMemo, useState, useEffect, useCallback, useRef } from "react";
-import api, { refreshSession, invalidateCsrfToken } from "../api";
+import api, { invalidateCsrfToken } from "../api";
 import { API_ROUTES } from "../constants/api.routes.js";
-import { clearAllAuth, getStoredUser, setUser } from "../utils/authStorage";
+import {
+  clearAllAuth,
+  getStoredUser,
+  setUser,
+  setToken,
+  getRefreshToken,
+  setRefreshToken,
+} from "../utils/authStorage";
 import { AuthContext } from "./authContextInstance";
 
 export function AuthProvider({ children }) {
@@ -77,13 +84,55 @@ export function AuthProvider({ children }) {
 
   const refreshToken = useCallback(async () => {
     try {
-      await refreshSession();
-      return true;
+      const storedRefreshToken = getRefreshToken();
+
+      if (!storedRefreshToken) {
+        clearAuthState();
+        return null;
+      }
+
+      const res = await api.post(
+        API_ROUTES.AUTH_REFRESH,
+        {
+          refreshToken: storedRefreshToken,
+        },
+        {
+          withCredentials: true,
+          timeout: 10000,
+        },
+      );
+
+      const newToken =
+        res.data?.data?.token ||
+        res.data?.token ||
+        res.data?.accessToken;
+
+      const newRefreshToken =
+        res.data?.data?.refreshToken ||
+        res.data?.refreshToken;
+
+      if (!newToken) {
+        throw new Error(
+          "Token refresh failed: Invalid response from server.",
+        );
+      }
+
+      // Backend rotates refresh tokens — save the new one
+      if (newRefreshToken) {
+        setRefreshToken(newRefreshToken);
+      }
+
+      setToken(newToken);
+
+      return newToken;
     } catch (error) {
-      console.error("[AUTH] Token refresh failed:", error.message || error);
+      console.error(
+        "[AUTH] Token refresh failed:",
+        error.response?.data || error.message || error,
+      );
+
       clearAuthState();
-      invalidateCsrfToken();
-      return false;
+      return null;
     }
   }, [clearAuthState]);
 
@@ -172,6 +221,24 @@ export function AuthProvider({ children }) {
       if (userData) {
         setUser(userData);
         setUserState(userData);
+      }
+
+      // Save access token and refresh token from login response
+      const newToken =
+        res.data?.data?.token ||
+        res.data?.token ||
+        res.data?.accessToken;
+
+      const newRefreshToken =
+        res.data?.data?.refreshToken ||
+        res.data?.refreshToken;
+
+      if (newToken) {
+        setToken(newToken);
+      }
+
+      if (newRefreshToken) {
+        setRefreshToken(newRefreshToken);
       }
 
       const context = await refreshUser();
