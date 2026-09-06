@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, useNavigate } from "react";
 import api from "../api.js";
 import { API_ROUTES } from "../constants/api.routes.js";
 import { useAuth } from "../hooks/useAuth";
@@ -208,6 +208,7 @@ function SubscriptionCRUDSection1({
   );
 }
 export default function SubscriptionCRUD({ showToast, user }) {
+  const navigate = useNavigate();
   const { refreshUser } = useAuth();
   const [subscription, setSubscription] = useState(null);
   const [paymentHistory, setPaymentHistory] = useState([]);
@@ -320,6 +321,7 @@ export default function SubscriptionCRUD({ showToast, user }) {
                   await refreshUser();
                   await refreshSubscriptionData();
                   setUpgrading(false);
+                  navigate("/dashboard", { replace: true });
                 } else if (
                   res.data?.paymentStatus === "FAILED" ||
                   attempts > 15

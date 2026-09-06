@@ -6,7 +6,7 @@ import api from "./api";
 import { normalizeArrayResponse } from "./utils/apiNormalizer";
 import { API_ROUTES } from "./constants/api.routes.js";
 import { SubscriptionStatus } from "./constants/enums";
-import { Sparkles, ShieldAlert, CheckCircle2 } from "lucide-react";
+import { ShieldAlert, CheckCircle2 } from "lucide-react";
 import { AnimatePresence, m, LazyMotion, domAnimation } from "framer-motion";
 import LogoutModal from "./components/LogoutModal";
 import AppRoutes from "./routes/AppRoutes";
@@ -23,32 +23,38 @@ function Paywall({ onActivate }) {
         <div className="paywall-lock-icon">
           <ShieldAlert size={48} />
         </div>
-        <h2>Access Restricted</h2>
+        <h2>Subscription Expired</h2>
         <p>
-          Your trial has concluded. Upgrade to a paid plan to continue using all
-          features.
+          Your 28-day free access has ended. Choose a subscription plan to continue
+          using MedAssist.
         </p>
 
-        <div className="paywall-features">
-          <div className="p-feat">
-            <CheckCircle2 size={14} /> UNLIMITED PATIENTS
+        <div className="paywall-benefits">
+          <div className="paywall-benefit">
+            <CheckCircle2 size={14} /> Inventory & Batch Tracking
           </div>
-          <div className="p-feat">
-            <CheckCircle2 size={14} /> AI DIAGNOSTICS
+          <div className="paywall-benefit">
+            <CheckCircle2 size={14} /> Billing & POS
           </div>
-          <div className="p-feat">
-            <CheckCircle2 size={14} /> REAL-TIME TELEMETRY
+          <div className="paywall-benefit">
+            <CheckCircle2 size={14} /> Reports & Analytics
           </div>
-          <div className="p-feat">
-            <CheckCircle2 size={14} /> 24/7 PRIORITY SUPPORT
+          <div className="paywall-benefit">
+            <CheckCircle2 size={14} /> Multi-Branch Support
+          </div>
+          <div className="paywall-benefit">
+            <CheckCircle2 size={14} /> Priority Support
           </div>
         </div>
 
-        <button className="paywall-btn" onClick={onActivate}>
-          UPGRADE NOW <Sparkles size={18} />
+        <button
+          className="paywall-primary-btn"
+          onClick={() => onActivate("/subscription")}
+        >
+          View Subscription Plans
         </button>
-        <button className="paywall-support-btn">
-          CONTACT FACILITY SUPPORT
+        <button className="paywall-support-btn" onClick={() => onActivate("/support")}>
+          Contact Support
         </button>
       </m.div>
     </div>
@@ -560,7 +566,7 @@ function AppContent() {
         handleSelectPro={handleSelectPro}
         handleSelectTrial={handleSelectTrial}
         PaywallComponent={() => (
-          <Paywall onActivate={() => navigate("/plans")} />
+          <Paywall onActivate={path => navigate(path)} />
         )}
       />
 

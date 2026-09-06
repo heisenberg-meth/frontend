@@ -49,10 +49,11 @@ const fieldMap = {
 };
 const headers = [
   ["Medicine", "left"],
+  ["Batch No.", "center"],
   ["Qty", "center"],
-  ["MRP", "center"],
+  ["MRP ₹", "right"],
+  ["Disc%", "center"],
   ["GST%", "center"],
-  ["Tax", "right"],
   ["Total", "right"],
 ];
 
@@ -102,6 +103,21 @@ const normalizeInvoiceItem = (item) => ({
   qty: item?.quantity ?? item?.qty ?? 0,
   price: item?.unitPrice ?? item?.price ?? item?.mrp ?? 0,
   mrp: item?.unitPrice ?? item?.price ?? item?.mrp ?? 0,
+  gst: item?.gst ?? item?.gstPercentage ?? 0,
+  batchId: item?.batchId || item?.batch?.id || null,
+  batchNumber:
+    item?.batchNumber ||
+    item?.batchNo ||
+    item?.batch?.batchNumber ||
+    item?.batch?.batchNo ||
+    item?.batchCode ||
+    "—",
+  discPercent:
+    item?.discPercent ??
+    item?.discountPercentage ??
+    item?.discountPercent ??
+    item?.discount ??
+    0,
   totalPrice: item?.totalPrice ?? item?.amount ?? 0,
 });
 
@@ -1037,8 +1053,9 @@ export default function BillingPOS({
         const item = normalizeInvoiceItem(rawItem);
         const iPrice = safeNumber(item.price);
         const iQty = safeNumber(item.qty);
-        const iGst = safeNumber(item.gst || item.gstPercentage);
-        const iDiscP = safeNumber(item.discPercent || item.discountPercent);
+        const iGst = safeNumber(item.gst);
+        const iDiscP = safeNumber(item.discPercent);
+        const batchNo = item.batchNumber || "—";
         const lineGross = iPrice * iQty;
         const lineDisc = lineGross * (iDiscP / 100);
         const taxable = lineGross - lineDisc;
@@ -1047,23 +1064,28 @@ export default function BillingPOS({
         const row = printDocument.createElement("tr");
         row.appendChild(createRowValue(item.name));
         row.appendChild(
+          createRowValue(batchNo, {
+            textAlign: "center",
+          }),
+        );
+        row.appendChild(
           createRowValue(iQty, {
             textAlign: "center",
           }),
         );
         row.appendChild(
           createRowValue(`₹${iPrice.toFixed(2)}`, {
+            textAlign: "right",
+          }),
+        );
+        row.appendChild(
+          createRowValue(iDiscP > 0 ? `${iDiscP}%` : "—", {
             textAlign: "center",
           }),
         );
         row.appendChild(
           createRowValue(`${iGst}%`, {
             textAlign: "center",
-          }),
-        );
-        row.appendChild(
-          createRowValue(`₹${lineTax.toFixed(2)}`, {
-            textAlign: "right",
           }),
         );
         row.appendChild(

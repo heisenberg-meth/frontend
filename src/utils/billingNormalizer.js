@@ -20,7 +20,21 @@ export function normalizeInvoice(invoice) {
     price: safeNumber(item.price ?? item.unitPrice ?? item.mrp ?? 0),
     mrp: safeNumber(item.mrp ?? item.price ?? item.unitPrice ?? 0),
     gst: safeNumber(item.gst ?? item.gstPercentage ?? 0),
-    batchId: item.batchId || null,
+    batchId: item.batchId || item.batch?.id || null,
+    batchNumber:
+      item.batchNumber ||
+      item.batchNo ||
+      item.batch?.batchNumber ||
+      item.batch?.batchNo ||
+      item.batchCode ||
+      " — ",
+    discPercent: safeNumber(
+      item.discPercent ??
+        item.discountPercentage ??
+        item.discountPercent ??
+        item.discount ??
+        0,
+    ),
     total: safeNumber(item.total ?? item.totalPrice ?? item.totalAmount ?? 0),
   }));
 
@@ -45,6 +59,12 @@ export function normalizeInvoice(invoice) {
   const total = safeNumber(
     invoice.total ?? invoice.totalAmount ?? invoice.grandTotal ?? 0,
   );
+  const discountAmount = safeNumber(
+    invoice.discountAmount ?? invoice.discount ?? 0,
+  );
+  const discountPercentage = safeNumber(
+    invoice.discountPercentage ?? invoice.discountPercent ?? 0,
+  );
 
   return {
     id: invoice.id,
@@ -57,7 +77,9 @@ export function normalizeInvoice(invoice) {
     subtotal: safeNumber(invoice.subtotal ?? invoice.subTotal ?? 0),
     cgst: safeNumber(invoice.cgst ?? 0),
     sgst: safeNumber(invoice.sgst ?? 0),
-    discount: safeNumber(invoice.discount ?? invoice.discountAmount ?? 0),
+    discount: discountAmount,
+    discountAmount,
+    discountPercentage,
     total,
     amount: total,
     paymentMethod: invoice.paymentMethod || invoice.paymentMode || "CASH",

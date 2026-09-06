@@ -67,11 +67,18 @@ export default function InvoiceGeneratedModal({
       invoice.paymentMode || invoice.paymentTerms || invoice.payment,
     dueDate: invoice.dueDate,
     lineItems: (invoice.items || []).map((i) => ({
-      name: i.medicine?.name || i.name,
+      name: i.medicine?.name || i.name || i.medicineName,
       qty: i.quantity || i.qty,
       price: i.unitPrice || i.price,
       gst: i.gstPercentage || i.gst || 0,
       discount: i.discountPercentage || i.discount || 0,
+      batchNumber:
+        i.batchNumber ||
+        i.batchNo ||
+        i.batch?.batchNumber ||
+        i.batch?.batchNo ||
+        i.batchCode ||
+        "—",
       isNew: false,
       id: i.medicineId || i.id,
     })),

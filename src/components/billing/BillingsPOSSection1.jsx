@@ -68,6 +68,21 @@ const normalizeInvoiceItem = (item) => ({
   qty: item?.quantity ?? item?.qty ?? 0,
   price: item?.unitPrice ?? item?.price ?? item?.mrp ?? 0,
   mrp: item?.unitPrice ?? item?.price ?? item?.mrp ?? 0,
+  gst: item?.gst ?? item?.gstPercentage ?? 0,
+  batchId: item?.batchId || item?.batch?.id || null,
+  batchNumber:
+    item?.batchNumber ||
+    item?.batchNo ||
+    item?.batch?.batchNumber ||
+    item?.batch?.batchNo ||
+    item?.batchCode ||
+    "—",
+  discPercent:
+    item?.discPercent ??
+    item?.discountPercentage ??
+    item?.discountPercent ??
+    item?.discount ??
+    0,
   totalPrice: item?.totalPrice ?? item?.amount ?? 0,
 });
 
@@ -216,12 +231,12 @@ export function BillingPOSSection3({
       {showAllBillsModal && (
         <div
           role="presentation"
-          className="stock-modal-overlay"
+          className="stock-modal-overlay all-bills-modal-overlay"
           onClick={() => setShowAllBillsModal(false)}
         >
           <m.div
             role="presentation"
-            className="stock-modal-content all-bills-modal"
+            className="stock-modal-content all-bills-modal all-bills-modal-content"
             initial={{
               opacity: 0,
               scale: 0.95,
@@ -401,10 +416,7 @@ export function BillingPOSSection3({
                                     <button
                                       aria-label="View"
                                       className="all-bills-action-btn"
-                                      onClick={() => {
-                                        openBillDetail(bill);
-                                        setShowAllBillsModal(false);
-                                      }}
+                                      onClick={() => openBillDetail(bill)}
                                       title="View"
                                     >
                                       <Eye size={14} />
@@ -571,32 +583,39 @@ export function BillingPOSSection4({
                 <TableHeader
                   columns={[
                     "Medicine",
+                    "Batch No.",
                     "Qty",
                     "MRP",
+                    "Disc%",
                     { label: "Amount", style: { textAlign: "right" } },
                   ]}
                 />
                 <tbody>
-                  {(selectedBill.itemsList || []).map((rawItem) => {
-                    const item = normalizeInvoiceItem(rawItem);
-                    return (
-                      <tr key={item.id || item.medicineId}>
-                        <td>{item.name}</td>
-                        <td>{safeNumber(item.qty)}</td>
-                        <td>₹{safeNumber(item.price).toFixed(2)}</td>
-                        <td
-                          style={{
-                            textAlign: "right",
-                          }}
-                        >
-                          ₹
-                          {(
-                            safeNumber(item.price) * safeNumber(item.qty)
-                          ).toFixed(2)}
-                        </td>
-                      </tr>
-                    );
-                  })}
+                  {(selectedBill.itemsList || selectedBill.items || []).map(
+                    (rawItem) => {
+                      const item = normalizeInvoiceItem(rawItem);
+                      const iPrice = safeNumber(item.price);
+                      const iQty = safeNumber(item.qty);
+                      const iDisc = safeNumber(item.discPercent);
+                      const lineAmt = iPrice * iQty * (1 - iDisc / 100);
+                      return (
+                        <tr key={item.id || item.medicineId}>
+                          <td>{item.name}</td>
+                          <td>{item.batchNumber || "—"}</td>
+                          <td>{iQty}</td>
+                          <td>₹{iPrice.toFixed(2)}</td>
+                          <td>{iDisc > 0 ? `${iDisc}%` : "—"}</td>
+                          <td
+                            style={{
+                              textAlign: "right",
+                            }}
+                          >
+                            ₹{lineAmt.toFixed(2)}
+                          </td>
+                        </tr>
+                      );
+                    },
+                  )}
                 </tbody>
               </table>
               <div className="drawer-summary">
@@ -881,18 +900,6 @@ export function BillingPOSSection5({
                   placeholder="Additional notes..."
                   rows={2}
                 />
-              </div>
-              <div className="return-total-row">
-                <span>Return Amount</span>
-                <span
-                  style={{
-                    fontWeight: 700,
-                    color: "var(--text-secondary)",
-                    fontSize: "14px",
-                  }}
-                >
-                  Calculated by server
-                </span>
               </div>
             </div>
             <div className="stock-modal-footer">

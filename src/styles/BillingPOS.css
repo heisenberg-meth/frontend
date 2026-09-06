@@ -948,13 +948,26 @@ select.pos-input option {
 }
 
 /* ═══════════════════════════════════════════════ */
+/* All Bills Modal Z-Index (must sit below drawer) */
+/* ═══════════════════════════════════════════════ */
+.stock-modal-overlay.all-bills-modal-overlay {
+  position: fixed;
+  z-index: 1000;
+}
+
+.stock-modal-content.all-bills-modal {
+  position: relative;
+  z-index: 1010;
+}
+
+/* ═══════════════════════════════════════════════ */
 /* FIX 6: Bill Detail Drawer */
 /* ═══════════════════════════════════════════════ */
 .drawer-backdrop {
   position: fixed;
   inset: 0;
   background: rgba(0, 0, 0, 0.4);
-  z-index: 999;
+  z-index: 1100;
 }
 
 .bill-detail-drawer {
@@ -965,7 +978,7 @@ select.pos-input option {
   height: 100vh;
   background: var(--surface);
   border-left: 1px solid var(--outline-variant);
-  z-index: 1000;
+  z-index: 1110;
   display: flex;
   flex-direction: column;
   box-shadow: -10px 0 40px rgba(0, 0, 0, 0.3);

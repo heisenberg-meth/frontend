@@ -399,13 +399,6 @@ export function BillingPOSSection1({
                 onClick={(e) => {
                   e.stopPropagation();
                   setIsWalkIn((prev) => !prev);
-                  if (isWalkIn) {
-                    setPatient({
-                      id: null,
-                      name: "",
-                      phone: "",
-                    });
-                  }
                 }}
                 title={isWalkIn ? "Walk-in mode" : "Click to enable walk-in"}
               >

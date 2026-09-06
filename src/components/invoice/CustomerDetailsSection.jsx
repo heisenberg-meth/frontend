@@ -102,21 +102,6 @@ export default function CustomerDetailsSection({
             checked={isWalkIn}
             onChange={(e) => {
               setIsWalkIn(e.target.checked);
-              if (e.target.checked) {
-                setPatient({
-                  id: null,
-                  name: "Walk-in Customer",
-                  phone: "",
-                });
-                setAddress("");
-                setGstNumber("");
-              } else {
-                setPatient({
-                  id: null,
-                  name: "",
-                  phone: "",
-                });
-              }
             }}
             className="rounded border-slate-300 text-[#0d9488] focus:ring-[#0d9488]/20 w-3.5 h-3.5"
           />
