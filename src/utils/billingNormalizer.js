@@ -86,6 +86,14 @@ export function normalizeInvoice(invoice) {
     total,
     paidAmount,
     amount: total,
+    refundedAmount: safeNumber(
+      invoice.refundedAmount ??
+        invoice.refundAmount ??
+        invoice.actualRefundAmount ??
+        invoice.totalRefundAmount ??
+        invoice.refunded ??
+        0,
+    ),
     paymentMethod: invoice.paymentMethod || invoice.paymentMode || "CASH",
     status: invoice.status || "PAID",
     date:

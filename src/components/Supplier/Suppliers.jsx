@@ -526,7 +526,7 @@ function Spinner({ size = 14 }) {
 }
 
 /* ─── Add / Edit Modal ─── */
-function SupplierModal({ onClose, onSave, editData, showToast, saving }) {
+function SupplierModal({ onClose, onSave, editData, saving }) {
   const initialForm = editData
     ? {
         ...EMPTY,
@@ -542,18 +542,57 @@ function SupplierModal({ onClose, onSave, editData, showToast, saving }) {
       }
     : EMPTY;
   const [form, setForm] = useState(initialForm);
+  const [supplierErrors, setSupplierErrors] = useState({});
   const set = (key, val) =>
     setForm((f) => ({
       ...f,
       [key]: val,
     }));
+  const validateSupplierForm = () => {
+    const errors = {};
+
+    // Supplier Legal Name
+    if (!form.name?.trim()) {
+      errors.name = "Supplier legal name is required";
+    } else if (form.name.trim().length < 2) {
+      errors.name = "Supplier legal name must be at least 2 characters";
+    }
+
+    // Contact Person
+    if (!form.contact?.trim()) {
+      errors.contact = "Contact person is required";
+    } else if (form.contact.trim().length < 2) {
+      errors.contact = "Contact person must be at least 2 characters";
+    }
+
+    // Phone
+    const phone = form.phone?.trim() || "";
+    if (!phone) {
+      errors.phone = "Phone number is required";
+    } else if (!/^\+?[0-9\s-]{10,15}$/.test(phone)) {
+      errors.phone = "Enter a valid phone number";
+    }
+
+    // Email - optional, but validate if entered
+    const email = form.email?.trim() || "";
+    if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      errors.email = "Enter a valid email address";
+    }
+
+    // GSTIN - optional, but validate if entered
+    const gst = form.gst?.trim().toUpperCase() || "";
+    if (gst && !/^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z][1-9A-Z]Z[0-9A-Z]$/.test(gst)) {
+      errors.gst = "Enter a valid GSTIN";
+    }
+
+    setSupplierErrors(errors);
+
+    return Object.keys(errors).length === 0;
+  };
   const handleSave = () => {
-    if (
-      !(form.name || "").trim() ||
-      !(form.contact || "").trim() ||
-      !(form.phone || "").trim()
-    ) {
-      showToast("Supplier Name, Contact, and Phone are required.", "error");
+    const isValid = validateSupplierForm();
+
+    if (!isValid) {
       return;
     }
     onSave(form);
@@ -594,34 +633,95 @@ function SupplierModal({ onClose, onSave, editData, showToast, saving }) {
         <div className="modal-scroll-area">
           <div className="sup-form-grid">
             <div className="form-group full">
-              <label htmlFor="field_kccb3o">Supplier Legal Name *</label>
+              <label htmlFor="field_kccb3o">
+                Supplier Legal Name <span className="required-star">*</span>
+              </label>
+
               <input
                 id="field_kccb3o"
                 required
+                className={supplierErrors.name ? "supplier-input-error" : ""}
                 placeholder="e.g. Cipla Distributors Ltd."
                 value={form.name}
-                onChange={(e) => set("name", e.target.value)}
+                onChange={(e) => {
+                  set("name", e.target.value);
+
+                  if (e.target.value.trim()) {
+                    setSupplierErrors((prev) => {
+                      const next = { ...prev };
+                      delete next.name;
+                      return next;
+                    });
+                  }
+                }}
               />
+
+              {supplierErrors.name && (
+                <span className="supplier-field-error">
+                  {supplierErrors.name}
+                </span>
+              )}
             </div>
             <div className="form-group">
-              <label htmlFor="field_3tymdv">Contact Person *</label>
+              <label htmlFor="field_3tymdv">
+                Contact Person <span className="required-star">*</span>
+              </label>
+
               <input
                 id="field_3tymdv"
                 required
+                className={supplierErrors.contact ? "supplier-input-error" : ""}
                 placeholder="e.g. Ramesh Kumar"
                 value={form.contact}
-                onChange={(e) => set("contact", e.target.value)}
+                onChange={(e) => {
+                  set("contact", e.target.value);
+
+                  if (e.target.value.trim()) {
+                    setSupplierErrors((prev) => {
+                      const next = { ...prev };
+                      delete next.contact;
+                      return next;
+                    });
+                  }
+                }}
               />
+
+              {supplierErrors.contact && (
+                <span className="supplier-field-error">
+                  {supplierErrors.contact}
+                </span>
+              )}
             </div>
             <div className="form-group">
-              <label htmlFor="field_im11hx">Phone Number *</label>
+              <label htmlFor="field_im11hx">
+                Phone Number <span className="required-star">*</span>
+              </label>
+
               <input
                 id="field_im11hx"
                 required
+                type="tel"
+                className={supplierErrors.phone ? "supplier-input-error" : ""}
                 placeholder="+91 XXXXX XXXXX"
                 value={form.phone}
-                onChange={(e) => set("phone", e.target.value)}
+                onChange={(e) => {
+                  set("phone", e.target.value);
+
+                  if (e.target.value.trim()) {
+                    setSupplierErrors((prev) => {
+                      const next = { ...prev };
+                      delete next.phone;
+                      return next;
+                    });
+                  }
+                }}
               />
+
+              {supplierErrors.phone && (
+                <span className="supplier-field-error">
+                  {supplierErrors.phone}
+                </span>
+              )}
             </div>
             <div className="form-group">
               <label htmlFor="field_71ejw4">Email Address</label>

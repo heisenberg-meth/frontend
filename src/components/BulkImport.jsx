@@ -940,7 +940,8 @@ export default function BulkImport({ fetchData, showToast }) {
           <div className="modal-content-v2">
             <div className="modal-header">
               <h3>Save Mapping Template</h3>
-              <button aria-label="Close"
+              <button
+                aria-label="Close"
                 type="button"
                 onClick={() => setShowSaveMappingModal(false)}
               >
@@ -952,7 +953,8 @@ export default function BulkImport({ fetchData, showToast }) {
                 <label htmlFor="field_himsdq" className="p-label">
                   TEMPLATE NAME
                 </label>
-                <input aria-label="e.g. Cipla Invoice Format"
+                <input
+                  aria-label="e.g. Cipla Invoice Format"
                   id="field_himsdq"
                   required
                   className="pos-input"
@@ -965,7 +967,8 @@ export default function BulkImport({ fetchData, showToast }) {
                 <label htmlFor="field_vvjc94" className="p-label">
                   DESCRIPTION
                 </label>
-                <textarea aria-label="Optional notes..."
+                <textarea
+                  aria-label="Optional notes..."
                   id="field_vvjc94"
                   className="pos-input"
                   placeholder="Optional notes..."
@@ -1011,7 +1014,8 @@ export default function BulkImport({ fetchData, showToast }) {
           <div className="modal-content-v2">
             <div className="modal-header">
               <h3>Load Mapping Template</h3>
-              <button aria-label="Close"
+              <button
+                aria-label="Close"
                 type="button"
                 onClick={() => setShowLoadMappingModal(false)}
               >

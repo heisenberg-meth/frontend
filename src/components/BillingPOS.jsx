@@ -35,6 +35,7 @@ import {
   BillingPOSSection5,
   BillingPOSSection6,
 } from "./billing/BillingsPOSSection1.jsx";
+import { validatePatientPhone } from "../utils/validatePatientPhone.js";
 
 const fieldMap = {
   patientName: [["patient", "fullName"], "patientName", "customerName"],
@@ -380,7 +381,7 @@ export default function BillingPOS({
   const [allBillsFilter, setAllBillsFilter] = useState("All");
   const [billCardFlash, setBillCardFlash] = useState(null);
   const [invoiceSaving, setInvoiceSaving] = useState(false);
-  const [returnsCount, setReturnsCount] = useState(0);
+
   const [loadMoreLoading, setLoadMoreLoading] = useState(false);
   const [allBillsLoaded, setAllBillsLoaded] = useState(false);
   const [showNewBillConfirm, setShowNewBillConfirm] = useState(false);
@@ -404,6 +405,24 @@ export default function BillingPOS({
     [],
   );
   const [processingReturn, setProcessingReturn] = useState(false);
+  const todayDateStr = new Date().toLocaleDateString("en-CA");
+  const todayBills = useMemo(
+    () =>
+      bills.filter((b) => {
+        const bd = b.date ? b.date.split("T")[0] : "";
+        return bd === todayDateStr;
+      }),
+    [bills, todayDateStr],
+  );
+  const returnsTodayCount = useMemo(
+    () =>
+      todayBills.filter((bill) =>
+        ["RETURNED", "REFUNDED", "PARTIALLY_REFUNDED"].includes(
+          String(bill.status || "").toUpperCase(),
+        ),
+      ).length,
+    [todayBills],
+  );
   useEffect(() => {
     localStorage.setItem(
       `currentBillingItems_${userKey}`,
@@ -548,15 +567,6 @@ export default function BillingPOS({
       : 0;
   const cgstAmt = tax / 2;
   const sgstAmt = tax / 2;
-  const todayDateStr = new Date().toISOString().split("T")[0];
-  const todayBills = useMemo(
-    () =>
-      bills.filter((b) => {
-        const bd = b.date ? b.date.split("T")[0] : "";
-        return bd === todayDateStr;
-      }),
-    [bills, todayDateStr],
-  );
   const visibleBills = todayBills.slice(0, 5);
   const todayStr = new Date().toLocaleDateString("en-IN", {
     day: "numeric",
@@ -648,6 +658,15 @@ export default function BillingPOS({
     if (lineItems.length === 0) {
       setDraftError("Add at least one medicine to save draft");
       return;
+    }
+    if (!isWalkIn) {
+      const phoneError = validatePatientPhone(patient.phone);
+
+      if (phoneError) {
+        setPhoneFieldError(phoneError);
+        showToast(phoneError, "error");
+        return;
+      }
     }
     setDraftError("");
     setDraftSaving(true);
@@ -1315,12 +1334,18 @@ export default function BillingPOS({
               ? {
                   ...b,
                   status: "RETURNED",
-                  refundedAmount: refund,
+                  refundedAmount: Number(refund),
                 }
               : b,
           ),
         );
-        setReturnsCount((c) => c + 1);
+        setShowReturnBillModal(false);
+        setSelectedBill(null);
+        showToast(
+          `Return processed successfully. Refund: ₹${Number(refund).toFixed(2)}`,
+          "success",
+        );
+        window.dispatchEvent(new CustomEvent("dashboard:refresh"));
         setShowReturnBillModal(false);
         setSelectedBill(null);
         showToast(
@@ -1520,7 +1545,7 @@ export default function BillingPOS({
           },
           {
             label: "RETURNS TODAY",
-            val: String(returnsCount),
+            val: String(returnsTodayCount),
             icon: ArrowLeft,
             col: "var(--danger)",
           },

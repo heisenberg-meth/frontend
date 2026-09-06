@@ -372,7 +372,10 @@ export function BillingPOSSection3({
                                 fontWeight: 700,
                               }}
                             >
-                              ₹{safeNumber(bill.paidAmount ?? bill.total).toFixed(2)}
+                              ₹
+                              {safeNumber(
+                                bill.paidAmount ?? bill.total,
+                              ).toFixed(2)}
                             </td>
                             <td>
                               <span
@@ -674,13 +677,11 @@ export function BillingPOSSection4({
                       ← Previous
                     </button>
                     <span>
-                      Showing{" "}
-                      {((medicinePage - 1) * ITEMS_PER_PAGE +
-                        1)}–{" "}
+                      Showing {(medicinePage - 1) * ITEMS_PER_PAGE + 1}–{" "}
                       {medicinePage * ITEMS_PER_PAGE > items.length
                         ? items.length
-                        : medicinePage * ITEMS_PER_PAGE} of{" "}
-                      {items.length} medicines
+                        : medicinePage * ITEMS_PER_PAGE}{" "}
+                      of {items.length} medicines
                     </span>
                     <button
                       className="pagination-btn"

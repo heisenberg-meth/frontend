@@ -289,7 +289,8 @@ export function BulkImportSection1({
                         {(file.size / 1024).toFixed(1)} KB · CSV File
                       </div>
                     </div>
-                    <button aria-label="Close"
+                    <button
+                      aria-label="Close"
                       type="button"
                       className="remove-file-btn"
                       onClick={(e) => {

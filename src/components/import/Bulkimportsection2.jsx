@@ -34,7 +34,11 @@ export function BulkImportSection2({
           >
             <div className="drawer-header">
               <h3>Import History</h3>
-              <button aria-label="Close" type="button" onClick={() => setShowHistoryDrawer(false)}>
+              <button
+                aria-label="Close"
+                type="button"
+                onClick={() => setShowHistoryDrawer(false)}
+              >
                 <X size={20} />
               </button>
             </div>
@@ -132,7 +136,8 @@ export function BulkImportSection3({
               <h3>Add New Supplier</h3>
               <p>Quickly add a supplier for this import.</p>
             </div>
-            <button aria-label="Close"
+            <button
+              aria-label="Close"
               type="button"
               onClick={() => setShowAddSupplierModal(false)}
             >

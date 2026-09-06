@@ -71,7 +71,8 @@ export default function LogoutModal({
   return (
     <AnimatePresence>
       {isOpen && (
-        <m.div role="presentation"
+        <m.div
+          role="presentation"
           className="logout-overlay"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}

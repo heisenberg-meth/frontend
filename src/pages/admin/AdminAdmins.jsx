@@ -140,7 +140,8 @@ export default function AdminAdmins() {
                 id="field_5g401e"
               />
             </>
-            <select aria-label="select field"
+            <select
+              aria-label="select field"
               value={form.role}
               onChange={(e) =>
                 setForm({
@@ -252,7 +253,8 @@ export default function AdminAdmins() {
                   </td>
                   <td>{new Date(a.createdAt).toLocaleDateString()}</td>
                   <td className="admin-actions-cell">
-                    <button aria-label="Delete"
+                    <button
+                      aria-label="Delete"
                       className="admin-icon-btn danger"
                       title="Delete"
                       onClick={() => handleDelete(a.id)}

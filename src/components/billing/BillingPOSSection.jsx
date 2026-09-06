@@ -19,6 +19,7 @@ import { AnimatePresence } from "framer-motion";
 import { TableHeader } from "../common/TableHeader.jsx";
 import { normalizeInvoice } from "../../utils/billingNormalizer";
 import "../../styles/BillingPOS.css";
+import { validatePatientPhone } from "../../utils/validatePatientPhone.js";
 
 const ones = [
   "",
@@ -449,20 +450,51 @@ export function BillingPOSSection1({
               </div>
               <div className="pos-input-group">
                 <label htmlFor="patient-phone-input">PHONE NUMBER</label>
+
                 <input
-                  required
+                  required={!isWalkIn}
                   id="patient-phone-input"
                   className={`pos-input ${phoneFieldError ? "input-error" : ""}`}
-                  placeholder="6379723465"
+                  type="tel"
+                  inputMode="numeric"
+                  autoComplete="tel"
+                  maxLength={10}
+                  placeholder="Enter 10-digit mobile number"
                   value={patient.phone}
                   onChange={(e) => {
+                    const value = e.target.value
+                      .replace(/\D/g, "")
+                      .slice(0, 10);
+
                     setPatient({
                       ...patient,
-                      phone: e.target.value,
+                      phone: value,
                     });
-                    setPhoneFieldError("");
+
+                    if (!value) {
+                      setPhoneFieldError(
+                        isWalkIn ? "" : "Phone number is required",
+                      );
+                    } else if (!/^[6-9]\d{9}$/.test(value)) {
+                      setPhoneFieldError(
+                        value.length < 10
+                          ? "Phone number must be exactly 10 digits"
+                          : "Enter a valid 10-digit Indian mobile number",
+                      );
+                    } else {
+                      setPhoneFieldError("");
+                    }
+                  }}
+                  onBlur={() => {
+                    if (isWalkIn) {
+                      setPhoneFieldError("");
+                      return;
+                    }
+
+                    setPhoneFieldError(validatePatientPhone(patient.phone));
                   }}
                 />
+
                 {phoneFieldError && (
                   <span className="field-error-text">{phoneFieldError}</span>
                 )}
@@ -889,6 +921,15 @@ export function BillingPOSSection1({
                       }
                       if (!Number.isFinite(item.price)) {
                         showToast("Invalid Price", "error");
+                        return;
+                      }
+                    }
+                    if (!isWalkIn) {
+                      const phoneError = validatePatientPhone(patient.phone);
+
+                      if (phoneError) {
+                        setPhoneFieldError(phoneError);
+                        showToast(phoneError, "error");
                         return;
                       }
                     }

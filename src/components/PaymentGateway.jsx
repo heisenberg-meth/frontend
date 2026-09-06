@@ -310,7 +310,10 @@ export default function PaymentGateway({ user, onPaymentComplete, amount }) {
                   isProcessingRef.current = false;
 
                   // Activate free trial for ₹1 verification flow
-                  const planId = selectedPlan?.id || sessionStorage.getItem("selectedPlanId") || "paid";
+                  const planId =
+                    selectedPlan?.id ||
+                    sessionStorage.getItem("selectedPlanId") ||
+                    "paid";
                   const isFreePlan =
                     (selectedPlan && selectedPlan.price === 0) ||
                     planId === "free" ||
@@ -320,7 +323,10 @@ export default function PaymentGateway({ user, onPaymentComplete, amount }) {
                     try {
                       await api.post(API_ROUTES.SUBSCRIPTIONS_TRIAL);
                     } catch (trialErr) {
-                      console.error("Free trial activation error after payment:", trialErr);
+                      console.error(
+                        "Free trial activation error after payment:",
+                        trialErr,
+                      );
                       // Continue with refreshUser even if trial activation fails
                     }
                   }

@@ -669,6 +669,7 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
       receiveItems: [],
       isReceiving: false,
       differentBatch: {},
+      receiveErrors: {},
     },
   );
   const {
@@ -1568,8 +1569,96 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
       (ret.date || ret.createdAt || "").startsWith(filters.date);
     return matchesSupplier && matchesStatus && matchesSearch && matchesDate;
   });
+  const validateReceiveForm = () => {
+    const errors = {};
+
+    // Supplier invoice number
+    if (!grnInvoiceNumber.trim()) {
+      errors.invoiceNumber = "Supplier invoice number is required";
+    }
+
+    // Invoice date
+    if (!grnInvoiceDate) {
+      errors.invoiceDate = "Invoice date is required";
+    }
+
+    // At least one item must have received qty > 0
+    const itemsToReceive = receiveItems.filter(
+      (item) => safeNumber(item.receivedQuantity) > 0,
+    );
+    if (itemsToReceive.length === 0) {
+      errors.general =
+        "Receive quantity must be greater than 0 for at least one item";
+    }
+
+    receiveItems.forEach((item) => {
+      const receivedQty = safeNumber(item.receivedQuantity);
+      const pendingQty = safeNumber(item.pendingQuantity);
+
+      // Only validate item details when receiving that item
+      if (receivedQty > 0) {
+        if (receivedQty > pendingQty) {
+          errors.receivedQuantity =
+            "Receive quantity must not exceed pending quantity";
+        }
+
+        if (!item.batchNumber?.trim()) {
+          errors.batchNumber = "Batch number is required";
+        }
+
+        if (!item.expiryDate) {
+          errors.expiryDate = "Expiry date is required";
+        } else {
+          const today = new Date();
+          today.setHours(0, 0, 0, 0);
+
+          if (new Date(item.expiryDate) < today) {
+            errors.expiryDate = "Expiry date must be in the future";
+          }
+        }
+
+        if (safeNumber(item.purchasePrice) <= 0) {
+          errors.purchasePrice = "Purchase price must be greater than 0";
+        }
+
+        if (safeNumber(item.mrp) <= 0) {
+          errors.mrp = "MRP must be greater than 0";
+        }
+
+        // GST 0 is valid, but empty is not
+        if (
+          item.gstPercentage === "" ||
+          item.gstPercentage === null ||
+          item.gstPercentage === undefined
+        ) {
+          errors.gstPercentage = "GST % is required";
+        } else if (
+          safeNumber(item.gstPercentage) < 0 ||
+          safeNumber(item.gstPercentage) > 100
+        ) {
+          errors.gstPercentage = "GST % must be between 0 and 100";
+        }
+      }
+    });
+
+    dispatchPurchase({
+      type: "SET_FIELD",
+      field: "receiveErrors",
+      value: errors,
+    });
+
+    return Object.keys(errors).length === 0;
+  };
+
   const handleReceiveOrder = async () => {
     if (isReceiving) return;
+
+    const isValid = validateReceiveForm();
+
+    if (!isValid) {
+      showToast("Please fix the highlighted fields", "warning");
+      return;
+    }
     try {
       setIsReceiving(true);
 

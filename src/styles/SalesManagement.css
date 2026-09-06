@@ -175,57 +175,41 @@
 .sales-input {
   height: 46px;
   padding: 0 16px;
-  background: linear-gradient(
-    145deg,
-    rgba(13, 20, 40, 0.95),
-    rgba(7, 12, 28, 0.98)
-  );
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  color: #ffffff;
+  background: var(--surface);
+  border: 1px solid var(--outline-variant);
+  color: var(--text);
   border-radius: 14px;
   font-size: 14px;
   font-weight: 600;
   font-family: "Outfit", sans-serif;
   outline: none;
   transition: all 0.25s ease;
-  backdrop-filter: blur(12px);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.04),
-    0 4px 20px rgba(0, 0, 0, 0.25);
   appearance: none;
   -webkit-appearance: none;
   -moz-appearance: none;
   cursor: pointer;
   min-width: 220px;
-  background-image:
-    linear-gradient(45deg, transparent 50%, #4fdbc8 50%),
-    linear-gradient(135deg, #4fdbc8 50%, transparent 50%);
-  background-position:
-    calc(100% - 18px) calc(50% - 3px),
-    calc(100% - 12px) calc(50% - 3px);
-  background-size: 6px 6px;
-  background-repeat: no-repeat;
 }
 
 .sales-input:hover {
-  border-color: rgba(79, 219, 200, 0.45);
-  box-shadow:
-    0 0 0 4px rgba(79, 219, 200, 0.08),
-    0 10px 25px rgba(0, 0, 0, 0.3);
+  border-color: var(--primary);
+  box-shadow: 0 0 0 4px rgba(79, 219, 200, 0.08);
 }
 
 .sales-input:focus {
   border-color: var(--primary);
-  box-shadow:
-    0 0 0 4px rgba(79, 219, 200, 0.12),
-    0 10px 30px rgba(79, 219, 200, 0.15);
+  box-shadow: 0 0 0 4px rgba(79, 219, 200, 0.12);
 }
 
 .sales-input option {
-  background: #081120;
-  color: #ffffff;
+  background: var(--surface);
+  color: var(--text);
   padding: 12px;
 }
+
+
+
+
 
 /* Micro Action Buttons */
 .micro-btn {

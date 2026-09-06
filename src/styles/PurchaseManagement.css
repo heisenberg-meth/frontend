@@ -373,7 +373,23 @@
   box-shadow: 0 0 0 4px rgba(79, 219, 200, 0.08);
 }
 
-/* Upload Zone */
+.receive-input-error {
+  border: 1px solid var(--danger) !important;
+  box-shadow: 0 0 0 1px var(--danger) !important;
+}
+
+.receive-field-error {
+  display: block;
+  margin-top: 4px;
+  color: var(--danger);
+  font-size: 11px;
+  line-height: 1.3;
+}
+
+.required-star {
+  color: var(--danger);
+  font-weight: 700;
+}
 .p-upload-zone {
   border: 2px dashed var(--outline-variant);
   border-radius: 12px;

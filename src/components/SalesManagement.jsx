@@ -1039,7 +1039,13 @@ export default function SalesManagement({ showToast, storeProfile }) {
                 filteredReturns.reduce(
                   (sum, r) =>
                     sum +
-                    (r.refundAmount || r.totalReturnAmount || r.value || 0),
+                    safeNumber(
+                      r.refundedAmount ||
+                        r.refundAmount ||
+                        r.totalReturnAmount ||
+                        r.value ||
+                        0,
+                    ),
                   0,
                 ),
               ),
