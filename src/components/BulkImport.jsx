@@ -643,7 +643,7 @@ export default function BulkImport({ fetchData, showToast }) {
       showToast,
     ],
   );
-  const { getRootProps, getInputProps, isDragActive } = useDropzone({
+  const { getRootProps, getInputProps, isDragActive, open } = useDropzone({
     onDrop,
     noClick: true,
     accept: {
@@ -911,6 +911,7 @@ export default function BulkImport({ fetchData, showToast }) {
         duplicateResults={duplicateResults}
         resetMappingToAI={resetMappingToAI}
         getRootProps={getRootProps}
+        open={open}
         handleAnalyzeImport={handleAnalyzeImport}
         suppliersList={suppliersList}
         selectedSupplier={selectedSupplier}

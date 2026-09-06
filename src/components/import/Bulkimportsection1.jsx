@@ -102,6 +102,7 @@ export function BulkImportSection1({
   duplicateResults,
   resetMappingToAI,
   getRootProps,
+  open,
   handleAnalyzeImport,
   suppliersList,
   selectedSupplier,
