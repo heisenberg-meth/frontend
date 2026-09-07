@@ -1,12 +1,13 @@
 import { useMemo, useState, useEffect, useCallback, useRef } from "react";
-import api, { invalidateCsrfToken } from "../api";
+import axios from "axios";
+import api, { invalidateCsrfToken, getBaseUrl } from "../api";
 import { API_ROUTES } from "../constants/api.routes.js";
 import {
   clearAllAuth,
   getStoredUser,
   setUser,
   setToken,
-  getRefreshToken,
+  getToken,
   setRefreshToken,
 } from "../utils/authStorage";
 import { AuthContext } from "./authContextInstance";
@@ -84,18 +85,9 @@ export function AuthProvider({ children }) {
 
   const refreshToken = useCallback(async () => {
     try {
-      const storedRefreshToken = getRefreshToken();
-
-      if (!storedRefreshToken) {
-        clearAuthState();
-        return null;
-      }
-
-      const res = await api.post(
-        API_ROUTES.AUTH_REFRESH,
-        {
-          refreshToken: storedRefreshToken,
-        },
+      const res = await axios.post(
+        `${getBaseUrl()}/auth/refresh`,
+        {},
         {
           withCredentials: true,
           timeout: 10000,
@@ -103,26 +95,14 @@ export function AuthProvider({ children }) {
       );
 
       const newToken =
-        res.data?.data?.token ||
-        res.data?.token ||
-        res.data?.accessToken;
-
-      const newRefreshToken =
-        res.data?.data?.refreshToken ||
-        res.data?.refreshToken;
+        res.data?.data?.token || res.data?.token || res.data?.accessToken;
 
       if (!newToken) {
-        throw new Error(
-          "Token refresh failed: Invalid response from server.",
-        );
-      }
-
-      // Backend rotates refresh tokens — save the new one
-      if (newRefreshToken) {
-        setRefreshToken(newRefreshToken);
+        throw new Error("No access token returned from refresh");
       }
 
       setToken(newToken);
+      invalidateCsrfToken();
 
       return newToken;
     } catch (error) {
@@ -130,11 +110,9 @@ export function AuthProvider({ children }) {
         "[AUTH] Token refresh failed:",
         error.response?.data || error.message || error,
       );
-
-      clearAuthState();
       return null;
     }
-  }, [clearAuthState]);
+  }, []);
 
   useEffect(() => {
     let ignore = false;
@@ -142,29 +120,50 @@ export function AuthProvider({ children }) {
     restoreAttemptedRef.current = true;
 
     const restoreSession = async () => {
-      if (!getStoredUser()) {
+      try {
+        const storedUser = getStoredUser();
+        const storedToken = getToken();
+
+        // If neither user nor token exists, genuinely logged out
+        if (!storedUser && !storedToken) {
+          if (!ignore) {
+            setLoading(false);
+            restoredRef.current = true;
+            setRestored(true);
+          }
+          return;
+        }
+
+        // Refresh access token using HttpOnly refresh cookie
+        const newToken = await refreshToken();
+
+        if (!newToken) {
+          if (!ignore) {
+            clearAuthState();
+            setLoading(false);
+            restoredRef.current = true;
+            setRestored(true);
+          }
+          return;
+        }
+
+        // Access token refreshed successfully — now fetch current user profile
+        const context = await refreshUser();
+
+        if (!context?.user && !ignore) {
+          clearAuthState();
+        }
+      } catch (error) {
+        console.error("[AUTH] Session restore failed:", error);
+        if (!ignore) {
+          clearAuthState();
+        }
+      } finally {
         if (!ignore) {
           setLoading(false);
           restoredRef.current = true;
           setRestored(true);
         }
-        return;
-      }
-
-      const newToken = await refreshToken();
-      if (!ignore && !newToken) {
-        clearAuthState();
-        setLoading(false);
-        restoredRef.current = true;
-        setRestored(true);
-        return;
-      }
-
-      await refreshUser();
-      if (!ignore) {
-        setLoading(false);
-        restoredRef.current = true;
-        setRestored(true);
       }
     };
 
@@ -225,13 +224,10 @@ export function AuthProvider({ children }) {
 
       // Save access token and refresh token from login response
       const newToken =
-        res.data?.data?.token ||
-        res.data?.token ||
-        res.data?.accessToken;
+        res.data?.data?.token || res.data?.token || res.data?.accessToken;
 
       const newRefreshToken =
-        res.data?.data?.refreshToken ||
-        res.data?.refreshToken;
+        res.data?.data?.refreshToken || res.data?.refreshToken;
 
       if (newToken) {
         setToken(newToken);

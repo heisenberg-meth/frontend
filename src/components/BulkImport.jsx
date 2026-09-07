@@ -482,8 +482,8 @@ export default function BulkImport({ fetchData, showToast }) {
   }, [showHistoryDrawer, showToast]);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const isAnalyzingRef = useRef(false);
-  const [parsingProgress, setParsingProgress] = useState(0);
-  const [parsingStatus, setParsingStatus] = useState("");
+  const [, setParsingProgress] = useState(0);
+  const [, setParsingStatus] = useState("");
   const handleAnalyzeImport = useCallback(async () => {
     if (isAnalyzingRef.current) return;
     if (!file) {

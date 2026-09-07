@@ -1,5 +1,10 @@
 import axios from "axios";
-import { setToken, setRefreshToken, clearAllAuth } from "./utils/authStorage";
+import {
+  setToken,
+  setRefreshToken,
+  clearAllAuth,
+  getStoredUser,
+} from "./utils/authStorage";
 const PRIVATE_IP_PATTERNS = [
   /^http:\/\/localhost/i,
   /^http:\/\/127\.0\.0\.1/i,
@@ -103,17 +108,14 @@ export async function refreshSession() {
 
       // Save new access token from refresh response
       const newToken =
-        res.data?.data?.token ||
-        res.data?.token ||
-        res.data?.accessToken;
+        res.data?.data?.token || res.data?.token || res.data?.accessToken;
       if (newToken) {
         setToken(newToken);
       }
 
       // Backend rotates refresh tokens — save the new one
       const newRefreshToken =
-        res.data?.data?.refreshToken ||
-        res.data?.refreshToken;
+        res.data?.data?.refreshToken || res.data?.refreshToken;
       if (newRefreshToken) {
         setRefreshToken(newRefreshToken);
       }
@@ -256,7 +258,7 @@ api.interceptors.response.use(
       originalRequest?.url?.includes(route),
     );
     if (status === 401 && !originalRequest._retry && !isExcluded) {
-      if (!localStorage.getItem("viyan_user")) {
+      if (!getStoredUser() && !localStorage.getItem("viyan_user")) {
         return Promise.reject(error);
       }
       if (refreshAttempts >= MAX_REFRESH_ATTEMPTS) {
