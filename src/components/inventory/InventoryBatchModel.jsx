@@ -198,8 +198,17 @@ export function BatchModal({
     const batchNumber = String(form.batchNumber || "").trim();
     if (!batchNumber) newErrors.batchNumber = "Batch number is required";
     if (!form.expiryDate) newErrors.expiryDate = "Expiry date is required";
-    else if (new Date(form.expiryDate) <= new Date())
-      newErrors.expiryDate = "Expiry date must be in the future";
+    else {
+      // Expiry = today is allowed: the backend classifies it as EXPIRED.
+      // Only reject dates strictly before today. Parse "YYYY-MM-DD" as a
+      // local date (new Date(str) would interpret it as UTC midnight).
+      const [yy, mm, dd] = String(form.expiryDate).split("-").map(Number);
+      const expiryDate = new Date(yy, mm - 1, dd);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      if (expiryDate < today)
+        newErrors.expiryDate = "Expiry date cannot be in the past";
+    }
     if (!form.mrp || safeNumber(form.mrp) <= 0)
       newErrors.mrp = "MRP must be greater than 0";
     if (form.quantity === "" || safeNumber(form.quantity) < 0)
@@ -735,28 +744,29 @@ function BatchModalSection2({
                   }}
                 >
                   <table
-                    className="inv-table"
+                    className="inv-table inv-batch-table"
                     style={{
                       margin: 0,
                       border: "none",
+                      borderCollapse: "separate",
+                      borderSpacing: 0,
                     }}
                   >
                     <thead
                       style={{
                         position: "sticky",
                         top: 0,
-                        zIndex: 10,
-                        background: "var(--bg-primary)",
-                        boxShadow: "0 2px 6px rgba(0, 0, 0, 0.08)",
+                        zIndex: 20,
+                        backgroundColor: "#ffffff",
                       }}
                     >
                       <tr>
                         <th
                           style={{
-                            background: "var(--bg-primary)",
+                            backgroundColor: "#ffffff",
                             padding: "12px 14px",
-                            borderBottom: "2px solid var(--border-color)",
-                            color: "var(--text-secondary)",
+                            borderBottom: "2px solid #d9dee7",
+                            color: "#475569",
                             fontWeight: 700,
                           }}
                         >
@@ -765,10 +775,10 @@ function BatchModalSection2({
 
                         <th
                           style={{
-                            background: "var(--bg-primary)",
+                            backgroundColor: "#ffffff",
                             padding: "12px 14px",
-                            borderBottom: "2px solid var(--border-color)",
-                            color: "var(--text-secondary)",
+                            borderBottom: "2px solid #d9dee7",
+                            color: "#475569",
                             fontWeight: 700,
                           }}
                         >
@@ -777,10 +787,10 @@ function BatchModalSection2({
 
                         <th
                           style={{
-                            background: "var(--bg-primary)",
+                            backgroundColor: "#ffffff",
                             padding: "12px 14px",
-                            borderBottom: "2px solid var(--border-color)",
-                            color: "var(--text-secondary)",
+                            borderBottom: "2px solid #d9dee7",
+                            color: "#475569",
                             fontWeight: 700,
                           }}
                         >
@@ -791,10 +801,10 @@ function BatchModalSection2({
                           style={{
                             width: "80px",
                             textAlign: "center",
-                            background: "var(--bg-primary)",
+                            backgroundColor: "#ffffff",
                             padding: "12px 14px",
-                            borderBottom: "2px solid var(--border-color)",
-                            color: "var(--text-secondary)",
+                            borderBottom: "2px solid #d9dee7",
+                            color: "#475569",
                             fontWeight: 700,
                           }}
                         >
@@ -808,12 +818,12 @@ function BatchModalSection2({
                           key={b.id}
                           className={`batch-row ${selectedBatch?.id === b.id ? "selected" : ""}`}
                           style={{
-                            background:
+                            backgroundColor:
                               selectedBatch?.id === b.id
-                                ? "var(--hover-bg)"
-                                : "var(--bg-primary)",
+                                ? "#f0fdfa"
+                                : "#ffffff",
                             cursor: "pointer",
-                            borderBottom: "1px solid var(--border-color)",
+                            borderBottom: "1px solid #e5e7eb",
                           }}
                           onClick={() => {
                             setSelectedBatch(b);

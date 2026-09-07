@@ -272,7 +272,14 @@ function InventoryCRUDSection2({
 
       {/* Table */}
       <div className="inv-table-wrapper">
-        <table className="inv-table">
+        <table className="inv-table"
+          style={{
+            margin: 0,
+            border: "none",
+            borderCollapse: "separate",
+            borderSpacing: 0,
+          }}
+        >
           <TableHeader
             columns={[
               "MEDICINE",

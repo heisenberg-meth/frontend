@@ -884,12 +884,6 @@ export function SuppliersSection1({ loading, suppliers }) {
             <Clock size={14} />
           </div>
         </div>
-        <div className="flex items-center">
-          <div className="sup-stat-value text-yellow-500">4</div>
-          <div className="sup-stat-trend">
-            <TrendingUp size={10} /> <span>2%</span>
-          </div>
-        </div>
       </div>
       <div className="sup-stat-card-v2" onMouseMove={handleMouseMove}>
         <div className="sup-stat-header">

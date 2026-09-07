@@ -221,8 +221,17 @@ export function MedicineModal({
       if (!form.quantity || safeNumber(form.quantity) < 0)
         newErrors.quantity = "Quantity must be 0 or more";
       if (!form.expiryDate) newErrors.expiryDate = "Expiry date is required";
-      else if (new Date(form.expiryDate) <= new Date())
-        newErrors.expiryDate = "Expiry date must be in the future";
+      else {
+        // Expiry = today is allowed: the backend classifies it as EXPIRED.
+        // Only reject dates strictly before today. Parse "YYYY-MM-DD" as a
+        // local date (new Date(str) would interpret it as UTC midnight).
+        const [yy, mm, dd] = String(form.expiryDate).split("-").map(Number);
+        const expiryDate = new Date(yy, mm - 1, dd);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        if (expiryDate < today)
+          newErrors.expiryDate = "Expiry date cannot be in the past";
+      }
       if (!batchNumber) newErrors.batchNumber = "Batch number is required";
       const duplicate = existingMedicines.find(
         (m) =>
