@@ -481,11 +481,9 @@ export default function BulkImport({ fetchData, showToast }) {
     };
   }, [showHistoryDrawer, showToast]);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
-const isAnalyzingRef = useRef(false);
-/* eslint-disable no-unused-vars */
+  const isAnalyzingRef = useRef(false);
   const [parsingProgress, setParsingProgress] = useState(0);
   const [parsingStatus, setParsingStatus] = useState("");
-/* eslint-enable no-unused-vars */
   const handleAnalyzeImport = useCallback(async () => {
     if (isAnalyzingRef.current) return;
     if (!file) {
@@ -608,9 +606,15 @@ const isAnalyzingRef = useRef(false);
               return;
             }
 
-            setParsingStatus(`Parsing Excel data... 0 of ${totalRowsCount.toLocaleString()} rows`);
+            setParsingStatus(
+              `Parsing Excel data... 0 of ${totalRowsCount.toLocaleString()} rows`,
+            );
 
-            for (let rowNumber = 2; rowNumber <= worksheet.rowCount; rowNumber++) {
+            for (
+              let rowNumber = 2;
+              rowNumber <= worksheet.rowCount;
+              rowNumber++
+            ) {
               const row = worksheet.getRow(rowNumber);
 
               const rowObj = {};
@@ -628,9 +632,7 @@ const isAnalyzingRef = useRef(false);
                 }
 
                 rowObj[header] =
-                  val !== null && val !== undefined
-                    ? String(val).trim()
-                    : "";
+                  val !== null && val !== undefined ? String(val).trim() : "";
               });
 
               parsedData.push(rowObj);
@@ -640,7 +642,8 @@ const isAnalyzingRef = useRef(false);
 
               if (
                 parsedCount === totalRowsCount ||
-                parsedCount % Math.max(1, Math.floor(totalRowsCount / 100)) === 0
+                parsedCount % Math.max(1, Math.floor(totalRowsCount / 100)) ===
+                  0
               ) {
                 const percentage =
                   totalRowsCount > 0

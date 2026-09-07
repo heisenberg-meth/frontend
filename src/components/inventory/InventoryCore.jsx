@@ -290,6 +290,8 @@ export function MedicineModal({
         form={form}
         errors={errors}
         set={set}
+        setForm={setForm}
+        setErrors={setErrors}
         categories={categories}
         loadingSuppliers={loadingSuppliers}
         suppliers={suppliers}
@@ -338,6 +340,8 @@ function MedicineModalSection1({
   form,
   errors,
   set,
+  setForm,
+  setErrors,
   categories,
   loadingSuppliers,
   suppliers,
@@ -428,53 +432,79 @@ function MedicineModalSection1({
           {/* Category & Schedule */}
           <div className="form-group">
             <label htmlFor="field_r0jnco">Category *</label>
-            {categories.length > 0 ? (
-              <select
-                id="field_r0jnco"
-                value={form.categoryId || ""}
-                onChange={(e) => set("categoryId", e.target.value)}
-                className={errors.category ? "input-error" : ""}
-              >
-                <option value="">Select Category</option>
-                {categories.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.name}
-                  </option>
-                ))}
-              </select>
-            ) : (
-              <>
-                <label htmlFor="field_b8jp8u" className="sr-only">
-                  Type category name (e.g. Tablets)
-                </label>
-                <input
-                  required
-                  placeholder="Type category name (e.g. Tablets)"
-                  value={form.category || ""}
-                  onChange={(e) => set("category", e.target.value)}
-                  className={errors.category ? "input-error" : ""}
-                  id="field_b8jp8u"
-                />
-              </>
-            )}
+
+            <input
+              id="field_r0jnco"
+              type="text"
+              list="medicine-category-options"
+              placeholder="Select or type category"
+              value={
+                form.categoryId
+                  ? categories.find(
+                      (c) => String(c.id) === String(form.categoryId),
+                    )?.name ||
+                    form.category ||
+                    ""
+                  : form.category || ""
+              }
+              onChange={(e) => {
+                const typedValue = e.target.value;
+
+                const matchedCategory = categories.find(
+                  (c) =>
+                    String(c.name || "")
+                      .trim()
+                      .toLowerCase() === typedValue.trim().toLowerCase(),
+                );
+
+                setForm((f) => ({
+                  ...f,
+                  category: typedValue,
+                  categoryId: matchedCategory?.id || "",
+                }));
+
+                if (errors.category) {
+                  setErrors((e) => ({
+                    ...e,
+                    category: null,
+                  }));
+                }
+              }}
+              className={errors.category ? "input-error" : ""}
+              autoComplete="off"
+            />
+
+            <datalist id="medicine-category-options">
+              {categories.map((c) => (
+                <option key={c.id} value={c.name} />
+              ))}
+            </datalist>
+
             {errors.category && (
               <span className="field-error">{errors.category}</span>
             )}
           </div>
           <div className="form-group">
             <label htmlFor="field_8yi3yp">Regulatory Classification</label>
-            <select
+
+            <input
               id="field_8yi3yp"
-              value={form.schedule || "OTC"}
+              type="text"
+              list="regulatory-classification-options"
+              placeholder="Select or type classification"
+              value={form.schedule || ""}
               onChange={(e) => set("schedule", e.target.value)}
-            >
+              autoComplete="off"
+            />
+
+            <datalist id="regulatory-classification-options">
               <option value="OTC">Non-Scheduled / OTC</option>
               <option value="G">Schedule G</option>
               <option value="H">Schedule H</option>
               <option value="H1">Schedule H1</option>
               <option value="X">Schedule X</option>
               <option value="OTHER">Other / Special</option>
-            </select>
+            </datalist>
           </div>
 
           {/* Batch & Expiry */}

@@ -1,4 +1,5 @@
-import { useState, useEffect, useRef, useCallback, useNavigate } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
 import api from "../api.js";
 import { API_ROUTES } from "../constants/api.routes.js";
 import { useAuth } from "../hooks/useAuth";

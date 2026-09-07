@@ -10,6 +10,7 @@ import {
   Truck,
 } from "lucide-react";
 import { AnimatePresence, m } from "framer-motion";
+import { createPortal } from "react-dom";
 import api from "../../api";
 import { safeNumber } from "../../utils/number.js";
 
@@ -1453,16 +1454,13 @@ export function ExpiryBatchIntelligenceSection6({
   disposalSummary,
   handleBulkDispose,
 }) {
-  return (
+  return createPortal(
     <AnimatePresence>
       {showDisposeModal && (
         <div
           role="presentation"
           className="stock-modal-overlay"
           onClick={() => !disposing && setShowDisposeModal(false)}
-          style={{
-            zIndex: 1100,
-          }}
         >
           <m.div
             role="presentation"
@@ -1668,7 +1666,8 @@ export function ExpiryBatchIntelligenceSection6({
           </m.div>
         </div>
       )}
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body,
   );
 }
 export function ExpiryBatchIntelligenceSection7({
@@ -1681,16 +1680,13 @@ export function ExpiryBatchIntelligenceSection7({
   suppliers,
   handleBulkAssignSupplier,
 }) {
-  return (
+  return createPortal(
     <AnimatePresence>
       {showBulkSupplierModal && (
         <div
           role="presentation"
           className="stock-modal-overlay"
           onClick={() => !bulkAssigning && setShowBulkSupplierModal(false)}
-          style={{
-            zIndex: 1100,
-          }}
         >
           <m.div
             role="presentation"
@@ -1838,7 +1834,8 @@ export function ExpiryBatchIntelligenceSection7({
           </m.div>
         </div>
       )}
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body,
   );
 }
 export function ExpiryBatchIntelligenceSection8({
@@ -1851,16 +1848,13 @@ export function ExpiryBatchIntelligenceSection8({
   importFile,
   handleImportCsv,
 }) {
-  return (
+  return createPortal(
     <AnimatePresence>
       {showImportModal && (
         <div
           role="presentation"
           className="stock-modal-overlay"
           onClick={() => !importing && setShowImportModal(false)}
-          style={{
-            zIndex: 1100,
-          }}
         >
           <m.div
             role="presentation"
@@ -2011,6 +2005,7 @@ export function ExpiryBatchIntelligenceSection8({
           </m.div>
         </div>
       )}
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body,
   );
 }
