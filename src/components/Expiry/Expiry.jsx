@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { AnimatePresence, m } from "framer-motion";
 import { TableHeader } from "../common/TableHeader.jsx";
+import ClearExpiredButton from "../ClearExpiredButton";
 
 const INV_FILTER_OPTIONS = [
   {
@@ -44,6 +45,8 @@ const INV_FILTER_OPTIONS = [
   },
 ];
 export function ExpiryBatchIntelligenceSection1({
+  showToast,
+  handleExpiredCleared,
   setFilter,
   setShowBulkSupplierModal,
   setShowDisposeModal,
@@ -171,8 +174,13 @@ export function ExpiryBatchIntelligenceSection1({
               display: "flex",
               alignItems: "center",
               gap: "10px",
+              flexWrap: "wrap",
             }}
           >
+            <ClearExpiredButton
+              showToast={showToast}
+              onCleared={handleExpiredCleared}
+            />
             <button
               className="pos-btn outline"
               style={{

@@ -26,7 +26,6 @@ import {
   importSupplierAssignments,
 } from "../services/inventory.service";
 import { getSuppliers } from "../services/suppliers.service";
-import ClearExpiredButton from "./ClearExpiredButton";
 import {
   ExpiryBatchIntelligenceSection1,
   ExpiryBatchIntelligenceSection2,
@@ -1529,7 +1528,6 @@ export default function ExpiryBatchIntelligence({ showToast }) {
 
       <div className="expiry-stats-grid">
         {dynamicStats.map((s) => {
-          const isExpiredCard = s.key === "EXPIRED";
           return (
             <div
               key={s.key}
@@ -1570,19 +1568,6 @@ export default function ExpiryBatchIntelligence({ showToast }) {
                 </div>
                 <div className="stat-value">{s.val}</div>
               </button>
-              {isExpiredCard && (
-                <div
-                  style={{
-                    marginTop: 8,
-                  }}
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  <ClearExpiredButton
-                    showToast={showToast}
-                    onCleared={handleExpiredCleared}
-                  />
-                </div>
-              )}
             </div>
           );
         })}
@@ -1590,6 +1575,8 @@ export default function ExpiryBatchIntelligence({ showToast }) {
 
       {/* ───────────────────── TIMELINE TAB ───────────────────── */}
       <ExpiryBatchIntelligenceSection1
+        showToast={showToast}
+        handleExpiredCleared={handleExpiredCleared}
         setFilter={setFilter}
         setShowBulkSupplierModal={setShowBulkSupplierModal}
         setShowDisposeModal={setShowDisposeModal}

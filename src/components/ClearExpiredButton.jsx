@@ -1,19 +1,3 @@
-/**
- * ClearExpiredButton
- * ─────────────────────────────────────────────────────────────────
- * Self-contained "Clear Expired Batches" feature component.
- *
- * Renders a button that shows the clearable-batch count and drives
- * the full confirm → loading → success / error flow described in the
- * "Clear Expired Batches" PRD.
- *
- * Props
- *   showToast  (fn)    – toast notification callback (msg, type)
- *   onCleared  (fn)    – called after a successful clear so parent
- *                        can refresh its data
- *   branchId   (str?)  – optional branch filter
- *   className  (str?)  – extra class names on the trigger button
- */
 import { useState, useEffect, useCallback, useRef } from "react";
 import { Trash2, AlertTriangle, CheckCircle2, X, Loader2 } from "lucide-react";
 import { AnimatePresence, m } from "framer-motion";
