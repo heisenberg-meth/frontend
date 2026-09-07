@@ -745,17 +745,57 @@ function BatchModalSection2({
                       style={{
                         position: "sticky",
                         top: 0,
-                        zIndex: 1,
+                        zIndex: 10,
+                        background: "var(--bg-primary)",
+                        boxShadow: "0 2px 6px rgba(0, 0, 0, 0.08)",
                       }}
                     >
                       <tr>
-                        <th>Batch Number</th>
-                        <th>Qty</th>
-                        <th>Expiry</th>
+                        <th
+                          style={{
+                            background: "var(--bg-primary)",
+                            padding: "12px 14px",
+                            borderBottom: "2px solid var(--border-color)",
+                            color: "var(--text-secondary)",
+                            fontWeight: 700,
+                          }}
+                        >
+                          Batch Number
+                        </th>
+
+                        <th
+                          style={{
+                            background: "var(--bg-primary)",
+                            padding: "12px 14px",
+                            borderBottom: "2px solid var(--border-color)",
+                            color: "var(--text-secondary)",
+                            fontWeight: 700,
+                          }}
+                        >
+                          Qty
+                        </th>
+
+                        <th
+                          style={{
+                            background: "var(--bg-primary)",
+                            padding: "12px 14px",
+                            borderBottom: "2px solid var(--border-color)",
+                            color: "var(--text-secondary)",
+                            fontWeight: 700,
+                          }}
+                        >
+                          Expiry
+                        </th>
+
                         <th
                           style={{
                             width: "80px",
                             textAlign: "center",
+                            background: "var(--bg-primary)",
+                            padding: "12px 14px",
+                            borderBottom: "2px solid var(--border-color)",
+                            color: "var(--text-secondary)",
+                            fontWeight: 700,
                           }}
                         >
                           Action
@@ -771,8 +811,9 @@ function BatchModalSection2({
                             background:
                               selectedBatch?.id === b.id
                                 ? "var(--hover-bg)"
-                                : "transparent",
+                                : "var(--bg-primary)",
                             cursor: "pointer",
+                            borderBottom: "1px solid var(--border-color)",
                           }}
                           onClick={() => {
                             setSelectedBatch(b);
