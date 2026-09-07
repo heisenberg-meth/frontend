@@ -632,17 +632,33 @@ export default function ExpiryReport({ showToast }) {
       isMounted = false;
     };
   }, []);
-  const now = new Date();
   const getDaysLeft = (dateStr) => {
-    const diff = new Date(dateStr) - now;
-    return Math.ceil(diff / (1000 * 60 * 60 * 24));
+    if (!dateStr) return 0;
+    let expYear, expMonth, expDate;
+    if (typeof dateStr === "string" && /^\d{4}-\d{2}-\d{2}/.test(dateStr)) {
+      const [y, m, d] = dateStr.substring(0, 10).split("-").map(Number);
+      expYear = y;
+      expMonth = m - 1;
+      expDate = d;
+    } else {
+      const exp = new Date(dateStr);
+      expYear = exp.getFullYear();
+      expMonth = exp.getMonth();
+      expDate = exp.getDate();
+    }
+    const today = new Date();
+    const diff =
+      Date.UTC(expYear, expMonth, expDate) -
+      Date.UTC(today.getFullYear(), today.getMonth(), today.getDate());
+    return Math.round(diff / (1000 * 60 * 60 * 24));
   };
   const processStockItem = (item) => {
     const days = getDaysLeft(item.expiryDate);
     let urgency = "safe";
-    if (days < 0) urgency = "danger";
-    else if (days < 30) urgency = "warning";
-    else if (days < 90) urgency = "info";
+    if (days <= 0) urgency = "danger";
+    else if (days <= 7) urgency = "danger";
+    else if (days <= 30) urgency = "warning";
+    else if (days <= 90) urgency = "info";
     return {
       ...item,
       daysLeft: days,
@@ -653,15 +669,15 @@ export default function ExpiryReport({ showToast }) {
   const processedStock = (Array.isArray(expiryStock) ? expiryStock : []).map(
     processStockItem,
   );
-  const expiredCount = processedStock.filter((i) => i.daysLeft < 0).length;
+  const expiredCount = processedStock.filter((i) => i.daysLeft <= 0).length;
   const expiring7DaysCount = processedStock.filter(
-    (i) => i.daysLeft >= 0 && i.daysLeft < 7,
+    (i) => i.daysLeft > 0 && i.daysLeft <= 7,
   ).length;
   const expiring7To30DaysCount = processedStock.filter(
-    (i) => i.daysLeft >= 7 && i.daysLeft < 30,
+    (i) => i.daysLeft > 7 && i.daysLeft <= 30,
   ).length;
   const expiring90DaysCount = processedStock.filter(
-    (i) => i.daysLeft >= 30 && i.daysLeft < 90,
+    (i) => i.daysLeft > 30 && i.daysLeft <= 90,
   ).length;
   const totalStockValue = processedStock.reduce(
     (acc, i) => acc + (i.value || 0),
@@ -669,20 +685,20 @@ export default function ExpiryReport({ showToast }) {
   );
   const totalStockBatches = processedStock.length;
   const filteredStock = processedStock.filter((item) => {
-    if (expiryFilter === "Expired" && item.daysLeft >= 0) return false;
+    if (expiryFilter === "Expired" && item.daysLeft > 0) return false;
     if (
       expiryFilter === "< 7 Days" &&
-      (item.daysLeft < 0 || item.daysLeft >= 7)
+      (item.daysLeft <= 0 || item.daysLeft > 7)
     )
       return false;
     if (
       expiryFilter === "7-30 Days" &&
-      (item.daysLeft < 7 || item.daysLeft >= 30)
+      (item.daysLeft <= 7 || item.daysLeft > 30)
     )
       return false;
     if (
       expiryFilter === "30-90 Days" &&
-      (item.daysLeft < 30 || item.daysLeft >= 90)
+      (item.daysLeft <= 30 || item.daysLeft > 90)
     )
       return false;
     if (expirySearch.trim() !== "") {

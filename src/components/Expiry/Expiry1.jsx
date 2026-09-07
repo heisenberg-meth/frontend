@@ -748,7 +748,7 @@ function ExpiryViewBatchModal({
               ["Expiry Date", viewBatch.exp],
               [
                 "Days Left",
-                viewBatch.days < 0 ? "EXPIRED" : `${viewBatch.days} Days`,
+                viewBatch.days <= 0 ? "EXPIRED" : `${viewBatch.days} Days`,
               ],
               ["Quantity", `${viewBatch.qty} units`],
               ["Value", `₹${viewBatch.val}`],

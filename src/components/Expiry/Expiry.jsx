@@ -357,7 +357,7 @@ export function ExpiryBatchIntelligenceSection1({
                 </tr>
               ) : (
                 filteredBatches.map((b) => {
-                  const isExpiredRow = b.days < 0 || b.status === "expired";
+                  const isExpiredRow = b.days <= 0 || b.status === "expired";
                   const isChecked =
                     isExpiredRow && selectedBatchIds.has(b.batchId);
                   return (
@@ -449,19 +449,19 @@ export function ExpiryBatchIntelligenceSection1({
                         <b
                           style={{
                             color:
-                              b.days < 0
+                              b.days <= 0
                                 ? "var(--danger)"
-                                : b.days < 7
+                                : b.days <= 7
                                   ? "var(--warning)"
-                                  : b.days < 30
+                                  : b.days <= 30
                                     ? "var(--warning)"
-                                    : b.days < 90
+                                    : b.days <= 90
                                       ? "var(--info)"
                                       : "var(--success)",
                             fontFamily: "Outfit",
                           }}
                         >
-                          {b.days < 0
+                          {b.days <= 0
                             ? "EXPIRED"
                             : b.days > 120
                               ? "120+ Days"
@@ -1023,15 +1023,15 @@ export function ExpiryBatchIntelligenceSection3({
                                     <b
                                       style={{
                                         color:
-                                          b.days < 0
+                                          b.days <= 0
                                             ? "var(--danger)"
-                                            : b.days < 7
+                                            : b.days <= 7
                                               ? "var(--warning)"
                                               : "var(--success)",
                                         fontFamily: "Outfit",
                                       }}
                                     >
-                                      {b.days < 0 ? "EXPIRED" : `${b.days}d`}
+                                      {b.days <= 0 ? "EXPIRED" : `${b.days}d`}
                                     </b>
                                   </td>
                                   <td
@@ -1052,9 +1052,9 @@ export function ExpiryBatchIntelligenceSection3({
                                           width: `${pct}%`,
                                           height: "100%",
                                           background:
-                                            b.days < 0
+                                            b.days <= 0
                                               ? "var(--danger)"
-                                              : b.days < 7
+                                              : b.days <= 7
                                                 ? "var(--warning)"
                                                 : "var(--primary)",
                                         }}

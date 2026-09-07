@@ -58,7 +58,7 @@ export function getMedicineStatus(medicine) {
       if (!b.expiryDate) return false;
       const d = new Date(b.expiryDate);
       d.setHours(0, 0, 0, 0);
-      return d < today;
+      return d <= today;
     });
 
     const unexpiredBatchesWithStock = activeBatchesWithStock.filter((b) => {
@@ -66,7 +66,7 @@ export function getMedicineStatus(medicine) {
       if (!b.expiryDate) return true;
       const d = new Date(b.expiryDate);
       d.setHours(0, 0, 0, 0);
-      return d >= today;
+      return d > today;
     });
 
     hasExpiredStock = expiredBatchesWithStock.length > 0;
@@ -99,7 +99,7 @@ export function getMedicineStatus(medicine) {
     if (exp) {
       const expDate = new Date(exp);
       expDate.setHours(0, 0, 0, 0);
-      if (expDate < today) {
+      if (expDate <= today) {
         hasExpiredStock = true;
       } else {
         nextExpiryDate = exp;
@@ -123,7 +123,7 @@ export function getMedicineStatus(medicine) {
   if (nextExpiryDate) {
     const expDate = new Date(nextExpiryDate);
     expDate.setHours(0, 0, 0, 0);
-    if (expDate <= thirtyDays && expDate >= today) {
+    if (expDate <= thirtyDays && expDate > today) {
       return "Expiring Soon";
     }
   }
@@ -158,8 +158,14 @@ function getExpiryDate(medicine) {
         b.expiryDate,
     );
 
+    const isDateExpired = (dateStr) => {
+      const d = new Date(dateStr);
+      d.setHours(0, 0, 0, 0);
+      return d <= today;
+    };
+
     const unexpired = activeBatchesWithStock
-      .filter((b) => b.status !== "EXPIRED" && new Date(b.expiryDate) >= today)
+      .filter((b) => b.status !== "EXPIRED" && !isDateExpired(b.expiryDate))
       .sort((a, b) => new Date(a.expiryDate) - new Date(b.expiryDate));
 
     if (unexpired.length > 0) {
@@ -167,7 +173,7 @@ function getExpiryDate(medicine) {
     }
 
     const expired = activeBatchesWithStock
-      .filter((b) => b.status === "EXPIRED" || new Date(b.expiryDate) < today)
+      .filter((b) => b.status === "EXPIRED" || isDateExpired(b.expiryDate))
       .sort((a, b) => new Date(a.expiryDate) - new Date(b.expiryDate));
 
     if (expired.length > 0) {

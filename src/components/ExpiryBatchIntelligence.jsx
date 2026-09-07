@@ -39,16 +39,28 @@ import {
   ExpiryBatchIntelligenceSection8,
 } from "./Expiry/Expiry1.jsx";
 function getDays(expiryDate) {
-  const exp = new Date(expiryDate);
+  if (!expiryDate) return 0;
+  let expYear, expMonth, expDate;
+  if (typeof expiryDate === "string" && /^\d{4}-\d{2}-\d{2}/.test(expiryDate)) {
+    const [y, m, d] = expiryDate.substring(0, 10).split("-").map(Number);
+    expYear = y;
+    expMonth = m - 1;
+    expDate = d;
+  } else {
+    const exp = new Date(expiryDate);
+    expYear = exp.getFullYear();
+    expMonth = exp.getMonth();
+    expDate = exp.getDate();
+  }
   const today = new Date();
   const diff =
-    Date.UTC(exp.getFullYear(), exp.getMonth(), exp.getDate()) -
+    Date.UTC(expYear, expMonth, expDate) -
     Date.UTC(today.getFullYear(), today.getMonth(), today.getDate());
-  return Math.floor(diff / (1000 * 60 * 60 * 24));
+  return Math.round(diff / (1000 * 60 * 60 * 24));
 }
 function computeStatus(days, qty) {
   if (qty <= 0) return "safe";
-  if (days < 0) return "expired";
+  if (days <= 0) return "expired";
   if (days <= 7) return "danger";
   if (days <= 30) return "warning";
   return "safe";
@@ -439,7 +451,9 @@ export default function ExpiryBatchIntelligence({ showToast }) {
                 safeNumber(b.availableQuantity ?? b.quantity) *
                 safeNumber(b.purchasePrice || 0),
               status:
-                b.status?.toLowerCase() || computeStatus(days, b.quantity),
+                b.status?.toLowerCase() === "expired" || days <= 0
+                  ? "expired"
+                  : b.status?.toLowerCase() || computeStatus(days, b.quantity),
               rank: 1,
               received: b.createdAt?.split("T")[0] || "",
               mfg: b.manufacturingDate?.split("T")[0] || "N/A",
@@ -451,7 +465,7 @@ export default function ExpiryBatchIntelligence({ showToast }) {
               purchaseDate: b.purchaseDate?.split("T")[0] || "",
               purchasePrice: safeNumber(b.purchasePrice || 0),
               returnEligible:
-                days < 0 && (b.supplier || b.supplierId) ? "YES" : "NO",
+                days <= 0 && (b.supplier || b.supplierId) ? "YES" : "NO",
               returnStatus: "PENDING",
             });
           }
@@ -638,7 +652,7 @@ export default function ExpiryBatchIntelligence({ showToast }) {
       const f = (filter || "ALL").toUpperCase();
       if (f === "ALL") return true;
       if (f === "EXPIRED")
-        return b.days < 0 || b.status?.toLowerCase() === "expired";
+        return b.days <= 0 || b.status?.toLowerCase() === "expired";
       if (
         f === "DANGER" ||
         f === "< 7 DAYS" ||
@@ -646,7 +660,7 @@ export default function ExpiryBatchIntelligence({ showToast }) {
         f === "EXPIRING < 7 DAYS"
       )
         return (
-          b.days >= 0 && b.days <= 7 && b.status?.toLowerCase() !== "expired"
+          b.days > 0 && b.days <= 7 && b.status?.toLowerCase() !== "expired"
         );
       if (
         f === "WARNING" ||
@@ -671,7 +685,7 @@ export default function ExpiryBatchIntelligence({ showToast }) {
       if (f === "SAFE" || f === "90+ DAYS" || f === "SAFE (90+ DAYS)")
         return b.days > 90 && b.status?.toLowerCase() !== "expired";
       if (f === "ACTIVE")
-        return b.days >= 0 && b.status?.toLowerCase() !== "expired";
+        return b.days > 0 && b.status?.toLowerCase() !== "expired";
       return b.status?.toLowerCase() === f.toLowerCase();
     });
   }, [batches, searchQuery, filter]);
@@ -690,10 +704,10 @@ export default function ExpiryBatchIntelligence({ showToast }) {
       const f = (invFilter || "ALL").toUpperCase();
       if (f === "ALL") return true;
       if (f === "EXPIRED")
-        return b.days < 0 || b.status?.toLowerCase() === "expired";
+        return b.days <= 0 || b.status?.toLowerCase() === "expired";
       if (f === "DANGER" || f === "< 7 DAYS" || f === "0-7 DAYS")
         return (
-          b.days >= 0 && b.days <= 7 && b.status?.toLowerCase() !== "expired"
+          b.days > 0 && b.days <= 7 && b.status?.toLowerCase() !== "expired"
         );
       if (
         f === "WARNING" ||
@@ -716,7 +730,7 @@ export default function ExpiryBatchIntelligence({ showToast }) {
       if (f === "SAFE" || f === "90+ DAYS")
         return b.days > 90 && b.status?.toLowerCase() !== "expired";
       if (f === "ACTIVE")
-        return b.days >= 0 && b.status?.toLowerCase() !== "expired";
+        return b.days > 0 && b.status?.toLowerCase() !== "expired";
       return b.status?.toLowerCase() === f.toLowerCase();
     });
   }, [batches, invSearch, invFilter]);
@@ -765,11 +779,10 @@ export default function ExpiryBatchIntelligence({ showToast }) {
     // Fallback: local calculation from batch data
     const activeBatches = batches.filter((b) => (b.qty || b.quantity) > 0);
     const expired = activeBatches.filter(
-      (b) => b.days < 0 || b.status?.toLowerCase() === "expired",
+      (b) => b.days <= 0 || b.status?.toLowerCase() === "expired",
     ).length;
     const expiring7Days = activeBatches.filter(
-      (b) =>
-        b.days >= 0 && b.days <= 7 && b.status?.toLowerCase() !== "expired",
+      (b) => b.days > 0 && b.days <= 7 && b.status?.toLowerCase() !== "expired",
     ).length;
     const expiring30Days = activeBatches.filter(
       (b) =>
@@ -841,10 +854,10 @@ export default function ExpiryBatchIntelligence({ showToast }) {
     // Fallback: local calculation
     const activeBatches = batches.filter((b) => (b.qty || b.quantity) > 0);
     const expired = activeBatches.filter(
-      (b) => b.status === "expired" || b.days < 0,
+      (b) => b.status === "expired" || b.days <= 0,
     ).length;
     const urg7 = activeBatches.filter(
-      (b) => b.days >= 0 && b.days <= 7 && b.status !== "expired",
+      (b) => b.days > 0 && b.days <= 7 && b.status !== "expired",
     ).length;
     const urg30 = activeBatches.filter(
       (b) => b.days > 7 && b.days <= 30 && b.status !== "expired",
@@ -978,7 +991,7 @@ export default function ExpiryBatchIntelligence({ showToast }) {
         ReceivedDate: b.received || "N/A",
         MFG: b.mfg,
         Expiry: b.exp,
-        DaysLeft: b.days < 0 ? "EXPIRED" : `${b.days} Days`,
+        DaysLeft: b.days <= 0 ? "EXPIRED" : `${b.days} Days`,
         Quantity: b.qty,
         PurchasePrice: `₹${b.purchasePrice.toFixed(2)}`,
         Value: `₹${b.val.toFixed(2)}`,
@@ -1076,7 +1089,7 @@ export default function ExpiryBatchIntelligence({ showToast }) {
 
   // ─── Bulk Disposal helpers ───────────────────────────────────
   const expiredBatches = useMemo(
-    () => filteredBatches.filter((b) => b.days < 0 || b.status === "expired"),
+    () => filteredBatches.filter((b) => b.days <= 0 || b.status === "expired"),
     [filteredBatches],
   );
   const toggleBatch = useCallback(
@@ -1458,12 +1471,9 @@ export default function ExpiryBatchIntelligence({ showToast }) {
     }
     const id = `B-${Date.now().toString(36).toUpperCase()}`;
     const today = new Date();
-    const expDate = new Date(newBatch.exp || today);
-    const diffDays = Math.ceil((expDate - today) / (1000 * 60 * 60 * 24));
-    let status = "safe";
-    if (diffDays < 0) status = "expired";
-    else if (diffDays < 7) status = "danger";
-    else if (diffDays < 30) status = "warning";
+    const expDate = newBatch.exp || today;
+    const diffDays = getDays(expDate);
+    const status = computeStatus(diffDays, safeNumber(newBatch.qty));
     const batch = {
       id,
       med: newBatch.med,
