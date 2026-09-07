@@ -2,6 +2,7 @@ import { z } from "zod";
 
 export const CreateMedicineSchema = z.object({
   name: z.string().min(2),
+  medicineName: z.string().optional(),
   genericName: z.string().optional(),
   categoryId: z.string().uuid().optional(),
   category: z.string().optional(),
@@ -14,6 +15,9 @@ export const CreateMedicineSchema = z.object({
   scheduleType: z.string().optional(),
   dosageForm: z.string().optional(),
   strength: z.string().optional(),
+  packSize: z.string().optional(),
+  unitPerPack: z.number().optional(),
+  unit: z.string().optional(),
   barcode: z.string().optional(),
   hsnCode: z.string().optional(),
   description: z.string().optional(),

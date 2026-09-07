@@ -637,6 +637,177 @@
   border-bottom: 1px solid rgba(255, 255, 255, 0.04);
 }
 
+/* ── Rich Medicine Item in Dropdown ── */
+.rich-medicine-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 14px;
+  gap: 12px;
+}
+
+.med-sugg-left {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+}
+
+.med-sugg-name {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text, #fff);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.med-sugg-generic {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.6);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.med-sugg-meta {
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.4);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.med-sugg-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.med-stock-pill {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 6px;
+  font-family: "Outfit", sans-serif;
+  letter-spacing: 0.02em;
+}
+
+.med-stock-pill.stock-in {
+  background: rgba(0, 230, 153, 0.15);
+  color: var(--primary, #00e699);
+  border: 1px solid rgba(0, 230, 153, 0.3);
+}
+
+.med-stock-pill.stock-zero {
+  background: rgba(255, 170, 0, 0.12);
+  color: #ffaa00;
+  border: 1px solid rgba(255, 170, 0, 0.25);
+}
+
+.p-btn-mini-add {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: rgba(79, 219, 200, 0.15);
+  color: var(--primary, #4fdbc8);
+  border: 1px solid rgba(79, 219, 200, 0.3);
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.p-btn-mini-add:hover {
+  background: var(--primary, #00e699);
+  color: #000;
+  border-color: var(--primary, #00e699);
+}
+
+.medicine-suggestions-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  background: rgba(255, 255, 255, 0.03);
+  border-top: 1px solid var(--outline-variant, rgba(255, 255, 255, 0.08));
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.btn-link-add-new {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: transparent;
+  border: none;
+  color: var(--primary, #00e699);
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 4px;
+  transition: all 0.15s ease;
+}
+
+.btn-link-add-new:hover {
+  background: rgba(0, 230, 153, 0.1);
+}
+
+/* ── No Match Dropdown State ── */
+.no-match-dropdown {
+  padding: 18px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.no-match-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--text, #fff);
+}
+
+.no-match-icon {
+  color: #ffaa00;
+}
+
+.no-match-subtext {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.55);
+  margin: 0;
+  max-width: 320px;
+  line-height: 1.4;
+}
+
+.btn-add-not-found {
+  margin-top: 6px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  font-size: 12px;
+  font-weight: 700;
+  background: var(--primary, #00e699);
+  color: #0b111e;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(0, 230, 153, 0.3);
+  transition: all 0.2s ease;
+}
+
+.btn-add-not-found:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(0, 230, 153, 0.45);
+}
+
 /* ── Purchase Summary Totals ── */
 .purchase-summary {
   margin-top: 20px;

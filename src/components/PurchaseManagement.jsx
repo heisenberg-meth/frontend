@@ -32,6 +32,7 @@ import {
   PurchaseManagementSection1,
   PurchaseManagementSection2,
 } from "./Purchase/Purchase.jsx";
+import AddNewMedicineModal from "./Purchase/AddNewMedicineModal.jsx";
 import { safeNumber } from "../utils/number.js";
 import { safeData } from "../utils/safeData.js";
 import { formatDate } from "../utils/formUtils.js";
@@ -431,10 +432,23 @@ function PurchaseManagementSection4({
                       return (
                         <tr key={item.id || item.medicineId}>
                           <td>
-                            {item.medicine?.name ||
-                              item.medicineName ||
-                              item.name ||
-                              "-"}
+                            <div style={{ fontWeight: 600 }}>
+                              {item.medicine?.name ||
+                                item.medicineName ||
+                                item.name ||
+                                "-"}
+                            </div>
+                            {(item.medicine?.genericName ||
+                              item.genericName) && (
+                              <div
+                                style={{
+                                  fontSize: "11px",
+                                  color: "rgba(255,255,255,0.45)",
+                                }}
+                              >
+                                {item.medicine?.genericName || item.genericName}
+                              </div>
+                            )}
                           </td>
                           <td>{item.orderedQuantity}</td>
                           <td>{item.prevReceivedQuantity}</td>
@@ -457,6 +471,21 @@ function PurchaseManagementSection4({
                                 setReceiveItems(newItems);
                               }}
                             />
+                            {safeNumber(item.receivedQuantity) > 0 &&
+                              safeNumber(item.receivedQuantity) <
+                                item.pendingQuantity && (
+                                <div
+                                  style={{
+                                    fontSize: "10px",
+                                    color: "var(--warning, #ffaa00)",
+                                    marginTop: "2px",
+                                    fontWeight: 600,
+                                  }}
+                                  title="Partial receipt: remaining balance stays open"
+                                >
+                                  Partial
+                                </div>
+                              )}
                           </td>
                           <td>
                             <>
@@ -508,6 +537,26 @@ function PurchaseManagementSection4({
                                 setReceiveItems(newItems);
                               }}
                             />
+                            {item.unitPrice &&
+                              safeNumber(item.purchasePrice) > 0 &&
+                              safeNumber(item.purchasePrice) !==
+                                safeNumber(item.unitPrice) && (
+                                <div
+                                  style={{
+                                    fontSize: "10px",
+                                    color:
+                                      safeNumber(item.purchasePrice) >
+                                      safeNumber(item.unitPrice)
+                                        ? "var(--danger, #ff4d4d)"
+                                        : "var(--primary, #00e699)",
+                                    marginTop: "2px",
+                                    fontWeight: 600,
+                                  }}
+                                  title={`Ordered unit price: ₹${safeNumber(item.unitPrice).toFixed(2)}`}
+                                >
+                                  PO: ₹{safeNumber(item.unitPrice).toFixed(2)}
+                                </div>
+                              )}
                           </td>
                           <td>
                             <input
@@ -1076,21 +1125,57 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
   const [selectedCreditNoteId, setSelectedCreditNoteId] = useState("");
   const [creditAmountToApply, setCreditAmountToApply] = useState(0);
   const [applyingCredit, setApplyingCredit] = useState(false);
-  const filteredMedicines = medicines.filter((m) =>
-    (m.name || "").toLowerCase().includes(medicineSearch.toLowerCase()),
+  const filteredMedicines = medicines.filter((m) => {
+    const term = (medicineSearch || "").trim().toLowerCase();
+    if (!term) return false;
+    const nameMatch = (m.name || m.medicineName || "")
+      .toLowerCase()
+      .includes(term);
+    const genericMatch = (m.genericName || "").toLowerCase().includes(term);
+    const brandMatch = (m.brandName || "").toLowerCase().includes(term);
+    const barcodeMatch = (m.barcode || "").toLowerCase().includes(term);
+    return nameMatch || genericMatch || brandMatch || barcodeMatch;
+  });
+
+  const addMedicine = useCallback(
+    (medicine) => {
+      setPurchaseItems((prev) => {
+        const exists = prev.find((i) => i.id === medicine.id);
+        if (exists) return prev;
+        return [
+          ...prev,
+          {
+            ...medicine,
+            qty: 1,
+          },
+        ];
+      });
+      setMedicineSearch("");
+    },
+    [setPurchaseItems, setMedicineSearch],
   );
-  const addMedicine = (medicine) => {
-    const exists = purchaseItems.find((i) => i.id === medicine.id);
-    if (exists) return;
-    setPurchaseItems([
-      ...purchaseItems,
-      {
-        ...medicine,
-        qty: 1,
-      },
-    ]);
-    setMedicineSearch("");
-  };
+
+  const [showAddMedicineModal, setShowAddMedicineModal] = useState(false);
+  const [addMedicineInitialName, setAddMedicineInitialName] = useState("");
+
+  const handleOpenAddMedicineModal = useCallback(
+    (initialName = "") => {
+      setAddMedicineInitialName(initialName || medicineSearch || "");
+      setShowAddMedicineModal(true);
+    },
+    [medicineSearch],
+  );
+
+  const handleMedicineAddedFromModal = useCallback(
+    (newMedicine, addToPO = true) => {
+      if (!newMedicine) return;
+      if (addToPO) {
+        addMedicine(newMedicine);
+      }
+      loadMedicines();
+    },
+    [addMedicine, loadMedicines],
+  );
   const updateItem = (id, field, value) => {
     setPurchaseItems((prev) =>
       prev.map((item) =>
@@ -2128,6 +2213,7 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
         handleSavePurchase={handleSavePurchase}
         downloadPurchasePDF={downloadPurchasePDF}
         handleKeyDown={handleKeyDown}
+        onOpenAddMedicineModal={handleOpenAddMedicineModal}
       />
 
       {/* ── Supplier Return Modal ── */}
@@ -2155,6 +2241,16 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
         setShowReceiveModal={setShowReceiveModal}
         isReceiving={isReceiving}
         handleReceiveOrder={handleReceiveOrder}
+      />
+
+      {/* ── Add New Medicine to Master Modal ── */}
+      <AddNewMedicineModal
+        isOpen={showAddMedicineModal}
+        onClose={() => setShowAddMedicineModal(false)}
+        initialSearchName={addMedicineInitialName}
+        branchId={selectedBranchId || user?.branchId}
+        onMedicineAdded={handleMedicineAddedFromModal}
+        showToast={showToast}
       />
     </div>
   );

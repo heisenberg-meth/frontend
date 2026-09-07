@@ -272,7 +272,8 @@ function InventoryCRUDSection2({
 
       {/* Table */}
       <div className="inv-table-wrapper">
-        <table className="inv-table"
+        <table
+          className="inv-table"
           style={{
             margin: 0,
             border: "none",
@@ -286,7 +287,7 @@ function InventoryCRUDSection2({
               "CATEGORY",
               "BATCH",
               "EXPIRY",
-              "STOCK",
+              "AVAILABLE STOCK",
               "MRP",
               "STATUS",
               "ACTIONS",
@@ -359,17 +360,47 @@ function InventoryCRUDSection2({
                           })
                         : "—"}
                     </td>
-                    <td
-                      style={{
-                        fontWeight: 800,
-                        color: isOutOfStock
-                          ? "var(--danger)"
-                          : isLowStock
-                            ? "var(--warning)"
-                            : "var(--success)",
-                      }}
-                    >
-                      {m.availableStock ?? m.stock ?? 0}
+                    <td>
+                      <div
+                        className="inv-stock-cell"
+                        style={{
+                          display: "flex",
+                          flexDirection: "column",
+                          gap: "2px",
+                        }}
+                      >
+                        <span
+                          style={{
+                            fontWeight: 800,
+                            color: isOutOfStock
+                              ? "var(--danger)"
+                              : isLowStock
+                                ? "var(--warning)"
+                                : "var(--success)",
+                          }}
+                        >
+                          {m.availableStock ?? m.stock ?? 0}
+                        </span>
+                        {Number(m.onOrder) > 0 && (
+                          <span
+                            className="inv-on-order-badge"
+                            title={`${m.onOrder} units on open Purchase Order`}
+                            style={{
+                              fontSize: "10px",
+                              fontWeight: 600,
+                              color: "var(--primary, #00e699)",
+                              background: "rgba(0, 230, 153, 0.1)",
+                              padding: "2px 6px",
+                              borderRadius: "4px",
+                              display: "inline-flex",
+                              alignItems: "center",
+                              width: "fit-content",
+                            }}
+                          >
+                            📦 On Order: {m.onOrder}
+                          </span>
+                        )}
+                      </div>
                     </td>
                     <td>₹{(m.mrp || 0).toFixed(2)}</td>
                     <td>

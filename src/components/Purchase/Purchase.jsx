@@ -12,6 +12,7 @@ import {
   Package,
   Loader2,
   Check,
+  AlertCircle,
 } from "lucide-react";
 import { AnimatePresence, m } from "framer-motion";
 import { TableHeader } from "../common/TableHeader.jsx";
@@ -733,6 +734,7 @@ export function PurchaseManagementSection2({
   isFormInvalid,
   handleSavePurchase,
   downloadPurchasePDF,
+  onOpenAddMedicineModal,
 }) {
   return (
     <AnimatePresence>
@@ -969,33 +971,107 @@ export function PurchaseManagementSection2({
                               fontSize: "12px",
                             }}
                           >
-                            Loading inventory...
+                            Loading medicines catalog...
                           </div>
-                        ) : (
-                          medicineSearch &&
-                          filteredMedicines.length > 0 && (
+                        ) : medicineSearch ? (
+                          filteredMedicines.length > 0 ? (
                             <div className="medicine-suggestions">
-                              {filteredMedicines.map((m) => (
+                              {filteredMedicines.map((m) => {
+                                const currentStock =
+                                  m.stock ?? m.availableStock ?? 0;
+                                return (
+                                  <div
+                                    key={m.id}
+                                    className="medicine-suggestion-item rich-medicine-item"
+                                    onClick={() => addMedicine(m)}
+                                  >
+                                    <div className="med-sugg-left">
+                                      <div className="med-sugg-name">
+                                        {m.name || m.medicineName}
+                                      </div>
+                                      <div className="med-sugg-generic">
+                                        {m.genericName || ""}
+                                        {m.strength ? ` • ${m.strength}` : ""}
+                                        {m.dosageForm
+                                          ? ` (${m.dosageForm})`
+                                          : ""}
+                                      </div>
+                                      <div className="med-sugg-meta">
+                                        {m.manufacturerName ||
+                                          m.manufacturer?.name ||
+                                          m.manufacturer ||
+                                          "Generic"}
+                                      </div>
+                                    </div>
+                                    <div className="med-sugg-right">
+                                      <span
+                                        className={`med-stock-pill ${
+                                          currentStock > 0
+                                            ? "stock-in"
+                                            : "stock-zero"
+                                        }`}
+                                      >
+                                        Stock: {currentStock}
+                                      </span>
+                                      <button
+                                        type="button"
+                                        className="p-btn-mini-add"
+                                        title="Add to Order"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          addMedicine(m);
+                                        }}
+                                      >
+                                        <Plus size={13} /> Add
+                                      </button>
+                                    </div>
+                                  </div>
+                                );
+                              })}
+                              <div className="medicine-suggestions-footer">
+                                <span>Can't find what you need?</span>
                                 <button
                                   type="button"
-                                  key={m.id}
-                                  className="medicine-suggestion-item"
-                                  onClick={() => addMedicine(m)}
+                                  className="btn-link-add-new"
+                                  onClick={() =>
+                                    onOpenAddMedicineModal &&
+                                    onOpenAddMedicineModal(medicineSearch)
+                                  }
                                 >
-                                  <span>{m.name}</span>
-                                  <span
-                                    style={{
-                                      color: "var(--primary)",
-                                      fontWeight: 600,
-                                    }}
-                                  >
-                                    ₹{m.purchasePrice}
-                                  </span>
+                                  <Plus size={13} /> Add New Medicine
                                 </button>
-                              ))}
+                              </div>
+                            </div>
+                          ) : (
+                            <div className="medicine-suggestions no-match-dropdown">
+                              <div className="no-match-header">
+                                <AlertCircle
+                                  size={16}
+                                  className="no-match-icon"
+                                />
+                                <span>
+                                  No medicine found for{" "}
+                                  <strong>"{medicineSearch}"</strong>
+                                </span>
+                              </div>
+                              <p className="no-match-subtext">
+                                Can't find this medicine in Medicine Master? Add
+                                it with 0 physical stock to place this order
+                                now.
+                              </p>
+                              <button
+                                type="button"
+                                className="p-btn p-btn-primary btn-add-not-found"
+                                onClick={() =>
+                                  onOpenAddMedicineModal &&
+                                  onOpenAddMedicineModal(medicineSearch)
+                                }
+                              >
+                                <Plus size={15} /> + ADD NEW MEDICINE
+                              </button>
                             </div>
                           )
-                        )}
+                        ) : null}
                       </div>
                       <button
                         className="medicine-tool-btn"
@@ -1005,8 +1081,13 @@ export function PurchaseManagementSection2({
                         Scan
                       </button>
                       <button
+                        type="button"
                         className="medicine-tool-btn"
-                        title="Add Manually"
+                        title="Add New Medicine to Master & Order"
+                        onClick={() =>
+                          onOpenAddMedicineModal &&
+                          onOpenAddMedicineModal(medicineSearch)
+                        }
                       >
                         <Plus size={16} />
                         Manual
@@ -1062,23 +1143,99 @@ export function PurchaseManagementSection2({
                                   fontSize: "12px",
                                 }}
                               >
-                                <b>{item.name}</b>
+                                <b>{item.name || item.medicineName}</b>
+                                {(item.genericName ||
+                                  item.strength ||
+                                  item.dosageForm) && (
+                                  <div
+                                    style={{
+                                      fontSize: "11px",
+                                      color: "rgba(255,255,255,0.45)",
+                                      marginTop: "2px",
+                                    }}
+                                  >
+                                    {[
+                                      item.genericName,
+                                      item.strength,
+                                      item.dosageForm,
+                                    ]
+                                      .filter(Boolean)
+                                      .join(" • ")}
+                                  </div>
+                                )}
                               </td>
                               <td>
-                                <input
-                                  required
-                                  className="p-cost-input"
-                                  aria-label="Required quantity"
+                                <div
+                                  className="po-qty-stepper"
                                   style={{
-                                    width: "60px",
+                                    display: "inline-flex",
+                                    alignItems: "center",
+                                    gap: "3px",
                                   }}
-                                  type="number"
-                                  min={1}
-                                  value={item.qty}
-                                  onChange={(e) =>
-                                    updateItem(item.id, "qty", e.target.value)
-                                  }
-                                />
+                                >
+                                  <button
+                                    type="button"
+                                    className="micro-btn"
+                                    style={{
+                                      width: "24px",
+                                      height: "24px",
+                                      padding: 0,
+                                      fontSize: "14px",
+                                      fontWeight: 700,
+                                      lineHeight: "24px",
+                                    }}
+                                    onClick={() =>
+                                      updateItem(
+                                        item.id,
+                                        "qty",
+                                        Math.max(
+                                          1,
+                                          (Number(item.qty) || 1) - 1,
+                                        ),
+                                      )
+                                    }
+                                    title="Decrease quantity"
+                                  >
+                                    -
+                                  </button>
+                                  <input
+                                    required
+                                    className="p-cost-input"
+                                    aria-label="Required quantity"
+                                    style={{
+                                      width: "50px",
+                                      textAlign: "center",
+                                    }}
+                                    type="number"
+                                    min={1}
+                                    value={item.qty}
+                                    onChange={(e) =>
+                                      updateItem(item.id, "qty", e.target.value)
+                                    }
+                                  />
+                                  <button
+                                    type="button"
+                                    className="micro-btn"
+                                    style={{
+                                      width: "24px",
+                                      height: "24px",
+                                      padding: 0,
+                                      fontSize: "14px",
+                                      fontWeight: 700,
+                                      lineHeight: "24px",
+                                    }}
+                                    onClick={() =>
+                                      updateItem(
+                                        item.id,
+                                        "qty",
+                                        (Number(item.qty) || 0) + 1,
+                                      )
+                                    }
+                                    title="Increase quantity"
+                                  >
+                                    +
+                                  </button>
+                                </div>
                               </td>
                               <td>
                                 <button
