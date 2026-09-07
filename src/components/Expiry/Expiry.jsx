@@ -15,7 +15,6 @@ import {
   Truck,
 } from "lucide-react";
 import { AnimatePresence, m } from "framer-motion";
-import { useState } from "react";
 import { TableHeader } from "../common/TableHeader.jsx";
 
 const INV_FILTER_OPTIONS = [
@@ -532,7 +531,6 @@ export function ExpiryBatchIntelligenceSection2({
   handleEditBatch,
   handleDeleteClick,
   activeTab,
-  const [openActionMenuId, setOpenActionMenuId] = useState(null);
   invSearch,
   showInvFilterDropdown,
   invFilteredBatches,

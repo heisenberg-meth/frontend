@@ -482,10 +482,7 @@ export function BillingPOSSection4({
   const [medicinePage, setMedicinePage] = useState(1);
 
   const items = resolveInvoiceItems(selectedBill);
-  const totalPages = Math.max(
-    1,
-    Math.ceil(items.length / ITEMS_PER_PAGE),
-  );
+  const totalPages = Math.max(1, Math.ceil(items.length / ITEMS_PER_PAGE));
 
   const paginatedItems = items.slice(
     (medicinePage - 1) * ITEMS_PER_PAGE,
