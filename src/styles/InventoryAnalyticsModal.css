@@ -384,27 +384,31 @@
   top: 0;
   z-index: 10;
 
-  background: rgba(243, 247, 249, 0.82); /* light glass effect */
+  /* Dark theme (default): dark glass. This app themes via [data-theme]
+     on <html>; there is no .dark class, so the old `.dark ...` override
+     never matched and dark mode kept the light glass header. */
+  background: rgba(15, 23, 42, 0.82);
   backdrop-filter: blur(14px);
   -webkit-backdrop-filter: blur(14px);
 
-  border-bottom: 1px solid rgba(15, 23, 42, 0.08);
-  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.06);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
 
   padding: 14px 18px;
   text-align: left;
   font-size: 0.75rem;
   text-transform: uppercase;
   letter-spacing: 0.05em;
+  white-space: nowrap;
   color: var(--on-surface-variant);
   font-weight: 600;
 }
 
-.dark .inventory-analytics-table thead th,
-.dark .inventory-analytics-table th {
-  background: rgba(15, 23, 42, 0.82);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+[data-theme="light"] .inventory-analytics-table thead th,
+[data-theme="light"] .inventory-analytics-table th {
+  background: rgba(243, 247, 249, 0.82);
+  border-bottom: 1px solid rgba(15, 23, 42, 0.08);
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.06);
 }
 
 /* Optional: slightly rounded top corners */
@@ -427,7 +431,8 @@
 }
 
 .inventory-analytics-table tbody tr:hover td {
-  background-color: var(--surface-variant);
+  /* --surface-variant is not defined in this app; use the real token */
+  background-color: var(--surface-container-highest);
 }
 
 .inventory-analytics-table tr:last-child td {

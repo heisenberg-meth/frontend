@@ -1081,69 +1081,6 @@ export default function SalesManagement({ showToast, storeProfile }) {
         ))}
       </div>
 
-      {/* ── Active Filter Banner ── */}
-      <div
-        style={{
-          marginBottom: "20px",
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          background: "var(--surface)",
-          padding: "12px 16px",
-          borderRadius: "8px",
-          border: "1px solid var(--outline-variant)",
-        }}
-      >
-        <div
-          style={{
-            fontSize: "14px",
-            color: "var(--text-secondary)",
-          }}
-        >
-          Showing Records:{" "}
-          <strong
-            style={{
-              color: "var(--text)",
-            }}
-          >
-            {dateRange.start
-              ? format(new Date(dateRange.start), "dd MMM yyyy")
-              : "All Time"}
-          </strong>{" "}
-          →{" "}
-          <strong
-            style={{
-              color: "var(--text)",
-            }}
-          >
-            {dateRange.end
-              ? format(new Date(dateRange.end), "dd MMM yyyy")
-              : "All Time"}
-          </strong>
-        </div>
-        {(dateRange.start || dateRange.end) && (
-          <button
-            className="pos-btn outline"
-            style={{
-              padding: "4px 12px",
-              fontSize: "12px",
-            }}
-            onClick={() => {
-              setDateRange({
-                start: "",
-                end: "",
-              });
-              setTempDateRange({
-                start: "",
-                end: "",
-              });
-            }}
-          >
-            Reset Filter
-          </button>
-        )}
-      </div>
-
       <SalesManagementSection1
         loading={loading}
         dateRange={dateRange}

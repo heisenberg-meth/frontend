@@ -35,6 +35,11 @@
   --text-muted: #94a3b8;
   --text-dim: #64748b;
 
+  /* Material-3 style aliases used by analytics/sales/purchase styles.
+     Were previously undefined, so colors silently fell back to inherited. */
+  --on-surface: #e2e8f0;
+  --on-surface-variant: #94a3b8;
+
   --danger: #ef4444;
   --warning: #f59e0b;
   --success: #10b981;
@@ -90,12 +95,21 @@
   --text-muted: #475569;
   --text-dim: #64748b;
 
+  /* Material-3 style aliases used by analytics/sales/purchase styles */
+  --on-surface: #0f172a;
+  --on-surface-variant: #475569;
+
   --danger: #ef4444;
   --warning: #f59e0b;
   --success: #10b981;
   --info: #3b82f6;
 
   color-scheme: light;
+}
+
+/* Utility class used by the analytics JSX for secondary text */
+.text-on-surface-variant {
+  color: var(--on-surface-variant);
 }
 
 @layer base {
