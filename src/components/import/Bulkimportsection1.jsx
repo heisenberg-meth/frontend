@@ -4,6 +4,7 @@ import {
   Truck,
   GitMerge,
   CheckCircle2,
+  AlertCircle,
   X,
   FileSpreadsheet,
 } from "lucide-react";
@@ -89,7 +90,12 @@ export function BulkImportSection1({
   setShowSaveMappingModal,
   setShowLoadMappingModal,
   handleDuplicateAction,
-  showToast,
+  handleBulkAction,
+  duplicateDecisions = {},
+  reviewingRow = null,
+  setReviewingRow,
+  hasUnresolvedDuplicates = false,
+  unresolvedCount = 0,
   importProgress,
   getInputProps,
   parsedRows,
@@ -124,19 +130,79 @@ export function BulkImportSection1({
         <CheckCircle2
           size={48}
           style={{
-            color: "var(--primary)",
+            color:
+              commitResult?.failed > 0 && commitResult?.imported === 0
+                ? "var(--danger)"
+                : "var(--primary)",
           }}
         />
         <div>
-          <h2>Import Complete!</h2>
+          <h2>
+            {commitResult?.failed > 0 && commitResult?.imported === 0
+              ? "Import Completed with Errors"
+              : "Import Complete!"}
+          </h2>
           <p>
-            {commitResult?.imported ?? 0} records imported
-            {commitResult?.failed > 0 && ` · ${commitResult.failed} failed`}
-            {commitResult?.duplicates > 0 &&
-              ` · ${commitResult.duplicates} duplicates processed`}
+            {commitResult?.imported ?? 0} records imported ·{" "}
+            {commitResult?.skipped ?? 0} skipped · {commitResult?.failed ?? 0}{" "}
+            failed
+            {commitResult?.total !== undefined &&
+              ` (Total: ${commitResult.total})`}
           </p>
         </div>
       </div>
+
+      <div
+        className="det-summary-grid"
+        style={{
+          marginBottom: "20px",
+        }}
+      >
+        <div className="det-stat">
+          <div className="num">{commitResult?.total ?? 0}</div>
+          <span>Total Rows</span>
+        </div>
+        <div className="det-stat success">
+          <div className="num">{commitResult?.imported ?? 0}</div>
+          <span>
+            Imported ({commitResult?.created ?? 0} new,{" "}
+            {commitResult?.updated ?? 0} updated)
+          </span>
+        </div>
+        <div className="det-stat warning">
+          <div className="num">{commitResult?.skipped ?? 0}</div>
+          <span>Skipped</span>
+        </div>
+        <div className="det-stat danger">
+          <div className="num">{commitResult?.failed ?? 0}</div>
+          <span>Failed</span>
+        </div>
+      </div>
+
+      {((commitResult?.overwritten ?? 0) > 0 ||
+        (commitResult?.merged ?? 0) > 0) && (
+        <div
+          style={{
+            display: "flex",
+            gap: "8px",
+            marginBottom: "16px",
+            fontSize: "13px",
+            color: "var(--text-muted)",
+          }}
+        >
+          <span>Resolution Details:</span>
+          {(commitResult?.overwritten ?? 0) > 0 && (
+            <span className="match-badge warning">
+              {commitResult.overwritten} Overwritten
+            </span>
+          )}
+          {(commitResult?.merged ?? 0) > 0 && (
+            <span className="match-badge blue">
+              {commitResult.merged} Merged
+            </span>
+          )}
+        </div>
+      )}
 
       {commitResult?.errors?.length > 0 && (
         <div className="error-details-section">
@@ -644,85 +710,95 @@ export function BulkImportSection1({
                     ]}
                   />
                   <tbody>
-                    {duplicateResults.rows.map((r, rIdx) => (
-                      <tr
-                        key={r.id || `${r.row}-${r.name || rIdx}`}
-                        className={r.conflict ? "conflict-row" : ""}
-                      >
-                        <td>Row {r.row}</td>
-                        <td className="bold">{r.name}</td>
-                        <td>{r.match}</td>
-                        <td>
-                          <span className={`match-badge ${r.severity}`}>
-                            {r.type}
-                          </span>
-                        </td>
-                        <td className="diff">{r.diff}</td>
-                        <td>
-                          <div className="action-btns">
-                            <button
-                              type="button"
-                              className="btn skip"
-                              onClick={() => handleDuplicateAction(r, "Skip")}
-                            >
-                              Skip
-                            </button>
-                            <button
-                              type="button"
-                              className="btn overwrite"
-                              onClick={() =>
-                                handleDuplicateAction(r, "Overwrite")
-                              }
-                            >
-                              Overwrite
-                            </button>
-                            <button
-                              type="button"
-                              className="btn merge"
-                              onClick={() => handleDuplicateAction(r, "Merge")}
-                            >
-                              Merge
-                            </button>
-                            {r.conflict && (
+                    {duplicateResults.rows.map((r, rIdx) => {
+                      const currentAction =
+                        duplicateDecisions[r.row]?.action ||
+                        (duplicateStrategy !== "Ask me"
+                          ? duplicateStrategy.toUpperCase()
+                          : "");
+                      return (
+                        <tr
+                          key={r.id || `${r.row}-${r.name || rIdx}`}
+                          className={r.conflict ? "conflict-row" : ""}
+                        >
+                          <td>Row {r.row}</td>
+                          <td className="bold">{r.name}</td>
+                          <td>{r.match}</td>
+                          <td>
+                            <span className={`match-badge ${r.severity}`}>
+                              {r.type}
+                            </span>
+                          </td>
+                          <td className="diff">
+                            {typeof r.diff === "string"
+                              ? r.diff
+                              : JSON.stringify(r.diff)}
+                          </td>
+                          <td>
+                            <div className="action-btns">
                               <button
                                 type="button"
-                                className="btn review"
+                                className={`btn skip ${currentAction === "SKIP" ? "active" : ""}`}
+                                onClick={() => handleDuplicateAction(r, "Skip")}
+                              >
+                                Skip
+                              </button>
+                              <button
+                                type="button"
+                                className={`btn overwrite ${currentAction === "OVERWRITE" ? "active" : ""}`}
                                 onClick={() =>
-                                  handleDuplicateAction(r, "Review")
+                                  handleDuplicateAction(r, "Overwrite")
                                 }
                               >
-                                Review ⚠
+                                Overwrite
                               </button>
-                            )}
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
+                              <button
+                                type="button"
+                                className={`btn merge ${currentAction === "MERGE" ? "active" : ""}`}
+                                onClick={() =>
+                                  handleDuplicateAction(r, "Merge")
+                                }
+                              >
+                                Merge
+                              </button>
+                              {r.conflict && (
+                                <button
+                                  type="button"
+                                  className="btn review"
+                                  onClick={() =>
+                                    handleDuplicateAction(r, "Review")
+                                  }
+                                >
+                                  Review ⚠
+                                </button>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>
               <div className="bulk-actions-row">
                 <button
+                  type="button"
                   className="pos-btn outline micro"
-                  onClick={() =>
-                    showToast("All duplicates will be skipped", "info")
-                  }
+                  onClick={() => handleBulkAction("Skip")}
                 >
                   Skip All Duplicates
                 </button>
                 <button
+                  type="button"
                   className="pos-btn outline micro warning"
-                  onClick={() =>
-                    showToast("All duplicates will be overwritten", "info")
-                  }
+                  onClick={() => handleBulkAction("Overwrite")}
                 >
                   Overwrite All
                 </button>
                 <button
+                  type="button"
                   className="pos-btn outline micro blue"
-                  onClick={() =>
-                    showToast("All duplicates will be merged", "info")
-                  }
+                  onClick={() => handleBulkAction("Merge")}
                 >
                   Merge All
                 </button>
@@ -761,8 +837,8 @@ export function BulkImportSection1({
                     <TableHeader
                       columns={[
                         "ROW #",
-                        "MEDICATION NAME",
-                        "FIELD / COLUMN",
+                        "MEDICINE NAME",
+                        "INVALID FIELD",
                         "ERROR DETAILS",
                       ]}
                     />
@@ -773,20 +849,11 @@ export function BulkImportSection1({
                             err.id ||
                             `${err.row}-${err.field || err.name || errIdx}`
                           }
-                          className="conflict-row"
                         >
                           <td>Row {err.row}</td>
                           <td className="bold">{err.name || "Unknown"}</td>
                           <td>
-                            <span
-                              className="match-badge danger"
-                              style={{
-                                color: "var(--danger)",
-                                background: "rgba(239, 68, 68, 0.1)",
-                                padding: "2px 6px",
-                                borderRadius: "4px",
-                              }}
-                            >
+                            <span className="match-badge danger">
                               {err.field}
                             </span>
                           </td>
@@ -809,12 +876,212 @@ export function BulkImportSection1({
         )}
       </AnimatePresence>
 
+      {reviewingRow && (
+        <div
+          className="conflict-review-modal-overlay"
+          onClick={() => setReviewingRow(null)}
+        >
+          <div
+            className="conflict-review-modal"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="conflict-review-modal-header">
+              <h3>
+                Resolve Conflict: Row {reviewingRow.row} — {reviewingRow.name}
+              </h3>
+              <button
+                type="button"
+                aria-label="Close"
+                className="remove-file-btn"
+                onClick={() => setReviewingRow(null)}
+              >
+                <X size={18} />
+              </button>
+            </div>
+            <div className="conflict-review-modal-body">
+              <div className="conflict-banner">
+                <AlertCircle size={16} />
+                <span>
+                  {reviewingRow.diff ||
+                    "Conflict detected between incoming file and existing database record."}
+                </span>
+              </div>
+              <table className="conflict-review-table">
+                <thead>
+                  <tr>
+                    <th>Field</th>
+                    <th>Existing in Database</th>
+                    <th>Imported from File</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr
+                    className={
+                      reviewingRow.diffDetails?.quantity ? "diff-row" : ""
+                    }
+                  >
+                    <td>Quantity</td>
+                    <td>
+                      {reviewingRow.diffDetails?.quantity?.existing ??
+                        reviewingRow.existing?.quantity ??
+                        "—"}
+                    </td>
+                    <td
+                      className={
+                        reviewingRow.diffDetails?.quantity
+                          ? "highlight-diff"
+                          : ""
+                      }
+                    >
+                      {reviewingRow.diffDetails?.quantity?.imported ??
+                        reviewingRow.imported?.quantity ??
+                        "—"}
+                    </td>
+                    <td>
+                      {reviewingRow.diffDetails?.quantity
+                        ? "Variance"
+                        : "Match"}
+                    </td>
+                  </tr>
+                  <tr
+                    className={
+                      reviewingRow.diffDetails?.purchasePrice ? "diff-row" : ""
+                    }
+                  >
+                    <td>Purchase Price</td>
+                    <td>
+                      ₹
+                      {reviewingRow.diffDetails?.purchasePrice?.existing ??
+                        reviewingRow.existing?.purchasePrice ??
+                        "—"}
+                    </td>
+                    <td
+                      className={
+                        reviewingRow.diffDetails?.purchasePrice
+                          ? "highlight-diff"
+                          : ""
+                      }
+                    >
+                      ₹
+                      {reviewingRow.diffDetails?.purchasePrice?.imported ??
+                        reviewingRow.imported?.purchasePrice ??
+                        "—"}
+                    </td>
+                    <td>
+                      {reviewingRow.diffDetails?.purchasePrice
+                        ? "Variance"
+                        : "Match"}
+                    </td>
+                  </tr>
+                  <tr
+                    className={
+                      reviewingRow.diffDetails?.expiry ? "diff-row" : ""
+                    }
+                  >
+                    <td>Expiry Date</td>
+                    <td>
+                      {reviewingRow.diffDetails?.expiry?.existing ??
+                        reviewingRow.existing?.expiry ??
+                        "—"}
+                    </td>
+                    <td
+                      className={
+                        reviewingRow.diffDetails?.expiry ? "highlight-diff" : ""
+                      }
+                    >
+                      {reviewingRow.diffDetails?.expiry?.imported ??
+                        reviewingRow.imported?.expiry ??
+                        "—"}
+                    </td>
+                    <td>
+                      {reviewingRow.diffDetails?.expiry ? "Variance" : "Match"}
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>Batch Number</td>
+                    <td>{reviewingRow.existing?.batch ?? "—"}</td>
+                    <td>{reviewingRow.imported?.batch ?? "—"}</td>
+                    <td>Match</td>
+                  </tr>
+                  {reviewingRow.existing?.barcode && (
+                    <tr>
+                      <td>Barcode</td>
+                      <td>{reviewingRow.existing.barcode}</td>
+                      <td>{reviewingRow.imported?.barcode || "—"}</td>
+                      <td>
+                        {reviewingRow.existing.barcode ===
+                        reviewingRow.imported?.barcode
+                          ? "Match"
+                          : "Variance"}
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+            <div className="conflict-review-modal-footer">
+              <div
+                style={{
+                  fontSize: "13px",
+                  color: "var(--text-muted)",
+                }}
+              >
+                Choose resolution for this item:
+              </div>
+              <div
+                style={{
+                  display: "flex",
+                  gap: "10px",
+                }}
+              >
+                <button
+                  type="button"
+                  className={`pos-btn outline micro ${duplicateDecisions[reviewingRow.row]?.action === "SKIP" ? "teal" : ""}`}
+                  onClick={() => {
+                    handleDuplicateAction(reviewingRow, "Skip");
+                    setReviewingRow(null);
+                  }}
+                >
+                  Skip
+                </button>
+                <button
+                  type="button"
+                  className={`pos-btn outline micro warning ${duplicateDecisions[reviewingRow.row]?.action === "OVERWRITE" ? "teal" : ""}`}
+                  onClick={() => {
+                    handleDuplicateAction(reviewingRow, "Overwrite");
+                    setReviewingRow(null);
+                  }}
+                >
+                  Overwrite
+                </button>
+                <button
+                  type="button"
+                  className={`pos-btn outline micro blue ${duplicateDecisions[reviewingRow.row]?.action === "MERGE" ? "teal" : ""}`}
+                  onClick={() => {
+                    handleDuplicateAction(reviewingRow, "Merge");
+                    setReviewingRow(null);
+                  }}
+                >
+                  Merge
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {file && (
         <div className="sticky-import-footer">
           <div className="validation-bar">
             <div className="val-item green">
               <div className="dot" />{" "}
-              <span>{duplicateResults.readyCount} rows ready to import</span>
+              <span>
+                {duplicateResults.readyCount ??
+                  parsedRows.length -
+                    (duplicateResults.errors || []).length}{" "}
+                rows ready to import
+              </span>
             </div>
             <div className="val-item green">
               <div className="dot" /> <span>Required fields mapped</span>
@@ -829,11 +1096,14 @@ export function BulkImportSection1({
             <div className="val-item teal">
               <div className="dot" /> <span>Supplier: {selectedSupplier}</span>
             </div>
-            <div className="val-item orange">
+            <div
+              className={`val-item ${hasUnresolvedDuplicates ? "orange" : "teal"}`}
+            >
               <div className="dot" />{" "}
               <span>
                 {duplicateResults.duplicates || 0} duplicates — handling:{" "}
                 {duplicateStrategy}
+                {hasUnresolvedDuplicates && ` (${unresolvedCount} unresolved)`}
               </span>
             </div>
             <div className="val-item red">
@@ -863,9 +1133,14 @@ export function BulkImportSection1({
                 Cancel
               </button>
               <button
-                className="pos-btn teal large"
+                className={`pos-btn teal large ${hasUnresolvedDuplicates ? "disabled" : ""}`}
                 onClick={handleStartImport}
-                title="Send mapped medicines for import"
+                disabled={hasUnresolvedDuplicates}
+                title={
+                  hasUnresolvedDuplicates
+                    ? `Resolve ${unresolvedCount} duplicate decisions first`
+                    : "Send mapped medicines for import"
+                }
               >
                 <UploadCloud size={18} />
                 <span>Start Import — {parsedRows.length} Records</span>

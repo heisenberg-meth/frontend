@@ -51,6 +51,7 @@ export default function BulkImport({ fetchData, showToast }) {
             rows: [],
             errors: [],
           },
+          duplicateDecisions: {},
           parsedRows: [],
           commitResult: null,
         };
@@ -103,6 +104,7 @@ export default function BulkImport({ fetchData, showToast }) {
         rows: [],
         errors: [],
       },
+      duplicateDecisions: {},
       parsedRows: [],
       commitResult: null,
     },
@@ -119,6 +121,7 @@ export default function BulkImport({ fetchData, showToast }) {
     barcodeOptions,
     dataPreview,
     duplicateResults,
+    duplicateDecisions,
     parsedRows,
     commitResult,
   } = importState;
@@ -747,9 +750,65 @@ export default function BulkImport({ fetchData, showToast }) {
     });
     showToast("AI mapping restored", "success");
   };
+  const [reviewingRow, setReviewingRow] = useState(null);
+
   const handleDuplicateAction = (row, action) => {
-    showToast(`${action} selected for ${row.name}`, "info");
+    if (action === "Review") {
+      setReviewingRow(row);
+      return;
+    }
+    const upper = action.toUpperCase();
+    dispatchImport({
+      type: "SET_FIELD",
+      field: "duplicateDecisions",
+      value: (prev) => ({
+        ...prev,
+        [row.row]: {
+          action: upper,
+          resolvedAt: new Date().toISOString(),
+        },
+      }),
+    });
+    showToast(`${action} selected for ${row.name || `Row ${row.row}`}`, "info");
   };
+
+  const handleBulkAction = (action) => {
+    const rows = duplicateResults?.rows || [];
+    if (rows.length === 0) {
+      showToast("No duplicate rows to apply action to", "warning");
+      return;
+    }
+    const upperAction = action.toUpperCase();
+    const newDecisions = {};
+    const now = new Date().toISOString();
+    for (const r of rows) {
+      newDecisions[r.row] = {
+        action: upperAction,
+        resolvedAt: now,
+      };
+    }
+    dispatchImport({
+      type: "SET_FIELD",
+      field: "duplicateDecisions",
+      value: (prev) => ({
+        ...prev,
+        ...newDecisions,
+      }),
+    });
+    showToast(
+      `Applied ${action} to all ${rows.length} duplicate rows`,
+      "success",
+    );
+  };
+
+  const duplicateRows = duplicateResults?.rows || [];
+  const unresolvedCount =
+    duplicateStrategy === "Ask me"
+      ? duplicateRows.filter((r) => !duplicateDecisions[r.row]?.action).length
+      : 0;
+  const hasUnresolvedDuplicates =
+    duplicateStrategy === "Ask me" && unresolvedCount > 0;
+
   const handleViewImport = (item) => {
     showToast(`Viewing ${item?.id || "Import"}`, "info");
   };
@@ -846,6 +905,13 @@ export default function BulkImport({ fetchData, showToast }) {
       showToast("Required field mappings missing (Name + Quantity)", "error");
       return;
     }
+    if (hasUnresolvedDuplicates) {
+      showToast(
+        `Please resolve all ${unresolvedCount} duplicate conflicts before importing`,
+        "error",
+      );
+      return;
+    }
     importProcessingRef.current = true;
     setImportStatus("processing");
     setImportProgress(15);
@@ -857,7 +923,9 @@ export default function BulkImport({ fetchData, showToast }) {
         fileName: file?.name || "bulk_import.csv",
         supplier: selectedSupplier,
         duplicateStrategy,
+        duplicateDecisions,
         barcodeOptions,
+        importType,
       });
       if (res.data?.success) {
         setImportProgress(100);
@@ -950,6 +1018,12 @@ export default function BulkImport({ fetchData, showToast }) {
         setShowSaveMappingModal={setShowSaveMappingModal}
         setShowLoadMappingModal={setShowLoadMappingModal}
         handleDuplicateAction={handleDuplicateAction}
+        handleBulkAction={handleBulkAction}
+        duplicateDecisions={duplicateDecisions}
+        reviewingRow={reviewingRow}
+        setReviewingRow={setReviewingRow}
+        hasUnresolvedDuplicates={hasUnresolvedDuplicates}
+        unresolvedCount={unresolvedCount}
         showToast={showToast}
         importProgress={importProgress}
         getInputProps={getInputProps}
