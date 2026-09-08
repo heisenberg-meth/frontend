@@ -286,7 +286,7 @@ export function MedicineModal({
       className="inv-modal-overlay"
       role="presentation"
       onKeyDown={(e) => {
-        if (e.key === "Enter" || e.key === " ") {
+        if (e.key === "Escape") {
           e.preventDefault();
           onClose();
         }
@@ -326,7 +326,7 @@ export function MedicineViewModal({
       className="inv-modal-overlay"
       role="presentation"
       onKeyDown={(e) => {
-        if (e.key === "Enter" || e.key === " ") {
+        if (e.key === "Escape") {
           e.preventDefault();
           onClose();
         }

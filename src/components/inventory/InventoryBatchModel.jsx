@@ -74,7 +74,7 @@ export function ReorderModal({ medicine, onClose, showToast }) {
       className="inv-modal-overlay"
       role="presentation"
       onKeyDown={(e) => {
-        if (e.key === "Enter" || e.key === " ") {
+        if (e.key === "Escape") {
           e.preventDefault();
           onClose();
         }
@@ -250,7 +250,7 @@ export function BatchModal({
       className="inv-modal-overlay"
       role="presentation"
       onKeyDown={(e) => {
-        if (e.key === "Enter" || e.key === " ") {
+        if (e.key === "Escape") {
           e.preventDefault();
           onClose();
         }
