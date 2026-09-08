@@ -757,16 +757,15 @@ function BatchModalSection2({
                         position: "sticky",
                         top: 0,
                         zIndex: 20,
-                        backgroundColor: "#ffffff",
+                        backgroundColor: "var(--surface)",
                       }}
                     >
                       <tr>
                         <th
                           style={{
-                            backgroundColor: "#ffffff",
                             padding: "12px 14px",
-                            borderBottom: "2px solid #d9dee7",
-                            color: "#475569",
+                            borderBottom: "1px solid var(--overlay-08)",
+                            color: "var(--text-muted)",
                             fontWeight: 700,
                           }}
                         >
@@ -775,10 +774,9 @@ function BatchModalSection2({
 
                         <th
                           style={{
-                            backgroundColor: "#ffffff",
                             padding: "12px 14px",
-                            borderBottom: "2px solid #d9dee7",
-                            color: "#475569",
+                            borderBottom: "1px solid var(--overlay-08)",
+                            color: "var(--text-muted)",
                             fontWeight: 700,
                           }}
                         >
@@ -787,10 +785,9 @@ function BatchModalSection2({
 
                         <th
                           style={{
-                            backgroundColor: "#ffffff",
                             padding: "12px 14px",
-                            borderBottom: "2px solid #d9dee7",
-                            color: "#475569",
+                            borderBottom: "1px solid var(--overlay-08)",
+                            color: "var(--text-muted)",
                             fontWeight: 700,
                           }}
                         >
@@ -801,10 +798,9 @@ function BatchModalSection2({
                           style={{
                             width: "80px",
                             textAlign: "center",
-                            backgroundColor: "#ffffff",
                             padding: "12px 14px",
-                            borderBottom: "2px solid #d9dee7",
-                            color: "#475569",
+                            borderBottom: "1px solid var(--overlay-08)",
+                            color: "var(--text-muted)",
                             fontWeight: 700,
                           }}
                         >
@@ -820,10 +816,10 @@ function BatchModalSection2({
                           style={{
                             backgroundColor:
                               selectedBatch?.id === b.id
-                                ? "#f0fdfa"
-                                : "#ffffff",
+                                ? "var(--surface-2)"
+                                : "var(--surface)",
                             cursor: "pointer",
-                            borderBottom: "1px solid #e5e7eb",
+                            borderBottom: "1px solid var(--overlay-06)",
                           }}
                           onClick={() => {
                             setSelectedBatch(b);

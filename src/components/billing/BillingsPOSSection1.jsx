@@ -12,6 +12,7 @@ import {
 import { useState } from "react";
 import { AnimatePresence, m } from "framer-motion";
 import { TableHeader } from "../common/TableHeader.jsx";
+import Pagination from "../common/Pagination.jsx";
 import "../../styles/BillingPOS.css";
 
 const fieldMap = {
@@ -228,6 +229,50 @@ export function BillingPOSSection3({
   todayStr,
   bills,
 }) {
+  const [billPage, setBillPage] = useState(1);
+  const [billsPerPage, setBillsPerPage] = useState(10);
+
+  const filteredBills = (bills || []).filter((bill) => {
+    if (allBillsFilter === "All") return true;
+
+    if (allBillsFilter === "PAID") {
+      return bill.status === "PAID" || bill.status === "FINALIZED";
+    }
+
+    if (allBillsFilter === "DRAFT") {
+      return bill.status === "DRAFT";
+    }
+
+    if (allBillsFilter === "RETURNED") {
+      return (
+        bill.status === "RETURNED" ||
+        bill.status === "REFUNDED" ||
+        bill.status === "PARTIALLY_REFUNDED"
+      );
+    }
+
+    return bill.status === allBillsFilter;
+  });
+
+  const totalBills = filteredBills.length;
+  const totalPages = Math.max(1, Math.ceil(totalBills / billsPerPage));
+  const safeBillPage = Math.min(billPage, Math.max(1, totalPages));
+  const startIndex = (safeBillPage - 1) * billsPerPage;
+  const paginatedBills = filteredBills.slice(
+    startIndex,
+    startIndex + billsPerPage,
+  );
+
+  const handleFilterChange = (filter) => {
+    setAllBillsFilter(filter);
+    setBillPage(1);
+  };
+
+  const handleBillsPerPageChange = (size) => {
+    setBillsPerPage(Number(size));
+    setBillPage(1);
+  };
+
   return (
     <AnimatePresence>
       {showAllBillsModal && (
@@ -315,7 +360,7 @@ export function BillingPOSSection3({
                   <button
                     key={f.value}
                     className={`filter-pill ${allBillsFilter === f.value ? "active" : ""}`}
-                    onClick={() => setAllBillsFilter(f.value)}
+                    onClick={() => handleFilterChange(f.value)}
                   >
                     {f.label}
                   </button>
@@ -336,132 +381,136 @@ export function BillingPOSSection3({
                     ]}
                   />
                   <tbody>
-                    {(bills || []).reduce((acc, bill) => {
-                      let keep;
-                      if (allBillsFilter === "All") keep = true;
-                      else if (allBillsFilter === "PAID")
-                        keep =
-                          bill.status === "PAID" || bill.status === "FINALIZED";
-                      else if (allBillsFilter === "DRAFT")
-                        keep = bill.status === "DRAFT";
-                      else if (allBillsFilter === "RETURNED")
-                        keep =
-                          bill.status === "RETURNED" ||
-                          bill.status === "REFUNDED" ||
-                          bill.status === "PARTIALLY_REFUNDED";
-                      else keep = bill.status === allBillsFilter;
-                      if (keep) {
-                        acc.push(
-                          <tr key={bill.id}>
-                            <td
-                              style={{
-                                fontWeight: 600,
-                              }}
+                    {paginatedBills.length === 0 ? (
+                      <tr>
+                        <td
+                          colSpan="8"
+                          style={{
+                            textAlign: "center",
+                            padding: "32px",
+                            color: "var(--text-muted)",
+                          }}
+                        >
+                          No bills found
+                        </td>
+                      </tr>
+                    ) : (
+                      paginatedBills.map((bill) => (
+                        <tr key={bill.id}>
+                          <td
+                            style={{
+                              fontWeight: 600,
+                            }}
+                          >
+                            {resolveInvoiceField(
+                              bill,
+                              "invoiceNumber",
+                              bill.id,
+                            )}
+                          </td>
+                          <td>{bill.time}</td>
+                          <td>{bill.patient}</td>
+                          <td>{bill.phone}</td>
+                          <td>{bill.items?.length || 0}</td>
+                          <td
+                            style={{
+                              fontWeight: 700,
+                            }}
+                          >
+                            ₹
+                            {safeNumber(
+                              resolveInvoiceField(bill, "total", 0),
+                            ).toFixed(2)}
+                          </td>
+                          <td>
+                            <span
+                              className={`status-badge ${bill.status === "DRAFT" ? "badge-draft" : bill.status === "RETURNED" ? "badge-returned" : "badge-paid"}`}
                             >
-                              {resolveInvoiceField(
-                                bill,
-                                "invoiceNumber",
-                                bill.id,
+                              {bill.status}
+                            </span>
+                          </td>
+                          <td>
+                            <div className="all-bills-actions">
+                              {bill.status === "DRAFT" ? (
+                                <>
+                                  <button
+                                    aria-label="Resume Draft"
+                                    className="all-bills-action-btn"
+                                    onClick={() => handleResumeDraftClick(bill)}
+                                    title="Resume Draft"
+                                    style={{
+                                      color: "var(--color-primary, #14b8a6)",
+                                    }}
+                                  >
+                                    <Play size={14} fill="currentColor" />
+                                  </button>
+                                  <button
+                                    aria-label="Delete Draft"
+                                    className="all-bills-action-btn"
+                                    onClick={() =>
+                                      handleDeleteDraftConfirm(bill)
+                                    }
+                                    title="Delete Draft"
+                                    style={{
+                                      color: "var(--color-error, #ef4444)",
+                                    }}
+                                  >
+                                    <Trash2 size={14} />
+                                  </button>
+                                </>
+                              ) : (
+                                <>
+                                  <button
+                                    aria-label="View"
+                                    className="all-bills-action-btn"
+                                    onClick={() => openBillDetail(bill)}
+                                    title="View"
+                                  >
+                                    <Eye size={14} />
+                                  </button>
+                                  <button
+                                    aria-label="Print"
+                                    className="all-bills-action-btn"
+                                    onClick={() => handleBillPrint(bill)}
+                                    title="Print"
+                                  >
+                                    <Printer size={14} />
+                                  </button>
+                                  <button
+                                    aria-label="WhatsApp"
+                                    className="all-bills-action-btn"
+                                    onClick={() => handleBillWhatsApp(bill)}
+                                    title="WhatsApp"
+                                  >
+                                    <MessageCircle size={14} />
+                                  </button>
+                                  <button
+                                    aria-label="Return"
+                                    className="all-bills-action-btn"
+                                    onClick={() => handleBillReturn(bill)}
+                                    title="Return"
+                                  >
+                                    <RefreshCw size={14} />
+                                  </button>
+                                </>
                               )}
-                            </td>
-                            <td>{bill.time}</td>
-                            <td>{bill.patient}</td>
-                            <td>{bill.phone}</td>
-                            <td>{bill.items.length}</td>
-                            <td
-                              style={{
-                                fontWeight: 700,
-                              }}
-                            >
-                              ₹
-                              {safeNumber(
-                                bill.paidAmount ?? bill.total,
-                              ).toFixed(2)}
-                            </td>
-                            <td>
-                              <span
-                                className={`status-badge ${bill.status === "DRAFT" ? "badge-draft" : bill.status === "RETURNED" ? "badge-returned" : "badge-paid"}`}
-                              >
-                                {bill.status}
-                              </span>
-                            </td>
-                            <td>
-                              <div className="all-bills-actions">
-                                {bill.status === "DRAFT" ? (
-                                  <>
-                                    <button
-                                      aria-label="Resume Draft"
-                                      className="all-bills-action-btn"
-                                      onClick={() =>
-                                        handleResumeDraftClick(bill)
-                                      }
-                                      title="Resume Draft"
-                                      style={{
-                                        color: "var(--color-primary, #14b8a6)",
-                                      }}
-                                    >
-                                      <Play size={14} fill="currentColor" />
-                                    </button>
-                                    <button
-                                      aria-label="Delete Draft"
-                                      className="all-bills-action-btn"
-                                      onClick={() =>
-                                        handleDeleteDraftConfirm(bill)
-                                      }
-                                      title="Delete Draft"
-                                      style={{
-                                        color: "var(--color-error, #ef4444)",
-                                      }}
-                                    >
-                                      <Trash2 size={14} />
-                                    </button>
-                                  </>
-                                ) : (
-                                  <>
-                                    <button
-                                      aria-label="View"
-                                      className="all-bills-action-btn"
-                                      onClick={() => openBillDetail(bill)}
-                                      title="View"
-                                    >
-                                      <Eye size={14} />
-                                    </button>
-                                    <button
-                                      aria-label="Print"
-                                      className="all-bills-action-btn"
-                                      onClick={() => handleBillPrint(bill)}
-                                      title="Print"
-                                    >
-                                      <Printer size={14} />
-                                    </button>
-                                    <button
-                                      aria-label="WhatsApp"
-                                      className="all-bills-action-btn"
-                                      onClick={() => handleBillWhatsApp(bill)}
-                                      title="WhatsApp"
-                                    >
-                                      <MessageCircle size={14} />
-                                    </button>
-                                    <button
-                                      aria-label="Return"
-                                      className="all-bills-action-btn"
-                                      onClick={() => handleBillReturn(bill)}
-                                      title="Return"
-                                    >
-                                      <RefreshCw size={14} />
-                                    </button>
-                                  </>
-                                )}
-                              </div>
-                            </td>
-                          </tr>,
-                        );
-                      }
-                      return acc;
-                    }, [])}
+                            </div>
+                          </td>
+                        </tr>
+                      ))
+                    )}
                   </tbody>
                 </table>
               </div>
+              <Pagination
+                currentPage={safeBillPage}
+                totalPages={totalPages}
+                totalItems={totalBills}
+                rowsPerPage={billsPerPage}
+                onPageChange={setBillPage}
+                onRowsPerPageChange={handleBillsPerPageChange}
+                itemLabel="bills"
+              />
             </div>
           </m.div>
         </div>

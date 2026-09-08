@@ -17,6 +17,7 @@ import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import api from "../../api.js";
 import { API_ROUTES } from "../../constants/api.routes.js";
+import Pagination from "../common/Pagination.jsx";
 const headers = [
   "Medicine",
   "Batch",
@@ -123,7 +124,13 @@ function ExpiryReportSection1({
 function ExpiryReportSection2({
   handleAction,
   promptDeleteBatch,
-  filteredStock,
+  paginatedStock,
+  totalItems,
+  totalPages,
+  currentPage,
+  setCurrentPage,
+  rowsPerPage,
+  onRowsPerPageChange,
 }) {
   return (
     <div className="purchase-table-card">
@@ -142,10 +149,10 @@ function ExpiryReportSection2({
           </tr>
         </thead>
         <tbody>
-          {filteredStock.length === 0 ? (
+          {paginatedStock.length === 0 ? (
             <tr>
               <td
-                colSpan="8"
+                colSpan="9"
                 style={{
                   textAlign: "center",
                   padding: "40px",
@@ -171,7 +178,7 @@ function ExpiryReportSection2({
               </td>
             </tr>
           ) : (
-            filteredStock.map((item) => (
+            paginatedStock.map((item) => (
               <tr
                 key={item.id}
                 className={
@@ -271,6 +278,14 @@ function ExpiryReportSection2({
           )}
         </tbody>
       </table>
+      <Pagination
+        currentPage={currentPage}
+        totalPages={totalPages}
+        totalItems={totalItems}
+        rowsPerPage={rowsPerPage}
+        onPageChange={setCurrentPage}
+        onRowsPerPageChange={onRowsPerPageChange}
+      />
     </div>
   );
 }
@@ -586,6 +601,8 @@ export default function ExpiryReport({ showToast }) {
   const [expiryStock, setExpiryStock] = useState([]);
   const [expiryFilter, setExpiryFilter] = useState("All");
   const [expirySearch, setExpirySearch] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
   const [showActionModal, setShowActionModal] = useState(false);
   const [actionType, setActionType] = useState("");
   const [selectedItem, setSelectedItem] = useState(null);
@@ -709,6 +726,25 @@ export default function ExpiryReport({ showToast }) {
     }
     return true;
   });
+  const totalItems = filteredStock.length;
+  const totalPages = Math.max(1, Math.ceil(totalItems / rowsPerPage));
+  const safeCurrentPage = Math.min(currentPage, Math.max(1, totalPages));
+  const startIndex = (safeCurrentPage - 1) * rowsPerPage;
+  const paginatedStock = filteredStock.slice(
+    startIndex,
+    startIndex + rowsPerPage,
+  );
+
+  const handleFilterChange = (filter) => {
+    setExpiryFilter(filter);
+    setCurrentPage(1);
+  };
+
+  const handleRowsPerPageChange = (value) => {
+    setRowsPerPage(Number(value));
+    setCurrentPage(1);
+  };
+
   const exportCSV = () => {
     if (filteredStock.length === 0) return;
     const rows = filteredStock.map((item) => [
@@ -891,7 +927,7 @@ export default function ExpiryReport({ showToast }) {
             style={{
               border: "1px solid var(--outline-variant)",
             }}
-            onClick={() => setExpiryFilter(p)}
+            onClick={() => handleFilterChange(p)}
           >
             {p}
           </button>
@@ -903,7 +939,7 @@ export default function ExpiryReport({ showToast }) {
         expiring7DaysCount={expiring7DaysCount}
         expiring7To30DaysCount={expiring7To30DaysCount}
         expiring90DaysCount={expiring90DaysCount}
-        setExpiryFilter={setExpiryFilter}
+        setExpiryFilter={handleFilterChange}
       />
 
       <div
@@ -916,7 +952,7 @@ export default function ExpiryReport({ showToast }) {
             e.currentTarget.click();
           }
         }}
-        onClick={() => setExpiryFilter("Expired")}
+        onClick={() => handleFilterChange("Expired")}
         style={{
           cursor: "pointer",
           marginTop: "20px",
@@ -992,7 +1028,10 @@ export default function ExpiryReport({ showToast }) {
                 outline: "none",
               }}
               value={expirySearch}
-              onChange={(e) => setExpirySearch(e.target.value)}
+              onChange={(e) => {
+                setExpirySearch(e.target.value);
+                setCurrentPage(1);
+              }}
               id="field_29gzgr"
             />
           </>
@@ -1031,8 +1070,14 @@ export default function ExpiryReport({ showToast }) {
 
       <ExpiryReportSection2
         handleAction={handleAction}
-        filteredStock={filteredStock}
         promptDeleteBatch={promptDeleteBatch}
+        paginatedStock={paginatedStock}
+        totalItems={totalItems}
+        totalPages={totalPages}
+        currentPage={safeCurrentPage}
+        setCurrentPage={setCurrentPage}
+        rowsPerPage={rowsPerPage}
+        onRowsPerPageChange={handleRowsPerPageChange}
       />
 
       {/* Action Dialog Overlay */}
