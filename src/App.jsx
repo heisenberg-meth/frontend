@@ -25,8 +25,8 @@ function Paywall({ onActivate }) {
         </div>
         <h2>Subscription Expired</h2>
         <p>
-          Your 28-day free access has ended. Choose a subscription plan to continue
-          using MedAssist.
+          Your 28-day free access has ended. Choose a subscription plan to
+          continue using MedAssist.
         </p>
 
         <div className="paywall-benefits">
@@ -53,7 +53,10 @@ function Paywall({ onActivate }) {
         >
           View Subscription Plans
         </button>
-        <button className="paywall-support-btn" onClick={() => onActivate("/support")}>
+        <button
+          className="paywall-support-btn"
+          onClick={() => onActivate("/support")}
+        >
           Contact Support
         </button>
       </m.div>
@@ -566,7 +569,7 @@ function AppContent() {
         handleSelectPro={handleSelectPro}
         handleSelectTrial={handleSelectTrial}
         PaywallComponent={() => (
-          <Paywall onActivate={path => navigate(path)} />
+          <Paywall onActivate={(path) => navigate(path)} />
         )}
       />
 

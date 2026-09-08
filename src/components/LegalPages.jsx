@@ -16,7 +16,6 @@ import {
 import { useNavigate } from "react-router-dom";
 import "../styles/LegalPages.css";
 
-const EFFECTIVE_DATE = "01/07/2025";
 const COMPANY = "Viyan Info";
 const APP = "Viyan MedAssist";
 const EMAIL = "support@viyaninfo.com";
@@ -38,7 +37,6 @@ function PrivacyPolicy() {
   return (
     <div className="legal-document">
       <h1>Privacy Policy</h1>
-      <p className="legal-effective">Effective Date: {EFFECTIVE_DATE}</p>
       <p>
         Welcome to <strong>{APP}</strong> ("{APP}", "we", "our", or "us"). This
         Privacy Policy explains how we collect, use, store, and protect
@@ -201,7 +199,6 @@ function TermsOfService() {
   return (
     <div className="legal-document">
       <h1>Terms of Service</h1>
-      <p className="legal-effective">Effective Date: {EFFECTIVE_DATE}</p>
       <p>These Terms govern your use of {APP}.</p>
 
       <h2>1. Acceptance</h2>
@@ -316,7 +313,6 @@ function EULA() {
   return (
     <div className="legal-document">
       <h1>End User License Agreement (EULA)</h1>
-      <p className="legal-effective">Effective Date: {EFFECTIVE_DATE}</p>
       <p>
         This software is licensed, not sold. By installing, accessing, or using{" "}
         {APP}, you agree to this Agreement.
@@ -395,7 +391,6 @@ function CookiePolicy() {
   return (
     <div className="legal-document">
       <h1>Cookie Policy</h1>
-      <p className="legal-effective">Effective Date: {EFFECTIVE_DATE}</p>
       <p>
         {APP} uses cookies and similar technologies to ensure the secure and
         efficient operation of our software.
@@ -469,7 +464,6 @@ function RefundPolicy() {
   return (
     <div className="legal-document">
       <h1>Refund & Cancellation Policy</h1>
-      <p className="legal-effective">Effective Date: {EFFECTIVE_DATE}</p>
 
       <h2>1. Subscription Cancellation</h2>
       <p>
@@ -531,7 +525,6 @@ function DataRetention() {
   return (
     <div className="legal-document">
       <h1>Data Retention Policy</h1>
-      <p className="legal-effective">Effective Date: {EFFECTIVE_DATE}</p>
       <p>
         This policy describes how long we retain different categories of data.
       </p>
@@ -610,7 +603,6 @@ function SecurityPolicy() {
   return (
     <div className="legal-document">
       <h1>Security Policy</h1>
-      <p className="legal-effective">Effective Date: {EFFECTIVE_DATE}</p>
 
       <h2>1. Encryption</h2>
       <ul>
@@ -669,7 +661,6 @@ function AcceptableUse() {
   return (
     <div className="legal-document">
       <h1>Acceptable Use Policy</h1>
-      <p className="legal-effective">Effective Date: {EFFECTIVE_DATE}</p>
       <p>This policy outlines prohibited activities when using {APP}.</p>
 
       <h2>Prohibited Activities</h2>
@@ -710,7 +701,6 @@ function SLAPolicy() {
   return (
     <div className="legal-document">
       <h1>Service Level Agreement (SLA)</h1>
-      <p className="legal-effective">Effective Date: {EFFECTIVE_DATE}</p>
 
       <h2>1. Uptime Commitment</h2>
       <p>
@@ -792,7 +782,6 @@ function DPAPolicy() {
   return (
     <div className="legal-document">
       <h1>Data Processing Agreement (DPA)</h1>
-      <p className="legal-effective">Effective Date: {EFFECTIVE_DATE}</p>
 
       <h2>1. Roles</h2>
       <p>
@@ -913,10 +902,6 @@ export default function LegalPages({ initialSection, showBackButton = true }) {
           <div className="legal-footer-notice">
             <p>
               © {new Date().getFullYear()} {COMPANY}. All rights reserved.
-            </p>
-            <p>
-              These documents were last updated on {EFFECTIVE_DATE}. For
-              questions, contact {EMAIL}.
             </p>
           </div>
         </main>
