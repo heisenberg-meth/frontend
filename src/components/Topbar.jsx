@@ -3,73 +3,16 @@ import {
   useState,
   useEffect,
   useCallback,
-  useMemo,
+  useRef,
   useEffectEvent,
-  useTransition,
 } from "react";
-import { safeNumber } from "../utils/number.js";
+import axios from "axios";
 import {
   getNotifications,
   markAllNotificationsRead,
 } from "../services/notification.service";
+import { globalSearch } from "../services/global-search.service.js";
 import { TopbarSection1, TopbarSection2 } from "./Topbar/Topbar.jsx";
-const SEARCH_PATIENTS = [];
-const SEARCH_SUPPLIERS = [];
-const SEARCH_INVOICES = [];
-const SEARCH_PRESCRIPTIONS = [];
-const SEARCH_ANALYTICS = [
-  {
-    id: "AN-01",
-    name: "Daily Revenue Summary",
-    desc: "View sales patterns and daily performance logs",
-    path: "/analytics",
-  },
-  {
-    id: "AN-02",
-    name: "Low Stock Alert Intelligence",
-    desc: "Check reorder thresholds and predictive restocks",
-    path: "/lowstock",
-  },
-  {
-    id: "AN-03",
-    name: "Expiry Batch Intelligence",
-    desc: "View batches nearing shelf-life threshold",
-    path: "/expiry",
-  },
-  {
-    id: "AN-04",
-    name: "Reports Hub & CSV Export",
-    desc: "Export billing and inventory reconciliation logs",
-    path: "/reports",
-  },
-];
-const SEARCH_SETTINGS = [
-  {
-    id: "ST-01",
-    name: "System Settings",
-    desc: "Configure low stock threshold and alerts",
-    path: "/settings",
-  },
-  {
-    id: "ST-02",
-    name: "Profile Management",
-    desc: "Configure your clinical credentials and password",
-    path: "/profile",
-  },
-  {
-    id: "ST-03",
-    name: "Team Management",
-    desc: "Add new staff members and configure access permissions",
-    path: "/team",
-  },
-  {
-    id: "ST-04",
-    name: "Database Reset / Clear Inventory",
-    desc: "Erase all inventory rows and start fresh",
-    path: "/settings",
-    action: "clear_db",
-  },
-];
 
 export default function Topbar({
   user,
@@ -85,6 +28,9 @@ export default function Topbar({
   const [showNotifications, setShowNotifications] = useState(false);
   const [showSearchOverlay, setShowSearchOverlay] = useState(false);
   const [activeCategory, setActiveCategory] = useState("All");
+  const [filteredResults, setFilteredResults] = useState([]);
+  const [isPending, setIsPending] = useState(false);
+  const searchAbortRef = useRef(null);
   const [recentSearches, setRecentSearches] = useState(() => {
     localStorage.removeItem("viyan-recent-searches");
     const saved = localStorage.getItem("viyan-recent-searches:v1");
@@ -98,9 +44,9 @@ export default function Topbar({
     return [];
   });
   const [selectedIndex, setSelectedIndex] = useState(-1);
-  const [isPending, startTransition] = useTransition();
   const [notifications, setNotifications] = useState([]);
   const [, setNotificationsLoading] = useState(false);
+
   useEffect(() => {
     const loadNotifications = async () => {
       try {
@@ -125,20 +71,29 @@ export default function Topbar({
     return () =>
       window.removeEventListener("notificationsUpdated", handleUpdate);
   }, [setNotificationsLoading]);
+
   const handleSearchChange = (value) => {
-    startTransition(() => {
-      setSearchQuery(value);
-      setSelectedIndex(-1);
-    });
+    setSearchQuery(value);
+    setSelectedIndex(-1);
+    if (!value.trim()) {
+      searchAbortRef.current?.abort();
+      setFilteredResults([]);
+      setIsPending(false);
+    } else {
+      setIsPending(true);
+    }
   };
+
   const handleCloseSearch = useCallback(() => {
+    searchAbortRef.current?.abort();
     setShowSearchOverlay(false);
-    startTransition(() => {
-      setSearchQuery("");
-      setActiveCategory("All");
-      setSelectedIndex(-1);
-    });
+    setSearchQuery("");
+    setActiveCategory("All");
+    setFilteredResults([]);
+    setIsPending(false);
+    setSelectedIndex(-1);
   }, []);
+
   const addRecentSearch = useCallback(
     (query) => {
       if (!query.trim()) return;
@@ -152,15 +107,18 @@ export default function Topbar({
     },
     [recentSearches],
   );
+
   const removeRecentSearch = (item, e) => {
     e.stopPropagation();
     const updated = recentSearches.filter((s) => s !== item);
     setRecentSearches(updated);
     localStorage.setItem("viyan-recent-searches:v1", JSON.stringify(updated));
   };
+
   const handleItemClick = useCallback(
     (item) => {
-      if (searchQuery) addRecentSearch(searchQuery);
+      if (!item) return;
+      if (searchQuery.trim()) addRecentSearch(searchQuery.trim());
       if (item.original?.action === "clear_db") {
         navigate("/settings");
       } else if (item.path) {
@@ -170,6 +128,7 @@ export default function Topbar({
     },
     [searchQuery, addRecentSearch, handleCloseSearch, navigate],
   );
+
   const handleQuickAction = useCallback(
     (path) => {
       navigate(path);
@@ -177,83 +136,83 @@ export default function Topbar({
     },
     [handleCloseSearch, navigate],
   );
-  const allSearchableItems = useMemo(() => {
-    const patientsList = SEARCH_PATIENTS.map((p) => ({
-      type: "Patients",
-      id: `pat-${p.id}`,
-      title: p.name,
-      subtitle: `Age: ${p.age}y • Gender: ${p.gender}`,
-      meta: `conditions: ${p.conditions}`,
-      path: "/patients",
-      original: p,
-    }));
-    const suppliersList = SEARCH_SUPPLIERS.map((s) => ({
-      type: "Suppliers",
-      id: `sup-${s.id}`,
-      title: s.name,
-      subtitle: `Contact: ${s.contact}`,
-      meta: `${s.categories} • ${s.reliability} Reliable`,
-      path: "/suppliers",
-      original: s,
-    }));
-    const invoicesList = SEARCH_INVOICES.map((inv) => ({
-      type: "Invoices",
-      id: `inv-${inv.id}`,
-      title: inv.id,
-      subtitle: `Patient: ${inv.patient}`,
-      meta: `₹${safeNumber(inv.amount || 0).toFixed(2)} • ${inv.status}`,
-      path: "/billing",
-      original: inv,
-    }));
-    const rxList = SEARCH_PRESCRIPTIONS.map((rx) => ({
-      type: "Prescriptions",
-      id: `rx-${rx.id}`,
-      title: rx.id,
-      subtitle: `Patient: ${rx.patient} • Doctor: ${rx.doctor}`,
-      meta: `Meds: ${rx.meds.join(", ")}`,
-      path: "/prescriptions",
-      original: rx,
-    }));
-    const analyticsList = SEARCH_ANALYTICS.map((an) => ({
-      type: "Analytics",
-      id: `an-${an.id}`,
-      title: an.name,
-      subtitle: an.desc,
-      meta: "Analytics Workspace",
-      path: an.path,
-      original: an,
-    }));
-    const settingsList = SEARCH_SETTINGS.map((st) => ({
-      type: "Settings",
-      id: `st-${st.id}`,
-      title: st.name,
-      subtitle: st.desc,
-      meta: "System Configuration",
-      path: st.path,
-      original: st,
-    }));
-    return [
-      ...patientsList,
-      ...suppliersList,
-      ...invoicesList,
-      ...rxList,
-      ...analyticsList,
-      ...settingsList,
-    ];
-  }, []);
-  const filteredResults = useMemo(() => {
-    if (!searchQuery.trim()) return [];
-    const query = searchQuery.toLowerCase().trim();
-    return allSearchableItems.filter((item) => {
-      if (activeCategory !== "All" && item.type !== activeCategory)
-        return false;
-      return (
-        item.title.toLowerCase().includes(query) ||
-        item.subtitle.toLowerCase().includes(query) ||
-        item.meta.toLowerCase().includes(query)
-      );
-    });
-  }, [searchQuery, activeCategory, allSearchableItems]);
+
+  const handleCategorySelect = useCallback(
+    (cat) => {
+      setActiveCategory(cat);
+
+      if (!searchQuery.trim()) {
+        if (cat !== "All") {
+          const categoryPaths = {
+            Medicines: "/inventory",
+            Suppliers: "/suppliers",
+            Invoices: "/billing",
+            Prescriptions: "/prescriptions",
+            Analytics: "/analytics",
+            Settings: "/settings",
+            Patients: "/patients",
+          };
+
+          const targetPath = categoryPaths[cat];
+          if (targetPath) {
+            handleCloseSearch();
+            navigate(targetPath);
+          }
+        }
+      } else {
+        setIsPending(true);
+      }
+    },
+    [searchQuery, handleCloseSearch, navigate],
+  );
+
+  // Debounced API-driven search with AbortController
+  useEffect(() => {
+    const query = searchQuery.trim();
+
+    if (!query) {
+      return;
+    }
+
+    const controller = new AbortController();
+    searchAbortRef.current?.abort();
+    searchAbortRef.current = controller;
+
+    const timer = setTimeout(async () => {
+      try {
+        setIsPending(true);
+        const response = await globalSearch({
+          q: query,
+          category: activeCategory,
+          limit: 20,
+          signal: controller.signal,
+        });
+
+        const results =
+          response?.data?.data?.results || response?.data?.results || [];
+
+        setFilteredResults(Array.isArray(results) ? results : []);
+      } catch (error) {
+        if (
+          error?.name !== "CanceledError" &&
+          error?.code !== "ERR_CANCELED" &&
+          !axios.isCancel(error)
+        ) {
+          console.error("Global search failed:", error);
+          setFilteredResults([]);
+        }
+      } finally {
+        if (!controller.signal.aborted) {
+          setIsPending(false);
+        }
+      }
+    }, 250);
+
+    return () => {
+      clearTimeout(timer);
+      controller.abort();
+    };
+  }, [searchQuery, activeCategory]);
   const unreadCount = Array.isArray(notifications)
     ? notifications.filter((n) => !n.isRead).length
     : 0;
@@ -353,7 +312,7 @@ export default function Topbar({
         searchQuery={searchQuery}
         handleSearchChange={handleSearchChange}
         activeCategory={activeCategory}
-        setActiveCategory={setActiveCategory}
+        setActiveCategory={handleCategorySelect}
         isPending={isPending}
         filteredResults={filteredResults}
         selectedIndex={selectedIndex}
