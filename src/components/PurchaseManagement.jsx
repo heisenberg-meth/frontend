@@ -1121,7 +1121,18 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
         api.get("/branches"),
       ]);
       setSuppliers(safeData(results[0], "data"));
-      setOrders(safeData(results[1], "data"));
+      const loadedOrdersRefresh = safeData(results[1], "data");
+      if (Array.isArray(loadedOrdersRefresh)) {
+        console.table(
+          loadedOrdersRefresh.map((po) => ({
+            id: po.id,
+            poNumber: po.poNumber || po.orderNumber,
+            status: po.status,
+            supplier: po.supplier?.name || po.supplierName,
+          })),
+        );
+      }
+      setOrders(loadedOrdersRefresh);
       setReturns(safeData(results[2], "data"));
       setInvoices(safeData(results[3], "data"));
       setBranches(safeData(results[4], "data"));
@@ -1162,7 +1173,18 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
         ]);
         if (!mounted) return;
         setSuppliers(safeData(results[0], "data"));
-        setOrders(safeData(results[1], "data"));
+        const loadedOrdersInit = safeData(results[1], "data");
+        if (Array.isArray(loadedOrdersInit)) {
+          console.table(
+            loadedOrdersInit.map((po) => ({
+              id: po.id,
+              poNumber: po.poNumber || po.orderNumber,
+              status: po.status,
+              supplier: po.supplier?.name || po.supplierName,
+            })),
+          );
+        }
+        setOrders(loadedOrdersInit);
         setReturns(safeData(results[2], "data"));
         setInvoices(safeData(results[3], "data"));
         setBranches(safeData(results[4], "data"));
