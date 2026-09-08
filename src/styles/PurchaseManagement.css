@@ -373,9 +373,16 @@
   box-shadow: 0 0 0 4px rgba(79, 219, 200, 0.08);
 }
 
-.receive-input-error {
-  border: 1px solid var(--danger) !important;
-  box-shadow: 0 0 0 1px var(--danger) !important;
+.receive-input-error,
+.input-error {
+  border-color: var(--danger) !important;
+  box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.15) !important;
+}
+
+.receive-input-error:focus,
+.input-error:focus {
+  border-color: var(--danger) !important;
+  box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.2) !important;
 }
 
 .receive-field-error {

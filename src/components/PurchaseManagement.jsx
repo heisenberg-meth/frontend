@@ -303,6 +303,8 @@ function PurchaseManagementSection4({
   setShowReceiveModal,
   isReceiving,
   handleReceiveOrder,
+  receiveErrors = {},
+  setReceiveErrors,
 }) {
   return (
     <AnimatePresence>
@@ -342,6 +344,7 @@ function PurchaseManagementSection4({
                 onClick={() => {
                   setShowReceiveModal(false);
                   setDifferentBatch({});
+                  if (setReceiveErrors) setReceiveErrors({});
                 }}
               >
                 <X size={20} />
@@ -357,6 +360,23 @@ function PurchaseManagementSection4({
                 Enter supplier invoice details and confirm quantities received
                 for {selectedRow?.orderNumber || selectedRow?.id}.
               </p>
+
+              {receiveErrors.general && (
+                <div
+                  style={{
+                    padding: "10px 14px",
+                    marginBottom: "16px",
+                    borderRadius: "6px",
+                    backgroundColor: "rgba(239, 68, 68, 0.1)",
+                    border: "1px solid var(--danger)",
+                    color: "var(--danger)",
+                    fontSize: "12px",
+                    fontWeight: 600,
+                  }}
+                >
+                  {receiveErrors.general}
+                </div>
+              )}
 
               {/* Supplier Invoice Details */}
               <div
@@ -378,11 +398,24 @@ function PurchaseManagementSection4({
                   <input
                     id="field_cy4yvz"
                     required
-                    className="pos-input"
+                    className={`pos-input ${receiveErrors.invoiceNumber ? "input-error" : ""}`}
                     placeholder="e.g. INV-24589"
                     value={grnInvoiceNumber}
-                    onChange={(e) => setGrnInvoiceNumber(e.target.value)}
+                    onChange={(e) => {
+                      setGrnInvoiceNumber(e.target.value);
+                      if (receiveErrors.invoiceNumber && setReceiveErrors) {
+                        setReceiveErrors((prev) => ({
+                          ...prev,
+                          invoiceNumber: undefined,
+                        }));
+                      }
+                    }}
                   />
+                  {receiveErrors.invoiceNumber && (
+                    <span className="receive-field-error">
+                      {receiveErrors.invoiceNumber}
+                    </span>
+                  )}
                 </div>
                 <div className="pos-input-group">
                   <label htmlFor="field_y0ugjw" className="p-label">
@@ -391,11 +424,24 @@ function PurchaseManagementSection4({
                   <input
                     id="field_y0ugjw"
                     required
-                    className="pos-input"
+                    className={`pos-input ${receiveErrors.invoiceDate ? "input-error" : ""}`}
                     type="date"
                     value={grnInvoiceDate}
-                    onChange={(e) => setGrnInvoiceDate(e.target.value)}
+                    onChange={(e) => {
+                      setGrnInvoiceDate(e.target.value);
+                      if (receiveErrors.invoiceDate && setReceiveErrors) {
+                        setReceiveErrors((prev) => ({
+                          ...prev,
+                          invoiceDate: undefined,
+                        }));
+                      }
+                    }}
                   />
+                  {receiveErrors.invoiceDate && (
+                    <span className="receive-field-error">
+                      {receiveErrors.invoiceDate}
+                    </span>
+                  )}
                 </div>
               </div>
 
@@ -457,7 +503,11 @@ function PurchaseManagementSection4({
                             <input
                               aria-label="input field"
                               required
-                              className="p-cost-input"
+                              className={`p-cost-input ${
+                                receiveErrors.receivedQuantity
+                                  ? "input-error"
+                                  : ""
+                              }`}
                               style={{
                                 width: "60px",
                               }}
@@ -471,6 +521,14 @@ function PurchaseManagementSection4({
                                 setReceiveItems(newItems);
                               }}
                             />
+                            {receiveErrors.receivedQuantity && (
+                              <div
+                                className="receive-field-error"
+                                style={{ fontSize: "10px" }}
+                              >
+                                {receiveErrors.receivedQuantity}
+                              </div>
+                            )}
                             {safeNumber(item.receivedQuantity) > 0 &&
                               safeNumber(item.receivedQuantity) <
                                 item.pendingQuantity && (
@@ -494,7 +552,9 @@ function PurchaseManagementSection4({
                               </label>
                               <input
                                 required
-                                className="p-cost-input"
+                                className={`p-cost-input ${
+                                  receiveErrors.batchNumber ? "input-error" : ""
+                                }`}
                                 placeholder="Batch..."
                                 value={item.batchNumber || ""}
                                 onChange={(e) => {
@@ -504,13 +564,23 @@ function PurchaseManagementSection4({
                                 }}
                                 id="field_n9afr2"
                               />
+                              {receiveErrors.batchNumber && (
+                                <div
+                                  className="receive-field-error"
+                                  style={{ fontSize: "10px" }}
+                                >
+                                  {receiveErrors.batchNumber}
+                                </div>
+                              )}
                             </>
                           </td>
                           <td>
                             <input
                               aria-label="input field"
                               required
-                              className="p-cost-input"
+                              className={`p-cost-input ${
+                                receiveErrors.expiryDate ? "input-error" : ""
+                              }`}
                               type="date"
                               value={item.expiryDate || ""}
                               onChange={(e) => {
@@ -519,12 +589,22 @@ function PurchaseManagementSection4({
                                 setReceiveItems(newItems);
                               }}
                             />
+                            {receiveErrors.expiryDate && (
+                              <div
+                                className="receive-field-error"
+                                style={{ fontSize: "10px" }}
+                              >
+                                {receiveErrors.expiryDate}
+                              </div>
+                            )}
                           </td>
                           <td>
                             <input
                               aria-label="input field"
                               required
-                              className="p-cost-input"
+                              className={`p-cost-input ${
+                                receiveErrors.purchasePrice ? "input-error" : ""
+                              }`}
                               style={{
                                 width: "80px",
                               }}
@@ -537,6 +617,14 @@ function PurchaseManagementSection4({
                                 setReceiveItems(newItems);
                               }}
                             />
+                            {receiveErrors.purchasePrice && (
+                              <div
+                                className="receive-field-error"
+                                style={{ fontSize: "10px" }}
+                              >
+                                {receiveErrors.purchasePrice}
+                              </div>
+                            )}
                             {item.unitPrice &&
                               safeNumber(item.purchasePrice) > 0 &&
                               safeNumber(item.purchasePrice) !==
@@ -562,7 +650,9 @@ function PurchaseManagementSection4({
                             <input
                               aria-label="input field"
                               required
-                              className="p-cost-input"
+                              className={`p-cost-input ${
+                                receiveErrors.mrp ? "input-error" : ""
+                              }`}
                               style={{
                                 width: "80px",
                               }}
@@ -575,12 +665,22 @@ function PurchaseManagementSection4({
                                 setReceiveItems(newItems);
                               }}
                             />
+                            {receiveErrors.mrp && (
+                              <div
+                                className="receive-field-error"
+                                style={{ fontSize: "10px" }}
+                              >
+                                {receiveErrors.mrp}
+                              </div>
+                            )}
                           </td>
                           <td>
                             <input
                               aria-label="input field"
                               required
-                              className="p-cost-input"
+                              className={`p-cost-input ${
+                                receiveErrors.gstPercentage ? "input-error" : ""
+                              }`}
                               style={{
                                 width: "60px",
                               }}
@@ -595,6 +695,14 @@ function PurchaseManagementSection4({
                                 setReceiveItems(newItems);
                               }}
                             />
+                            {receiveErrors.gstPercentage && (
+                              <div
+                                className="receive-field-error"
+                                style={{ fontSize: "10px" }}
+                              >
+                                {receiveErrors.gstPercentage}
+                              </div>
+                            )}
                           </td>
                           <td
                             style={{
@@ -661,6 +769,7 @@ function PurchaseManagementSection4({
                 onClick={() => {
                   setShowReceiveModal(false);
                   setDifferentBatch({});
+                  if (setReceiveErrors) setReceiveErrors({});
                 }}
                 disabled={isReceiving}
               >
@@ -741,6 +850,7 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
     loading,
     receiveItems,
     isReceiving,
+    receiveErrors = {},
   } = purchaseState;
   const isOpeningReceiveModalRef = useRef(false);
   const isUpdatingPaymentRef = useRef(false);
@@ -926,6 +1036,15 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
       }),
     [],
   );
+  const setReceiveErrors = useCallback(
+    (val) =>
+      dispatchPurchase({
+        type: "SET_FIELD",
+        field: "receiveErrors",
+        value: val,
+      }),
+    [],
+  );
   const handleOpenReceiveModal = async (po) => {
     if (isOpeningReceiveModalRef.current) return;
     isOpeningReceiveModalRef.current = true;
@@ -934,6 +1053,7 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
       setDifferentBatch({});
       setGrnInvoiceNumber("");
       setGrnInvoiceDate(new Date().toISOString().split("T")[0]);
+      setReceiveErrors({});
       let priorGRN = null;
       try {
         const { data } = await api.get(
@@ -1856,6 +1976,7 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
       showToast("Order Received & Inventory Updated", "success");
       setShowReceiveModal(false);
       setDifferentBatch({});
+      setReceiveErrors({});
       setGrnInvoiceNumber("");
       setGrnInvoiceDate(new Date().toISOString().split("T")[0]);
       await refreshData();
@@ -2241,6 +2362,8 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
         setShowReceiveModal={setShowReceiveModal}
         isReceiving={isReceiving}
         handleReceiveOrder={handleReceiveOrder}
+        receiveErrors={receiveErrors}
+        setReceiveErrors={setReceiveErrors}
       />
 
       {/* ── Add New Medicine to Master Modal ── */}
