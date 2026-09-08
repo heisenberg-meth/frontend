@@ -633,26 +633,6 @@ function PurchaseManagementSection4({
                                 {receiveErrors.purchasePrice}
                               </div>
                             )}
-                            {item.unitPrice &&
-                              safeNumber(item.purchasePrice) > 0 &&
-                              safeNumber(item.purchasePrice) !==
-                                safeNumber(item.unitPrice) && (
-                                <div
-                                  style={{
-                                    fontSize: "10px",
-                                    color:
-                                      safeNumber(item.purchasePrice) >
-                                      safeNumber(item.unitPrice)
-                                        ? "var(--danger, #ff4d4d)"
-                                        : "var(--primary, #00e699)",
-                                    marginTop: "2px",
-                                    fontWeight: 600,
-                                  }}
-                                  title={`Ordered unit price: ₹${safeNumber(item.unitPrice).toFixed(2)}`}
-                                >
-                                  PO: ₹{safeNumber(item.unitPrice).toFixed(2)}
-                                </div>
-                              )}
                           </td>
                           <td>
                             <input
