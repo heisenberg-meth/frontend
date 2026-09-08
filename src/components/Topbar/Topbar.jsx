@@ -27,8 +27,6 @@ function getCategoryIcon(cat) {
   switch (cat) {
     case "Medicines":
       return <Package size={12} />;
-    case "Patients":
-      return <User size={12} />;
     case "Suppliers":
       return <Truck size={12} />;
     case "Invoices":
@@ -47,8 +45,6 @@ function getItemIcon(type) {
   switch (type) {
     case "Medicines":
       return <Package size={16} />;
-    case "Patients":
-      return <User size={16} />;
     case "Suppliers":
       return <Truck size={16} />;
     case "Invoices":
@@ -493,14 +489,13 @@ export function TopbarSection2({
               <Search size={20} className="search-overlay-icon" />
               <>
                 <label htmlFor="field_s74f2c" className="sr-only">
-                  Search medicines, patients, suppliers, invoices, or
-                  settings...
+                  Search medicines, suppliers, invoices, or settings...
                 </label>
                 <input
                   required
                   autoFocus
                   type="text"
-                  placeholder="Search medicines, patients, suppliers, invoices, or settings..."
+                  placeholder="Search medicines, suppliers, invoices, or settings..."
                   value={searchQuery}
                   onChange={(e) => handleSearchChange(e.target.value)}
                   id="field_s74f2c"
@@ -526,7 +521,6 @@ export function TopbarSection2({
               {[
                 "All",
                 "Medicines",
-                "Patients",
                 "Suppliers",
                 "Invoices",
                 "Prescriptions",
@@ -666,7 +660,7 @@ export function TopbarSection2({
                         {
                           title: "New Billing",
                           path: "/billing",
-                          desc: "Create new patient bill",
+                          desc: "Create new bill",
                           icon: <CreditCard size={16} />,
                         },
                         {

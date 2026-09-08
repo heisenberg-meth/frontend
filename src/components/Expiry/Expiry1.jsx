@@ -1787,7 +1787,11 @@ export function ExpiryBatchIntelligenceSection7({
                     fontSize: 14,
                   }}
                 >
-                  <option value="">Select a supplier...</option>
+                  <option value="">
+                    {suppliers.length === 0
+                      ? "Loading suppliers..."
+                      : "Select a supplier..."}
+                  </option>
                   {suppliers.map((s) => (
                     <option key={s.id} value={s.id}>
                       {s.name}

@@ -408,35 +408,52 @@ export default function ExpiryBatchIntelligence({ showToast }) {
       }),
     [],
   );
+  // Lazy-load suppliers only when the bulk supplier modal is opened
   useEffect(() => {
+    if (!showBulkSupplierModal || suppliers.length > 0) return;
+    let active = true;
+
     getSuppliers({
       limit: 500,
     })
       .then((res) => {
+        if (!active) return;
         const data = res.data?.data || res.data || [];
         setSuppliers(Array.isArray(data) ? data : []);
       })
-      .catch(() => {});
-  }, [setSuppliers]);
+      .catch((error) => {
+        console.error("Failed to load suppliers:", error);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [showBulkSupplierModal, suppliers.length, setSuppliers]);
+
   useEffect(() => {
     let active = true;
+
     const fetchData = async () => {
+      setLoading(true);
+
       try {
-        setLoading(true);
-        const [batchRes, recRes, metricsRes] = await Promise.all([
-          api.get("/intelligence/batches"),
-          api.get("/intelligence/recommendations").catch(() => null),
-          api.get("/inventory/expiry-metrics").catch(() => null),
-        ]);
+        // ─────────────────────────────────────────────
+        // 1. Load the main page data FIRST
+        // ─────────────────────────────────────────────
+        const batchRes = await api.get("/intelligence/batches");
+
         if (!active) return;
+
         const rawBatches = Array.isArray(batchRes.data?.data)
           ? batchRes.data.data
           : Array.isArray(batchRes.data)
             ? batchRes.data
             : [];
+
         const mapped = rawBatches.reduce((acc, b) => {
           if (b.quantity > 0) {
             const days = getDays(b.expiryDate);
+
             acc.push({
               id: b.id,
               // real UUID for API calls and React keys
@@ -450,10 +467,12 @@ export default function ExpiryBatchIntelligence({ showToast }) {
               val:
                 safeNumber(b.availableQuantity ?? b.quantity) *
                 safeNumber(b.purchasePrice || 0),
+
               status:
                 b.status?.toLowerCase() === "expired" || days <= 0
                   ? "expired"
                   : b.status?.toLowerCase() || computeStatus(days, b.quantity),
+
               rank: 1,
               received: b.createdAt?.split("T")[0] || "",
               mfg: b.manufacturingDate?.split("T")[0] || "N/A",
@@ -464,26 +483,48 @@ export default function ExpiryBatchIntelligence({ showToast }) {
               purchaseInvoice: b.purchaseInvoiceNumber || "",
               purchaseDate: b.purchaseDate?.split("T")[0] || "",
               purchasePrice: safeNumber(b.purchasePrice || 0),
+
               returnEligible:
                 days <= 0 && (b.supplier || b.supplierId) ? "YES" : "NO",
+
               returnStatus: "PENDING",
             });
           }
+
           return acc;
         }, []);
-        setBatches(mapped);
 
-        // Store unified expiry metrics from backend
+        // Render the main table immediately
+        setBatches(mapped);
+        setLoading(false);
+
+        // ─────────────────────────────────────────────
+        // 2. Load secondary data in background
+        // ─────────────────────────────────────────────
+        const [recRes, metricsRes] = await Promise.all([
+          api.get("/intelligence/recommendations").catch(() => null),
+          api.get("/inventory/expiry-metrics").catch(() => null),
+        ]);
+
+        if (!active) return;
+
+        // Metrics
         const metrics = metricsRes?.data?.data || metricsRes?.data || null;
+
         if (metrics) {
           setExpiryMetrics(metrics);
         }
+
+        // Recommendations
         const recs = recRes?.data?.data || recRes?.data || [];
+
         const mappedRecs = Array.isArray(recs)
           ? recs.map((r) => {
               const batch = r.batch || {};
               const days = r.recommendedDays ?? getDays(batch.expiryDate);
+
               const qty = batch.quantity || 0;
+
               return {
                 med: batch.medicine?.name || "Unknown",
                 batch: batch.batchNumber || r.id || "",
@@ -495,14 +536,19 @@ export default function ExpiryBatchIntelligence({ showToast }) {
               };
             })
           : [];
+
         setSuggestions(mappedRecs);
       } catch (error) {
         console.error("Failed to load expiry intelligence:", error);
-      } finally {
-        if (active) setLoading(false);
+
+        if (active) {
+          setLoading(false);
+        }
       }
     };
+
     fetchData();
+
     return () => {
       active = false;
     };
