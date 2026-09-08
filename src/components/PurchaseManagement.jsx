@@ -1,4 +1,11 @@
-import { useState, useEffect, useCallback, useReducer, useRef } from "react";
+import {
+  useState,
+  useEffect,
+  useCallback,
+  useReducer,
+  useRef,
+  useMemo,
+} from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import api from "../api.js";
 import { useAuth } from "../hooks/useAuth.js";
@@ -36,6 +43,7 @@ import AddNewMedicineModal from "./Purchase/AddNewMedicineModal.jsx";
 import { safeNumber } from "../utils/number.js";
 import { safeData } from "../utils/safeData.js";
 import { formatDate } from "../utils/formUtils.js";
+import { getPendingPOCount } from "../utils/purchaseOrderStatus.js";
 
 function PurchaseManagementSection3({
   showReturnModal,
@@ -1774,6 +1782,7 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
       (ret.date || ret.createdAt || "").startsWith(filters.date);
     return matchesSupplier && matchesStatus && matchesSearch && matchesDate;
   });
+  const pendingPOCount = useMemo(() => getPendingPOCount(orders), [orders]);
   const validateReceiveForm = () => {
     const errors = {};
 
@@ -2226,9 +2235,7 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
           },
           {
             label: "PENDING POs",
-            val: orders.filter(
-              (o) => o.status === "PENDING" || o.status === "SENT",
-            ).length,
+            val: pendingPOCount,
             icon: Clock,
             col: "var(--warning)",
           },

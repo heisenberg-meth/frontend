@@ -23,6 +23,7 @@ import {
 } from "lucide-react";
 import { AnimatePresence, m } from "framer-motion";
 import { TableHeader } from "../common/TableHeader.jsx";
+import { getPendingPOCount } from "../../utils/purchaseOrderStatus.js";
 
 const PAYMENT_TERMS_MAP = {
   "Net 15": 15,
@@ -843,8 +844,12 @@ function SupplierModal({ onClose, onSave, editData, saving }) {
   );
 }
 
-/* ─── MAIN COMPONENT ─── */
-export function SuppliersSection1({ loading, suppliers }) {
+export function SuppliersSection1({
+  loading,
+  suppliers,
+  pendingPOCount,
+  orders = [],
+}) {
   return (
     <div className="sup-stats-row">
       <div className="sup-stat-card-v2" onMouseMove={handleMouseMove}>
@@ -883,6 +888,9 @@ export function SuppliersSection1({ loading, suppliers }) {
           <div className="sup-stat-icon bg-yellow-500/10 text-yellow-500">
             <Clock size={14} />
           </div>
+        </div>
+        <div className="sup-stat-value text-yellow-500">
+          {loading ? "..." : (pendingPOCount ?? getPendingPOCount(orders))}
         </div>
       </div>
       <div className="sup-stat-card-v2" onMouseMove={handleMouseMove}>

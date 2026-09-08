@@ -13,6 +13,10 @@ import {
   SuppliersSection2,
   SuppliersSection3,
 } from "./Supplier/Suppliers.jsx";
+import api from "../api.js";
+import { API_ROUTES } from "../constants/api.routes.js";
+import { safeData } from "../utils/safeData.js";
+import { getPendingPOCount } from "../utils/purchaseOrderStatus.js";
 
 const headers = [
   "Name",
@@ -48,6 +52,9 @@ export default function Suppliers({ showToast }) {
   const [viewTarget, setViewTarget] = useState(null);
   const [creditBalance, setCreditBalance] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [ordersLoading, setOrdersLoading] = useState(true);
+  const [ordersError, setOrdersError] = useState(false);
+  const [orders, setOrders] = useState([]);
   const [saving, setSaving] = useState(false);
   const handleView = (s) => {
     setCreditBalance(null);
@@ -60,42 +67,48 @@ export default function Suppliers({ showToast }) {
         .catch(() => setCreditBalance(0));
     }
   }, [viewTarget]);
-  const loadSuppliers = useCallback(async () => {
-    setLoading(true);
+  const fetchSuppliersData = useCallback(async () => {
     try {
-      const res = await getSuppliers();
-      const data = res.data.data || res.data;
-      setSuppliers(Array.isArray(data) ? data : []);
-    } catch {
-      showToast("Failed to load suppliers", "error");
+      const [supplierRes, ordersRes] = await Promise.allSettled([
+        getSuppliers(),
+        api.get(API_ROUTES.PURCHASES_ORDERS),
+      ]);
+      if (supplierRes.status === "fulfilled") {
+        const data = supplierRes.value.data?.data || supplierRes.value.data;
+        setSuppliers(Array.isArray(data) ? data : []);
+      } else {
+        showToast("Failed to load suppliers", "error");
+      }
+      if (ordersRes.status === "fulfilled") {
+        const oData = safeData(ordersRes.value, "data");
+        setOrders(Array.isArray(oData) ? oData : []);
+      } else {
+        setOrdersError(true);
+        console.warn(
+          "[SUPPLIERS] Failed to load purchase orders for pending count",
+        );
+      }
     } finally {
       setLoading(false);
+      setOrdersLoading(false);
     }
   }, [showToast]);
+
+  const loadSuppliers = useCallback(async () => {
+    setLoading(true);
+    setOrdersLoading(true);
+    setOrdersError(false);
+    await fetchSuppliersData();
+  }, [fetchSuppliersData]);
+
   useEffect(() => {
-    let mounted = true;
-    const initialize = async () => {
-      try {
-        setLoading(true);
-        const res = await getSuppliers();
-        if (!mounted) return;
-        const data = res.data.data || res.data;
-        setSuppliers(Array.isArray(data) ? data : []);
-      } catch {
-        if (mounted) {
-          showToast("Failed to load suppliers", "error");
-        }
-      } finally {
-        if (mounted) {
-          setLoading(false);
-        }
-      }
-    };
-    initialize();
-    return () => {
-      mounted = false;
-    };
-  }, [showToast]);
+    fetchSuppliersData();
+  }, [fetchSuppliersData]);
+  const pendingPOCount = useMemo(() => {
+    if (ordersLoading || loading) return "...";
+    if (ordersError) return "—";
+    return getPendingPOCount(orders);
+  }, [orders, loading, ordersLoading, ordersError]);
   const filtered = useMemo(() => {
     return suppliers.filter((s) => {
       const matchSearch =
@@ -235,7 +248,12 @@ export default function Suppliers({ showToast }) {
         </div>
       </div>
 
-      <SuppliersSection1 loading={loading} suppliers={suppliers} />
+      <SuppliersSection1
+        loading={loading}
+        suppliers={suppliers}
+        pendingPOCount={pendingPOCount}
+        orders={orders}
+      />
 
       <SuppliersSection2
         search={search}
