@@ -279,6 +279,137 @@
   border-collapse: collapse;
 }
 
+/* Sales Returns Filters & Actions */
+.return-filters {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 18px;
+}
+
+.sales-btn {
+  height: 46px;
+  padding: 0 18px;
+  border-radius: 14px;
+  font-size: 14px;
+  font-weight: 600;
+  font-family: "Outfit", sans-serif;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: none;
+}
+
+.sales-btn.secondary {
+  background: var(--surface);
+  border: 1px solid var(--outline-variant);
+  color: var(--text);
+}
+
+.sales-btn.secondary:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: var(--primary, #00e699);
+  color: var(--primary, #00e699);
+}
+
+/* Sortable Table Headers */
+.sortable-th {
+  cursor: pointer;
+  user-select: none;
+  white-space: nowrap;
+  transition: all 0.15s ease;
+}
+
+.sortable-th:hover {
+  color: var(--primary, #00e699);
+}
+
+.sort-header-inner {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* Pagination Bar */
+.sales-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-top: 1px solid var(--outline-variant);
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.pagination-info {
+  font-size: 13px;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+.pagination-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.pagination-size {
+  min-width: 72px !important;
+  width: 72px !important;
+  height: 36px !important;
+  padding: 0 8px !important;
+  font-size: 13px !important;
+  border-radius: 8px !important;
+  text-align: center;
+}
+
+.pagination-btn {
+  height: 36px;
+  min-width: 36px;
+  padding: 0 10px;
+  border-radius: 8px;
+  border: 1px solid var(--outline-variant);
+  background: var(--surface);
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.pagination-btn:hover:not(:disabled) {
+  border-color: var(--primary, #00e699);
+  color: var(--primary, #00e699);
+  background: rgba(0, 230, 153, 0.08);
+}
+
+.pagination-btn.active {
+  background: var(--primary, #00e699);
+  color: #000;
+  border-color: var(--primary, #00e699);
+  font-weight: 700;
+}
+
+.pagination-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.pagination-ellipsis {
+  padding: 0 4px;
+  color: var(--text-muted);
+  font-size: 13px;
+  user-select: none;
+}
+
 /* Mobile Media Queries */
 @media (max-width: 768px) {
   .sale-details-modal.stock-modal-content {

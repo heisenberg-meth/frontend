@@ -10,10 +10,15 @@ import {
   CreditCard,
   Smartphone,
   Banknote,
+  Search,
+  RotateCcw,
+  ArrowUpDown,
+  ArrowUp,
+  ArrowDown,
+  X,
 } from "lucide-react";
 import { AnimatePresence, m } from "framer-motion";
 import { TableHeader } from "../common/TableHeader.jsx";
-import { X } from "lucide-react";
 import { format, subDays } from "date-fns";
 import { getMedicineName } from "../../utils/apiNormalizer.js";
 import "../../styles/SalesManagement.css";
@@ -617,25 +622,278 @@ export function SalesManagementSection2({
 export function SalesManagementSection3({
   loading,
   activeTab,
-  filteredReturns,
+  filteredReturns = [],
+  totalReturns = 0,
+  returnFilters = { search: "", status: "All Status", reason: "All Reasons" },
+  setReturnFilters,
+  returnSort = { key: "date", direction: "desc" },
+  setReturnSort,
+  returnPagination = { page: 1, pageSize: 10 },
+  setReturnPagination,
+  returnTotalPages = 1,
+  onFilterChange,
+  onClearFilters,
 }) {
+  const handleSort = (key) => {
+    if (!setReturnSort) return;
+    setReturnSort((prev) => {
+      if (prev.key === key) {
+        return {
+          key,
+          direction: prev.direction === "asc" ? "desc" : "asc",
+        };
+      }
+      return {
+        key,
+        direction: key === "date" ? "desc" : "asc",
+      };
+    });
+  };
+
+  const getSortIcon = (key) => {
+    if (returnSort.key !== key) {
+      return (
+        <ArrowUpDown
+          size={13}
+          style={{ opacity: 0.35, marginLeft: "4px", verticalAlign: "middle" }}
+        />
+      );
+    }
+    return returnSort.direction === "asc" ? (
+      <ArrowUp
+        size={13}
+        style={{
+          color: "var(--primary, #00e699)",
+          marginLeft: "4px",
+          verticalAlign: "middle",
+        }}
+      />
+    ) : (
+      <ArrowDown
+        size={13}
+        style={{
+          color: "var(--primary, #00e699)",
+          marginLeft: "4px",
+          verticalAlign: "middle",
+        }}
+      />
+    );
+  };
+
+  const handleFilterUpdate = (field, value) => {
+    if (onFilterChange) {
+      onFilterChange(field, value);
+    } else if (setReturnFilters) {
+      setReturnFilters((prev) => ({ ...prev, [field]: value }));
+      if (setReturnPagination) {
+        setReturnPagination((prev) => ({ ...prev, page: 1 }));
+      }
+    }
+  };
+
+  const handleClear = () => {
+    if (onClearFilters) {
+      onClearFilters();
+    } else if (setReturnFilters) {
+      setReturnFilters({
+        search: "",
+        status: "All Status",
+        reason: "All Reasons",
+      });
+      if (setReturnPagination) {
+        setReturnPagination((prev) => ({ ...prev, page: 1 }));
+      }
+    }
+  };
+
+  const getPageNumbers = () => {
+    const current = returnPagination.page || 1;
+    const total = returnTotalPages || 1;
+    if (total <= 7) {
+      return Array.from({ length: total }, (_, i) => i + 1);
+    }
+    if (current <= 4) {
+      return [1, 2, 3, 4, 5, "...", total];
+    }
+    if (current >= total - 3) {
+      return [1, "...", total - 4, total - 3, total - 2, total - 1, total];
+    }
+    return [1, "...", current - 1, current, current + 1, "...", total];
+  };
+
+  if (loading || activeTab !== "returns") return null;
+
   return (
-    !loading &&
-    activeTab === "returns" && (
-      <div className="sales-table-card">
-        <table className="purchase-table">
-          <TableHeader
-            columns={[
-              "Date",
-              "Return #",
-              "Orig Invoice #",
-              "Patient",
-              "Items",
-              "Return Value",
-              "Reason",
-              "Status",
-            ]}
+    <div className="sales-table-card">
+      {/* ── Return Filters ── */}
+      <div className="sales-filters return-filters">
+        <div
+          style={{
+            flex: 1,
+            minWidth: "260px",
+            position: "relative",
+            display: "flex",
+            alignItems: "center",
+          }}
+        >
+          <Search
+            size={16}
+            style={{
+              position: "absolute",
+              left: "14px",
+              color: "var(--text-muted)",
+              pointerEvents: "none",
+            }}
           />
+          <input
+            className="sales-input"
+            style={{
+              paddingLeft: "38px",
+              width: "100%",
+              minWidth: "100%",
+              cursor: "text",
+            }}
+            placeholder="Search return #, invoice #, patient, reason..."
+            value={returnFilters.search || ""}
+            onChange={(e) => handleFilterUpdate("search", e.target.value)}
+          />
+        </div>
+
+        <select
+          className="sales-input"
+          value={returnFilters.status || "All Status"}
+          aria-label="Filter by return status"
+          onChange={(e) => handleFilterUpdate("status", e.target.value)}
+        >
+          <option>All Status</option>
+          <option>REFUNDED</option>
+          <option>PENDING</option>
+          <option>COMPLETED</option>
+          <option>CANCELLED</option>
+        </select>
+
+        <select
+          className="sales-input"
+          value={returnFilters.reason || "All Reasons"}
+          aria-label="Filter by return reason"
+          onChange={(e) => handleFilterUpdate("reason", e.target.value)}
+        >
+          <option>All Reasons</option>
+          <option>Customer Request</option>
+          <option>Expired Medicine</option>
+          <option>Wrong Medicine</option>
+          <option>Damaged Packaging</option>
+        </select>
+
+        <button
+          type="button"
+          className="sales-btn secondary"
+          onClick={handleClear}
+          title="Reset return filters"
+        >
+          <RotateCcw size={14} /> Clear
+        </button>
+      </div>
+
+      {/* ── Table with Clickable Sort Headers ── */}
+      <div className="table-wrapper">
+        <table className="purchase-table">
+          <thead>
+            <tr>
+              <th
+                className="sortable-th"
+                onClick={() => handleSort("date")}
+                aria-sort={
+                  returnSort.key === "date"
+                    ? returnSort.direction === "asc"
+                      ? "ascending"
+                      : "descending"
+                    : "none"
+                }
+              >
+                <span className="sort-header-inner">
+                  Date {getSortIcon("date")}
+                </span>
+              </th>
+              <th
+                className="sortable-th"
+                onClick={() => handleSort("returnNumber")}
+                aria-sort={
+                  returnSort.key === "returnNumber"
+                    ? returnSort.direction === "asc"
+                      ? "ascending"
+                      : "descending"
+                    : "none"
+                }
+              >
+                <span className="sort-header-inner">
+                  Return # {getSortIcon("returnNumber")}
+                </span>
+              </th>
+              <th>Orig Invoice #</th>
+              <th
+                className="sortable-th"
+                onClick={() => handleSort("patient")}
+                aria-sort={
+                  returnSort.key === "patient"
+                    ? returnSort.direction === "asc"
+                      ? "ascending"
+                      : "descending"
+                    : "none"
+                }
+              >
+                <span className="sort-header-inner">
+                  Patient {getSortIcon("patient")}
+                </span>
+              </th>
+              <th
+                className="sortable-th"
+                onClick={() => handleSort("items")}
+                aria-sort={
+                  returnSort.key === "items"
+                    ? returnSort.direction === "asc"
+                      ? "ascending"
+                      : "descending"
+                    : "none"
+                }
+              >
+                <span className="sort-header-inner">
+                  Items {getSortIcon("items")}
+                </span>
+              </th>
+              <th
+                className="sortable-th"
+                onClick={() => handleSort("amount")}
+                aria-sort={
+                  returnSort.key === "amount"
+                    ? returnSort.direction === "asc"
+                      ? "ascending"
+                      : "descending"
+                    : "none"
+                }
+              >
+                <span className="sort-header-inner">
+                  Return Value {getSortIcon("amount")}
+                </span>
+              </th>
+              <th>Reason</th>
+              <th
+                className="sortable-th"
+                onClick={() => handleSort("status")}
+                aria-sort={
+                  returnSort.key === "status"
+                    ? returnSort.direction === "asc"
+                      ? "ascending"
+                      : "descending"
+                    : "none"
+                }
+              >
+                <span className="sort-header-inner">
+                  Status {getSortIcon("status")}
+                </span>
+              </th>
+            </tr>
+          </thead>
           <tbody>
             {filteredReturns.length === 0 ? (
               <tr>
@@ -643,11 +901,11 @@ export function SalesManagementSection3({
                   colSpan="8"
                   style={{
                     textAlign: "center",
-                    padding: "30px",
+                    padding: "40px",
                     color: "var(--text-muted)",
                   }}
                 >
-                  No returns found
+                  No returns found matching the current filters
                 </td>
               </tr>
             ) : (
@@ -711,7 +969,109 @@ export function SalesManagementSection3({
           </tbody>
         </table>
       </div>
-    )
+
+      {/* ── Pagination Footer ── */}
+      <div className="sales-pagination">
+        <div className="pagination-info">
+          Showing{" "}
+          {totalReturns === 0
+            ? 0
+            : (returnPagination.page - 1) * returnPagination.pageSize + 1}
+          –
+          {Math.min(
+            returnPagination.page * returnPagination.pageSize,
+            totalReturns,
+          )}{" "}
+          of {totalReturns}
+        </div>
+
+        <div className="pagination-controls">
+          <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+            <span style={{ fontSize: "12px", color: "var(--text-muted)" }}>
+              Rows:
+            </span>
+            <select
+              className="sales-input pagination-size"
+              value={returnPagination.pageSize}
+              aria-label="Rows per page"
+              onChange={(e) => {
+                const newSize = Number(e.target.value);
+                if (setReturnPagination) {
+                  setReturnPagination({
+                    page: 1,
+                    pageSize: newSize,
+                  });
+                }
+              }}
+            >
+              <option value={10}>10</option>
+              <option value={25}>25</option>
+              <option value={50}>50</option>
+            </select>
+          </div>
+
+          <button
+            type="button"
+            className="pagination-btn"
+            disabled={returnPagination.page <= 1}
+            onClick={() => {
+              if (setReturnPagination) {
+                setReturnPagination((prev) => ({
+                  ...prev,
+                  page: Math.max(1, prev.page - 1),
+                }));
+              }
+            }}
+            aria-label="Previous page"
+          >
+            <ChevronLeft size={16} />
+          </button>
+
+          {getPageNumbers().map((p, idx) =>
+            p === "..." ? (
+              <span key={`ellipsis-${idx}`} className="pagination-ellipsis">
+                ...
+              </span>
+            ) : (
+              <button
+                type="button"
+                key={p}
+                className={`pagination-btn ${
+                  p === returnPagination.page ? "active" : ""
+                }`}
+                onClick={() => {
+                  if (setReturnPagination) {
+                    setReturnPagination((prev) => ({
+                      ...prev,
+                      page: p,
+                    }));
+                  }
+                }}
+              >
+                {p}
+              </button>
+            ),
+          )}
+
+          <button
+            type="button"
+            className="pagination-btn"
+            disabled={returnPagination.page >= returnTotalPages}
+            onClick={() => {
+              if (setReturnPagination) {
+                setReturnPagination((prev) => ({
+                  ...prev,
+                  page: Math.min(returnTotalPages, prev.page + 1),
+                }));
+              }
+            }}
+            aria-label="Next page"
+          >
+            <ChevronRight size={16} />
+          </button>
+        </div>
+      </div>
+    </div>
   );
 }
 export function SalesManagementSection4({

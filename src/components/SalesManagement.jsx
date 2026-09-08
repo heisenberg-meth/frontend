@@ -89,6 +89,19 @@ export default function SalesManagement({ showToast, storeProfile }) {
           payment: "All Payment Modes",
           status: "All Status",
         },
+        returnFilters: {
+          search: "",
+          status: "All Status",
+          reason: "All Reasons",
+        },
+        returnSort: {
+          key: "date",
+          direction: "desc",
+        },
+        returnPagination: {
+          page: 1,
+          pageSize: 10,
+        },
       };
     },
   );
@@ -115,6 +128,9 @@ export default function SalesManagement({ showToast, storeProfile }) {
     dateRange,
     tempDateRange,
     filters,
+    returnFilters,
+    returnSort,
+    returnPagination,
   } = salesState;
   const setShowInvoiceModal = useCallback(
     (val) =>
@@ -314,6 +330,57 @@ export default function SalesManagement({ showToast, storeProfile }) {
       }),
     [],
   );
+  const setReturnFilters = useCallback(
+    (val) =>
+      dispatchSales({
+        type: "SET_FIELD",
+        field: "returnFilters",
+        value: val,
+      }),
+    [],
+  );
+  const setReturnSort = useCallback(
+    (val) =>
+      dispatchSales({
+        type: "SET_FIELD",
+        field: "returnSort",
+        value: val,
+      }),
+    [],
+  );
+  const setReturnPagination = useCallback(
+    (val) =>
+      dispatchSales({
+        type: "SET_FIELD",
+        field: "returnPagination",
+        value: val,
+      }),
+    [],
+  );
+  const handleReturnFilterChange = useCallback(
+    (field, value) => {
+      setReturnFilters((prev) => ({
+        ...prev,
+        [field]: value,
+      }));
+      setReturnPagination((prev) => ({
+        ...prev,
+        page: 1,
+      }));
+    },
+    [setReturnFilters, setReturnPagination],
+  );
+  const handleClearReturnFilters = useCallback(() => {
+    setReturnFilters({
+      search: "",
+      status: "All Status",
+      reason: "All Reasons",
+    });
+    setReturnPagination((prev) => ({
+      ...prev,
+      page: 1,
+    }));
+  }, [setReturnFilters, setReturnPagination]);
   const refreshSalesData = async () => {
     try {
       setError(null);
@@ -446,32 +513,138 @@ export default function SalesManagement({ showToast, storeProfile }) {
       return saleDateOnly === todayStr;
     });
   }, [sales]);
-  const filteredReturns = useMemo(
-    () =>
-      returns.filter((ret) => {
-        const patientName =
-          ret.patient?.fullName ||
-          ret.patientName ||
-          ret.customerName ||
-          "Walk-in";
-        const matchesSearch =
-          (ret.returnNumber || ret.id || "")
-            .toLowerCase()
-            .includes(filters.search.toLowerCase()) ||
-          patientName.toLowerCase().includes(filters.search.toLowerCase());
-        const matchesStatus =
-          filters.status === "All Status" ||
-          (ret.status || "").toUpperCase() === filters.status;
-        const returnDateOnly = new Date(
-          formatInvoiceDate(ret.createdAt || ret.date),
-        );
-        const matchesDate =
-          (!dateRange.start || returnDateOnly >= new Date(dateRange.start)) &&
-          (!dateRange.end || returnDateOnly <= new Date(dateRange.end));
-        return matchesSearch && matchesStatus && matchesDate;
-      }),
-    [returns, filters, dateRange],
+  const processedReturns = useMemo(() => {
+    const search = (returnFilters.search || "").trim().toLowerCase();
+
+    const filtered = returns.filter((ret) => {
+      const patientName =
+        ret.patient?.fullName ||
+        ret.patientName ||
+        ret.customerName ||
+        "Walk-in";
+
+      const invoiceNumber =
+        ret.sale?.invoiceNumber ||
+        ret.invoice?.invoiceNumber ||
+        ret.origInv ||
+        "";
+
+      const returnNumber = ret.returnNumber || ret.id || "";
+      const reason = ret.returnReason || ret.reason || "";
+
+      const matchesSearch =
+        !search ||
+        returnNumber.toLowerCase().includes(search) ||
+        invoiceNumber.toLowerCase().includes(search) ||
+        patientName.toLowerCase().includes(search) ||
+        reason.toLowerCase().includes(search);
+
+      const matchesStatus =
+        returnFilters.status === "All Status" ||
+        (ret.status || "").toUpperCase() === returnFilters.status.toUpperCase();
+
+      let matchesReason = returnFilters.reason === "All Reasons";
+      if (!matchesReason) {
+        const selected = returnFilters.reason.toLowerCase();
+        const rawReason = (reason || "").toLowerCase();
+
+        const reasonMap = {
+          "customer request": ["customer", "patient", "customer_return"],
+          "expired medicine": ["expired", "expired_return"],
+          "wrong medicine": ["wrong", "billing_correction", "correction"],
+          "damaged packaging": ["damaged", "damaged_return", "packaging"],
+        };
+
+        const aliases = reasonMap[selected] || [selected];
+        matchesReason = aliases.some((alias) => rawReason.includes(alias));
+      }
+
+      const returnDateOnly = new Date(
+        formatInvoiceDate(ret.createdAt || ret.date),
+      );
+
+      const matchesDate =
+        (!dateRange.start || returnDateOnly >= new Date(dateRange.start)) &&
+        (!dateRange.end || returnDateOnly <= new Date(dateRange.end));
+
+      return matchesSearch && matchesStatus && matchesReason && matchesDate;
+    });
+
+    const sorted = [...filtered].sort((a, b) => {
+      let aValue;
+      let bValue;
+
+      switch (returnSort.key) {
+        case "date":
+          aValue = new Date(a.createdAt || a.date).getTime();
+          bValue = new Date(b.createdAt || b.date).getTime();
+          break;
+
+        case "returnNumber":
+          aValue = a.returnNumber || a.id || "";
+          bValue = b.returnNumber || b.id || "";
+          break;
+
+        case "patient":
+          aValue =
+            a.patient?.fullName || a.patientName || a.customerName || "Walk-in";
+          bValue =
+            b.patient?.fullName || b.patientName || b.customerName || "Walk-in";
+          break;
+
+        case "items":
+          aValue = a.items?.length || a.itemsCount || 0;
+          bValue = b.items?.length || b.itemsCount || 0;
+          break;
+
+        case "amount":
+          aValue = Number(
+            a.refundAmount || a.totalReturnAmount || a.value || 0,
+          );
+          bValue = Number(
+            b.refundAmount || b.totalReturnAmount || b.value || 0,
+          );
+          break;
+
+        case "status":
+          aValue = a.status || "";
+          bValue = b.status || "";
+          break;
+
+        default:
+          return 0;
+      }
+
+      if (typeof aValue === "string") {
+        return returnSort.direction === "asc"
+          ? aValue.localeCompare(bValue)
+          : bValue.localeCompare(aValue);
+      }
+
+      return returnSort.direction === "asc" ? aValue - bValue : bValue - aValue;
+    });
+
+    return sorted;
+  }, [returns, returnFilters, returnSort, dateRange]);
+
+  const returnTotalPages = Math.max(
+    1,
+    Math.ceil(processedReturns.length / (returnPagination.pageSize || 10)),
   );
+
+  const paginatedReturns = useMemo(() => {
+    const pageSize = returnPagination.pageSize || 10;
+    const page = Math.min(Math.max(1, returnPagination.page), returnTotalPages);
+    const start = (page - 1) * pageSize;
+    return processedReturns.slice(start, start + pageSize);
+  }, [
+    processedReturns,
+    returnPagination.page,
+    returnPagination.pageSize,
+    returnTotalPages,
+  ]);
+
+  const filteredReturns = processedReturns;
   const handlePrevDate = () => setCurrentDate((prev) => subDays(prev, 1));
   const handleNextDate = () => setCurrentDate((prev) => addDays(prev, 1));
   const fetchInvoiceDetail = async (invoiceId) => {
@@ -1109,7 +1282,17 @@ export default function SalesManagement({ showToast, storeProfile }) {
       <SalesManagementSection3
         loading={loading}
         activeTab={activeTab}
-        filteredReturns={filteredReturns}
+        filteredReturns={paginatedReturns}
+        totalReturns={processedReturns.length}
+        returnFilters={returnFilters}
+        setReturnFilters={setReturnFilters}
+        returnSort={returnSort}
+        setReturnSort={setReturnSort}
+        returnPagination={returnPagination}
+        setReturnPagination={setReturnPagination}
+        returnTotalPages={returnTotalPages}
+        onFilterChange={handleReturnFilterChange}
+        onClearFilters={handleClearReturnFilters}
       />
       {/* ── Detail Modal ── */}
       <SalesManagementSection4
