@@ -5,7 +5,6 @@ import {
   useEffect,
   useRef,
   useCallback,
-  useEffectEvent,
 } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../api.js";
@@ -1406,43 +1405,64 @@ export default function BillingPOS({
     const timerId = setTimeout(() => barcodeInputRef.current?.focus(), 300);
     return () => clearTimeout(timerId);
   }, []);
-  const handleKeyDown = useEffectEvent((e) => {
-    if (e.key === "F2") {
-      e.preventDefault();
-      if (lineItems.length > 0) handleSaveDraft();
-      return;
-    }
-    if (e.key === "F4") {
-      e.preventDefault();
-      if (lineItems.length > 0 || activeInvoice) handlePrint();
-      return;
-    }
-    if (e.key === "F8") {
-      e.preventDefault();
-      const genBtn = document.getElementById("generate-invoice-btn");
-      if (genBtn && !genBtn.disabled) genBtn.click();
-      return;
-    }
-    if ((e.ctrlKey || e.metaKey) && e.key === "f") {
-      e.preventDefault();
-      barcodeInputRef.current?.focus();
-      return;
-    }
-    if (e.key === "Escape") {
-      e.preventDefault();
-      if (showNewBillConfirm) setShowNewBillConfirm(false);
-      else if (showPreview) setShowPreview(false);
-      else if (showReturnBillModal) setShowReturnBillModal(false);
-      else if (showBillDetailDrawer) setShowBillDetailDrawer(false);
-      else if (showAllBillsModal) setShowAllBillsModal(false);
-      else if (showReturnModal) setShowReturnModal(false);
-      else resetBillForm();
-    }
-  });
+  const handleKeyDown = useCallback(
+    (e) => {
+      if (e.key === "F2") {
+        e.preventDefault();
+        if (lineItems.length > 0) handleSaveDraft();
+        return;
+      }
+      if (e.key === "F4") {
+        e.preventDefault();
+        if (lineItems.length > 0 || activeInvoice) handlePrint();
+        return;
+      }
+      if (e.key === "F8") {
+        e.preventDefault();
+        const genBtn = document.getElementById("generate-invoice-btn");
+        if (genBtn && !genBtn.disabled) genBtn.click();
+        return;
+      }
+      if ((e.ctrlKey || e.metaKey) && e.key === "f") {
+        e.preventDefault();
+        barcodeInputRef.current?.focus();
+        return;
+      }
+      if (e.key === "Escape") {
+        e.preventDefault();
+        if (showNewBillConfirm) setShowNewBillConfirm(false);
+        else if (showPreview) setShowPreview(false);
+        else if (showReturnBillModal) setShowReturnBillModal(false);
+        else if (showBillDetailDrawer) setShowBillDetailDrawer(false);
+        else if (showAllBillsModal) setShowAllBillsModal(false);
+        else if (showReturnModal) setShowReturnModal(false);
+        else resetBillForm();
+      }
+    },
+    [
+      lineItems.length,
+      activeInvoice,
+      handleSaveDraft,
+      handlePrint,
+      showNewBillConfirm,
+      showPreview,
+      showReturnBillModal,
+      showBillDetailDrawer,
+      showAllBillsModal,
+      showReturnModal,
+      setShowNewBillConfirm,
+      setShowPreview,
+      setShowReturnBillModal,
+      setShowBillDetailDrawer,
+      setShowAllBillsModal,
+      setShowReturnModal,
+      resetBillForm,
+    ],
+  );
   useEffect(() => {
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, []);
+  }, [handleKeyDown]);
   return (
     <div className="pos-container">
       <div className="page-header">

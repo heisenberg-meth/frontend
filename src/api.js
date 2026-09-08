@@ -2,6 +2,7 @@ import axios from "axios";
 import {
   setToken,
   setRefreshToken,
+  getRefreshToken,
   clearAllAuth,
   getStoredUser,
 } from "./utils/authStorage";
@@ -87,10 +88,12 @@ export async function refreshSession() {
     return refreshPromise;
   }
 
+  const storedRefreshToken = getRefreshToken();
+
   refreshPromise = axios
     .post(
       `${getBaseUrl()}/auth/refresh`,
-      {},
+      storedRefreshToken ? { refreshToken: storedRefreshToken } : {},
       {
         withCredentials: true,
         timeout: 60000,

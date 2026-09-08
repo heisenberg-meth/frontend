@@ -8,6 +8,7 @@ import {
   setUser,
   setToken,
   getToken,
+  getRefreshToken,
   setRefreshToken,
 } from "../utils/authStorage";
 import { AuthContext } from "./authContextInstance";
@@ -85,31 +86,39 @@ export function AuthProvider({ children }) {
 
   const refreshToken = useCallback(async () => {
     try {
+      const storedRefreshToken = getRefreshToken();
+
       const res = await axios.post(
         `${getBaseUrl()}/auth/refresh`,
-        {},
+        storedRefreshToken ? { refreshToken: storedRefreshToken } : {},
         {
           withCredentials: true,
           timeout: 10000,
         },
       );
 
-      const newToken =
-        res.data?.data?.token || res.data?.token || res.data?.accessToken;
+      const payload = res.data?.data || res.data;
+
+      const newToken = payload?.token || payload?.accessToken;
+      const newRefreshToken = payload?.refreshToken;
 
       if (!newToken) {
         throw new Error("No access token returned from refresh");
       }
 
       setToken(newToken);
+      if (newRefreshToken) {
+        setRefreshToken(newRefreshToken);
+      }
       invalidateCsrfToken();
 
       return newToken;
     } catch (error) {
-      console.error(
-        "[AUTH] Token refresh failed:",
-        error.response?.data || error.message || error,
-      );
+      console.error("[AUTH] Token refresh failed:", {
+        status: error.response?.status,
+        data: error.response?.data,
+        message: error.message,
+      });
       return null;
     }
   }, []);

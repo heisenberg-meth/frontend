@@ -1,10 +1,4 @@
-import {
-  useEffect,
-  useMemo,
-  useCallback,
-  useReducer,
-  useEffectEvent,
-} from "react";
+import { useEffect, useMemo, useCallback, useReducer } from "react";
 import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
 import {
@@ -248,16 +242,19 @@ export default function InventoryAnalyticsModal({ isOpen, onClose }) {
     run();
   }, [isOpen, fetchAnalytics]);
 
-  const onKeyDown = useEffectEvent((e) => {
-    if (e.key === "Escape" && isOpen) {
-      handleClose();
-    }
-  });
+  const onKeyDown = useCallback(
+    (e) => {
+      if (e.key === "Escape" && isOpen) {
+        handleClose();
+      }
+    },
+    [isOpen, handleClose],
+  );
 
   useEffect(() => {
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, []);
+  }, [onKeyDown]);
 
   const totalCategoryValue = useMemo(() => {
     return categories.reduce((acc, curr) => acc + curr.value, 0);

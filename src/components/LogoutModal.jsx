@@ -1,4 +1,4 @@
-import { useState, useEffect, useEffectEvent } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { AnimatePresence, m } from "framer-motion";
 import {
   LogOut,
@@ -21,9 +21,9 @@ export default function LogoutModal({
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [logoutSuccess, setLogoutSuccess] = useState(false);
 
-  const onEscape = useEffectEvent(() => {
+  const onEscape = useCallback(() => {
     if (!isLoggingOut) onClose();
-  });
+  }, [isLoggingOut, onClose]);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -32,7 +32,7 @@ export default function LogoutModal({
     };
     document.addEventListener("keydown", handler);
     return () => document.removeEventListener("keydown", handler);
-  }, [isOpen]);
+  }, [isOpen, onEscape]);
 
   const handleClose = () => {
     if (isLoggingOut) return;

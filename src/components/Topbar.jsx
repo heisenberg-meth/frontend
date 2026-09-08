@@ -1,11 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import {
-  useState,
-  useEffect,
-  useCallback,
-  useRef,
-  useEffectEvent,
-} from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import axios from "axios";
 import {
   getNotifications,
@@ -263,29 +257,32 @@ export default function Topbar({
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [handleCloseSearch]);
-  const handleKeys = useEffectEvent((e) => {
-    if (!showSearchOverlay) return;
-    if (e.key === "ArrowDown") {
-      e.preventDefault();
-      setSelectedIndex((prev) =>
-        prev < filteredResults.length - 1 ? prev + 1 : 0,
-      );
-    } else if (e.key === "ArrowUp") {
-      e.preventDefault();
-      setSelectedIndex((prev) =>
-        prev > 0 ? prev - 1 : filteredResults.length - 1,
-      );
-    } else if (e.key === "Enter") {
-      e.preventDefault();
-      if (selectedIndex >= 0 && selectedIndex < filteredResults.length) {
-        handleItemClick(filteredResults[selectedIndex]);
+  const handleKeys = useCallback(
+    (e) => {
+      if (!showSearchOverlay) return;
+      if (e.key === "ArrowDown") {
+        e.preventDefault();
+        setSelectedIndex((prev) =>
+          prev < filteredResults.length - 1 ? prev + 1 : 0,
+        );
+      } else if (e.key === "ArrowUp") {
+        e.preventDefault();
+        setSelectedIndex((prev) =>
+          prev > 0 ? prev - 1 : filteredResults.length - 1,
+        );
+      } else if (e.key === "Enter") {
+        e.preventDefault();
+        if (selectedIndex >= 0 && selectedIndex < filteredResults.length) {
+          handleItemClick(filteredResults[selectedIndex]);
+        }
       }
-    }
-  });
+    },
+    [showSearchOverlay, filteredResults, selectedIndex, handleItemClick],
+  );
   useEffect(() => {
     window.addEventListener("keydown", handleKeys);
     return () => window.removeEventListener("keydown", handleKeys);
-  }, []);
+  }, [handleKeys]);
   return (
     <>
       <TopbarSection1
