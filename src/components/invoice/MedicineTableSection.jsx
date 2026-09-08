@@ -168,11 +168,21 @@ function MedicineRow({
         // Auto-select first available batch
         if (valid.length > 0) {
           const first = valid[0];
+          const totalValidStock = valid.reduce(
+            (sum, b) =>
+              sum + safeNumber(b.quantity ?? b.stock ?? b.availableQty ?? 0),
+            0,
+          );
           onUpdate(idx, "_batchSelect", {
             batchId: first.id || first._id || first.batchId,
             batchNumber: first.batchNumber || first.batch_number || "",
             expiryDate: first.expiryDate || "",
-            stock: first.quantity ?? first.stock ?? first.availableQty ?? 0,
+            stock:
+              item.stock ||
+              totalValidStock ||
+              (first.quantity ?? first.stock ?? first.availableQty ?? 0),
+            batchStock:
+              first.quantity ?? first.stock ?? first.availableQty ?? 0,
           });
         }
       } catch (err) {
@@ -183,7 +193,7 @@ function MedicineRow({
         onUpdate(idx, "batchesLoading", false);
       }
     },
-    [idx, onUpdate, showToast],
+    [idx, item.stock, onUpdate, showToast],
   );
 
   // Handle medicine selection from autocomplete
@@ -234,8 +244,8 @@ function MedicineRow({
         batchId: found.id || found._id || found.batchId,
         batchNumber: found.batchNumber || found.batch_number || "",
         expiryDate: found.expiryDate || "",
-        stock:
-          found.quantity ?? found.stock ?? found.availableQty ?? item.stock,
+        stock: item.stock,
+        batchStock: found.quantity ?? found.stock ?? found.availableQty ?? 0,
         // Optionally override price from batch
         ...(found.mrp
           ? {
@@ -437,7 +447,10 @@ function MedicineRow({
               Math.floor(safeNumber(e.target.value) || 1),
             );
             if (val > (item.stock || 9999)) {
-              showToast(`Only ${item.stock} units in stock`, "warning");
+              showToast(
+                `Only ${item.stock} units in stock across batches`,
+                "warning",
+              );
               onUpdate(idx, "qty", item.stock);
             } else {
               onUpdate(idx, "qty", val);

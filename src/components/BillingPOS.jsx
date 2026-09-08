@@ -605,7 +605,8 @@ export default function BillingPOS({
           gst: safeNumber(med.gst || med.gstPercentage || med.gstRate),
           total: price,
           discount: 0,
-          availableStock: med.availableStock,
+          availableStock: med.availableStock ?? med.stock,
+          stock: med.availableStock ?? med.stock,
         },
       ];
     });
@@ -619,10 +620,10 @@ export default function BillingPOS({
       prev.map((i) => {
         if (i.batchId === batchId) {
           const newQty = Math.max(1, i.qty + delta);
-          const maxAvail = i.availableStock ?? Infinity;
+          const maxAvail = i.availableStock ?? i.stock ?? Infinity;
           if (newQty > maxAvail) {
             showToast(
-              `Only ${maxAvail} unit${maxAvail !== 1 ? "s" : ""} available in stock`,
+              `Only ${maxAvail} unit${maxAvail !== 1 ? "s" : ""} available in stock across all batches`,
               "error",
             );
             return i;

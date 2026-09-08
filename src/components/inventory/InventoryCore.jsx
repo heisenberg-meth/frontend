@@ -494,7 +494,7 @@ function MedicineModalSection1({
             )}
           </div>
           <div className="form-group">
-            <label htmlFor="field_8yi3yp">Regulatory Classification</label>
+            <label htmlFor="field_8yi3yp">Schedule</label>
 
             <input
               id="field_8yi3yp"

@@ -647,13 +647,15 @@ export function BillingPOSSection1({
                             aria-label="Item quantity"
                             type="number"
                             min="1"
-                            max={item.stock}
+                            max={item.availableStock ?? item.stock ?? 9999}
                             value={item.qty}
                             onChange={(e) => {
                               const raw = e.target.value;
+                              const maxLimit =
+                                item.availableStock ?? item.stock ?? 9999;
                               const qty = Math.max(
                                 1,
-                                Math.min(Number(raw) || 1, item.stock || 9999),
+                                Math.min(Number(raw) || 1, maxLimit),
                               );
                               setLineItems((prev) =>
                                 prev.map((i) =>
