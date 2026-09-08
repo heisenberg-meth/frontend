@@ -564,7 +564,9 @@ select.pos-input option {
 .qty-stepper {
   display: flex;
   align-items: center;
-  gap: 8px;
+  justify-content: center;
+  gap: 4px;
+  min-width: 120px;
   background: var(--surface-container);
   border: 1px solid var(--outline-variant);
   padding: 4px;
@@ -572,9 +574,12 @@ select.pos-input option {
   width: fit-content;
 }
 
-.step-btn {
-  width: 24px;
-  height: 24px;
+.step-btn,
+.qty-stepper .step-btn {
+  width: 32px;
+  height: 32px;
+  min-width: 32px;
+  padding: 0;
   border-radius: 6px;
   display: flex;
   align-items: center;
@@ -583,17 +588,41 @@ select.pos-input option {
   background: var(--surface);
   color: var(--text);
   cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.step-btn:hover,
+.qty-stepper .step-btn:hover {
+  background: var(--primary-light, rgba(59, 130, 246, 0.15));
+  color: var(--primary, #3b82f6);
 }
 
 .qty-input {
-  width: 32px;
+  width: 52px;
+  min-width: 52px;
+  height: 36px;
+  padding: 0 8px;
+  box-sizing: border-box;
   background: none;
   border: none;
   color: var(--text);
   text-align: center;
-  font-weight: 600;
+  font-weight: 700;
   font-size: 14px;
   outline: none;
+}
+
+.qty-input::-webkit-outer-spin-button,
+.qty-input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  appearance: none;
+  margin: 0;
+}
+
+.qty-input[type="number"] {
+  -webkit-appearance: textfield;
+  -moz-appearance: textfield;
+  appearance: textfield;
 }
 
 /* Summary Box */
