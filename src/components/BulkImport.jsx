@@ -914,10 +914,11 @@ export default function BulkImport({ fetchData, showToast }) {
     }
     importProcessingRef.current = true;
     setImportStatus("processing");
-    setImportProgress(15);
+    setImportProgress(10);
     const medicines = getMappedMedicines();
+    let isQueued = false;
     try {
-      setImportProgress(45);
+      setImportProgress(25);
       const res = await api.post("/import/bulk/commit", {
         medicines,
         fileName: file?.name || "bulk_import.csv",
@@ -927,7 +928,73 @@ export default function BulkImport({ fetchData, showToast }) {
         barcodeOptions,
         importType,
       });
-      if (res.data?.success) {
+
+      if (res.data?.success && res.data?.queued && res.data?.jobId) {
+        isQueued = true;
+        const jobId = res.data.jobId;
+        setImportProgress(30);
+
+        const pollInterval = 1000;
+        const checkStatus = async () => {
+          try {
+            const statusRes = await api.get(`/import/status/${jobId}`);
+            const progressData = statusRes.data?.data;
+            if (!progressData) {
+              window._importPollTimer = setTimeout(checkStatus, pollInterval);
+              return;
+            }
+
+            const pct =
+              progressData.percentage ??
+              (progressData.total > 0
+                ? Math.round(
+                    (progressData.processed / progressData.total) * 100,
+                  )
+                : 0);
+            setImportProgress(Math.min(100, Math.max(10, pct)));
+
+            if (
+              progressData.status === "complete" ||
+              progressData.status === "completed"
+            ) {
+              setImportProgress(100);
+              setImportStatus("complete");
+              importProcessingRef.current = false;
+              const summary = progressData.summary || {};
+              setCommitResult({
+                ...summary,
+                errors: summary.errors || [],
+              });
+              const imported = summary.imported ?? 0;
+              const duplicates = summary.duplicates ?? 0;
+              const failed = summary.failed ?? 0;
+              showToast(
+                `Import complete: ${imported} imported, ${duplicates} duplicates, ${failed} failed`,
+                imported > 0 ? "success" : "warning",
+              );
+              if (fetchData) fetchData();
+              return;
+            }
+
+            if (progressData.status === "failed") {
+              setImportStatus("idle");
+              importProcessingRef.current = false;
+              showToast(
+                progressData.error || "Failed to commit import",
+                "error",
+              );
+              return;
+            }
+
+            window._importPollTimer = setTimeout(checkStatus, pollInterval);
+          } catch (pollErr) {
+            console.error("Poll error:", pollErr);
+            window._importPollTimer = setTimeout(checkStatus, pollInterval);
+          }
+        };
+
+        window._importPollTimer = setTimeout(checkStatus, pollInterval);
+      } else if (res.data?.success) {
         setImportProgress(100);
         setImportStatus("complete");
         setCommitResult({
@@ -954,7 +1021,9 @@ export default function BulkImport({ fetchData, showToast }) {
         "Failed to commit import";
       showToast(errMsg, "error");
     } finally {
-      importProcessingRef.current = false;
+      if (!isQueued) {
+        importProcessingRef.current = false;
+      }
     }
   };
   const cancelImport = () => {
@@ -962,6 +1031,7 @@ export default function BulkImport({ fetchData, showToast }) {
       clearTimeout(window._importPollTimer);
       window._importPollTimer = null;
     }
+    importProcessingRef.current = false;
     setImportStatus("idle");
     showToast("Import cancelled", "info");
   };

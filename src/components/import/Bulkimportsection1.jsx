@@ -77,8 +77,6 @@ export function BulkImportSection1({
   setImportStatus,
   setCommitResult,
   headers,
-  importType,
-  setImportType,
   setShowAddSupplierModal,
   setSelectedSupplier,
   setDuplicateStrategy,
@@ -434,24 +432,6 @@ export function BulkImportSection1({
 
           <div className="config-card-v2">
             <h3>Import Configuration</h3>
-
-            <div className="config-row">
-              <span className="p-label">IMPORT TYPE</span>
-              <div className="pill-selector">
-                {["New Medicines", "Update Existing", "Stock Entry Only"].map(
-                  (t) => (
-                    <button
-                      key={t}
-                      className={`pill ${importType === t ? "active" : ""}`}
-                      onClick={() => setImportType(t)}
-                    >
-                      {t}
-                    </button>
-                  ),
-                )}
-              </div>
-            </div>
-
             <div className="config-row">
               <label htmlFor="field_84m1br" className="p-label">
                 TAG THIS IMPORT TO SUPPLIER

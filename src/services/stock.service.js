@@ -27,7 +27,7 @@ export const getStockAlerts = () => api.get(`${API_ROUTES.STOCK}/alerts`);
  * @param {string} [payload.notes] - Notes
  * @returns {Promise<Object>} Created InventoryBatch object
  */
-export const stockIn = (payload) => api.post(`${API_ROUTES.STOCK}/in`, payload);
+const stockIn = (payload) => api.post(`${API_ROUTES.STOCK}/in`, payload);
 
 /**
  * Record stock outbound (sale, transfer, adjustment).
@@ -40,8 +40,7 @@ export const stockIn = (payload) => api.post(`${API_ROUTES.STOCK}/in`, payload);
  * @param {string} [payload.batchId] - Specific batch ID (optional)
  * @returns {Promise<Object>} { totalDeducted: number, batches: Array<{ batchId: string, quantity: number }> }
  */
-export const stockOut = (payload) =>
-  api.post(`${API_ROUTES.STOCK}/out`, payload);
+const stockOut = (payload) => api.post(`${API_ROUTES.STOCK}/out`, payload);
 
 /**
  * Record stock damage or disposal write-off.
@@ -54,7 +53,7 @@ export const stockOut = (payload) =>
  * @param {string} [payload.notes] - Additional notes
  * @returns {Promise<Object>} Created StockMovement ledger record
  */
-export const recordDamage = (payload) =>
+const recordDamage = (payload) =>
   api.post(`${API_ROUTES.STOCK}/damage`, payload);
 
 /**
@@ -65,7 +64,7 @@ export const recordDamage = (payload) =>
  * @param {number} [params.limit=20] - Records per page
  * @returns {Promise<Object>} { transactions: Array, total: number, page: number, limit: number }
  */
-export const getStockHistory = (params) =>
+const getStockHistory = (params) =>
   api.get(`${API_ROUTES.STOCK}/history`, { params });
 
 /**
@@ -73,7 +72,7 @@ export const getStockHistory = (params) =>
  * @param {string} alertId - Stock alert ID
  * @returns {Promise<Object>} { message: 'Alert resolved' }
  */
-export const resolveStockAlert = (alertId) =>
+const resolveStockAlert = (alertId) =>
   api.put(`${API_ROUTES.STOCK}/alerts/${alertId}/resolve`);
 
 /**
@@ -81,7 +80,7 @@ export const resolveStockAlert = (alertId) =>
  * @param {string} medicineId - Medicine ID
  * @returns {Promise<Object>} { totalQuantity: number, batches: Array }
  */
-export const getCurrentStock = (medicineId) =>
+const getCurrentStock = (medicineId) =>
   api.get(`${API_ROUTES.STOCK}/current/${medicineId}`);
 
 export default {

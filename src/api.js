@@ -83,7 +83,7 @@ let csrfToken = null;
 let csrfPromise = null;
 let refreshPromise = null;
 
-export async function refreshSession() {
+async function refreshSession() {
   if (refreshPromise) {
     return refreshPromise;
   }
