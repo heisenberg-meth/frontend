@@ -914,11 +914,10 @@ export default function BulkImport({ fetchData, showToast }) {
     }
     importProcessingRef.current = true;
     setImportStatus("processing");
-    setImportProgress(10);
+    setImportProgress(0);
     const medicines = getMappedMedicines();
     let isQueued = false;
     try {
-      setImportProgress(25);
       const res = await api.post("/import/bulk/commit", {
         medicines,
         fileName: file?.name || "bulk_import.csv",
@@ -932,7 +931,6 @@ export default function BulkImport({ fetchData, showToast }) {
       if (res.data?.success && res.data?.queued && res.data?.jobId) {
         isQueued = true;
         const jobId = res.data.jobId;
-        setImportProgress(30);
 
         const pollInterval = 1000;
         const checkStatus = async () => {
@@ -951,7 +949,7 @@ export default function BulkImport({ fetchData, showToast }) {
                     (progressData.processed / progressData.total) * 100,
                   )
                 : 0);
-            setImportProgress(Math.min(100, Math.max(10, pct)));
+            setImportProgress(Math.min(100, Math.max(0, pct)));
 
             if (
               progressData.status === "complete" ||
