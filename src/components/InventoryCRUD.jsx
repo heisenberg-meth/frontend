@@ -526,6 +526,14 @@ export default function InventoryCRUD({
 }) {
   const navigate = useNavigate();
   const { user, tenant } = useAuth();
+  const canClearInventory =
+    !user ||
+    user.role === "OWNER" ||
+    user.role === "ADMIN" ||
+    user.role === "owner" ||
+    user.assignedRole?.permissions?.some(
+      (p) => p.permission?.name === "MANAGE_INVENTORY",
+    );
   const branchId =
     user?.branchId || user?.branch?.id || tenant?.branchId || null;
   const [medicines, setMedicines] = useState([]);
@@ -956,19 +964,21 @@ export default function InventoryCRUD({
           >
             <Plus size={20} /> Add Medicine
           </button>
-          <button
-            id="clear-inventory-btn"
-            className="inv-action-btn danger"
-            style={{
-              background: "rgba(239, 68, 68, 0.1)",
-              borderColor: "rgba(239, 68, 68, 0.35)",
-              color: "#ef4444",
-            }}
-            onClick={() => setShowClearModal(true)}
-            title="Clear active inventory batches and reset stock for this branch"
-          >
-            <Trash2 size={16} /> Clear Inventory
-          </button>
+          {canClearInventory && (
+            <button
+              id="clear-inventory-btn"
+              className="inv-action-btn danger"
+              style={{
+                background: "rgba(239, 68, 68, 0.1)",
+                borderColor: "rgba(239, 68, 68, 0.35)",
+                color: "#ef4444",
+              }}
+              onClick={() => setShowClearModal(true)}
+              title="Clear active inventory batches and reset stock for this branch"
+            >
+              <Trash2 size={16} /> Clear Inventory
+            </button>
+          )}
         </div>
       </div>
 

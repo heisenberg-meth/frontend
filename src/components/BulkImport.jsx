@@ -3,6 +3,7 @@ import { useDropzone } from "react-dropzone";
 import { useNavigate } from "react-router-dom";
 import { UploadCloud, Download, History, X, Trash2 } from "lucide-react";
 import ClearInventoryModal from "./inventory/ClearInventoryModal.jsx";
+import { useAuth } from "../hooks/useAuth";
 import ExcelJS from "exceljs";
 import Papa from "papaparse";
 import api from "../api";
@@ -35,6 +36,15 @@ const normalizeDate = (dateStr) => {
 
 export default function BulkImport({ fetchData, showToast }) {
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const canClearInventory =
+    !user ||
+    user.role === "OWNER" ||
+    user.role === "ADMIN" ||
+    user.role === "owner" ||
+    user.assignedRole?.permissions?.some(
+      (p) => p.permission?.name === "MANAGE_INVENTORY",
+    );
   const [showClearModal, setShowClearModal] = useState(false);
   const [importState, dispatchImport] = useReducer(
     (state, action) => {
@@ -1065,21 +1075,33 @@ export default function BulkImport({ fetchData, showToast }) {
             <History size={16} />
             <span>Import History</span>
           </button>
-          <button
-            id="bulk-import-clear-inv-btn"
-            type="button"
-            className="pos-btn outline"
-            style={{
-              borderColor: "rgba(239, 68, 68, 0.4)",
-              color: "#ef4444",
-              background: "rgba(239, 68, 68, 0.08)",
-            }}
-            onClick={() => setShowClearModal(true)}
-            title="Clear active inventory before starting a fresh import"
-          >
-            <Trash2 size={16} />
-            <span>Clear Inventory</span>
-          </button>
+          {canClearInventory && (
+            <button
+              id="bulk-import-clear-inv-btn"
+              type="button"
+              className="pos-btn danger"
+              disabled={
+                importStatus === "analyzing" || importStatus === "committing"
+              }
+              onClick={() => {
+                if (
+                  importStatus === "analyzing" ||
+                  importStatus === "committing"
+                ) {
+                  showToast?.(
+                    "An inventory import is currently in progress. Please wait until it finishes.",
+                    "warning",
+                  );
+                  return;
+                }
+                setShowClearModal(true);
+              }}
+              title="Clear active inventory before starting a fresh import"
+            >
+              <Trash2 size={16} />
+              <span>Clear Inventory</span>
+            </button>
+          )}
         </div>
       </div>
 

@@ -1427,6 +1427,28 @@ select.pos-input option {
   border-color: var(--overlay-30);
 }
 
+.pos-btn.danger {
+  background: rgba(239, 68, 68, 0.08);
+  border: 1px solid rgba(239, 68, 68, 0.35);
+  color: #ef4444;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  transition: all 0.18s ease;
+}
+.pos-btn.danger:hover:not(:disabled) {
+  background: rgba(239, 68, 68, 0.16);
+  border-color: #ef4444;
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.25);
+  transform: translateY(-1px);
+}
+.pos-btn.danger:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 .pos-btn.micro {
   padding: 4px 10px;
   font-size: 11px;
