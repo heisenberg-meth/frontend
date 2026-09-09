@@ -14,7 +14,9 @@ import {
   ChevronRight,
   DollarSign,
   Calendar,
+  UploadCloud,
 } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { AnimatePresence } from "framer-motion";
 import { getMedicineStatus, STATUS_OPTIONS } from "../utils/inventoryStatus";
 import { TableHeader } from "./common/TableHeader.jsx";
@@ -44,6 +46,7 @@ import {
   MedicineViewModal,
 } from "./inventory/InventoryCore.jsx";
 import { BatchModal, ReorderModal } from "./inventory/InventoryBatchModel.jsx";
+import ClearInventoryModal from "./inventory/ClearInventoryModal.jsx";
 
 /* ─── MAIN COMPONENT ─── */
 
@@ -521,10 +524,12 @@ export default function InventoryCRUD({
   showToast,
   title = "Inventory Management",
 }) {
+  const navigate = useNavigate();
   const { user, tenant } = useAuth();
   const branchId =
     user?.branchId || user?.branch?.id || tenant?.branchId || null;
   const [medicines, setMedicines] = useState([]);
+  const [showClearModal, setShowClearModal] = useState(false);
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("All");
@@ -936,6 +941,13 @@ export default function InventoryCRUD({
             <Download size={16} /> Export CSV
           </button>
           <button
+            className="inv-action-btn secondary"
+            onClick={() => navigate("/import")}
+            title="Import inventory data from file"
+          >
+            <UploadCloud size={16} /> Import Inventory
+          </button>
+          <button
             className="inv-action-btn primary"
             onClick={() => {
               setEditTarget(null);
@@ -943,6 +955,19 @@ export default function InventoryCRUD({
             }}
           >
             <Plus size={20} /> Add Medicine
+          </button>
+          <button
+            id="clear-inventory-btn"
+            className="inv-action-btn danger"
+            style={{
+              background: "rgba(239, 68, 68, 0.1)",
+              borderColor: "rgba(239, 68, 68, 0.35)",
+              color: "#ef4444",
+            }}
+            onClick={() => setShowClearModal(true)}
+            title="Clear active inventory batches and reset stock for this branch"
+          >
+            <Trash2 size={16} /> Clear Inventory
           </button>
         </div>
       </div>
@@ -1058,6 +1083,16 @@ export default function InventoryCRUD({
           />
         )}
       </AnimatePresence>
+
+      <ClearInventoryModal
+        isOpen={showClearModal}
+        onClose={() => setShowClearModal(false)}
+        onSuccess={() => {
+          loadMedicines({ skipSummary: false });
+        }}
+        showToast={showToast}
+        branchId={branchId}
+      />
     </div>
   );
 }

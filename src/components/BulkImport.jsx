@@ -1,7 +1,8 @@
 import { useState, useCallback, useEffect, useReducer, useRef } from "react";
 import { useDropzone } from "react-dropzone";
 import { useNavigate } from "react-router-dom";
-import { UploadCloud, Download, History, X } from "lucide-react";
+import { UploadCloud, Download, History, X, Trash2 } from "lucide-react";
+import ClearInventoryModal from "./inventory/ClearInventoryModal.jsx";
 import ExcelJS from "exceljs";
 import Papa from "papaparse";
 import api from "../api";
@@ -34,6 +35,7 @@ const normalizeDate = (dateStr) => {
 
 export default function BulkImport({ fetchData, showToast }) {
   const navigate = useNavigate();
+  const [showClearModal, setShowClearModal] = useState(false);
   const [importState, dispatchImport] = useReducer(
     (state, action) => {
       if (action.type === "RESET_IMPORT") {
@@ -1063,6 +1065,21 @@ export default function BulkImport({ fetchData, showToast }) {
             <History size={16} />
             <span>Import History</span>
           </button>
+          <button
+            id="bulk-import-clear-inv-btn"
+            type="button"
+            className="pos-btn outline"
+            style={{
+              borderColor: "rgba(239, 68, 68, 0.4)",
+              color: "#ef4444",
+              background: "rgba(239, 68, 68, 0.08)",
+            }}
+            onClick={() => setShowClearModal(true)}
+            title="Clear active inventory before starting a fresh import"
+          >
+            <Trash2 size={16} />
+            <span>Clear Inventory</span>
+          </button>
         </div>
       </div>
 
@@ -1260,6 +1277,15 @@ export default function BulkImport({ fetchData, showToast }) {
           </div>
         </div>
       )}
+
+      <ClearInventoryModal
+        isOpen={showClearModal}
+        onClose={() => setShowClearModal(false)}
+        onSuccess={() => {
+          fetchData?.();
+        }}
+        showToast={showToast}
+      />
     </div>
   );
 }
