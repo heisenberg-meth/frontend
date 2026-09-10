@@ -36,7 +36,7 @@ const normalizeDate = (dateStr) => {
 
 export default function BulkImport({ fetchData, showToast }) {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, tenant } = useAuth();
   const canClearInventory =
     !user ||
     user.role === "OWNER" ||
@@ -45,6 +45,8 @@ export default function BulkImport({ fetchData, showToast }) {
     user.assignedRole?.permissions?.some(
       (p) => p.permission?.name === "MANAGE_INVENTORY",
     );
+  const branchId =
+    user?.branchId || user?.branch?.id || tenant?.branchId || null;
   const [showClearModal, setShowClearModal] = useState(false);
   const [importState, dispatchImport] = useReducer(
     (state, action) => {
@@ -983,6 +985,8 @@ export default function BulkImport({ fetchData, showToast }) {
                 imported > 0 ? "success" : "warning",
               );
               if (fetchData) fetchData();
+              window.dispatchEvent(new CustomEvent("inventory:refresh"));
+              window.dispatchEvent(new CustomEvent("dashboard:refresh"));
               return;
             }
 
@@ -1019,6 +1023,8 @@ export default function BulkImport({ fetchData, showToast }) {
           imported > 0 ? "success" : "warning",
         );
         if (fetchData) fetchData();
+        window.dispatchEvent(new CustomEvent("inventory:refresh"));
+        window.dispatchEvent(new CustomEvent("dashboard:refresh"));
       } else {
         throw new Error(res.data?.message || "Failed to commit import");
       }
@@ -1305,8 +1311,11 @@ export default function BulkImport({ fetchData, showToast }) {
         onClose={() => setShowClearModal(false)}
         onSuccess={() => {
           fetchData?.();
+          window.dispatchEvent(new CustomEvent("inventory:refresh"));
+          window.dispatchEvent(new CustomEvent("dashboard:refresh"));
         }}
         showToast={showToast}
+        branchId={branchId}
       />
     </div>
   );

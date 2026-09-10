@@ -289,7 +289,13 @@ export function BulkImportSection1({
       )}
 
       <div className="results-actions">
-        <button className="pos-btn teal" onClick={() => navigate("/stock")}>
+        <button
+          className="pos-btn teal"
+          onClick={() => {
+            window.dispatchEvent(new CustomEvent("inventory:refresh"));
+            navigate("/stock");
+          }}
+        >
           View Stock
         </button>
         <button

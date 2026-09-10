@@ -417,6 +417,12 @@ export default function Dashboard({
       }
     };
     fetchDashboard();
+
+    const handleRefresh = () => {
+      fetchDashboard();
+    };
+    window.addEventListener("dashboard:refresh", handleRefresh);
+    return () => window.removeEventListener("dashboard:refresh", handleRefresh);
   }, []);
   const stats = useMemo(() => {
     const recon = dashboardData?.reconciliation;
@@ -602,7 +608,9 @@ export default function Dashboard({
       <div className="page-header">
         <div className="page-header-content">
           <h1 className="page-title">Intelligence Hub</h1>
-          <p className="page-subtitle">Live overview — medicines, billing, stock, and supply chain</p>
+          <p className="page-subtitle">
+            Live overview — medicines, billing, stock, and supply chain
+          </p>
         </div>
         <div className="hub-status-group page-header-actions">
           <div className="status-item">

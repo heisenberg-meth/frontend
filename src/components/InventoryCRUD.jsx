@@ -15,6 +15,7 @@ import {
   DollarSign,
   Calendar,
   UploadCloud,
+  RefreshCw,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { AnimatePresence } from "framer-motion";
@@ -601,19 +602,29 @@ export default function InventoryCRUD({
     }, 400);
     return () => clearTimeout(handler);
   }, [search]);
-  const loadSummary = useCallback(async () => {
-    try {
-      const res = await getInventorySummary();
-      if (res.data?.success && res.data?.data) {
-        setSummaryStats(res.data.data);
+  const loadSummary = useCallback(
+    async (options = {}) => {
+      try {
+        const { forceRefresh = false } = options;
+        const params = {
+          ...(branchId ? { branchId } : {}),
+          ...(forceRefresh ? { forceRefresh: true } : {}),
+        };
+        const res = await getInventorySummary(
+          Object.keys(params).length > 0 ? params : undefined,
+        );
+        if (res.data?.success && res.data?.data) {
+          setSummaryStats(res.data.data);
+        }
+      } catch (err) {
+        console.error("Failed to load inventory summary", err);
       }
-    } catch (err) {
-      console.error("Failed to load inventory summary", err);
-    }
-  }, []);
+    },
+    [branchId],
+  );
   const loadMedicines = useCallback(
     async (options = {}) => {
-      const { skipSummary = true } = options;
+      const { skipSummary = false, forceRefreshSummary = false } = options;
       if (medicineAbortRef.current) {
         medicineAbortRef.current.abort();
       }
@@ -665,7 +676,7 @@ export default function InventoryCRUD({
           }
         }
         if (!skipSummary) {
-          await loadSummary();
+          await loadSummary({ forceRefresh: forceRefreshSummary });
         }
       } catch (err) {
         if (err?.name === "CanceledError" || controller.signal.aborted) return;
@@ -710,6 +721,7 @@ export default function InventoryCRUD({
       }
       await loadMedicines({
         skipSummary: false,
+        forceRefreshSummary: true,
       });
       setBatchModalOpen(false);
       setEditBatchTarget(null);
@@ -751,6 +763,15 @@ export default function InventoryCRUD({
       mounted = false;
     };
   }, [showToast, loadSummary]);
+
+  useEffect(() => {
+    const handleRefresh = () => {
+      loadMedicines({ skipSummary: false, forceRefreshSummary: true });
+    };
+    window.addEventListener("inventory:refresh", handleRefresh);
+    return () => window.removeEventListener("inventory:refresh", handleRefresh);
+  }, [loadMedicines]);
+
   useEffect(() => {
     const run = async () => {
       await loadMedicines();
@@ -944,6 +965,15 @@ export default function InventoryCRUD({
         <div className="inv-header-actions">
           <button
             className="inv-action-btn secondary"
+            onClick={() =>
+              loadMedicines({ skipSummary: false, forceRefreshSummary: true })
+            }
+            title="Refresh inventory and summary cards"
+          >
+            <RefreshCw size={16} /> Refresh
+          </button>
+          <button
+            className="inv-action-btn secondary"
             onClick={handleExportCSV}
           >
             <Download size={16} /> Export CSV
@@ -1098,7 +1128,7 @@ export default function InventoryCRUD({
         isOpen={showClearModal}
         onClose={() => setShowClearModal(false)}
         onSuccess={() => {
-          loadMedicines({ skipSummary: false });
+          loadMedicines({ skipSummary: false, forceRefreshSummary: true });
         }}
         showToast={showToast}
         branchId={branchId}
