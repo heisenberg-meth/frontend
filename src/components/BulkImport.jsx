@@ -68,6 +68,7 @@ export default function BulkImport({ fetchData, showToast }) {
           duplicateDecisions: {},
           parsedRows: [],
           commitResult: null,
+          processExistingMedicines: false,
         };
       }
       if (action.type === "SET_FIELD") {
@@ -110,6 +111,7 @@ export default function BulkImport({ fetchData, showToast }) {
         overwrite: false,
         validate: true,
       },
+      processExistingMedicines: false,
       dataPreview: [],
       duplicateResults: {
         new: 0,
@@ -133,6 +135,7 @@ export default function BulkImport({ fetchData, showToast }) {
     selectedSupplier,
     duplicateStrategy,
     barcodeOptions,
+    processExistingMedicines,
     dataPreview,
     duplicateResults,
     duplicateDecisions,
@@ -216,6 +219,15 @@ export default function BulkImport({ fetchData, showToast }) {
       dispatchImport({
         type: "SET_FIELD",
         field: "barcodeOptions",
+        value: val,
+      }),
+    [],
+  );
+  const setProcessExistingMedicines = useCallback(
+    (val) =>
+      dispatchImport({
+        type: "SET_FIELD",
+        field: "processExistingMedicines",
         value: val,
       }),
     [],
@@ -520,6 +532,7 @@ export default function BulkImport({ fetchData, showToast }) {
         supplier: selectedSupplier,
         duplicateStrategy,
         barcodeOptions,
+        processExistingMedicines,
       });
       if (res.data?.success) {
         setDuplicateResults(res.data.summary);
@@ -543,6 +556,7 @@ export default function BulkImport({ fetchData, showToast }) {
     selectedSupplier,
     duplicateStrategy,
     barcodeOptions,
+    processExistingMedicines,
     setDuplicateResults,
   ]);
   const onDrop = useCallback(
@@ -940,6 +954,7 @@ export default function BulkImport({ fetchData, showToast }) {
         duplicateDecisions,
         barcodeOptions,
         importType,
+        processExistingMedicines,
       });
 
       if (res.data?.success && res.data?.queued && res.data?.jobId) {
@@ -1124,6 +1139,8 @@ export default function BulkImport({ fetchData, showToast }) {
         setSelectedSupplier={setSelectedSupplier}
         setDuplicateStrategy={setDuplicateStrategy}
         duplicateStrategy={duplicateStrategy}
+        processExistingMedicines={processExistingMedicines}
+        setProcessExistingMedicines={setProcessExistingMedicines}
         setBarcodeOptions={setBarcodeOptions}
         barcodeOptions={barcodeOptions}
         mapping={mapping}

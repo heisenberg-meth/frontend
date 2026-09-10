@@ -81,6 +81,8 @@ export function BulkImportSection1({
   setSelectedSupplier,
   setDuplicateStrategy,
   duplicateStrategy,
+  processExistingMedicines = false,
+  setProcessExistingMedicines,
   setBarcodeOptions,
   barcodeOptions,
   mapping,
@@ -477,6 +479,36 @@ export function BulkImportSection1({
                     >
                       Change
                     </button>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="config-row">
+              <span className="p-label">EXISTING MEDICINES</span>
+              <div className="checkbox-list">
+                <label className="check-item">
+                  <input
+                    type="checkbox"
+                    checked={processExistingMedicines}
+                    disabled={importStatus === "processing"}
+                    onChange={(e) =>
+                      setProcessExistingMedicines?.(e.target.checked)
+                    }
+                  />
+                  <span>Process Existing Medicines</span>
+                </label>
+                <span className="config-help-text">
+                  Leave unchecked for the first import. Enable this when
+                  importing stock/data for medicines already in the system.
+                </span>
+                {processExistingMedicines && (
+                  <div
+                    className="barcode-hint info"
+                    style={{ marginTop: "4px" }}
+                  >
+                    ℹ Existing medicines will be processed using duplicate
+                    strategy: <strong>{duplicateStrategy}</strong>
                   </div>
                 )}
               </div>

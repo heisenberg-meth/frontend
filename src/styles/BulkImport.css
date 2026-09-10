@@ -419,6 +419,15 @@
 .barcode-hint.warning {
   color: var(--warning);
 }
+.barcode-hint.info {
+  color: var(--info, #3b82f6);
+}
+
+.config-help-text {
+  font-size: 12px;
+  color: var(--text-muted);
+  line-height: 1.4;
+}
 
 /* --- SMART MAPPING --- */
 .mapping-card-v2 {
