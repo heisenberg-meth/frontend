@@ -224,13 +224,33 @@ export default function BulkImport({ fetchData, showToast }) {
     [],
   );
   const setProcessExistingMedicines = useCallback(
-    (val) =>
+    (val) => {
       dispatchImport({
         type: "SET_FIELD",
         field: "processExistingMedicines",
         value: val,
-      }),
-    [],
+      });
+
+      // When enabling processing of existing medicines,
+      // move the safe default from Skip to Merge.
+      if (val === true && duplicateStrategy === "Skip") {
+        dispatchImport({
+          type: "SET_FIELD",
+          field: "duplicateStrategy",
+          value: "Merge",
+        });
+      }
+
+      // When disabling it, restore the first-import default.
+      if (val === false && duplicateStrategy === "Merge") {
+        dispatchImport({
+          type: "SET_FIELD",
+          field: "duplicateStrategy",
+          value: "Skip",
+        });
+      }
+    },
+    [duplicateStrategy],
   );
   const setDataPreview = useCallback(
     (val) =>
@@ -832,10 +852,14 @@ export default function BulkImport({ fetchData, showToast }) {
   const duplicateRows = duplicateResults?.rows || [];
   const unresolvedCount =
     duplicateStrategy === "Ask me"
-      ? duplicateRows.filter((r) => !duplicateDecisions[r.row]?.action).length
+      ? duplicateRows.filter(
+          (r) => r.conflict && !duplicateDecisions[r.row]?.action,
+        ).length
       : 0;
   const hasUnresolvedDuplicates =
-    duplicateStrategy === "Ask me" && unresolvedCount > 0;
+    Boolean(processExistingMedicines) &&
+    duplicateStrategy === "Ask me" &&
+    unresolvedCount > 0;
 
   const handleViewImport = (item) => {
     showToast(`Viewing ${item?.id || "Import"}`, "info");
