@@ -96,6 +96,10 @@ export function normalizeInvoice(invoice) {
     ),
     paymentMethod: invoice.paymentMethod || invoice.paymentMode || "CASH",
     status: invoice.status || "PAID",
+    billDate:
+      invoice.billDate ||
+      (invoice.date ? String(invoice.date).split("T")[0] : null) ||
+      (invoice.createdAt ? String(invoice.createdAt).split("T")[0] : null),
     date:
       invoice.date ||
       invoice.createdAt ||

@@ -14,12 +14,14 @@ import { AnimatePresence, m } from "framer-motion";
 import { TableHeader } from "../common/TableHeader.jsx";
 import Pagination from "../common/Pagination.jsx";
 import "../../styles/BillingPOS.css";
+import { formatBillDate } from "../../constants/medicine.constants.js";
 
 const fieldMap = {
   patientName: [["patient", "fullName"], "patientName", "customerName"],
   patientPhone: [["patient", "phone"], "patientPhone", "customerPhone"],
   invoiceNumber: ["invoiceNumber", "billNumber", "id"],
-  date: ["invoiceDate", "createdAt", "date"],
+  billDate: ["billDate", "invoiceDate", "createdAt", "date"],
+  date: ["billDate", "invoiceDate", "createdAt", "date"],
   subtotal: ["subtotal", "subTotal", "taxableAmount"],
   total: ["totalAmount", "grandTotal", "total"],
   sgst: ["sgst", "sgstAmount"],
@@ -232,32 +234,58 @@ export function BillingPOSSection3({
   handleBillWhatsApp,
   handleBillReturn,
   showAllBillsModal,
-  todayStr,
   bills,
 }) {
   const [billPage, setBillPage] = useState(1);
   const [billsPerPage, setBillsPerPage] = useState(10);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedDateFilter, setSelectedDateFilter] = useState("");
 
   const filteredBills = (bills || []).filter((bill) => {
-    if (allBillsFilter === "All") return true;
-
-    if (allBillsFilter === "PAID") {
-      return bill.status === "PAID" || bill.status === "FINALIZED";
+    if (allBillsFilter !== "All") {
+      if (allBillsFilter === "PAID") {
+        if (bill.status !== "PAID" && bill.status !== "FINALIZED") return false;
+      } else if (allBillsFilter === "DRAFT") {
+        if (bill.status !== "DRAFT") return false;
+      } else if (allBillsFilter === "RETURNED") {
+        if (
+          bill.status !== "RETURNED" &&
+          bill.status !== "REFUNDED" &&
+          bill.status !== "PARTIALLY_REFUNDED"
+        ) {
+          return false;
+        }
+      } else if (bill.status !== allBillsFilter) {
+        return false;
+      }
     }
 
-    if (allBillsFilter === "DRAFT") {
-      return bill.status === "DRAFT";
+    if (selectedDateFilter) {
+      const bDate = bill.billDate
+        ? typeof bill.billDate === "string"
+          ? bill.billDate.split("T")[0]
+          : new Date(bill.billDate).toISOString().split("T")[0]
+        : bill.date
+          ? String(bill.date).split("T")[0]
+          : bill.createdAt
+            ? String(bill.createdAt).split("T")[0]
+            : "";
+      if (bDate !== selectedDateFilter) return false;
     }
 
-    if (allBillsFilter === "RETURNED") {
-      return (
-        bill.status === "RETURNED" ||
-        bill.status === "REFUNDED" ||
-        bill.status === "PARTIALLY_REFUNDED"
-      );
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase().trim();
+      const invNo = String(
+        resolveInvoiceField(bill, "invoiceNumber", bill.id) || "",
+      ).toLowerCase();
+      const pat = String(bill.patient || "").toLowerCase();
+      const ph = String(bill.phone || "").toLowerCase();
+      if (!invNo.includes(q) && !pat.includes(q) && !ph.includes(q)) {
+        return false;
+      }
     }
 
-    return bill.status === allBillsFilter;
+    return true;
   });
 
   const totalBills = filteredBills.length;
@@ -311,7 +339,7 @@ export function BillingPOSSection3({
                   fontWeight: 700,
                 }}
               >
-                All Bills — {todayStr}
+                All Bills
               </h3>
               <button
                 aria-label="Close"
@@ -328,10 +356,14 @@ export function BillingPOSSection3({
                     Search by invoice, patient, phone...
                   </label>
                   <input
-                    required
                     className="all-bills-search"
                     placeholder="Search by invoice, patient, phone..."
                     id="field_zdnf26"
+                    value={searchQuery}
+                    onChange={(e) => {
+                      setSearchQuery(e.target.value);
+                      setBillPage(1);
+                    }}
                   />
                 </>
                 <button
@@ -341,42 +373,115 @@ export function BillingPOSSection3({
                     fontSize: "13px",
                   }}
                 >
-                  Export Today's Bills
+                  Export Bills
                 </button>
               </div>
-              <div className="filter-pills">
-                {[
-                  {
-                    label: "All",
-                    value: "All",
-                  },
-                  {
-                    label: "Paid",
-                    value: "PAID",
-                  },
-                  {
-                    label: "Draft",
-                    value: "DRAFT",
-                  },
-                  {
-                    label: "Returned",
-                    value: "RETURNED",
-                  },
-                ].map((f) => (
-                  <button
-                    key={f.value}
-                    className={`filter-pill ${allBillsFilter === f.value ? "active" : ""}`}
-                    onClick={() => handleFilterChange(f.value)}
+              <div
+                className="filter-pills"
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  flexWrap: "wrap",
+                  gap: "12px",
+                }}
+              >
+                <div
+                  style={{ display: "flex", alignItems: "center", gap: "6px" }}
+                >
+                  {[
+                    {
+                      label: "All",
+                      value: "All",
+                    },
+                    {
+                      label: "Paid",
+                      value: "PAID",
+                    },
+                    {
+                      label: "Draft",
+                      value: "DRAFT",
+                    },
+                    {
+                      label: "Returned",
+                      value: "RETURNED",
+                    },
+                  ].map((f) => (
+                    <button
+                      key={f.value}
+                      className={`filter-pill ${allBillsFilter === f.value ? "active" : ""}`}
+                      onClick={() => handleFilterChange(f.value)}
+                    >
+                      {f.label}
+                    </button>
+                  ))}
+                </div>
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "8px",
+                    background: "var(--surface-container)",
+                    padding: "4px 10px",
+                    borderRadius: "8px",
+                    border: "1px solid var(--outline-variant)",
+                  }}
+                >
+                  <label
+                    htmlFor="all-bills-date-filter"
+                    style={{
+                      fontSize: "12px",
+                      fontWeight: 600,
+                      color: "var(--text-dim)",
+                      whiteSpace: "nowrap",
+                    }}
                   >
-                    {f.label}
-                  </button>
-                ))}
+                    Bill Date:
+                  </label>
+                  <input
+                    id="all-bills-date-filter"
+                    type="date"
+                    className="pos-input"
+                    style={{
+                      padding: "3px 8px",
+                      fontSize: "12px",
+                      width: "auto",
+                      borderRadius: "6px",
+                    }}
+                    value={selectedDateFilter}
+                    onChange={(e) => {
+                      setSelectedDateFilter(e.target.value);
+                      setBillPage(1);
+                    }}
+                  />
+                  {selectedDateFilter && (
+                    <button
+                      type="button"
+                      className="step-btn"
+                      style={{
+                        width: "22px",
+                        height: "22px",
+                        minWidth: "22px",
+                        padding: 0,
+                        fontSize: "11px",
+                      }}
+                      onClick={() => {
+                        setSelectedDateFilter("");
+                        setBillPage(1);
+                      }}
+                      title="Clear date filter"
+                    >
+                      ✕
+                    </button>
+                  )}
+                </div>
               </div>
               <div className="all-bills-table-wrap">
                 <table className="all-bills-table">
                   <TableHeader
                     columns={[
                       "INV#",
+                      "Bill Date",
                       "Time",
                       "Patient",
                       "Phone",
@@ -390,7 +495,7 @@ export function BillingPOSSection3({
                     {paginatedBills.length === 0 ? (
                       <tr>
                         <td
-                          colSpan="8"
+                          colSpan="9"
                           style={{
                             textAlign: "center",
                             padding: "32px",
@@ -412,6 +517,15 @@ export function BillingPOSSection3({
                               bill,
                               "invoiceNumber",
                               bill.id,
+                            )}
+                          </td>
+                          <td>
+                            {formatBillDate(
+                              resolveInvoiceField(
+                                bill,
+                                "billDate",
+                                bill.billDate || bill.date || bill.createdAt,
+                              ),
                             )}
                           </td>
                           <td>{bill.time}</td>

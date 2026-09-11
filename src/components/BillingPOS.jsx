@@ -40,7 +40,8 @@ const fieldMap = {
   patientName: [["patient", "fullName"], "patientName", "customerName"],
   patientPhone: [["patient", "phone"], "patientPhone", "customerPhone"],
   invoiceNumber: ["invoiceNumber", "billNumber", "id"],
-  date: ["invoiceDate", "createdAt", "date"],
+  date: ["billDate", "invoiceDate", "createdAt", "date"],
+  billDate: ["billDate", "invoiceDate", "createdAt", "date"],
   subtotal: ["subtotal", "subTotal", "taxableAmount"],
   total: ["totalAmount", "grandTotal", "total"],
   sgst: ["sgst", "sgstAmount"],
@@ -414,7 +415,8 @@ export default function BillingPOS({
   const todayBills = useMemo(
     () =>
       bills.filter((b) => {
-        const bd = b.date ? b.date.split("T")[0] : "";
+        const raw = b.billDate || b.date || b.createdAt || "";
+        const bd = raw ? raw.split("T")[0] : "";
         return bd === todayDateStr;
       }),
     [bills, todayDateStr],
@@ -678,6 +680,7 @@ export default function BillingPOS({
     setDraftSaving(true);
     try {
       const payload = {
+        billDate: new Date().toLocaleDateString("en-CA"),
         patientId: isWalkIn ? null : patient.id,
         patientName: isWalkIn ? "Walk-in Customer" : patient.name || "Walk-in",
         patientPhone: isWalkIn ? "" : patient.phone || "",

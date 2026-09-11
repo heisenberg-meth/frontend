@@ -61,7 +61,8 @@ const fieldMap = {
   patientName: [["patient", "fullName"], "patientName", "customerName"],
   patientPhone: [["patient", "phone"], "patientPhone", "customerPhone"],
   invoiceNumber: ["invoiceNumber", "billNumber", "id"],
-  date: ["invoiceDate", "createdAt", "date"],
+  billDate: ["billDate", "invoiceDate", "createdAt", "date"],
+  date: ["billDate", "invoiceDate", "createdAt", "date"],
   subtotal: ["subtotal", "subTotal", "taxableAmount"],
   total: ["totalAmount", "grandTotal", "total"],
   sgst: ["sgst", "sgstAmount"],
@@ -158,6 +159,11 @@ const normalizeBill = (bill) => {
     patient: resolveInvoiceField(bill, "patientName", "Walk-in Customer"),
     phone: resolveInvoiceField(bill, "patientPhone", "-"),
     invoiceNumber: resolveInvoiceField(bill, "invoiceNumber", bill.id),
+    billDate: resolveInvoiceField(
+      bill,
+      "billDate",
+      bill.billDate || bill.date || bill.createdAt || "",
+    ),
     items: resolvedItems,
     itemsList: resolvedItems,
     subtotal: safeNumber(resolveInvoiceField(bill, "subtotal", 0)),
@@ -972,6 +978,7 @@ export function BillingPOSSection1({
                           ? "Walk-in Customer"
                           : patient.name || "Walk-in Customer",
                         patientPhone: isWalkIn ? null : patient.phone,
+                        billDate: new Date().toLocaleDateString("en-CA"),
                         items: lineItems.map((it) => ({
                           medicineId: it.id,
                           batchId: it.batchId,
