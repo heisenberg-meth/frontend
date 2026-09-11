@@ -113,6 +113,9 @@ export function BulkImportSection1({
   suppliersList,
   selectedSupplier,
   cancelImport,
+  inventoryState = null,
+  existingMedicineCount = 0,
+  requiresDuplicateStrategy = false,
 }) {
   return importStatus === "complete" ? (
     <m.div
@@ -484,74 +487,163 @@ export function BulkImportSection1({
               </div>
             </div>
 
-            <div className="config-row">
-              <span className="p-label">EXISTING MEDICINES</span>
-              <div className="checkbox-list">
-                <label className="check-item">
-                  <input
-                    type="checkbox"
-                    checked={processExistingMedicines}
-                    disabled={importStatus === "processing"}
-                    onChange={(e) =>
-                      setProcessExistingMedicines?.(e.target.checked)
-                    }
-                  />
-                  <span>Process Existing Medicines</span>
-                </label>
-                <span className="config-help-text">
-                  Leave unchecked for the first import. Enable this when
-                  importing stock/data for medicines already in the system.
-                </span>
-                {processExistingMedicines && (
+            {inventoryState === "EMPTY" ? (
+              <div className="config-row">
+                <div
+                  style={{
+                    background: "rgba(16, 185, 129, 0.08)",
+                    border: "1px solid rgba(16, 185, 129, 0.25)",
+                    borderRadius: "16px",
+                    padding: "16px 20px",
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: "8px",
+                    width: "100%",
+                  }}
+                >
                   <div
-                    className="barcode-hint info"
-                    style={{ marginTop: "4px" }}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      gap: "10px",
+                    }}
                   >
-                    ℹ Existing medicines will be processed using duplicate
-                    strategy: <strong>{duplicateStrategy}</strong>
+                    <span
+                      style={{
+                        fontSize: "13px",
+                        fontWeight: "700",
+                        letterSpacing: "0.04em",
+                        textTransform: "uppercase",
+                        color: "var(--success, #10b981)",
+                      }}
+                    >
+                      ✦ First Inventory Import Detected
+                    </span>
+                    <span
+                      style={{
+                        fontSize: "11px",
+                        fontWeight: "700",
+                        background: "rgba(16, 185, 129, 0.2)",
+                        color: "var(--success, #10b981)",
+                        padding: "3px 8px",
+                        borderRadius: "6px",
+                      }}
+                    >
+                      DIRECT IMPORT
+                    </span>
+                  </div>
+                  <p
+                    style={{
+                      fontSize: "13px",
+                      color: "var(--text-muted, #94a3b8)",
+                      margin: 0,
+                      lineHeight: "1.5",
+                    }}
+                  >
+                    Your inventory is currently empty. The medicines in this
+                    file will be added directly into your catalog without
+                    duplicate-resolution complexity.
+                  </p>
+                </div>
+              </div>
+            ) : (
+              <>
+                {(requiresDuplicateStrategy ||
+                  inventoryState === "EXISTING") && (
+                  <div
+                    style={{
+                      background: "rgba(59, 130, 246, 0.08)",
+                      border: "1px solid rgba(59, 130, 246, 0.2)",
+                      borderRadius: "12px",
+                      padding: "10px 14px",
+                      marginBottom: "8px",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      fontSize: "12px",
+                      color: "var(--info, #3b82f6)",
+                    }}
+                  >
+                    <span>
+                      ℹ Existing inventory detected ({existingMedicineCount}{" "}
+                      existing medicines in catalog)
+                    </span>
+                    <span style={{ fontWeight: "700", fontSize: "11px" }}>
+                      DUPLICATE SCAN ACTIVE
+                    </span>
                   </div>
                 )}
-              </div>
-            </div>
+                <div className="config-row">
+                  <span className="p-label">EXISTING MEDICINES</span>
+                  <div className="checkbox-list">
+                    <label className="check-item">
+                      <input
+                        type="checkbox"
+                        checked={processExistingMedicines}
+                        disabled={importStatus === "processing"}
+                        onChange={(e) =>
+                          setProcessExistingMedicines?.(e.target.checked)
+                        }
+                      />
+                      <span>Process Existing Medicines</span>
+                    </label>
+                    <span className="config-help-text">
+                      Leave unchecked for the first import. Enable this when
+                      importing stock/data for medicines already in the system.
+                    </span>
+                    {processExistingMedicines && (
+                      <div
+                        className="barcode-hint info"
+                        style={{ marginTop: "4px" }}
+                      >
+                        ℹ Existing medicines will be processed using duplicate
+                        strategy: <strong>{duplicateStrategy}</strong>
+                      </div>
+                    )}
+                  </div>
+                </div>
 
-            <div className="config-row">
-              <span className="p-label">IF DUPLICATE FOUND</span>
-              <div className="radio-group-vertical">
-                {[
-                  {
-                    id: "Skip",
-                    desc: "Keep existing record, don't overwrite",
-                  },
-                  {
-                    id: "Overwrite",
-                    desc: "Replace existing with imported data",
-                  },
-                  {
-                    id: "Merge",
-                    desc: "Keep existing fields, fill only blanks",
-                  },
-                  {
-                    id: "Ask me",
-                    desc: "Pause and show conflict for each duplicate",
-                  },
-                ].map((opt) => (
-                  <button
-                    type="button"
-                    key={opt.id}
-                    className="radio-item"
-                    onClick={() => setDuplicateStrategy(opt.id)}
-                  >
-                    <div
-                      className={`radio-dot ${duplicateStrategy === opt.id ? "active" : ""}`}
-                    />
-                    <div className="radio-label-wrap">
-                      <span className="label">{opt.id}</span>
-                      <span className="desc">{opt.desc}</span>
-                    </div>
-                  </button>
-                ))}
-              </div>
-            </div>
+                <div className="config-row">
+                  <span className="p-label">IF DUPLICATE FOUND</span>
+                  <div className="radio-group-vertical">
+                    {[
+                      {
+                        id: "Skip",
+                        desc: "Keep existing record, don't overwrite",
+                      },
+                      {
+                        id: "Overwrite",
+                        desc: "Replace existing with imported data",
+                      },
+                      {
+                        id: "Merge",
+                        desc: "Keep existing fields, fill only blanks",
+                      },
+                      {
+                        id: "Ask me",
+                        desc: "Pause and show conflict for each duplicate",
+                      },
+                    ].map((opt) => (
+                      <button
+                        type="button"
+                        key={opt.id}
+                        className="radio-item"
+                        onClick={() => setDuplicateStrategy(opt.id)}
+                      >
+                        <div
+                          className={`radio-dot ${duplicateStrategy === opt.id ? "active" : ""}`}
+                        />
+                        <div className="radio-label-wrap">
+                          <span className="label">{opt.id}</span>
+                          <span className="desc">{opt.desc}</span>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </>
+            )}
 
             <div className="config-row">
               <span className="p-label">BARCODE SETTINGS</span>
@@ -1114,16 +1206,24 @@ export function BulkImportSection1({
             <div className="val-item teal">
               <div className="dot" /> <span>Supplier: {selectedSupplier}</span>
             </div>
-            <div
-              className={`val-item ${hasUnresolvedDuplicates ? "orange" : "teal"}`}
-            >
-              <div className="dot" />{" "}
-              <span>
-                {duplicateResults.duplicates || 0} duplicates — handling:{" "}
-                {duplicateStrategy}
-                {hasUnresolvedDuplicates && ` (${unresolvedCount} unresolved)`}
-              </span>
-            </div>
+            {inventoryState === "EMPTY" ? (
+              <div className="val-item green">
+                <div className="dot" />{" "}
+                <span>Mode: Direct Import (First-Time)</span>
+              </div>
+            ) : (
+              <div
+                className={`val-item ${hasUnresolvedDuplicates ? "orange" : "teal"}`}
+              >
+                <div className="dot" />{" "}
+                <span>
+                  {duplicateResults.duplicates || 0} duplicates — handling:{" "}
+                  {duplicateStrategy}
+                  {hasUnresolvedDuplicates &&
+                    ` (${unresolvedCount} unresolved)`}
+                </span>
+              </div>
+            )}
             <div className="val-item red">
               <div className="dot" />{" "}
               <span>
@@ -1161,7 +1261,11 @@ export function BulkImportSection1({
                 }
               >
                 <UploadCloud size={18} />
-                <span>Start Import — {parsedRows.length} Records</span>
+                <span>
+                  {inventoryState === "EMPTY"
+                    ? `Import to Inventory — ${parsedRows.length} Records`
+                    : `Start Import — ${parsedRows.length} Records`}
+                </span>
               </button>
             </div>
           </div>

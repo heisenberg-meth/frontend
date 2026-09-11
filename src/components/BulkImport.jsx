@@ -48,6 +48,43 @@ export default function BulkImport({ fetchData, showToast }) {
   const branchId =
     user?.branchId || user?.branch?.id || tenant?.branchId || null;
   const [showClearModal, setShowClearModal] = useState(false);
+  const [inventoryState, setInventoryState] = useState(null);
+  const [existingMedicineCount, setExistingMedicineCount] = useState(0);
+  const [requiresDuplicateStrategy, setRequiresDuplicateStrategy] =
+    useState(false);
+
+  useEffect(() => {
+    let active = true;
+    const loadState = async () => {
+      try {
+        const res = await api.get("/import/bulk/state");
+        if (active && res.data?.success) {
+          setInventoryState(res.data.inventoryState);
+          setExistingMedicineCount(res.data.existingMedicineCount || 0);
+          setRequiresDuplicateStrategy(
+            Boolean(res.data.requiresDuplicateStrategy),
+          );
+        }
+      } catch (err) {
+        if (active) console.warn("Failed to fetch inventory state", err);
+      }
+    };
+
+    loadState();
+
+    const onRefresh = () => {
+      loadState();
+    };
+
+    window.addEventListener("inventory:refresh", onRefresh);
+    window.addEventListener("dashboard:refresh", onRefresh);
+    return () => {
+      active = false;
+      window.removeEventListener("inventory:refresh", onRefresh);
+      window.removeEventListener("dashboard:refresh", onRefresh);
+    };
+  }, [branchId]);
+
   const [importState, dispatchImport] = useReducer(
     (state, action) => {
       if (action.type === "RESET_IMPORT") {
@@ -1196,6 +1233,9 @@ export default function BulkImport({ fetchData, showToast }) {
         suppliersList={suppliersList}
         selectedSupplier={selectedSupplier}
         cancelImport={cancelImport}
+        inventoryState={inventoryState}
+        existingMedicineCount={existingMedicineCount}
+        requiresDuplicateStrategy={requiresDuplicateStrategy}
       />
 
       <BulkImportSection2
