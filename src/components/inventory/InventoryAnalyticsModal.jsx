@@ -12,7 +12,7 @@ import {
   FileText,
   Clock,
   Loader2,
-  DollarSign,
+  IndianRupee,
 } from "lucide-react";
 import { toast } from "react-hot-toast";
 import { AnimatePresence, m } from "framer-motion";
@@ -455,7 +455,7 @@ export default function InventoryAnalyticsModal({ isOpen, onClose }) {
                             Total Inventory Value
                           </span>
                           <div className="inventory-summary-icon bg-primary/10 text-primary">
-                            <DollarSign size={20} />
+                            <IndianRupee size={20} />
                           </div>
                         </div>
                         <div className="inventory-summary-value">

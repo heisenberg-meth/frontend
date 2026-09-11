@@ -12,10 +12,9 @@ import {
   AlertTriangle,
   ChevronLeft,
   ChevronRight,
-  DollarSign,
+  IndianRupee,
   Calendar,
   UploadCloud,
-  RefreshCw,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { AnimatePresence } from "framer-motion";
@@ -193,7 +192,7 @@ function InventoryCRUDSection1({
         <div className="inv-stat-header">
           <span className="inv-stat-label">INVENTORY VALUE</span>
           <div className="inv-stat-icon bg-primary">
-            <DollarSign size={18} />
+            <IndianRupee size={18} />
           </div>
         </div>
         <div className="inv-stat-value text-primary">
@@ -527,14 +526,6 @@ export default function InventoryCRUD({
 }) {
   const navigate = useNavigate();
   const { user, tenant } = useAuth();
-  const canClearInventory =
-    !user ||
-    user.role === "OWNER" ||
-    user.role === "ADMIN" ||
-    user.role === "owner" ||
-    user.assignedRole?.permissions?.some(
-      (p) => p.permission?.name === "MANAGE_INVENTORY",
-    );
   const branchId =
     user?.branchId || user?.branch?.id || tenant?.branchId || null;
   const [medicines, setMedicines] = useState([]);
@@ -965,15 +956,6 @@ export default function InventoryCRUD({
         <div className="inv-header-actions">
           <button
             className="inv-action-btn secondary"
-            onClick={() =>
-              loadMedicines({ skipSummary: false, forceRefreshSummary: true })
-            }
-            title="Refresh inventory and summary cards"
-          >
-            <RefreshCw size={16} /> Refresh
-          </button>
-          <button
-            className="inv-action-btn secondary"
             onClick={handleExportCSV}
           >
             <Download size={16} /> Export CSV
@@ -994,21 +976,6 @@ export default function InventoryCRUD({
           >
             <Plus size={20} /> Add Medicine
           </button>
-          {canClearInventory && (
-            <button
-              id="clear-inventory-btn"
-              className="inv-action-btn danger"
-              style={{
-                background: "rgba(239, 68, 68, 0.1)",
-                borderColor: "rgba(239, 68, 68, 0.35)",
-                color: "#ef4444",
-              }}
-              onClick={() => setShowClearModal(true)}
-              title="Clear active inventory batches and reset stock for this branch"
-            >
-              <Trash2 size={16} /> Clear Inventory
-            </button>
-          )}
         </div>
       </div>
 
