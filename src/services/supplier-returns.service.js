@@ -20,6 +20,9 @@ export const getSupplierReturnById = (id) => api.get(`${BASE}/${id}`);
 export const updateReturnStatus = (id, status) =>
   api.patch(`${BASE}/${id}/status`, { status });
 
+export const completeSupplierReturn = (id) =>
+  api.post(`${BASE}/${id}/complete`);
+
 export const generateCreditNote = (returnId, data) =>
   api.post(`${BASE}/${returnId}/credit-notes`, data);
 

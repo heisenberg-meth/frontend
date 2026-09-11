@@ -13,6 +13,7 @@ import {
   createSupplierReturn,
   getSupplierReturns,
   updateReturnStatus,
+  completeSupplierReturn,
   generateCreditNote,
   getCreditNotes,
 } from "../services/supplier-returns.service.js";
@@ -70,6 +71,8 @@ export default function SupplierReturns({ showToast }) {
   const [loadingBatches, setLoadingBatches] = useState(false);
   const [expandedGroup, setExpandedGroup] = useState(null);
   const [metrics, setMetrics] = useState(null);
+  const [completingReturnId, setCompletingReturnId] = useState(null);
+  const [confirmCompleteReturn, setConfirmCompleteReturn] = useState(null);
   const notify = useCallback(
     (msg, type = "success") => {
       showToast?.(msg, type);
@@ -279,6 +282,39 @@ export default function SupplierReturns({ showToast }) {
       notify(getErrorMessage(err) || "Failed to update status", "error");
     }
   };
+
+  const handleCompleteReturn = async (returnRecord) => {
+    if (!returnRecord) return;
+    setCompletingReturnId(returnRecord.id);
+    try {
+      const { data } = await completeSupplierReturn(returnRecord.id);
+      if (data.success) {
+        const totalUnits = (returnRecord.items || []).reduce(
+          (sum, i) => sum + Number(i.quantity || 0),
+          0,
+        );
+        notify(
+          `Supplier return completed. ${totalUnits} units removed from inventory.`,
+          "success",
+        );
+        setConfirmCompleteReturn(null);
+        setSelectedReturn(null);
+        await fetchReturns();
+        getDashboardMetrics()
+          .then((res) => setMetrics(res.data?.data || null))
+          .catch(() => {});
+      }
+    } catch (err) {
+      notify(
+        err.response?.data?.message ||
+          getErrorMessage(err) ||
+          "Return could not be completed. No inventory was changed.",
+        "error",
+      );
+    } finally {
+      setCompletingReturnId(null);
+    }
+  };
   const handleGenerateCreditNote = async (returnId) => {
     try {
       const res = await generateCreditNote(returnId, {
@@ -301,7 +337,9 @@ export default function SupplierReturns({ showToast }) {
           <PackageX size={28} />
           <div>
             <h1 className="page-title">Supplier Returns</h1>
-            <p className="page-subtitle">Manage returns, credit notes & expired inventory</p>
+            <p className="page-subtitle">
+              Manage returns, credit notes & expired inventory
+            </p>
           </div>
         </div>
         <div className="page-header-actions">
@@ -374,7 +412,127 @@ export default function SupplierReturns({ showToast }) {
         handleStatusUpdate={handleStatusUpdate}
         selectedReturn={selectedReturn}
         handleGenerateCreditNote={handleGenerateCreditNote}
+        setConfirmCompleteReturn={setConfirmCompleteReturn}
+        completingReturnId={completingReturnId}
       />
+
+      {confirmCompleteReturn && (
+        <div
+          className="modal-overlay"
+          style={{ zIndex: 1100 }}
+          role="presentation"
+          onClick={() => {
+            if (!completingReturnId) setConfirmCompleteReturn(null);
+          }}
+        >
+          <div
+            role="presentation"
+            className="modal-content"
+            style={{ maxWidth: "520px" }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="modal-header">
+              <h2>Complete Supplier Return?</h2>
+              <button
+                className="modal-close"
+                onClick={() => setConfirmCompleteReturn(null)}
+                disabled={completingReturnId != null}
+              >
+                &times;
+              </button>
+            </div>
+            <div className="modal-body">
+              <p style={{ marginBottom: "14px", color: "var(--text-main)" }}>
+                This action will finalize the return and{" "}
+                <strong>remove the following stock from inventory</strong>:
+              </p>
+              <div
+                style={{
+                  background: "var(--bg-card)",
+                  border: "1px solid var(--border)",
+                  borderRadius: "8px",
+                  padding: "12px",
+                  marginBottom: "16px",
+                  maxHeight: "220px",
+                  overflowY: "auto",
+                }}
+              >
+                {(confirmCompleteReturn.items || []).map((item) => {
+                  const avail =
+                    item.batch?.availableQuantity ?? item.batch?.quantity;
+                  const remaining =
+                    typeof avail === "number"
+                      ? Math.max(0, avail - item.quantity)
+                      : "—";
+                  return (
+                    <div
+                      key={item.id}
+                      style={{
+                        padding: "8px 0",
+                        borderBottom: "1px solid var(--border)",
+                        fontSize: "13px",
+                      }}
+                    >
+                      <div style={{ fontWeight: 600 }}>
+                        {item.medicine?.name || "Medicine"}
+                      </div>
+                      <div
+                        style={{ color: "var(--text-muted)", fontSize: "12px" }}
+                      >
+                        Batch: <code>{item.batch?.batchNumber || "—"}</code> |
+                        Return:{" "}
+                        <strong style={{ color: "var(--danger)" }}>
+                          {item.quantity} units
+                        </strong>
+                      </div>
+                      {typeof avail === "number" && (
+                        <div
+                          style={{
+                            fontSize: "11px",
+                            color: "var(--text-muted)",
+                            marginTop: "2px",
+                          }}
+                        >
+                          Current stock: {avail} → Remaining stock: {remaining}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+              <p style={{ fontSize: "12px", color: "var(--text-muted)" }}>
+                Once completed, stock cannot be restored without a purchase
+                receipt or manual inventory adjustment.
+              </p>
+            </div>
+            <div
+              className="modal-footer"
+              style={{
+                display: "flex",
+                justifyContent: "flex-end",
+                gap: "10px",
+              }}
+            >
+              <button
+                className="btn btn-secondary"
+                onClick={() => setConfirmCompleteReturn(null)}
+                disabled={completingReturnId != null}
+              >
+                Cancel
+              </button>
+              <button
+                className="btn btn-danger"
+                disabled={completingReturnId != null}
+                onClick={() => handleCompleteReturn(confirmCompleteReturn)}
+              >
+                {completingReturnId
+                  ? "Completing..."
+                  : "Confirm & Remove Stock"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <SupplierReturnsSection4
         setShowCreateModal={setShowCreateModal}

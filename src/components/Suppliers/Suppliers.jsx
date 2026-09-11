@@ -622,6 +622,8 @@ export function SupplierReturnsSection3({
   handleStatusUpdate,
   selectedReturn,
   handleGenerateCreditNote,
+  setConfirmCompleteReturn,
+  completingReturnId,
 }) {
   return (
     selectedReturn && (
@@ -654,6 +656,18 @@ export function SupplierReturnsSection3({
               <div className="detail-item">
                 <span>Created By</span>
                 <span>{selectedReturn.creator?.fullName || "—"}</span>
+              </div>
+              <div className="detail-item">
+                <span>Original Invoice</span>
+                <span>
+                  {selectedReturn.purchaseInvoice?.invoiceNumber ||
+                    selectedReturn.originalInvoiceId ||
+                    "—"}
+                </span>
+              </div>
+              <div className="detail-item">
+                <span>Reason</span>
+                <span>{selectedReturn.reason || "—"}</span>
               </div>
               <div className="detail-item">
                 <span>Created At</span>
@@ -693,23 +707,60 @@ export function SupplierReturnsSection3({
             <h3>Items</h3>
             <table className="data-table">
               <TableHeader
-                columns={["Medicine", "Qty", "Price", "Loss", "Reason"]}
+                columns={[
+                  "Medicine",
+                  "Batch",
+                  "Current Stock",
+                  "Return Qty",
+                  "Remaining",
+                  "Price",
+                  "Reason",
+                ]}
               />
               <tbody>
-                {(selectedReturn.items || []).map((item) => (
-                  <tr key={item.id}>
-                    <td>{item.medicine?.name || "—"}</td>
-                    <td>{item.quantity}</td>
-                    <td>₹{safeNumber(item.purchasePrice || 0).toFixed(2)}</td>
-                    <td>₹{safeNumber(item.lossAmount || 0).toFixed(2)}</td>
-                    <td>{item.reason || "—"}</td>
-                  </tr>
-                ))}
+                {(selectedReturn.items || []).map((item) => {
+                  const avail =
+                    item.batch?.availableQuantity ?? item.batch?.quantity;
+                  const remaining =
+                    typeof avail === "number"
+                      ? Math.max(0, avail - item.quantity)
+                      : "—";
+                  return (
+                    <tr key={item.id}>
+                      <td>{item.medicine?.name || "—"}</td>
+                      <td>
+                        <code style={{ fontSize: "12px" }}>
+                          {item.batch?.batchNumber || item.batchNumber || "—"}
+                        </code>
+                      </td>
+                      <td>{typeof avail === "number" ? avail : "—"}</td>
+                      <td style={{ fontWeight: 600, color: "var(--danger)" }}>
+                        {item.quantity}
+                      </td>
+                      <td>{remaining}</td>
+                      <td>₹{safeNumber(item.purchasePrice || 0).toFixed(2)}</td>
+                      <td>{item.reason || "—"}</td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
           <div className="modal-footer">
             <div className="status-actions">
+              {selectedReturn.status !== "COMPLETED" &&
+                selectedReturn.status !== "REJECTED" && (
+                  <button
+                    className="btn btn-success"
+                    disabled={completingReturnId === selectedReturn.id}
+                    onClick={() => setConfirmCompleteReturn?.(selectedReturn)}
+                  >
+                    <CheckCircle2 size={14} />
+                    {completingReturnId === selectedReturn.id
+                      ? "Completing..."
+                      : "Complete Return"}
+                  </button>
+                )}
               {selectedReturn.status === "DRAFT" && (
                 <button
                   className="btn btn-warning"
@@ -723,7 +774,7 @@ export function SupplierReturnsSection3({
               {selectedReturn.status === "PENDING" && (
                 <>
                   <button
-                    className="btn btn-success"
+                    className="btn btn-info"
                     onClick={() =>
                       handleStatusUpdate(selectedReturn.id, "APPROVED")
                     }
@@ -751,24 +802,14 @@ export function SupplierReturnsSection3({
                 </button>
               )}
               {selectedReturn.status === "PICKED_UP" && (
-                <>
-                  <button
-                    className="btn btn-success"
-                    onClick={() =>
-                      handleStatusUpdate(selectedReturn.id, "COMPLETED")
-                    }
-                  >
-                    <CheckCircle2 size={14} /> Complete
-                  </button>
-                  <button
-                    className="btn btn-danger"
-                    onClick={() =>
-                      handleStatusUpdate(selectedReturn.id, "REJECTED")
-                    }
-                  >
-                    <XCircle size={14} /> Reject
-                  </button>
-                </>
+                <button
+                  className="btn btn-danger"
+                  onClick={() =>
+                    handleStatusUpdate(selectedReturn.id, "REJECTED")
+                  }
+                >
+                  <XCircle size={14} /> Reject
+                </button>
               )}
               {selectedReturn.status === "COMPLETED" && (
                 <button

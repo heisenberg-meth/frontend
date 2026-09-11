@@ -621,7 +621,7 @@ export default function InventoryCRUD({
       }
       const controller = new AbortController();
       medicineAbortRef.current = controller;
-      if (medicines.length === 0) setLoading(true);
+      setLoading(true);
       try {
         let categoryId = undefined;
         if (categoryFilter !== "All") {
@@ -646,6 +646,8 @@ export default function InventoryCRUD({
           search: debouncedSearch,
           categoryId,
           status: backendStatus,
+          branchId: branchId || undefined,
+          forceRefresh: forceRefreshSummary || undefined,
           signal: controller.signal,
         });
         if (controller.signal.aborted) return;
@@ -676,11 +678,13 @@ export default function InventoryCRUD({
           err?.response?.data?.error || "error",
         );
       } finally {
-        setLoading(false);
+        if (!controller.signal.aborted) {
+          setLoading(false);
+        }
       }
     },
     [
-      medicines.length,
+      branchId,
       categoryFilter,
       statusFilter,
       currentPage,
