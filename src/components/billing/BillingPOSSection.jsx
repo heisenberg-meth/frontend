@@ -20,6 +20,7 @@ import { TableHeader } from "../common/TableHeader.jsx";
 import { normalizeInvoice } from "../../utils/billingNormalizer";
 import "../../styles/BillingPOS.css";
 import { validatePatientPhone } from "../../utils/validatePatientPhone.js";
+import { formatDosageForm } from "../../constants/medicine.constants.js";
 
 const ones = [
   "",
@@ -335,6 +336,15 @@ export function BillingPOSSection1({
                           <span className="result-name">{res.name}</span>
                           <span className="result-meta">
                             {res.genericName || res.generic || "—"}
+                            {(res.dosageForm || res.medicineType) && (
+                              <>
+                                {" "}
+                                ·{" "}
+                                {formatDosageForm(
+                                  res.dosageForm || res.medicineType,
+                                )}
+                              </>
+                            )}
                           </span>
                         </div>
                         <div className="result-batch">
@@ -595,163 +605,182 @@ export function BillingPOSSection1({
             <div className="table-scroll-container">
               <table className="line-items-table">
                 <TableHeader
-                  columns={["Item", "Qty", "MRP", "GST%", "Total", ""]}
+                  columns={["Item", "Type", "Qty", "MRP", "GST%", "Total", ""]}
                 />
                 <tbody>
-                  {lineItems.map((item) => (
-                    <tr key={item.id}>
-                      <td>
-                        <div
-                          style={{
-                            display: "flex",
-                            flexDirection: "column",
-                          }}
-                        >
-                          <span className="result-name">{item.name}</span>
-                          <span
-                            className="result-meta"
+                  {lineItems.map((item) => {
+                    const formattedType = formatDosageForm(
+                      item.dosageForm ||
+                        item.medicineType ||
+                        item.medicine?.dosageForm ||
+                        item.medicine?.medicineType,
+                    );
+                    return (
+                      <tr key={item.id}>
+                        <td>
+                          <div
                             style={{
                               display: "flex",
-                              alignItems: "center",
-                              gap: "4px",
+                              flexDirection: "column",
                             }}
                           >
-                            <div
+                            <span className="result-name">{item.name}</span>
+                            <span
+                              className="result-meta"
                               style={{
-                                width: "6px",
-                                height: "6px",
-                                borderRadius: "50%",
-                                background: "var(--danger)",
+                                display: "flex",
+                                alignItems: "center",
+                                gap: "4px",
+                              }}
+                            >
+                              <div
+                                style={{
+                                  width: "6px",
+                                  height: "6px",
+                                  borderRadius: "50%",
+                                  background: "var(--danger)",
+                                }}
+                              />
+                              {item.batch?.batchNumber ||
+                                item.batchNumber ||
+                                item.batchId ||
+                                "N/A"}{" "}
+                              · Exp {item.exp}
+                            </span>
+                          </div>
+                        </td>
+                        <td>
+                          {formattedType ? (
+                            <span className="pos-item-type-badge">
+                              {formattedType}
+                            </span>
+                          ) : (
+                            <span className="pos-item-type-unspecified">
+                              Type: Not specified
+                            </span>
+                          )}
+                        </td>
+                        <td>
+                          <div className="qty-stepper">
+                            <button
+                              className="step-btn"
+                              aria-label="Decrease quantity"
+                              onClick={() => updateQty(item.batchId, -1)}
+                            >
+                              <Minus size={12} />
+                            </button>
+                            <input
+                              required
+                              className="qty-input"
+                              aria-label="Item quantity"
+                              type="number"
+                              min="1"
+                              max={item.availableStock ?? item.stock ?? 9999}
+                              value={item.qty}
+                              onChange={(e) => {
+                                const raw = e.target.value;
+                                const maxLimit =
+                                  item.availableStock ?? item.stock ?? 9999;
+                                const qty = Math.max(
+                                  1,
+                                  Math.min(Number(raw) || 1, maxLimit),
+                                );
+                                setLineItems((prev) =>
+                                  prev.map((i) =>
+                                    i.batchId === item.batchId
+                                      ? {
+                                          ...i,
+                                          qty,
+                                          total: qty * safeNumber(i.price),
+                                        }
+                                      : i,
+                                  ),
+                                );
                               }}
                             />
-                            {item.batch?.batchNumber ||
-                              item.batchNumber ||
-                              item.batchId ||
-                              "N/A"}{" "}
-                            · Exp {item.exp}
-                          </span>
-                        </div>
-                      </td>
-                      <td>
-                        <div className="qty-stepper">
-                          <button
-                            className="step-btn"
-                            aria-label="Decrease quantity"
-                            onClick={() => updateQty(item.batchId, -1)}
-                          >
-                            <Minus size={12} />
-                          </button>
+                            <button
+                              aria-label="Add"
+                              className="step-btn"
+                              onClick={() => updateQty(item.batchId, 1)}
+                            >
+                              <Plus size={12} />
+                            </button>
+                          </div>
+                        </td>
+                        <td>
                           <input
+                            aria-label="input field"
                             required
-                            className="qty-input"
-                            aria-label="Item quantity"
+                            className="pos-input"
                             type="number"
-                            min="1"
-                            max={item.availableStock ?? item.stock ?? 9999}
-                            value={item.qty}
+                            min="0"
+                            step="0.01"
+                            style={{
+                              width: "70px",
+                              padding: "6px",
+                            }}
+                            value={item.price}
                             onChange={(e) => {
-                              const raw = e.target.value;
-                              const maxLimit =
-                                item.availableStock ?? item.stock ?? 9999;
-                              const qty = Math.max(
-                                1,
-                                Math.min(Number(raw) || 1, maxLimit),
-                              );
+                              const price = Number(e.target.value) || 0;
                               setLineItems((prev) =>
                                 prev.map((i) =>
                                   i.batchId === item.batchId
                                     ? {
                                         ...i,
-                                        qty,
-                                        total: qty * safeNumber(i.price),
+                                        price,
+                                        total: price * safeNumber(i.qty),
                                       }
                                     : i,
                                 ),
                               );
                             }}
                           />
-                          <button
-                            aria-label="Add"
-                            className="step-btn"
-                            onClick={() => updateQty(item.batchId, 1)}
-                          >
-                            <Plus size={12} />
-                          </button>
-                        </div>
-                      </td>
-                      <td>
-                        <input
-                          aria-label="input field"
-                          required
-                          className="pos-input"
-                          type="number"
-                          min="0"
-                          step="0.01"
-                          style={{
-                            width: "70px",
-                            padding: "6px",
-                          }}
-                          value={item.price}
-                          onChange={(e) => {
-                            const price = Number(e.target.value) || 0;
-                            setLineItems((prev) =>
-                              prev.map((i) =>
-                                i.batchId === item.batchId
-                                  ? {
-                                      ...i,
-                                      price,
-                                      total: price * safeNumber(i.qty),
-                                    }
-                                  : i,
-                              ),
-                            );
-                          }}
-                        />
-                      </td>
+                        </td>
 
-                      <td
-                        className="result-meta"
-                        style={{
-                          fontWeight: 800,
-                        }}
-                      >
-                        {safeNumber(item.gst)}%
-                      </td>
-                      <td
-                        style={{
-                          textAlign: "right",
-                          fontWeight: 700,
-                          color: "var(--primary)",
-                        }}
-                      >
-                        ₹
-                        {(() => {
-                          const lineGross =
-                            safeNumber(item.price) * safeNumber(item.qty);
-                          const discountRatio =
-                            subtotal > 0 ? discountAmount / subtotal : 0;
-                          const lineDisc = lineGross * discountRatio;
-                          return (lineGross - lineDisc).toFixed(2);
-                        })()}
-                      </td>
-                      <td
-                        style={{
-                          textAlign: "right",
-                        }}
-                      >
-                        <button
-                          aria-label="Close"
-                          className="step-btn"
+                        <td
+                          className="result-meta"
                           style={{
-                            color: "var(--danger)",
+                            fontWeight: 800,
                           }}
-                          onClick={() => removeRow(item.batchId)}
                         >
-                          <X size={14} />
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
+                          {safeNumber(item.gst)}%
+                        </td>
+                        <td
+                          style={{
+                            textAlign: "right",
+                            fontWeight: 700,
+                            color: "var(--primary)",
+                          }}
+                        >
+                          ₹
+                          {(() => {
+                            const lineGross =
+                              safeNumber(item.price) * safeNumber(item.qty);
+                            const discountRatio =
+                              subtotal > 0 ? discountAmount / subtotal : 0;
+                            const lineDisc = lineGross * discountRatio;
+                            return (lineGross - lineDisc).toFixed(2);
+                          })()}
+                        </td>
+                        <td
+                          style={{
+                            textAlign: "right",
+                          }}
+                        >
+                          <button
+                            aria-label="Close"
+                            className="step-btn"
+                            style={{
+                              color: "var(--danger)",
+                            }}
+                            onClick={() => removeRow(item.batchId)}
+                          >
+                            <X size={14} />
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>

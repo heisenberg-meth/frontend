@@ -118,6 +118,12 @@ const normalizeInvoiceItem = (item) => ({
     item?.discountPercent ??
     item?.discount ??
     0,
+  dosageForm:
+    item?.dosageForm ||
+    item?.medicineType ||
+    item?.medicine?.dosageForm ||
+    item?.medicine?.medicineType ||
+    null,
   totalPrice: item?.totalPrice ?? item?.amount ?? 0,
 });
 
@@ -775,7 +781,20 @@ export default function BillingPOS({
         const loadedItems = (invoice.items || []).map((it) => ({
           id: it.medicineId || it.id,
           name: it.medicine?.name || it.medicineName || it.name || "Medicine",
+          dosageForm:
+            it.medicine?.dosageForm ||
+            it.dosageForm ||
+            it.medicine?.medicineType ||
+            it.medicineType ||
+            null,
           batchId: it.batchId || null,
+          batchNumber:
+            it.batchNumber ||
+            it.batchNo ||
+            it.batch?.batchNumber ||
+            it.batch?.batchNo ||
+            it.batchCode ||
+            "—",
           qty: Number(it.quantity || it.qty || 1),
           price: Number(it.unitPrice || it.price || 0),
           gst: Number(it.gstPercentage || it.gst || 0),

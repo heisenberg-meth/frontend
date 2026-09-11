@@ -561,6 +561,32 @@ select.pos-input option {
   vertical-align: middle;
 }
 
+.pos-item-type-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.4;
+  border-radius: 6px;
+  background: var(--surface-container-high, rgba(255, 255, 255, 0.08));
+  color: var(--text, #f1f5f9);
+  border: 1px solid var(--outline-variant, rgba(255, 255, 255, 0.12));
+  white-space: nowrap;
+  letter-spacing: 0.01em;
+}
+
+.pos-item-type-unspecified {
+  display: inline-flex;
+  align-items: center;
+  font-size: 11px;
+  font-style: italic;
+  font-weight: 500;
+  color: var(--text-dim, #94a3b8);
+  white-space: nowrap;
+  opacity: 0.85;
+}
+
 .qty-stepper {
   display: flex;
   align-items: center;

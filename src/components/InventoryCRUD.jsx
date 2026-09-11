@@ -823,9 +823,7 @@ export default function InventoryCRUD({
         ...(form.hsnCode?.trim() && {
           hsnCode: form.hsnCode.trim(),
         }),
-        ...(form.dosageForm?.trim() && {
-          dosageForm: form.dosageForm.trim(),
-        }),
+        dosageForm: form.dosageForm?.trim() || undefined,
         ...(form.strength?.trim() && {
           strength: form.strength.trim(),
         }),

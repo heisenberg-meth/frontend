@@ -86,6 +86,12 @@ const normalizeInvoiceItem = (item) => ({
     item?.discountPercent ??
     item?.discount ??
     0,
+  dosageForm:
+    item?.dosageForm ||
+    item?.medicineType ||
+    item?.medicine?.dosageForm ||
+    item?.medicine?.medicineType ||
+    null,
   totalPrice: item?.totalPrice ?? item?.amount ?? 0,
 });
 

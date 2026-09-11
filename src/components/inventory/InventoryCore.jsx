@@ -14,10 +14,15 @@ import { AnimatePresence, m } from "framer-motion";
 import { getSuppliers } from "../../services/suppliers.service.js";
 import { safeNumber } from "../../utils/number.js";
 import { getMedicineStatus } from "../../utils/inventoryStatus.js";
+import {
+  DOSAGE_FORMS,
+  formatDosageForm,
+} from "../../constants/medicine.constants.js";
 const EMPTY = {
   name: "",
   genericName: "",
   categoryId: "",
+  dosageForm: "Tablet",
   batchNumber: "",
   expiryDate: "",
   mrp: "",
@@ -160,6 +165,7 @@ export function MedicineModal({
       ? {
           ...EMPTY,
           ...editData,
+          dosageForm: editData.dosageForm || editData.medicineType || "",
           supplierId: editData.supplierId || editData.supplier?.id || "",
         }
       : EMPTY,
@@ -436,6 +442,25 @@ function MedicineModalSection1({
               value={form.manufacturer || ""}
               onChange={(e) => set("manufacturer", e.target.value)}
             />
+          </div>
+
+          {/* Dosage Form / Type */}
+          <div className="form-group">
+            <label htmlFor="field_dosage_form">Type / Dosage Form</label>
+            <input
+              id="field_dosage_form"
+              type="text"
+              list="medicine-dosage-form-options"
+              placeholder="Select or type (e.g. Tablet)"
+              value={form.dosageForm || ""}
+              onChange={(e) => set("dosageForm", e.target.value)}
+              autoComplete="off"
+            />
+            <datalist id="medicine-dosage-form-options">
+              {DOSAGE_FORMS.map((df) => (
+                <option key={df} value={df} />
+              ))}
+            </datalist>
           </div>
 
           {/* Category & Schedule */}
@@ -851,6 +876,13 @@ function MedicineViewModalSection2({
         </div>
 
         <div className="inv-view-grid">
+          <div className="inv-detail-item">
+            <span>Type / Dosage Form</span>
+            <span>
+              {formatDosageForm(medicine.dosageForm || medicine.medicineType) ||
+                "Not specified"}
+            </span>
+          </div>
           <div className="inv-detail-item">
             <span>Category</span>
             <span>{medicine.category?.name || medicine.category || "—"}</span>
