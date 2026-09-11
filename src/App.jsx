@@ -139,8 +139,8 @@ function useAppData({ status, restored, user, showToast }) {
 
       setMedicines(normalizeArrayResponse(res));
       setLastSync(new Date());
-    } catch {
-      showToast("Failed to fetch inventory", "error");
+    } catch (err) {
+      showToast("Failed to fetch inventory", err);
     }
   }, [showToast, status]);
 
@@ -172,8 +172,8 @@ function useAppData({ status, restored, user, showToast }) {
         localStorage.setItem("viyan-theme", backendTheme);
         document.documentElement.setAttribute("data-theme", backendTheme);
       }
-    } catch {
-      console.error("Failed to fetch settings");
+    } catch (err) {
+      console.error("Failed to fetch settings", err);
     }
   }, [status]);
 
@@ -294,8 +294,8 @@ function useAppActions({
       await api.delete("inventory/medicines-clear-all");
       showToast("Inventory reset successfully", "success");
       await fetchData();
-    } catch {
-      showToast("Reset failed", "error");
+    } catch (err) {
+      showToast("Reset failed", err);
     }
   }, [fetchData, showToast]);
 
@@ -305,8 +305,8 @@ function useAppActions({
         await api.put("settings", settings);
         showToast("Configuration saved and synchronized", "success");
         await fetchSettings();
-      } catch {
-        showToast("Failed to save settings", "error");
+      } catch (err) {
+        showToast("Failed to save settings", err);
       }
     },
     [fetchSettings, showToast],
@@ -337,8 +337,8 @@ function useAppActions({
     try {
       await refreshUser();
       showToast("Subscription status synchronized", "success");
-    } catch {
-      showToast("Failed to refresh status", "error");
+    } catch (err) {
+      showToast("Failed to refresh status", err);
     }
   }, [refreshUser, showToast]);
 
@@ -530,8 +530,8 @@ function AppContent() {
     document.documentElement.setAttribute("data-theme", newTheme);
     try {
       await api.put("settings", { lowStock, expiryDays, theme: newTheme });
-    } catch {
-      console.error("Failed to save theme preference");
+    } catch (err) {
+      console.error("Failed to save theme preference", err);
     }
   }, [theme, lowStock, expiryDays]);
 

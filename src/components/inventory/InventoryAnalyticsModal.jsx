@@ -266,8 +266,8 @@ export default function InventoryAnalyticsModal({ isOpen, onClose }) {
         state: { summary, categories, highValueStock, expiryRisk },
       });
       onClose();
-    } catch {
-      toast.error("Unable to open analytics page");
+    } catch (err) {
+      toast.error("Unable to open analytics page", err);
     }
   };
 

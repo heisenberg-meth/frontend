@@ -656,8 +656,8 @@ export default function AdminSubscriptions() {
       if (res.success) {
         setHistoryData(res.data || []);
       }
-    } catch {
-      toast.error("Failed to load history");
+    } catch (err) {
+      toast.error("Failed to load history", err);
     }
   };
   const totalPages = Math.ceil(total / 15);

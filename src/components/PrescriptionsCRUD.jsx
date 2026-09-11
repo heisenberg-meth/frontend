@@ -53,8 +53,8 @@ export default function PrescriptionsCRUD({ showToast }) {
       const res = await getPrescriptions();
       const data = res.data.data || res.data;
       setPrescriptions(Array.isArray(data) ? data : []);
-    } catch {
-      showToast("Failed to load prescriptions", "error");
+    } catch (err) {
+      showToast("Failed to load prescriptions", err);
     } finally {
       setLoading(false);
     }

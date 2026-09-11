@@ -651,8 +651,8 @@ export default function ManageTeam({ user, showToast }) {
       const res = await getTeamMembers();
       const data = res.data.data || res.data;
       setTeam(Array.isArray(data) ? data : []);
-    } catch {
-      showToast("Failed to fetch clinical personnel", "error");
+    } catch (err) {
+      showToast("Failed to fetch clinical personnel", err);
     }
   }, [showToast]);
   useEffect(() => {
@@ -726,8 +726,8 @@ export default function ManageTeam({ user, showToast }) {
       showToast("Clinical profile image synchronized", "success");
       setShowAvatarModal(false);
       fetchTeam();
-    } catch {
-      showToast("Failed to upload assets", "error");
+    } catch (err) {
+      showToast("Failed to upload assets", err);
     } finally {
       setUploading(false);
     }
@@ -745,8 +745,8 @@ export default function ManageTeam({ user, showToast }) {
       await removeTeamMember(id);
       showToast("Personnel de-authorized", "success");
       fetchTeam();
-    } catch {
-      showToast("Critical: Error removing staff", "error");
+    } catch (err) {
+      showToast("Critical: Error removing staff", err);
     }
   };
   return (

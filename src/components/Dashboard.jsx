@@ -19,7 +19,8 @@ import { safeNumber } from "../utils/number.js";
 const getDays = (d) => {
   try {
     return differenceInDays(new Date(d), new Date());
-  } catch {
+  } catch (err) {
+    console.log(err);
     return 999;
   }
 };

@@ -31,7 +31,8 @@ export default function Topbar({
     if (saved) {
       try {
         return JSON.parse(saved);
-      } catch {
+      } catch (err) {
+        console.log(err);
         return [];
       }
     }
@@ -53,8 +54,8 @@ export default function Topbar({
               ? res.data
               : [],
         );
-      } catch {
-        // notification errors are non-critical
+      } catch (err) {
+        console.log(err);
       } finally {
         setNotificationsLoading(false);
       }
@@ -219,8 +220,8 @@ export default function Topbar({
           isRead: true,
         })),
       );
-    } catch {
-      // non-critical
+    } catch (err) {
+      console.log(err);
     }
   };
   useEffect(() => {

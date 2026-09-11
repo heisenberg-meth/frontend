@@ -357,8 +357,8 @@ function NotifySettings({ showToast, settings }) {
         alertPhone: phone,
       });
       showToast("Notification settings saved", "success");
-    } catch {
-      showToast("Failed to save notification settings", "error");
+    } catch (err) {
+      showToast("Failed to save notification settings", err);
     } finally {
       setSaving(false);
     }

@@ -10,7 +10,8 @@ function isValidCallback(url) {
   try {
     const parsed = new URL(url);
     return ALLOWED_CALLBACK_HOSTS.includes(parsed.hostname);
-  } catch {
+  } catch (err) {
+    console.log(err);
     return false;
   }
 }

@@ -345,8 +345,8 @@ function ShopModal({
       showToast?.("Shop Details Updated Successfully", "success");
       onRefresh?.();
       onClose();
-    } catch {
-      showToast?.("Failed to update shop details", "error");
+    } catch (err) {
+      showToast?.("Failed to update shop details", err);
     } finally {
       setSaving(false);
     }

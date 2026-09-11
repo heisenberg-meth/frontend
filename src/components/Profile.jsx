@@ -625,7 +625,8 @@ export default function Profile({
       const res = await getActiveSessions();
       const data = res.data.data || res.data;
       setSessions(Array.isArray(data) ? data : []);
-    } catch {
+    } catch (err) {
+      console.log(err);
       setSessions([]);
     } finally {
       setSessionsLoading(false);
@@ -655,11 +656,13 @@ export default function Profile({
   };
   return (
     <div className="profile-container-v2">
-      <div className="profile-header-v2">          <div className="header-badge">
-            <Zap size={12} /> ENTERPRISE NODE
-          </div>
-          <h1 className="page-title">Clinical Profile</h1>
-          <p className="page-subtitle header-subtitle">
+      <div className="profile-header-v2">
+        {" "}
+        <div className="header-badge">
+          <Zap size={12} /> ENTERPRISE NODE
+        </div>
+        <h1 className="page-title">Clinical Profile</h1>
+        <p className="page-subtitle header-subtitle">
           Manage your professional identity and security credentials within the
           Viyan ecosystem.
         </p>

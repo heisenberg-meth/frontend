@@ -60,7 +60,8 @@ adminHttp.interceptors.response.use(
           }
           return adminHttp(original);
         }
-      } catch {
+      } catch (err) {
+        console.log(err);
         localStorage.removeItem(ADMIN_KEY);
         window.location.href = "/admin/login";
       }
@@ -99,8 +100,8 @@ export const adminApi = {
   async logout() {
     try {
       await adminHttp.post(API_ROUTES.ADMIN_LOGOUT);
-    } catch {
-      // logout errors are non-critical
+    } catch (err) {
+      console.log(err);
     } finally {
       localStorage.removeItem(ADMIN_KEY);
       localStorage.removeItem(REFRESH_KEY);
@@ -111,7 +112,8 @@ export const adminApi = {
       localStorage.removeItem("viyan_admin_user");
       const raw = localStorage.getItem(ADMIN_KEY);
       return raw ? JSON.parse(raw) : null;
-    } catch {
+    } catch (err) {
+      console.log(err);
       return null;
     }
   },

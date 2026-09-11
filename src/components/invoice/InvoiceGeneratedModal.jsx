@@ -200,8 +200,8 @@ export default function InvoiceGeneratedModal({
         pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeight);
         pdf.save(`INV-${invoice.invoiceNumber || invoice.id}.pdf`);
         if (showToast) showToast("PDF downloaded", "success");
-      } catch {
-        if (showToast) showToast("Failed to generate PDF", "error");
+      } catch (err) {
+        if (showToast) showToast("Failed to generate PDF", err);
       }
     });
   };

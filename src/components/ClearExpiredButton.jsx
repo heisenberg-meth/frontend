@@ -578,7 +578,8 @@ export default function ClearExpiredButton({
       const res = await api.get(`/inventory/expired/clearable${params}`);
       const data = res?.data?.data ?? res?.data ?? {};
       setCount(data.count ?? 0);
-    } catch {
+    } catch (err) {
+      console.log(err);
       setCount(0);
     } finally {
       setLoadingCount(false);
@@ -594,7 +595,8 @@ export default function ClearExpiredButton({
           const data = res?.data?.data ?? res?.data ?? {};
           setCount(data.count ?? 0);
         }
-      } catch {
+      } catch (err) {
+        console.log(err);
         if (!ignore) setCount(0);
       }
     })();

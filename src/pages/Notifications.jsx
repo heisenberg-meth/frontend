@@ -281,8 +281,9 @@ export default function Notifications({ showToast }) {
       );
       window.dispatchEvent(new Event("notificationsUpdated"));
       showToast?.("All notifications marked as read", "success");
-    } catch {
-      showToast?.("Failed to mark all as read", "error");
+    } catch (err) {
+      console.log(err);
+      showToast?.("Failed to mark all as read", err);
     }
   };
   const handleDelete = async (id) => {
@@ -315,8 +316,8 @@ export default function Notifications({ showToast }) {
       setNotifications([]);
       window.dispatchEvent(new Event("notificationsUpdated"));
       showToast?.("All notifications cleared", "success");
-    } catch {
-      showToast?.("Failed to clear notifications", "error");
+    } catch (err) {
+      showToast?.("Failed to clear notifications", err);
     }
   };
   const filteredNotifications = useMemo(() => {

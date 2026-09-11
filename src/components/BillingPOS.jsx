@@ -182,8 +182,8 @@ export default function BillingPOS({
           `currentBillingPatient_${initialArgs.userKey}`,
         );
         if (saved) initialPatient = JSON.parse(saved);
-      } catch {
-        /* ignore */
+      } catch (err) {
+        console.log(err);
       }
       let initialLineItems = [];
       try {
@@ -191,8 +191,8 @@ export default function BillingPOS({
           `currentBillingItems_${initialArgs.userKey}`,
         );
         if (saved) initialLineItems = JSON.parse(saved);
-      } catch {
-        /* ignore */
+      } catch (err) {
+        console.log(err);
       }
       return {
         patient: initialPatient,

@@ -228,8 +228,8 @@ export default function SubscriptionCRUD({ showToast, user }) {
       ]);
       setSubscription(subRes.data?.data || subRes.data);
       setPaymentHistory(payRes.data?.data || payRes.data || []);
-    } catch {
-      showToast("Could not verify subscription status", "error");
+    } catch (err) {
+      showToast("Could not verify subscription status", err);
     }
   }, [showToast]);
   useEffect(() => {
@@ -244,9 +244,9 @@ export default function SubscriptionCRUD({ showToast, user }) {
         if (!mounted) return;
         setSubscription(subRes.data?.data || subRes.data);
         setPaymentHistory(payRes.data?.data || payRes.data || []);
-      } catch {
+      } catch (err) {
         if (mounted) {
-          showToast("Could not verify subscription status", "error");
+          showToast("Could not verify subscription status", err);
         }
       } finally {
         if (mounted) {

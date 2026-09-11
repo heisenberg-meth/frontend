@@ -847,6 +847,10 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
     summaryLoading,
     summaryError,
   } = purchaseState;
+  const showToastRef = useRef(showToast);
+  useEffect(() => {
+    showToastRef.current = showToast;
+  }, [showToast]);
   const isOpeningReceiveModalRef = useRef(false);
   const isUpdatingPaymentRef = useRef(false);
   const isProcessingReturnRef = useRef(false);
@@ -1075,11 +1079,20 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
       const data = res?.data?.data || res?.data || null;
       if (data && typeof data === "object") {
         setSummaryData(data);
+        console.log("[PURCHASE SUMMARY]", {
+          endpoint: API_ROUTES.PURCHASES_SUMMARY,
+          status: res?.status || 200,
+          pendingPurchaseOrders: data.pendingPurchaseOrders,
+        });
       } else {
         setSummaryError(true);
       }
     } catch (err) {
-      console.error("[PURCHASE SUMMARY FETCH ERROR]", err);
+      console.error("[PURCHASE SUMMARY ERROR]", {
+        endpoint: API_ROUTES.PURCHASES_SUMMARY,
+        status: err?.response?.status || 500,
+        message: err?.response?.data?.message || err?.message,
+      });
       setSummaryError(true);
     } finally {
       setSummaryLoading(false);
@@ -1101,8 +1114,8 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
         );
         const order = data?.data || data;
         priorGRN = order?.goodsReceiptNotes?.[0] || null;
-      } catch {
-        // no prior GRN data available
+      } catch (err) {
+        console.log(err);
       }
       setReceiveItems(
         (po.items || []).map((item) => {
@@ -1145,6 +1158,7 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
   };
   const refreshData = async () => {
     try {
+      setSummaryLoading(true);
       const results = await Promise.allSettled([
         api.get(API_ROUTES.SUPPLIERS),
         api.get(API_ROUTES.PURCHASES_ORDERS),
@@ -1155,16 +1169,6 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
       ]);
       setSuppliers(safeData(results[0], "data"));
       const loadedOrdersRefresh = safeData(results[1], "data");
-      if (Array.isArray(loadedOrdersRefresh)) {
-        console.table(
-          loadedOrdersRefresh.map((po) => ({
-            id: po.id,
-            poNumber: po.poNumber || po.orderNumber,
-            status: po.status,
-            supplier: po.supplier?.name || po.supplierName,
-          })),
-        );
-      }
       setOrders(loadedOrdersRefresh);
       setReturns(safeData(results[2], "data"));
       setInvoices(safeData(results[3], "data"));
@@ -1174,15 +1178,28 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
         if (sumData && typeof sumData === "object") {
           setSummaryData(sumData);
           setSummaryError(false);
+          console.log("[PURCHASE SUMMARY]", {
+            endpoint: API_ROUTES.PURCHASES_SUMMARY,
+            status: 200,
+            pendingPurchaseOrders: sumData.pendingPurchaseOrders,
+          });
         } else {
           setSummaryError(true);
         }
       } else if (results[5]?.status === "rejected") {
         setSummaryError(true);
+        const err = results[5].reason;
+        console.error("[PURCHASE SUMMARY ERROR]", {
+          endpoint: API_ROUTES.PURCHASES_SUMMARY,
+          status: err?.response?.status || 500,
+          message: err?.response?.data?.message || err?.message,
+        });
       }
     } catch (err) {
       console.error("[FETCH DATA ERROR]", err);
-      showToast("Failed to load live data", "error");
+      showToastRef.current?.("Failed to load live data", "error");
+    } finally {
+      setSummaryLoading(false);
     }
   };
   const updatePaymentStatus = async (invoiceId, status) => {
@@ -1195,10 +1212,10 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
           paymentStatus: status,
         },
       );
-      showToast("Payment status updated", "success");
+      showToastRef.current?.("Payment status updated", "success");
       await refreshData();
     } catch (err) {
-      showToast("Failed to update payment status", err);
+      showToastRef.current?.("Failed to update payment status", err);
     } finally {
       isUpdatingPaymentRef.current = false;
     }
@@ -1220,16 +1237,6 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
         if (!mounted) return;
         setSuppliers(safeData(results[0], "data"));
         const loadedOrdersInit = safeData(results[1], "data");
-        if (Array.isArray(loadedOrdersInit)) {
-          console.table(
-            loadedOrdersInit.map((po) => ({
-              id: po.id,
-              poNumber: po.poNumber || po.orderNumber,
-              status: po.status,
-              supplier: po.supplier?.name || po.supplierName,
-            })),
-          );
-        }
         setOrders(loadedOrdersInit);
         setReturns(safeData(results[2], "data"));
         setInvoices(safeData(results[3], "data"));
@@ -1240,26 +1247,52 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
           if (sumData && typeof sumData === "object") {
             setSummaryData(sumData);
             setSummaryError(false);
+            console.log("[PURCHASE SUMMARY]", {
+              endpoint: API_ROUTES.PURCHASES_SUMMARY,
+              status: 200,
+              pendingPurchaseOrders: sumData.pendingPurchaseOrders,
+            });
           } else {
             setSummaryError(true);
           }
         } else if (results[5]?.status === "rejected") {
           setSummaryError(true);
+          const err = results[5].reason;
+          console.error("[PURCHASE SUMMARY ERROR]", {
+            endpoint: API_ROUTES.PURCHASES_SUMMARY,
+            status: err?.response?.status || 500,
+            message: err?.response?.data?.message || err?.message,
+          });
         }
-        const failed = results.filter((r) => r.status === "rejected");
+        const endpointNames = [
+          "SUPPLIERS",
+          "PURCHASES_ORDERS",
+          "PURCHASES_RETURNS",
+          "PURCHASES_INVOICES",
+          "BRANCHES",
+          "PURCHASES_SUMMARY",
+        ];
+        const failed = results
+          .map((r, idx) => ({
+            name: endpointNames[idx],
+            status: r.status,
+            reason: r.reason,
+          }))
+          .filter((r) => r.status === "rejected");
         if (failed.length > 0) {
           console.warn(
-            `[PURCHASE] ${failed.length} API(s) failed, using partial data`,
+            `[PURCHASE] ${failed.length} API(s) failed (${failed.map((f) => f.name).join(", ")}), using partial data`,
           );
         }
       } catch (err) {
         console.error(err);
         if (mounted) {
-          showToast("Failed to load live data", "error");
+          showToastRef.current?.("Failed to load live data", "error");
         }
       } finally {
         if (mounted) {
           setLoading(false);
+          setSummaryLoading(false);
         }
       }
     };
@@ -1277,7 +1310,6 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
     setSummaryError,
     setSummaryLoading,
     setSuppliers,
-    showToast,
   ]);
   useEffect(() => {}, [medicines]);
   useEffect(() => {}, [purchaseItems]);
@@ -2136,7 +2168,8 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
               ),
               maxQuantity: batches.length > 0 ? batches[0].quantity : 0,
             };
-          } catch {
+          } catch (err) {
+            console.log(err);
             return {
               medicineId,
               medicineName,
@@ -2311,14 +2344,16 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
           {
             label: "THIS MONTH PURCHASES",
             val:
-              "₹" +
-              invoices
-                .reduce(
-                  (sum, inv) =>
-                    sum + safeNumber(inv.totalAmount || inv.total || 0),
-                  0,
-                )
-                .toLocaleString(),
+              summaryData?.thisMonthPurchases != null
+                ? "₹" + Number(summaryData.thisMonthPurchases).toLocaleString()
+                : "₹" +
+                  invoices
+                    .reduce(
+                      (sum, inv) =>
+                        sum + safeNumber(inv.totalAmount || inv.total || 0),
+                      0,
+                    )
+                    .toLocaleString(),
             icon: ShoppingCart,
             col: "var(--info)",
           },
@@ -2395,23 +2430,28 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
           {
             label: "SUPPLIER RETURNS",
             val:
-              "₹" +
-              returns
-                .reduce(
-                  (sum, r) =>
-                    sum +
-                    safeNumber(
-                      r.returnAmount || r.refundAmount || r.value || 0,
-                    ),
-                  0,
-                )
-                .toLocaleString(),
+              summaryData?.supplierReturns != null
+                ? "₹" + Number(summaryData.supplierReturns).toLocaleString()
+                : "₹" +
+                  returns
+                    .reduce(
+                      (sum, r) =>
+                        sum +
+                        safeNumber(
+                          r.returnAmount || r.refundAmount || r.value || 0,
+                        ),
+                      0,
+                    )
+                    .toLocaleString(),
             icon: ArrowLeft,
             col: "var(--danger)",
           },
           {
             label: "ACTIVE SUPPLIERS",
-            val: suppliers.length,
+            val:
+              summaryData?.activeSuppliers != null
+                ? summaryData.activeSuppliers
+                : suppliers.length,
             icon: Building2,
             col: "var(--primary)",
           },

@@ -184,8 +184,8 @@ export default function SystemSettings({
         }),
       ]);
       showToast("Global facility configuration synchronized", "success");
-    } catch {
-      showToast("Synchronization partial failure", "error");
+    } catch (err) {
+      showToast("Synchronization partial failure", err);
     } finally {
       setSaving(false);
     }
@@ -303,8 +303,8 @@ export default function SystemSettings({
           <div>
             <h1 className="page-title">System Configuration</h1>
             <p className="page-subtitle">
-              Orchestrate global clinical thresholds, manage enterprise licensing,
-              and maintain architectural integrity.
+              Orchestrate global clinical thresholds, manage enterprise
+              licensing, and maintain architectural integrity.
             </p>
           </div>
         </div>

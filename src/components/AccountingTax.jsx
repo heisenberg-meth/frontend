@@ -690,8 +690,8 @@ export default function AccountingTax({ showToast }) {
           : [];
       setExpenses(expensesList);
       if (data?.gst) setGstData(Array.isArray(data.gst) ? data.gst : []);
-    } catch {
-      showToast("Failed to load accounting data", "error");
+    } catch (err) {
+      showToast("Failed to load accounting data", err);
     } finally {
       setLoading(false);
     }
@@ -711,9 +711,9 @@ export default function AccountingTax({ showToast }) {
             : [];
         setExpenses(expensesList);
         setGstData(Array.isArray(data?.gst) ? data.gst : []);
-      } catch {
+      } catch (err) {
         if (mounted) {
-          showToast("Failed to load accounting data", "error");
+          showToast("Failed to load accounting data", err);
         }
       } finally {
         if (mounted) {

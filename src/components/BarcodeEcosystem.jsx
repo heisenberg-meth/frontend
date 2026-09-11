@@ -150,7 +150,8 @@ export default function BarcodeEcosystem({ showToast }) {
         setVerificationResult("notfound");
         showToast("Medicine not found", "error");
       }
-    } catch {
+    } catch (err) {
+      console.log(err);
       try {
         const res2 = await searchByBarcode(barcodeInput.trim());
         const data2 = res2.data.data || res2.data;
@@ -163,9 +164,9 @@ export default function BarcodeEcosystem({ showToast }) {
           setVerificationResult("notfound");
           showToast("Medicine not found", "error");
         }
-      } catch {
+      } catch (err) {
         setVerificationResult("notfound");
-        showToast("Medicine not found", "error");
+        showToast("Medicine not found", err);
       }
     } finally {
       setVerifying(false);
@@ -183,7 +184,8 @@ export default function BarcodeEcosystem({ showToast }) {
         if (!mounted) return;
         const data = res.data.data || res.data;
         setScanHistory(Array.isArray(data) ? data : []);
-      } catch {
+      } catch (err) {
+        console.log(err);
         if (mounted) {
           setScanHistory([]);
         }

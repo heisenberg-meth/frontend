@@ -144,8 +144,8 @@ function GSTModal({ onClose, onRefresh, showToast, storeProfile }) {
       showToast?.("GST Configuration Updated Successfully", "success");
       onRefresh?.();
       onClose();
-    } catch {
-      showToast?.("Failed to update GST configuration", "error");
+    } catch (err) {
+      showToast?.("Failed to update GST configuration", err);
     } finally {
       setSaving(false);
     }

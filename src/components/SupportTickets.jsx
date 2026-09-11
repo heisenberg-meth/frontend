@@ -630,8 +630,8 @@ export default function SupportTickets({ user, showToast }) {
       if (filter.priority) params.set("priority", filter.priority);
       const res = await api.get(`${url}?${params}`);
       setTickets(res.data?.data || []);
-    } catch {
-      showToast("Failed to load tickets", "error");
+    } catch (err) {
+      showToast("Failed to load tickets", err);
     } finally {
       setLoading(false);
     }
@@ -696,8 +696,8 @@ export default function SupportTickets({ user, showToast }) {
       const url = `/support/${ticketId}`;
       const res = await api.get(url);
       setSelectedTicket(res.data?.data);
-    } catch {
-      showToast("Failed to load ticket details", "error");
+    } catch (err) {
+      showToast("Failed to load ticket details", err);
     }
   };
   const isReplyingRef = useRef(false);

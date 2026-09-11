@@ -12,8 +12,8 @@ export function setUser(user) {
       avatar: user.avatar,
     };
     localStorage.setItem(USER_KEY, JSON.stringify(safeUser));
-  } catch {
-    /* noop */
+  } catch (err) {
+    console.log(err);
   }
 }
 
@@ -24,7 +24,8 @@ export function getStoredUser() {
     return raw && raw !== "undefined" && raw !== "null"
       ? JSON.parse(raw)
       : null;
-  } catch {
+  } catch (err) {
+    console.log(err);
     return null;
   }
 }
@@ -32,8 +33,8 @@ export function getStoredUser() {
 export function setToken(token) {
   try {
     localStorage.setItem(TOKEN_KEY, token);
-  } catch {
-    /* noop */
+  } catch (err) {
+    console.log(err);
   }
 }
 
@@ -42,7 +43,8 @@ export function getToken() {
     localStorage.removeItem("viyan_token");
     const raw = localStorage.getItem(TOKEN_KEY);
     return raw && raw !== "undefined" && raw !== "null" ? raw : null;
-  } catch {
+  } catch (err) {
+    console.log(err);
     return null;
   }
 }
@@ -50,8 +52,8 @@ export function getToken() {
 export function setRefreshToken(token) {
   try {
     localStorage.setItem(REFRESH_TOKEN_KEY, token);
-  } catch {
-    /* noop */
+  } catch (err) {
+    console.log(err);
   }
 }
 
@@ -59,7 +61,8 @@ export function getRefreshToken() {
   try {
     const raw = localStorage.getItem(REFRESH_TOKEN_KEY);
     return raw && raw !== "undefined" && raw !== "null" ? raw : null;
-  } catch {
+  } catch (err) {
+    console.log(err);
     return null;
   }
 }
@@ -70,8 +73,8 @@ function clearUser() {
     localStorage.removeItem(USER_KEY);
     localStorage.removeItem(TOKEN_KEY);
     localStorage.removeItem(REFRESH_TOKEN_KEY);
-  } catch {
-    /* noop */
+  } catch (err) {
+    console.log(err);
   }
 }
 

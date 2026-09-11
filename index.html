@@ -18,7 +18,8 @@
         try {
           var theme = localStorage.getItem("viyan-theme") || "dark";
           document.documentElement.setAttribute("data-theme", theme);
-        } catch (e) {}
+        } catch (e) {console.log(e);
+        }
       })();
     </script>
   </head>

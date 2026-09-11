@@ -70,7 +70,8 @@ const getFingerprint = () => {
     return btoa(
       `${userAgent}-${language}-${hardwareConcurrency}-${deviceMemory}-${width}x${height}-${colorDepth}-${timezone}-${canvasHash}`,
     );
-  } catch {
+  } catch (err) {
+    console.log(err);
     return null;
   }
 };
