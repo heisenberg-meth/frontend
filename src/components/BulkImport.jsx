@@ -1107,9 +1107,18 @@ export default function BulkImport({ fetchData, showToast }) {
               setImportStatus("complete");
               importProcessingRef.current = false;
               const summary = progressData.summary || {};
+              const errors =
+                progressData.errors ||
+                summary.errors ||
+                progressData.failures ||
+                summary.failures ||
+                progressData.failedRecords ||
+                summary.failedRecords ||
+                [];
               setCommitResult({
                 ...summary,
-                errors: summary.errors || [],
+                errors,
+                failures: errors,
               });
               const imported = summary.imported ?? 0;
               const duplicates = summary.duplicates ?? 0;
@@ -1145,9 +1154,19 @@ export default function BulkImport({ fetchData, showToast }) {
       } else if (res.data?.success) {
         setImportProgress(100);
         setImportStatus("complete");
+        const summary = res.data.summary || {};
+        const errors =
+          res.data.errors ||
+          res.data.failures ||
+          res.data.failedRecords ||
+          summary.errors ||
+          summary.failures ||
+          summary.failedRecords ||
+          [];
         setCommitResult({
-          ...(res.data.summary || {}),
-          errors: res.data.errors || [],
+          ...summary,
+          errors,
+          failures: errors,
         });
         const imported = res.data.summary?.imported ?? 0;
         const duplicates = res.data.summary?.duplicates ?? 0;

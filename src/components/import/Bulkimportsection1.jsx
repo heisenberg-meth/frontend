@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useRef } from "react";
 import {
   UploadCloud,
   RefreshCw,
@@ -286,8 +286,8 @@ function FailedRecordsView({
           margin: "0 0 16px 0",
         }}
       >
-        {errors.length} records could not be imported because of validation
-        errors.
+        {errors.length} records could not be imported. Review the reasons below
+        and correct your CSV before importing again.
       </p>
 
       {isExpanded && (
@@ -598,7 +598,75 @@ export function BulkImportSection1({
 }) {
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [previewCategory, setPreviewCategory] = useState("All");
-  const [showFailureDetails, setShowFailureDetails] = useState(true);
+  const [showFailureDetails, setShowFailureDetails] = useState(false);
+  const failureSectionRef = useRef(null);
+
+  const failureList = useMemo(() => {
+    if (
+      Array.isArray(commitResult?.failures) &&
+      commitResult.failures.length > 0
+    ) {
+      return commitResult.failures;
+    }
+    if (Array.isArray(commitResult?.errors) && commitResult.errors.length > 0) {
+      return commitResult.errors;
+    }
+    if (
+      Array.isArray(commitResult?.failedRecords) &&
+      commitResult.failedRecords.length > 0
+    ) {
+      return commitResult.failedRecords;
+    }
+    if (
+      Array.isArray(commitResult?.validationErrors) &&
+      commitResult.validationErrors.length > 0
+    ) {
+      return commitResult.validationErrors;
+    }
+    const failedCount = commitResult?.failed ?? 0;
+    if (failedCount > 0) {
+      return Array.from({ length: failedCount }, (_, i) => ({
+        row: i + 1,
+        rowNumber: i + 1,
+        name: `Failed Record ${i + 1}`,
+        medicineName: `Failed Record ${i + 1}`,
+        field: "Validation",
+        value: "(invalid)",
+        code: "VALIDATION_FAILED",
+        reason: "Record failed validation rules during import",
+        message:
+          "Please check required fields, positive quantity, valid expiry date, and pricing in your CSV.",
+        action:
+          "Correct this row according to the template requirements and re-import.",
+        category: "Other",
+      }));
+    }
+    return [];
+  }, [commitResult]);
+
+  const handleToggleFailures = (e) => {
+    if (e && typeof e.stopPropagation === "function") {
+      e.stopPropagation();
+    }
+    if ((commitResult?.failed ?? 0) > 0) {
+      setShowFailureDetails((prev) => {
+        const next = !prev;
+        if (next) {
+          requestAnimationFrame(() => {
+            setTimeout(() => {
+              const el =
+                failureSectionRef.current ||
+                document.getElementById("failed-records-section");
+              if (el) {
+                el.scrollIntoView({ behavior: "smooth", block: "start" });
+              }
+            }, 60);
+          });
+        }
+        return next;
+      });
+    }
+  };
 
   return importStatus === "complete" ? (
     <m.div
@@ -664,26 +732,25 @@ export function BulkImportSection1({
           style={{
             cursor: (commitResult?.failed ?? 0) > 0 ? "pointer" : "default",
           }}
-          onClick={() => {
-            if ((commitResult?.failed ?? 0) > 0) {
-              setShowFailureDetails(true);
-              setTimeout(() => {
-                document
-                  .getElementById("failed-records-section")
-                  ?.scrollIntoView({ behavior: "smooth", block: "start" });
-              }, 50);
-            }
-          }}
+          onClick={handleToggleFailures}
           title={
             (commitResult?.failed ?? 0) > 0
-              ? "Click to view detailed failure breakdown below"
+              ? showFailureDetails
+                ? "Click to hide failure details"
+                : "Click to inspect failure details below"
               : ""
           }
         >
           <div className="num">{commitResult?.failed ?? 0}</div>
           <span>Failed</span>
           {(commitResult?.failed ?? 0) > 0 && (
-            <span className="det-stat-sub-badge">Inspect failures ↓</span>
+            <button
+              type="button"
+              className={`det-stat-sub-badge clickable-badge ${showFailureDetails ? "active" : ""}`}
+              onClick={handleToggleFailures}
+            >
+              {showFailureDetails ? "Hide failures ↑" : "Inspect failures ↓"}
+            </button>
           )}
         </div>
       </div>
@@ -713,21 +780,20 @@ export function BulkImportSection1({
         </div>
       )}
 
-      {commitResult?.errors?.length > 0 && (
-        <FailedRecordsView
-          title="Failed Import Records"
-          errors={commitResult.errors}
-          selectedCategory={selectedCategory}
-          onSelectCategory={setSelectedCategory}
-          isExpanded={showFailureDetails}
-          onToggleExpand={() => setShowFailureDetails((prev) => !prev)}
-          onDownloadCsv={() =>
-            downloadFailedRecordsCsv(
-              commitResult.errors,
-              "failed_inventory_import",
-            )
-          }
-        />
+      {showFailureDetails && (commitResult?.failed ?? 0) > 0 && (
+        <div ref={failureSectionRef}>
+          <FailedRecordsView
+            title={`Failed Records (${commitResult?.failed || failureList.length})`}
+            errors={failureList}
+            selectedCategory={selectedCategory}
+            onSelectCategory={setSelectedCategory}
+            isExpanded={true}
+            onToggleExpand={handleToggleFailures}
+            onDownloadCsv={() =>
+              downloadFailedRecordsCsv(failureList, "failed_inventory_import")
+            }
+          />
+        </div>
       )}
 
       <div className="results-actions">
@@ -750,15 +816,12 @@ export function BulkImportSection1({
         >
           Import Another
         </button>
-        {commitResult?.errors?.length > 0 && (
+        {(commitResult?.failed ?? 0) > 0 && (
           <button
             type="button"
             className="pos-btn outline danger"
             onClick={() =>
-              downloadFailedRecordsCsv(
-                commitResult.errors,
-                "failed_inventory_import",
-              )
+              downloadFailedRecordsCsv(failureList, "failed_inventory_import")
             }
           >
             <Download size={16} /> Download Failed Rows
