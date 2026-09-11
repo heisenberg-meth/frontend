@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import React, { useState, useMemo } from "react";
 import {
   UploadCloud,
   RefreshCw,
@@ -116,7 +116,7 @@ function downloadFailedRecordsCsv(
     "Batch Number",
     "Failed Field",
     "Provided Value",
-    "Error Reason",
+    "Import Failure Reason",
     "Recommended Action",
   ];
 
@@ -179,7 +179,35 @@ function FailedRecordsView({
   selectedCategory,
   onSelectCategory,
   onDownloadCsv,
+  isExpanded: controlledIsExpanded,
+  onToggleExpand,
 }) {
+  const [internalExpanded, setInternalExpanded] = useState(true);
+  const isExpanded =
+    controlledIsExpanded !== undefined
+      ? controlledIsExpanded
+      : internalExpanded;
+  const toggleExpanded = () => {
+    if (onToggleExpand) {
+      onToggleExpand();
+    } else {
+      setInternalExpanded(!internalExpanded);
+    }
+  };
+  const [expandedRows, setExpandedRows] = useState(new Set());
+
+  const toggleRow = (key) => {
+    setExpandedRows((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) {
+        next.delete(key);
+      } else {
+        next.add(key);
+      }
+      return next;
+    });
+  };
+
   const categoryCounts = useMemo(() => {
     const counts = {
       All: errors.length,
@@ -218,12 +246,26 @@ function FailedRecordsView({
   if (!errors || errors.length === 0) return null;
 
   return (
-    <div className="failed-records-panel">
+    <div className="failed-records-panel" id="failed-records-section">
       <div className="failed-records-header">
-        <h3>
-          <AlertCircle size={20} style={{ color: "var(--danger)" }} />
-          {title || "Failed Import Records"} ({errors.length})
-        </h3>
+        <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+          <h3>
+            <AlertCircle size={20} style={{ color: "var(--danger)" }} />
+            {title || "Failed Records"} ({errors.length})
+          </h3>
+          <button
+            type="button"
+            className="pos-btn outline small"
+            onClick={toggleExpanded}
+            style={{
+              padding: "4px 12px",
+              fontSize: "12px",
+              borderRadius: "6px",
+            }}
+          >
+            {isExpanded ? "Hide Details" : "View Details"}
+          </button>
+        </div>
         <div className="failed-records-header-actions">
           <button
             type="button"
@@ -232,183 +274,277 @@ function FailedRecordsView({
             title="Download failed rows as CSV to fix and re-import"
           >
             <Download size={15} />
-            <span>Download Failed Records CSV</span>
+            <span>Download Failed Rows</span>
           </button>
         </div>
       </div>
 
-      {/* Error Count Cards (PRD §13) */}
-      <div className="error-stat-cards">
-        <button
-          type="button"
-          className={`error-stat-card danger ${selectedCategory === "All" ? "active" : ""}`}
-          onClick={() => onSelectCategory("All")}
-        >
-          <div className="count">{errors.length}</div>
-          <div className="label">Total Failed</div>
-        </button>
-        <button
-          type="button"
-          className={`error-stat-card quantity ${selectedCategory === "Quantity" ? "active" : ""}`}
-          onClick={() => onSelectCategory("Quantity")}
-        >
-          <div className="count">{categoryCounts.Quantity}</div>
-          <div className="label">Quantity</div>
-        </button>
-        <button
-          type="button"
-          className={`error-stat-card expiry ${selectedCategory === "Expiry" ? "active" : ""}`}
-          onClick={() => onSelectCategory("Expiry")}
-        >
-          <div className="count">{categoryCounts.Expiry}</div>
-          <div className="label">Expired</div>
-        </button>
-        <button
-          type="button"
-          className={`error-stat-card pricing ${selectedCategory === "Pricing" ? "active" : ""}`}
-          onClick={() => onSelectCategory("Pricing")}
-        >
-          <div className="count">{categoryCounts.Pricing}</div>
-          <div className="label">Pricing</div>
-        </button>
-        <button
-          type="button"
-          className={`error-stat-card duplicate ${selectedCategory === "Duplicate" ? "active" : ""}`}
-          onClick={() => onSelectCategory("Duplicate")}
-        >
-          <div className="count">{categoryCounts.Duplicate}</div>
-          <div className="label">Duplicate</div>
-        </button>
-        <button
-          type="button"
-          className={`error-stat-card other ${selectedCategory === "Other" ? "active" : ""}`}
-          onClick={() => onSelectCategory("Other")}
-        >
-          <div className="count">
-            {categoryCounts.Required + categoryCounts.Other}
+      <p
+        style={{
+          fontSize: "13px",
+          color: "var(--text-muted)",
+          margin: "0 0 16px 0",
+        }}
+      >
+        {errors.length} records could not be imported because of validation
+        errors.
+      </p>
+
+      {isExpanded && (
+        <>
+          {/* Error Count Cards (PRD §13 & §19) */}
+          <div className="error-stat-cards">
+            <button
+              type="button"
+              className={`error-stat-card danger ${selectedCategory === "All" ? "active" : ""}`}
+              onClick={() => onSelectCategory("All")}
+            >
+              <div className="count">{errors.length}</div>
+              <div className="label">Total Failed</div>
+            </button>
+            <button
+              type="button"
+              className={`error-stat-card quantity ${selectedCategory === "Quantity" ? "active" : ""}`}
+              onClick={() => onSelectCategory("Quantity")}
+            >
+              <div className="count">{categoryCounts.Quantity}</div>
+              <div className="label">Invalid Quantity</div>
+            </button>
+            <button
+              type="button"
+              className={`error-stat-card expiry ${selectedCategory === "Expiry" ? "active" : ""}`}
+              onClick={() => onSelectCategory("Expiry")}
+            >
+              <div className="count">{categoryCounts.Expiry}</div>
+              <div className="label">Expired Medicine</div>
+            </button>
+            <button
+              type="button"
+              className={`error-stat-card pricing ${selectedCategory === "Pricing" ? "active" : ""}`}
+              onClick={() => onSelectCategory("Pricing")}
+            >
+              <div className="count">{categoryCounts.Pricing}</div>
+              <div className="label">Pricing Errors</div>
+            </button>
+            <button
+              type="button"
+              className={`error-stat-card duplicate ${selectedCategory === "Duplicate" ? "active" : ""}`}
+              onClick={() => onSelectCategory("Duplicate")}
+            >
+              <div className="count">{categoryCounts.Duplicate}</div>
+              <div className="label">Duplicate</div>
+            </button>
+            <button
+              type="button"
+              className={`error-stat-card other ${selectedCategory === "Other" ? "active" : ""}`}
+              onClick={() => onSelectCategory("Other")}
+            >
+              <div className="count">
+                {categoryCounts.Required + categoryCounts.Other}
+              </div>
+              <div className="label">Required & Format</div>
+            </button>
           </div>
-          <div className="label">Required & Other</div>
-        </button>
-      </div>
 
-      {/* Category Filter Pills (PRD §12) */}
-      <div className="error-filter-bar">
-        {[
-          "All",
-          "Quantity",
-          "Expiry",
-          "Pricing",
-          "Required",
-          "Duplicate",
-          "Other",
-        ].map((cat) => (
-          <button
-            key={cat}
-            type="button"
-            className={`error-pill ${selectedCategory === cat ? "active" : ""}`}
-            onClick={() => onSelectCategory(cat)}
-          >
-            <span>{cat}</span>
-            <span className="badge">{categoryCounts[cat] || 0}</span>
-          </button>
-        ))}
-      </div>
+          {/* Category Filter Pills (PRD §12) */}
+          <div className="error-filter-bar">
+            {[
+              "All",
+              "Quantity",
+              "Expiry",
+              "Pricing",
+              "Required",
+              "Duplicate",
+              "Other",
+            ].map((cat) => (
+              <button
+                key={cat}
+                type="button"
+                className={`error-pill ${selectedCategory === cat ? "active" : ""}`}
+                onClick={() => onSelectCategory(cat)}
+              >
+                <span>{cat}</span>
+                <span className="badge">{categoryCounts[cat] || 0}</span>
+              </button>
+            ))}
+          </div>
 
-      {/* Failed Records Table (PRD §10 & §11) */}
-      <div className="failed-records-table-container">
-        <table className="failed-records-table">
-          <TableHeader
-            columns={[
-              "Row #",
-              "Medicine Name",
-              "Batch",
-              "Field",
-              "Provided Value",
-              "Reason",
-              "Recommended Action",
-            ]}
-          />
-          <tbody>
-            {filteredErrors.length === 0 ? (
-              <tr>
-                <td
-                  colSpan={7}
-                  style={{
-                    textAlign: "center",
-                    padding: "24px",
-                    color: "var(--text-muted)",
-                  }}
-                >
-                  No errors in category &quot;{selectedCategory}&quot;.
-                </td>
-              </tr>
-            ) : (
-              filteredErrors.map((err, errIdx) => {
-                const subErrors =
-                  err.errors && err.errors.length > 0 ? err.errors : [err];
-                return subErrors.map((sub, subIdx) => (
-                  <tr
-                    key={`${err.row || err.rowNumber || errIdx}-${sub.field || subIdx}`}
-                  >
-                    <td className="row-num">
-                      Row {err.row || err.rowNumber || errIdx + 1}
-                    </td>
-                    <td className="medicine-name">
-                      {err.name || err.medicineName || "Unknown"}
-                    </td>
-                    <td>
-                      {err.batch || err.batchNumber ? (
-                        <span className="batch-tag">
-                          {err.batch || err.batchNumber}
-                        </span>
-                      ) : (
-                        "—"
-                      )}
-                    </td>
-                    <td>
-                      <span
-                        className="match-badge danger"
-                        style={{ fontSize: "11px" }}
-                      >
-                        {sub.field || err.field || "—"}
-                      </span>
-                    </td>
-                    <td>
-                      <span className="value-cell">
-                        {sub.value !== undefined &&
-                        sub.value !== null &&
-                        sub.value !== ""
-                          ? `"${sub.value}"`
-                          : err.value !== undefined &&
-                              err.value !== null &&
-                              err.value !== ""
-                            ? `"${err.value}"`
-                            : "(empty)"}
-                      </span>
-                    </td>
-                    <td>
-                      <div className="reason-text">
-                        {sub.message || sub.reason || err.message}
-                      </div>
-                    </td>
-                    <td>
-                      {sub.action || err.action ? (
-                        <div className="action-hint">
-                          <span>Correction:</span> {sub.action || err.action}
-                        </div>
-                      ) : (
-                        <div className="action-hint">
-                          Review spreadsheet entry
-                        </div>
-                      )}
+          {/* Failed Records Table (PRD §14, §15, §16) */}
+          <div className="failed-records-table-container">
+            <table className="failed-records-table">
+              <TableHeader
+                columns={[
+                  "CSV Row",
+                  "Medicine",
+                  "Batch",
+                  "Field",
+                  "Value",
+                  "Reason",
+                  "Recommended Action",
+                ]}
+              />
+              <tbody>
+                {filteredErrors.length === 0 ? (
+                  <tr>
+                    <td
+                      colSpan={7}
+                      style={{
+                        textAlign: "center",
+                        padding: "24px",
+                        color: "var(--text-muted)",
+                      }}
+                    >
+                      No errors in category &quot;{selectedCategory}&quot;.
                     </td>
                   </tr>
-                ));
-              })
-            )}
-          </tbody>
-        </table>
-      </div>
+                ) : (
+                  filteredErrors.map((err, errIdx) => {
+                    const subErrors =
+                      err.errors && err.errors.length > 0 ? err.errors : [err];
+                    return subErrors.map((sub, subIdx) => {
+                      const rowKey = `${err.row || err.rowNumber || errIdx}-${sub.field || subIdx}`;
+                      const isRowOpen = expandedRows.has(rowKey);
+                      return (
+                        <React.Fragment key={rowKey}>
+                          <tr
+                            className="clickable-error-row"
+                            onClick={() => toggleRow(rowKey)}
+                            title="Click to view full row diagnostic details"
+                          >
+                            <td className="row-num">
+                              Row {err.row || err.rowNumber || errIdx + 1}
+                            </td>
+                            <td className="medicine-name">
+                              {err.name ||
+                                err.medicine ||
+                                err.medicineName ||
+                                "Unknown"}
+                            </td>
+                            <td>
+                              {err.batch || err.batchNumber ? (
+                                <span className="batch-tag">
+                                  {err.batch || err.batchNumber}
+                                </span>
+                              ) : (
+                                "—"
+                              )}
+                            </td>
+                            <td>
+                              <span
+                                className="match-badge danger"
+                                style={{ fontSize: "11px" }}
+                              >
+                                {sub.field || err.field || "—"}
+                              </span>
+                            </td>
+                            <td>
+                              <span className="value-cell">
+                                {sub.value !== undefined &&
+                                sub.value !== null &&
+                                sub.value !== ""
+                                  ? `"${sub.value}"`
+                                  : err.value !== undefined &&
+                                      err.value !== null &&
+                                      err.value !== ""
+                                    ? `"${err.value}"`
+                                    : "(empty)"}
+                              </span>
+                            </td>
+                            <td>
+                              <div className="reason-text">
+                                {sub.message || sub.reason || err.message}
+                              </div>
+                            </td>
+                            <td>
+                              {sub.action || err.action ? (
+                                <div className="action-hint">
+                                  <span>Correction:</span>{" "}
+                                  {sub.action || err.action}
+                                </div>
+                              ) : (
+                                <div className="action-hint">
+                                  Review spreadsheet entry
+                                </div>
+                              )}
+                            </td>
+                          </tr>
+                          {isRowOpen && (
+                            <tr className="expanded-error-detail-row">
+                              <td colSpan={7}>
+                                <div className="expanded-error-card">
+                                  <div className="exp-card-header">
+                                    <strong>
+                                      CSV Row{" "}
+                                      {err.row || err.rowNumber || errIdx + 1} —{" "}
+                                      {err.name ||
+                                        err.medicine ||
+                                        err.medicineName ||
+                                        "Unknown"}
+                                    </strong>
+                                    <span className="exp-code-badge">
+                                      Code:{" "}
+                                      {sub.errorCode ||
+                                        sub.code ||
+                                        err.errorCode ||
+                                        "VALIDATION_ERROR"}
+                                    </span>
+                                  </div>
+                                  <div className="exp-card-grid">
+                                    <div>
+                                      <span className="exp-label">Field:</span>{" "}
+                                      <span className="exp-val">
+                                        {sub.field || err.field || "—"}
+                                      </span>
+                                    </div>
+                                    <div>
+                                      <span className="exp-label">
+                                        Provided Value:
+                                      </span>{" "}
+                                      <span className="exp-val danger">
+                                        {sub.value !== undefined &&
+                                        sub.value !== null &&
+                                        sub.value !== ""
+                                          ? `"${sub.value}"`
+                                          : err.value !== undefined &&
+                                              err.value !== null &&
+                                              err.value !== ""
+                                            ? `"${err.value}"`
+                                            : "(empty)"}
+                                      </span>
+                                    </div>
+                                    <div>
+                                      <span className="exp-label">Reason:</span>{" "}
+                                      <span className="exp-val danger">
+                                        {sub.reason ||
+                                          sub.message ||
+                                          err.message}
+                                      </span>
+                                    </div>
+                                    <div>
+                                      <span className="exp-label">
+                                        Details / Action:
+                                      </span>{" "}
+                                      <span className="exp-val">
+                                        {sub.action ||
+                                          err.action ||
+                                          "Correct this field in the CSV and re-import."}
+                                      </span>
+                                    </div>
+                                  </div>
+                                </div>
+                              </td>
+                            </tr>
+                          )}
+                        </React.Fragment>
+                      );
+                    });
+                  })
+                )}
+              </tbody>
+            </table>
+          </div>
+        </>
+      )}
     </div>
   );
 }
@@ -462,6 +598,7 @@ export function BulkImportSection1({
 }) {
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [previewCategory, setPreviewCategory] = useState("All");
+  const [showFailureDetails, setShowFailureDetails] = useState(true);
 
   return importStatus === "complete" ? (
     <m.div
@@ -522,9 +659,32 @@ export function BulkImportSection1({
           <div className="num">{commitResult?.skipped ?? 0}</div>
           <span>Skipped</span>
         </div>
-        <div className="det-stat danger">
+        <div
+          className={`det-stat danger ${(commitResult?.failed ?? 0) > 0 ? "clickable" : ""}`}
+          style={{
+            cursor: (commitResult?.failed ?? 0) > 0 ? "pointer" : "default",
+          }}
+          onClick={() => {
+            if ((commitResult?.failed ?? 0) > 0) {
+              setShowFailureDetails(true);
+              setTimeout(() => {
+                document
+                  .getElementById("failed-records-section")
+                  ?.scrollIntoView({ behavior: "smooth", block: "start" });
+              }, 50);
+            }
+          }}
+          title={
+            (commitResult?.failed ?? 0) > 0
+              ? "Click to view detailed failure breakdown below"
+              : ""
+          }
+        >
           <div className="num">{commitResult?.failed ?? 0}</div>
           <span>Failed</span>
+          {(commitResult?.failed ?? 0) > 0 && (
+            <span className="det-stat-sub-badge">Inspect failures ↓</span>
+          )}
         </div>
       </div>
 
@@ -559,6 +719,8 @@ export function BulkImportSection1({
           errors={commitResult.errors}
           selectedCategory={selectedCategory}
           onSelectCategory={setSelectedCategory}
+          isExpanded={showFailureDetails}
+          onToggleExpand={() => setShowFailureDetails((prev) => !prev)}
           onDownloadCsv={() =>
             downloadFailedRecordsCsv(
               commitResult.errors,
@@ -578,6 +740,16 @@ export function BulkImportSection1({
         >
           View Stock
         </button>
+        <button
+          className="pos-btn outline"
+          onClick={() => {
+            setFile(null);
+            setImportStatus("idle");
+            setCommitResult(null);
+          }}
+        >
+          Import Another
+        </button>
         {commitResult?.errors?.length > 0 && (
           <button
             type="button"
@@ -589,19 +761,9 @@ export function BulkImportSection1({
               )
             }
           >
-            <Download size={16} /> Download Failed Records CSV
+            <Download size={16} /> Download Failed Rows
           </button>
         )}
-        <button
-          className="pos-btn outline"
-          onClick={() => {
-            setFile(null);
-            setImportStatus("idle");
-            setCommitResult(null);
-          }}
-        >
-          Import Another
-        </button>
       </div>
     </m.div>
   ) : importStatus === "processing" ? (
