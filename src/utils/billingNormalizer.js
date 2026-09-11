@@ -36,6 +36,8 @@ export function normalizeInvoice(invoice) {
         0,
     ),
     total: safeNumber(item.total ?? item.totalPrice ?? item.totalAmount ?? 0),
+    sellingUnit: item.sellingUnit || item.unit || "STRIP",
+    stripSize: Number(item.stripSize || 10),
   }));
 
   const patient =

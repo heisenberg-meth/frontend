@@ -580,6 +580,33 @@ export default function BillingPOS({
     month: "short",
     year: "numeric",
   });
+  const handleSellingUnitChange = useCallback(
+    (batchId, newUnit) => {
+      setLineItems((prev) =>
+        prev.map((i) => {
+          if (i.batchId === batchId) {
+            const stripSize = Number(i.stripSize) || 10;
+            const stripPrice = safeNumber(i.stripPrice ?? i.mrp ?? i.price);
+            const pillPrice = Math.round((stripPrice / stripSize) * 100) / 100;
+            const price = newUnit === "PILL" ? pillPrice : stripPrice;
+            const qty = 1; // PRD Option A: Reset quantity to 1
+            return {
+              ...i,
+              sellingUnit: newUnit,
+              stripPrice,
+              pillPrice,
+              price,
+              qty,
+              total: qty * price,
+            };
+          }
+          return i;
+        }),
+      );
+    },
+    [setLineItems],
+  );
+
   const addToLineItems = (med) => {
     if (med.availableStock <= 0 || med.isOutOfStock) {
       showToast("Medicine out of stock", "error");
@@ -589,28 +616,57 @@ export default function BillingPOS({
       showToast("No active batch available for this medicine", "error");
       return;
     }
+    const isTabletOrCapsule =
+      ["TABLET", "CAPSULE"].includes(
+        String(med.dosageForm || med.medicineType || "").toUpperCase(),
+      ) || Number(med.stripSize) > 1;
+    const stripSize = Number(med.stripSize) || Number(med.unitPerPack) || 10;
+    const stripPrice = safeNumber(med.price || med.mrp || med.salePrice);
+    const pillPrice = Math.round((stripPrice / stripSize) * 100) / 100;
+    const defaultUnit = isTabletOrCapsule ? "STRIP" : "UNIT";
+    const defaultPrice = defaultUnit === "PILL" ? pillPrice : stripPrice;
+
     setLineItems((prev) => {
       const exists = prev.find((i) => i.id === med.id);
       if (exists) {
-        return prev.map((i) =>
-          i.batchId === med.batchId
-            ? {
-                ...i,
-                qty: i.qty + 1,
-              }
-            : i,
-        );
+        return prev.map((i) => {
+          if (i.batchId === med.batchId) {
+            const currentUnit = i.sellingUnit || defaultUnit;
+            const multiplier =
+              currentUnit === "STRIP" ? Number(i.stripSize) || 10 : 1;
+            const availPills = i.availableStock ?? i.stock ?? Infinity;
+            const newQty = i.qty + 1;
+            if (newQty * multiplier > availPills) {
+              showToast(
+                currentUnit === "STRIP"
+                  ? `Insufficient stock. Available: ${availPills} pills (${Math.floor(availPills / (Number(i.stripSize) || 10))} strips), Required: ${newQty * multiplier} pills`
+                  : `Insufficient stock. Available: ${availPills} pills, Required: ${newQty} pills`,
+                "error",
+              );
+              return i;
+            }
+            return {
+              ...i,
+              qty: newQty,
+              total: newQty * safeNumber(i.price),
+            };
+          }
+          return i;
+        });
       }
-      const price = safeNumber(med.price || med.mrp || med.salePrice);
       return [
         ...prev,
         {
           ...med,
+          sellingUnit: defaultUnit,
+          stripSize,
+          stripPrice,
+          pillPrice,
           qty: 1,
-          price,
-          mrp: price,
+          price: defaultPrice,
+          mrp: stripPrice,
           gst: safeNumber(med.gst || med.gstPercentage || med.gstRate),
-          total: price,
+          total: defaultPrice,
           discount: 0,
           availableStock: med.availableStock ?? med.stock,
           stock: med.availableStock ?? med.stock,
@@ -627,10 +683,18 @@ export default function BillingPOS({
       prev.map((i) => {
         if (i.batchId === batchId) {
           const newQty = Math.max(1, i.qty + delta);
-          const maxAvail = i.availableStock ?? i.stock ?? Infinity;
-          if (newQty > maxAvail) {
+          const isStrip = i.sellingUnit === "STRIP";
+          const sSize = Number(i.stripSize) || 10;
+          const multiplier = isStrip ? sSize : 1;
+          const totalStockInPills = i.availableStock ?? i.stock ?? Infinity;
+          const requiredPills = newQty * multiplier;
+
+          if (requiredPills > totalStockInPills) {
+            const availStrips = Math.floor(totalStockInPills / sSize);
             showToast(
-              `Only ${maxAvail} unit${maxAvail !== 1 ? "s" : ""} available in stock across all batches`,
+              isStrip
+                ? `Insufficient stock. Available: ${totalStockInPills} pills (${availStrips} strips), Required: ${requiredPills} pills (${newQty} strips)`
+                : `Insufficient stock. Available: ${totalStockInPills} pills, Required: ${requiredPills} pills`,
               "error",
             );
             return i;
@@ -691,6 +755,8 @@ export default function BillingPOS({
           unitPrice: i.price,
           gstPercentage: i.gst || 0,
           batchId: i.batchId || null,
+          sellingUnit: i.sellingUnit || "STRIP",
+          stripSize: i.stripSize ? Number(i.stripSize) : 10,
         })),
         subtotal,
         cgst: cgstAmt,
@@ -1613,6 +1679,7 @@ export default function BillingPOS({
       </div>
 
       <BillingPOSSection1
+        handleSellingUnitChange={handleSellingUnitChange}
         setIsWalkIn={setIsWalkIn}
         isWalkIn={isWalkIn}
         setPatient={setPatient}

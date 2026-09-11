@@ -177,6 +177,7 @@ const normalizeBill = (bill) => {
   };
 };
 export function BillingPOSSection1({
+  handleSellingUnitChange,
   setIsWalkIn,
   isWalkIn,
   setPatient,
@@ -340,18 +341,22 @@ export function BillingPOSSection1({
                       >
                         <div className="result-medicine">
                           <span className="result-name">{res.name}</span>
-                          <span className="result-meta">
-                            {res.genericName || res.generic || "—"}
-                            {(res.dosageForm || res.medicineType) && (
-                              <>
-                                {" "}
-                                ·{" "}
-                                {formatDosageForm(
+                          {Boolean(
+                            (res.genericName || res.generic)?.trim() ||
+                            res.dosageForm ||
+                            res.medicineType,
+                          ) && (
+                            <span className="result-meta">
+                              {[
+                                (res.genericName || res.generic)?.trim(),
+                                formatDosageForm(
                                   res.dosageForm || res.medicineType,
-                                )}
-                              </>
-                            )}
-                          </span>
+                                ),
+                              ]
+                                .filter(Boolean)
+                                .join(" · ")}
+                            </span>
+                          )}
                         </div>
                         <div className="result-batch">
                           <span className="result-meta">
@@ -391,7 +396,24 @@ export function BillingPOSSection1({
                             </span>
                           ) : (
                             <span className="result-meta">
-                              {availQty} in stock
+                              {(() => {
+                                const isTab =
+                                  ["TABLET", "CAPSULE"].includes(
+                                    String(
+                                      res.dosageForm || res.medicineType || "",
+                                    ).toUpperCase(),
+                                  ) || Number(res.stripSize || 0) > 1;
+                                if (isTab) {
+                                  const sSize = Number(res.stripSize) || 10;
+                                  const strips = Math.floor(availQty / sSize);
+                                  return `${availQty} pills in stock${
+                                    strips > 0
+                                      ? ` (${strips} strip${strips > 1 ? "s" : ""})`
+                                      : ""
+                                  }`;
+                                }
+                                return `${availQty} in stock`;
+                              })()}
                             </span>
                           )}
                         </div>
@@ -611,7 +633,15 @@ export function BillingPOSSection1({
             <div className="table-scroll-container">
               <table className="line-items-table">
                 <TableHeader
-                  columns={["Item", "Type", "Qty", "MRP", "GST%", "Total", ""]}
+                  columns={[
+                    "Item",
+                    "Selling Unit",
+                    "Qty",
+                    "MRP",
+                    "GST%",
+                    "Total",
+                    "",
+                  ]}
                 />
                 <tbody>
                   {lineItems.map((item) => {
@@ -652,19 +682,69 @@ export function BillingPOSSection1({
                                 item.batchId ||
                                 "N/A"}{" "}
                               · Exp {item.exp}
+                              {formattedType ? ` · Form: ${formattedType}` : ""}
                             </span>
                           </div>
                         </td>
                         <td>
-                          {formattedType ? (
-                            <span className="pos-item-type-badge">
-                              {formattedType}
-                            </span>
-                          ) : (
-                            <span className="pos-item-type-unspecified">
-                              Type: Not specified
-                            </span>
-                          )}
+                          {(() => {
+                            const isTabOrCap =
+                              ["TABLET", "CAPSULE"].includes(
+                                String(
+                                  item.dosageForm ||
+                                    item.medicineType ||
+                                    item.medicine?.dosageForm ||
+                                    item.medicine?.medicineType ||
+                                    "",
+                                ).toUpperCase(),
+                              ) || Number(item.stripSize) > 1;
+
+                            if (isTabOrCap) {
+                              const activeUnit = item.sellingUnit || "STRIP";
+                              return (
+                                <div className="selling-unit-segmented-control">
+                                  <button
+                                    type="button"
+                                    className={`selling-unit-btn ${activeUnit === "PILL" ? "active" : ""}`}
+                                    onClick={() =>
+                                      handleSellingUnitChange
+                                        ? handleSellingUnitChange(
+                                            item.batchId,
+                                            "PILL",
+                                          )
+                                        : null
+                                    }
+                                  >
+                                    PILL
+                                  </button>
+                                  <button
+                                    type="button"
+                                    className={`selling-unit-btn ${activeUnit === "STRIP" ? "active" : ""}`}
+                                    onClick={() =>
+                                      handleSellingUnitChange
+                                        ? handleSellingUnitChange(
+                                            item.batchId,
+                                            "STRIP",
+                                          )
+                                        : null
+                                    }
+                                  >
+                                    STRIP
+                                  </button>
+                                </div>
+                              );
+                            }
+
+                            return formattedType ? (
+                              <span className="pos-item-type-badge">
+                                {formattedType}
+                              </span>
+                            ) : (
+                              <span className="pos-item-type-unspecified">
+                                Type: Not specified
+                              </span>
+                            );
+                          })()}
                         </td>
                         <td>
                           <div className="qty-stepper">
@@ -681,15 +761,37 @@ export function BillingPOSSection1({
                               aria-label="Item quantity"
                               type="number"
                               min="1"
-                              max={item.availableStock ?? item.stock ?? 9999}
                               value={item.qty}
                               onChange={(e) => {
                                 const raw = e.target.value;
-                                const maxLimit =
+                                const stripSize = Number(item.stripSize) || 10;
+                                const isStrip = item.sellingUnit === "STRIP";
+                                const availPills =
                                   item.availableStock ?? item.stock ?? 9999;
+                                const maxLimit = isStrip
+                                  ? Math.max(
+                                      1,
+                                      Math.floor(availPills / stripSize),
+                                    )
+                                  : availPills;
+                                const inputVal = Number(raw) || 1;
+                                if (
+                                  isStrip &&
+                                  inputVal * stripSize > availPills
+                                ) {
+                                  showToast?.(
+                                    `Insufficient stock. Available: ${availPills} pills (${Math.floor(availPills / stripSize)} strips), Required: ${inputVal * stripSize} pills`,
+                                    "error",
+                                  );
+                                } else if (!isStrip && inputVal > availPills) {
+                                  showToast?.(
+                                    `Insufficient stock. Available: ${availPills} pills, Required: ${inputVal} pills`,
+                                    "error",
+                                  );
+                                }
                                 const qty = Math.max(
                                   1,
-                                  Math.min(Number(raw) || 1, maxLimit),
+                                  Math.min(inputVal, maxLimit),
                                 );
                                 setLineItems((prev) =>
                                   prev.map((i) =>
@@ -714,33 +816,63 @@ export function BillingPOSSection1({
                           </div>
                         </td>
                         <td>
-                          <input
-                            aria-label="input field"
-                            required
-                            className="pos-input"
-                            type="number"
-                            min="0"
-                            step="0.01"
+                          <div
                             style={{
-                              width: "70px",
-                              padding: "6px",
+                              display: "flex",
+                              flexDirection: "column",
+                              gap: "2px",
                             }}
-                            value={item.price}
-                            onChange={(e) => {
-                              const price = Number(e.target.value) || 0;
-                              setLineItems((prev) =>
-                                prev.map((i) =>
-                                  i.batchId === item.batchId
-                                    ? {
-                                        ...i,
-                                        price,
-                                        total: price * safeNumber(i.qty),
-                                      }
-                                    : i,
-                                ),
-                              );
-                            }}
-                          />
+                          >
+                            <input
+                              aria-label="input field"
+                              required
+                              className="pos-input"
+                              type="number"
+                              min="0"
+                              step="0.01"
+                              style={{
+                                width: "70px",
+                                padding: "6px",
+                              }}
+                              value={item.price}
+                              onChange={(e) => {
+                                const price = Number(e.target.value) || 0;
+                                setLineItems((prev) =>
+                                  prev.map((i) =>
+                                    i.batchId === item.batchId
+                                      ? {
+                                          ...i,
+                                          price,
+                                          total: price * safeNumber(i.qty),
+                                        }
+                                      : i,
+                                  ),
+                                );
+                              }}
+                            />
+                            {item.sellingUnit === "PILL" && (
+                              <span
+                                style={{
+                                  fontSize: "10px",
+                                  color: "var(--text-dim, #94a3b8)",
+                                  whiteSpace: "nowrap",
+                                }}
+                              >
+                                / pill
+                              </span>
+                            )}
+                            {item.sellingUnit === "STRIP" && (
+                              <span
+                                style={{
+                                  fontSize: "10px",
+                                  color: "var(--text-dim, #94a3b8)",
+                                  whiteSpace: "nowrap",
+                                }}
+                              >
+                                / strip
+                              </span>
+                            )}
+                          </div>
                         </td>
 
                         <td
@@ -985,6 +1117,8 @@ export function BillingPOSSection1({
                           quantity: it.qty,
                           unitPrice: it.price,
                           gstPercentage: it.gst || 0,
+                          sellingUnit: it.sellingUnit || "STRIP",
+                          stripSize: it.stripSize ? Number(it.stripSize) : 10,
                         })),
                         paymentMode: paymentMode,
                         discountPercentage: discountPercentage,
