@@ -213,6 +213,7 @@
 
 /* Table Card */
 .inv-table-card {
+  position: relative;
   background: linear-gradient(
     145deg,
     var(--overlay-03) 0%,
@@ -221,10 +222,12 @@
   backdrop-filter: blur(24px);
   border: 1px solid var(--overlay-06);
   border-radius: 28px;
-  overflow: hidden;
+  overflow: visible;
 }
 
 .inv-table-header {
+  position: relative;
+  z-index: 20;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -265,6 +268,8 @@
 }
 
 .inv-filter-group {
+  position: relative;
+  z-index: 30;
   display: flex;
   gap: 12px;
 }
@@ -287,6 +292,11 @@
 .custom-dropdown-container {
   position: relative;
   min-width: 160px;
+  z-index: 40;
+}
+
+.custom-dropdown-container:focus-within {
+  z-index: 50;
 }
 
 .custom-dropdown-trigger {
@@ -380,6 +390,8 @@
 
 /* Table */
 .inv-table-wrapper {
+  position: relative;
+  z-index: 1;
   overflow-x: auto;
 }
 
