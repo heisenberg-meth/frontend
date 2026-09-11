@@ -32,6 +32,7 @@ import {
   X,
   Package,
   Loader2,
+  RefreshCw,
 } from "lucide-react";
 import { AnimatePresence, m } from "framer-motion";
 import {
@@ -43,7 +44,10 @@ import AddNewMedicineModal from "./Purchase/AddNewMedicineModal.jsx";
 import { safeNumber } from "../utils/number.js";
 import { safeData } from "../utils/safeData.js";
 import { formatDate } from "../utils/formUtils.js";
-import { getPendingPOCount } from "../utils/purchaseOrderStatus.js";
+import {
+  getPendingPOCount,
+  getPendingInvoiceCount,
+} from "../utils/purchaseOrderStatus.js";
 
 function PurchaseManagementSection3({
   showReturnModal,
@@ -816,6 +820,9 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
       isReceiving: false,
       differentBatch: {},
       receiveErrors: {},
+      summaryData: null,
+      summaryLoading: false,
+      summaryError: false,
     },
   );
   const {
@@ -839,6 +846,9 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
     receiveItems,
     isReceiving,
     receiveErrors = {},
+    summaryData,
+    summaryLoading,
+    summaryError,
   } = purchaseState;
   const isOpeningReceiveModalRef = useRef(false);
   const isUpdatingPaymentRef = useRef(false);
@@ -1033,6 +1043,51 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
       }),
     [],
   );
+  const setSummaryData = useCallback(
+    (val) =>
+      dispatchPurchase({
+        type: "SET_FIELD",
+        field: "summaryData",
+        value: val,
+      }),
+    [],
+  );
+  const setSummaryLoading = useCallback(
+    (val) =>
+      dispatchPurchase({
+        type: "SET_FIELD",
+        field: "summaryLoading",
+        value: val,
+      }),
+    [],
+  );
+  const setSummaryError = useCallback(
+    (val) =>
+      dispatchPurchase({
+        type: "SET_FIELD",
+        field: "summaryError",
+        value: val,
+      }),
+    [],
+  );
+  const fetchSummary = useCallback(async () => {
+    try {
+      setSummaryLoading(true);
+      setSummaryError(false);
+      const res = await api.get(API_ROUTES.PURCHASES_SUMMARY);
+      const data = res?.data?.data || res?.data || null;
+      if (data && typeof data === "object") {
+        setSummaryData(data);
+      } else {
+        setSummaryError(true);
+      }
+    } catch (err) {
+      console.error("[PURCHASE SUMMARY FETCH ERROR]", err);
+      setSummaryError(true);
+    } finally {
+      setSummaryLoading(false);
+    }
+  }, [setSummaryData, setSummaryLoading, setSummaryError]);
   const handleOpenReceiveModal = async (po) => {
     if (isOpeningReceiveModalRef.current) return;
     isOpeningReceiveModalRef.current = true;
@@ -1099,6 +1154,7 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
         api.get(API_ROUTES.PURCHASES_RETURNS),
         api.get(API_ROUTES.PURCHASES_INVOICES),
         api.get("/branches"),
+        api.get(API_ROUTES.PURCHASES_SUMMARY),
       ]);
       setSuppliers(safeData(results[0], "data"));
       const loadedOrdersRefresh = safeData(results[1], "data");
@@ -1116,6 +1172,17 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
       setReturns(safeData(results[2], "data"));
       setInvoices(safeData(results[3], "data"));
       setBranches(safeData(results[4], "data"));
+      if (results[5]?.status === "fulfilled") {
+        const sumData = results[5].value?.data?.data || results[5].value?.data;
+        if (sumData && typeof sumData === "object") {
+          setSummaryData(sumData);
+          setSummaryError(false);
+        } else {
+          setSummaryError(true);
+        }
+      } else if (results[5]?.status === "rejected") {
+        setSummaryError(true);
+      }
     } catch (err) {
       console.error("[FETCH DATA ERROR]", err);
       showToast("Failed to load live data", "error");
@@ -1144,12 +1211,14 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
     const initialize = async () => {
       try {
         setLoading(true);
+        setSummaryLoading(true);
         const results = await Promise.allSettled([
           api.get(API_ROUTES.SUPPLIERS),
           api.get(API_ROUTES.PURCHASES_ORDERS),
           api.get(API_ROUTES.PURCHASES_RETURNS),
           api.get(API_ROUTES.PURCHASES_INVOICES),
           api.get("/branches"),
+          api.get(API_ROUTES.PURCHASES_SUMMARY),
         ]);
         if (!mounted) return;
         setSuppliers(safeData(results[0], "data"));
@@ -1168,6 +1237,18 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
         setReturns(safeData(results[2], "data"));
         setInvoices(safeData(results[3], "data"));
         setBranches(safeData(results[4], "data"));
+        if (results[5]?.status === "fulfilled") {
+          const sumData =
+            results[5].value?.data?.data || results[5].value?.data;
+          if (sumData && typeof sumData === "object") {
+            setSummaryData(sumData);
+            setSummaryError(false);
+          } else {
+            setSummaryError(true);
+          }
+        } else if (results[5]?.status === "rejected") {
+          setSummaryError(true);
+        }
         const failed = results.filter((r) => r.status === "rejected");
         if (failed.length > 0) {
           console.warn(
@@ -1195,6 +1276,9 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
     setLoading,
     setOrders,
     setReturns,
+    setSummaryData,
+    setSummaryError,
+    setSummaryLoading,
     setSuppliers,
     showToast,
   ]);
@@ -1784,7 +1868,21 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
       (ret.date || ret.createdAt || "").startsWith(filters.date);
     return matchesSupplier && matchesStatus && matchesSearch && matchesDate;
   });
-  const pendingPOCount = useMemo(() => getPendingPOCount(orders), [orders]);
+  const pendingCount = useMemo(() => {
+    if (summaryLoading || summaryError) return null;
+    if (summaryData) {
+      if (activeTab === "orders") {
+        return summaryData.orders?.pending ?? summaryData.pendingOrders ?? 0;
+      }
+      return (
+        summaryData.pendingPurchaseOrders ?? summaryData.invoices?.pending ?? 0
+      );
+    }
+    if (activeTab === "orders") {
+      return getPendingPOCount(orders);
+    }
+    return getPendingInvoiceCount(invoices);
+  }, [summaryData, summaryLoading, summaryError, activeTab, orders, invoices]);
   const validateReceiveForm = () => {
     const errors = {};
 
@@ -2236,8 +2334,67 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
             col: "var(--info)",
           },
           {
-            label: "PENDING POs",
-            val: pendingPOCount,
+            label: activeTab === "orders" ? "PENDING ORDERS" : "PENDING POs",
+            val: summaryLoading ? (
+              <span
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "6px",
+                  fontSize: "14px",
+                  color: "var(--text-secondary)",
+                }}
+              >
+                <Loader2 size={16} className="animate-spin" />
+                <span>Loading...</span>
+              </span>
+            ) : summaryError ? (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  fetchSummary();
+                }}
+                style={{
+                  background: "transparent",
+                  border: "none",
+                  padding: 0,
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "6px",
+                  fontSize: "13px",
+                  color: "var(--danger)",
+                  cursor: "pointer",
+                }}
+                title="Failed to load live summary. Click to retry."
+              >
+                <span>Error</span>
+                <RefreshCw size={13} />
+              </button>
+            ) : (
+              <div style={{ display: "flex", flexDirection: "column" }}>
+                <span>{pendingCount ?? 0}</span>
+                {summaryData?.pendingValue > 0 && activeTab !== "orders" && (
+                  <span
+                    style={{
+                      fontSize: "12px",
+                      color: "var(--text-secondary)",
+                      fontWeight: "normal",
+                      marginTop: "2px",
+                    }}
+                  >
+                    ₹
+                    {Number(summaryData.pendingValue).toLocaleString(
+                      undefined,
+                      {
+                        minimumFractionDigits: 0,
+                        maximumFractionDigits: 0,
+                      },
+                    )}
+                  </span>
+                )}
+              </div>
+            ),
             icon: Clock,
             col: "var(--warning)",
           },

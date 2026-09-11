@@ -74,6 +74,7 @@ export const API_ROUTES = {
   SUPPLIERS_STATS: "/suppliers/stats",
   IMPORT_BULK: "/import/bulk",
   PURCHASES_ORDERS: "/purchase-orders",
+  PURCHASES_SUMMARY: "/purchase-orders/summary",
   PURCHASES_INVOICES: "/purchase-orders/invoices",
   PURCHASES_INVOICES_PAYMENT: "/purchase-orders/invoices",
   PURCHASES_RETURNS: "/purchase/returns",
