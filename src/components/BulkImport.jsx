@@ -105,7 +105,7 @@ export default function BulkImport({ fetchData, showToast }) {
           duplicateDecisions: {},
           parsedRows: [],
           commitResult: null,
-          processExistingMedicines: false,
+          processExistingMedicines: true,
         };
       }
       if (action.type === "SET_FIELD") {
@@ -148,7 +148,7 @@ export default function BulkImport({ fetchData, showToast }) {
         overwrite: false,
         validate: true,
       },
-      processExistingMedicines: false,
+      processExistingMedicines: true,
       dataPreview: [],
       duplicateResults: {
         new: 0,
@@ -481,20 +481,29 @@ export default function BulkImport({ fetchData, showToast }) {
   const getMappedMedicines = useCallback(() => {
     const result = parsedRows.map((row) => {
       const name = String(row[mapping.nameColumn] || "").trim();
-      const qtyStr = mapping.qtyColumn
-        ? String(row[mapping.qtyColumn] ?? "").trim()
-        : "";
-      const priceStr = mapping.priceColumn
-        ? String(row[mapping.priceColumn] ?? "").trim()
-        : "";
-      const expiryStr = mapping.expiryColumn
-        ? String(row[mapping.expiryColumn] ?? "").trim()
-        : "";
+      const qtyStr =
+        mapping.qtyColumn &&
+        row[mapping.qtyColumn] !== undefined &&
+        row[mapping.qtyColumn] !== null
+          ? String(row[mapping.qtyColumn]).trim()
+          : "";
+      const priceStr =
+        mapping.priceColumn &&
+        row[mapping.priceColumn] !== undefined &&
+        row[mapping.priceColumn] !== null
+          ? String(row[mapping.priceColumn]).trim()
+          : "";
+      const expiryStr =
+        mapping.expiryColumn &&
+        row[mapping.expiryColumn] !== undefined &&
+        row[mapping.expiryColumn] !== null
+          ? String(row[mapping.expiryColumn]).trim()
+          : "";
       return {
         name,
-        qty: qtyStr ? Number(qtyStr.replace(/[^0-9.-]/g, "")) || 0 : 0,
+        qty: qtyStr,
         expiry: normalizeDate(expiryStr),
-        price: priceStr ? Number(priceStr.replace(/[^0-9.-]/g, "")) || 0 : 0,
+        price: priceStr,
         batch: String(row[mapping.batchColumn] || "").trim(),
         barcode: String(row[mapping.barcodeColumn] || "").trim(),
         category: String(row[mapping.categoryColumn] || "").trim(),
@@ -505,6 +514,15 @@ export default function BulkImport({ fetchData, showToast }) {
         schedule: String(row[mapping.scheduleColumn] || "").trim(),
         hsnCode: String(row[mapping.hsnCodeColumn] || "").trim(),
         gstPercentage: String(row[mapping.gstPercentageColumn] || "").trim(),
+        mrp:
+          mapping.mrpColumn && row[mapping.mrpColumn] !== undefined
+            ? String(row[mapping.mrpColumn]).trim()
+            : undefined,
+        sellingPrice:
+          mapping.sellingPriceColumn &&
+          row[mapping.sellingPriceColumn] !== undefined
+            ? String(row[mapping.sellingPriceColumn]).trim()
+            : undefined,
       };
     });
     if (result.length > 0) {
@@ -570,51 +588,91 @@ export default function BulkImport({ fetchData, showToast }) {
   const isAnalyzingRef = useRef(false);
   const [, setParsingProgress] = useState(0);
   const [, setParsingStatus] = useState("");
-  const handleAnalyzeImport = useCallback(async () => {
-    if (isAnalyzingRef.current) return;
-    if (!file) {
-      showToast("Upload a file first", "error");
-      return;
-    }
-    if (!mapping.nameColumn || !mapping.qtyColumn) {
-      showToast("Required field mappings missing (Name + Quantity)", "error");
-      return;
-    }
-    isAnalyzingRef.current = true;
-    setIsAnalyzing(true);
-    const medicines = getMappedMedicines();
-    try {
-      const res = await api.post("/import/bulk/analyze", {
-        medicines,
-        supplier: selectedSupplier,
-        duplicateStrategy,
-        barcodeOptions,
-        processExistingMedicines,
-      });
-      if (res.data?.success) {
-        setDuplicateResults(res.data.summary);
-        showToast("✓ Import analysis / duplicate scan completed", "success");
-      } else {
-        throw new Error(res.data?.message || "Failed to analyze import data");
+  const handleAnalyzeImport = useCallback(
+    async (isManual = false) => {
+      const manual = isManual === true;
+      if (isAnalyzingRef.current) return;
+      if (!file) {
+        if (manual) showToast("Upload a file first", "error");
+        return;
       }
-    } catch (err) {
-      console.error(err);
-      showToast(err.message || "Failed to analyze import data", "error");
-    } finally {
-      isAnalyzingRef.current = false;
-      setIsAnalyzing(false);
+      if (!mapping.nameColumn || !mapping.qtyColumn) {
+        if (manual)
+          showToast(
+            "Required field mappings missing (Name + Quantity)",
+            "error",
+          );
+        return;
+      }
+      isAnalyzingRef.current = true;
+      setIsAnalyzing(true);
+      const medicines = getMappedMedicines();
+      try {
+        const res = await api.post("/import/bulk/analyze", {
+          medicines,
+          supplier: selectedSupplier,
+          duplicateStrategy,
+          barcodeOptions,
+          processExistingMedicines,
+        });
+        if (res.data?.success) {
+          setDuplicateResults(res.data.summary);
+          if (manual) {
+            showToast(
+              "✓ Import analysis / duplicate scan completed",
+              "success",
+            );
+          }
+        } else {
+          throw new Error(res.data?.message || "Failed to analyze import data");
+        }
+      } catch (err) {
+        console.error(err);
+        if (manual) {
+          showToast(err.message || "Failed to analyze import data", "error");
+        }
+      } finally {
+        isAnalyzingRef.current = false;
+        setIsAnalyzing(false);
+      }
+    },
+    [
+      file,
+      mapping.nameColumn,
+      mapping.qtyColumn,
+      getMappedMedicines,
+      showToast,
+      selectedSupplier,
+      duplicateStrategy,
+      barcodeOptions,
+      processExistingMedicines,
+      setDuplicateResults,
+    ],
+  );
+
+  // PRD §26: Auto-run analysis when file and required columns are mapped
+  useEffect(() => {
+    if (
+      file &&
+      mapping.nameColumn &&
+      mapping.qtyColumn &&
+      parsedRows.length > 0
+    ) {
+      const timer = setTimeout(() => {
+        handleAnalyzeImport(false);
+      }, 350);
+      return () => clearTimeout(timer);
     }
   }, [
     file,
     mapping.nameColumn,
     mapping.qtyColumn,
-    getMappedMedicines,
-    showToast,
+    parsedRows.length,
     selectedSupplier,
     duplicateStrategy,
-    barcodeOptions,
     processExistingMedicines,
-    setDuplicateResults,
+    barcodeOptions,
+    handleAnalyzeImport,
   ]);
   const onDrop = useCallback(
     async (files) => {

@@ -807,7 +807,7 @@ export function BulkImportSection1({
                         color: "var(--success, #10b981)",
                       }}
                     >
-                      ✦ First Inventory Import Detected
+                      ✦ First Inventory Import
                     </span>
                     <span
                       style={{
@@ -830,9 +830,10 @@ export function BulkImportSection1({
                       lineHeight: "1.5",
                     }}
                   >
-                    Your inventory is currently empty. The medicines in this
-                    file will be added directly into your catalog without
-                    duplicate-resolution complexity.
+                    No medicines currently exist in your inventory. All valid
+                    medicines from this file will be added directly to your
+                    inventory. Duplicate handling is disabled for this first
+                    import.
                   </p>
                 </div>
               </div>
@@ -856,7 +857,7 @@ export function BulkImportSection1({
                   >
                     <span>
                       ℹ Existing inventory detected ({existingMedicineCount}{" "}
-                      existing medicines in catalog)
+                      medicines in inventory)
                     </span>
                     <span style={{ fontWeight: "700", fontSize: "11px" }}>
                       DUPLICATE SCAN ACTIVE
@@ -1444,7 +1445,7 @@ export function BulkImportSection1({
             {inventoryState === "EMPTY" ? (
               <div className="val-item green">
                 <div className="dot" />{" "}
-                <span>Mode: Direct Import (First-Time)</span>
+                <span>Mode: Direct Import (First-Time) · 0 duplicates</span>
               </div>
             ) : (
               <div
@@ -1459,11 +1460,14 @@ export function BulkImportSection1({
                 </span>
               </div>
             )}
-            <div className="val-item red">
+            <div
+              className={`val-item ${(duplicateResults.errors || []).length > 0 ? "red" : "green"}`}
+            >
               <div className="dot" />{" "}
               <span>
-                {(duplicateResults.errors || []).length} rows with invalid data
-                will be skipped
+                {(duplicateResults.errors || []).length > 0
+                  ? `${(duplicateResults.errors || []).length} rows with invalid data`
+                  : "0 invalid rows"}
               </span>
             </div>
           </div>
@@ -1471,7 +1475,15 @@ export function BulkImportSection1({
           <div className="import-action-bar">
             <div className="estimate-text">
               Will import:{" "}
-              <span className="green">{duplicateResults.new || 0} new</span> ·{" "}
+              <span className="green">
+                {duplicateResults.new ??
+                  Math.max(
+                    0,
+                    parsedRows.length - (duplicateResults.errors || []).length,
+                  )}{" "}
+                new
+              </span>{" "}
+              ·{" "}
               <span className="gray">
                 {duplicateResults.duplicates || 0} duplicates
               </span>{" "}
@@ -1479,7 +1491,13 @@ export function BulkImportSection1({
               <span className="red">
                 {(duplicateResults.errors || []).length} errors
               </span>{" "}
-              = {duplicateResults.new || 0} records
+              ={" "}
+              {duplicateResults.new ??
+                Math.max(
+                  0,
+                  parsedRows.length - (duplicateResults.errors || []).length,
+                )}{" "}
+              records
             </div>
             <div className="action-btns">
               <button className="pos-btn outline" onClick={() => setFile(null)}>
@@ -1498,8 +1516,8 @@ export function BulkImportSection1({
                 <UploadCloud size={18} />
                 <span>
                   {inventoryState === "EMPTY"
-                    ? `Import to Inventory — ${parsedRows.length} Records`
-                    : `Start Import — ${parsedRows.length} Records`}
+                    ? `Import to Inventory — ${duplicateResults.new !== undefined ? duplicateResults.new : parsedRows.length} Valid Records`
+                    : `Start Import — ${duplicateResults.new !== undefined ? duplicateResults.new : parsedRows.length} Valid Records`}
                 </span>
               </button>
             </div>
