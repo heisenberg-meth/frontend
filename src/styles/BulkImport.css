@@ -1489,3 +1489,280 @@ select.pos-input option {
   font-size: 14px;
   margin: 0;
 }
+
+/* ==========================================================================
+   PRD Addendum: Failed Records, Category Filtering & Error Reporting Styles
+   ========================================================================== */
+
+.failed-records-panel {
+  margin-top: 28px;
+  background: var(--surface);
+  border: 1px solid rgba(239, 68, 68, 0.25);
+  border-radius: 16px;
+  padding: 24px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
+}
+
+.failed-records-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.failed-records-header h3 {
+  font-family: "Outfit", sans-serif;
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text-main, #f8fafc);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0;
+}
+
+.failed-records-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+/* Error Count Cards (PRD Addendum §13) */
+.error-stat-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.error-stat-card {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--border-color, rgba(255, 255, 255, 0.08));
+  border-radius: 12px;
+  padding: 12px 16px;
+  text-align: left;
+  transition: all 0.2s ease;
+}
+
+.error-stat-card:hover {
+  background: rgba(255, 255, 255, 0.05);
+  transform: translateY(-1px);
+}
+
+.error-stat-card.active {
+  border-color: var(--primary, #0d9488);
+  background: rgba(13, 148, 136, 0.08);
+}
+
+.error-stat-card.danger {
+  border-left: 3px solid #ef4444;
+}
+
+.error-stat-card.quantity {
+  border-left: 3px solid #f59e0b;
+}
+
+.error-stat-card.expiry {
+  border-left: 3px solid #ec4899;
+}
+
+.error-stat-card.pricing {
+  border-left: 3px solid #8b5cf6;
+}
+
+.error-stat-card.duplicate {
+  border-left: 3px solid #06b6d4;
+}
+
+.error-stat-card.other {
+  border-left: 3px solid #94a3b8;
+}
+
+.error-stat-card .count {
+  font-size: 22px;
+  font-weight: 700;
+  font-family: "Outfit", sans-serif;
+  line-height: 1.2;
+}
+
+.error-stat-card.danger .count { color: #ef4444; }
+.error-stat-card.quantity .count { color: #f59e0b; }
+.error-stat-card.expiry .count { color: #ec4899; }
+.error-stat-card.pricing .count { color: #8b5cf6; }
+.error-stat-card.duplicate .count { color: #06b6d4; }
+.error-stat-card.other .count { color: #94a3b8; }
+
+.error-stat-card .label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: var(--text-muted, #94a3b8);
+  margin-top: 4px;
+}
+
+/* Category Filter Pills (PRD Addendum §12) */
+.error-filter-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 18px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.error-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text-muted, #94a3b8);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.error-pill:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+}
+
+.error-pill.active {
+  background: rgba(13, 148, 136, 0.15);
+  color: #2dd4bf;
+  border-color: rgba(45, 212, 191, 0.4);
+}
+
+.error-pill .badge {
+  display: inline-block;
+  padding: 1px 6px;
+  font-size: 11px;
+  font-weight: 700;
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.3);
+}
+
+.error-pill.active .badge {
+  background: rgba(45, 212, 191, 0.25);
+  color: #2dd4bf;
+}
+
+/* Failed Records Table (PRD Addendum §10 & §11) */
+.failed-records-table-container {
+  overflow-x: auto;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgba(0, 0, 0, 0.2);
+}
+
+.failed-records-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  text-align: left;
+}
+
+.failed-records-table th {
+  background: rgba(255, 255, 255, 0.03);
+  padding: 12px 14px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--text-muted, #94a3b8);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+}
+
+.failed-records-table td {
+  padding: 12px 14px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  vertical-align: top;
+}
+
+.failed-records-table tr:hover {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.failed-records-table .row-num {
+  font-family: monospace;
+  font-weight: 700;
+  color: var(--text-muted, #94a3b8);
+  white-space: nowrap;
+}
+
+.failed-records-table .medicine-name {
+  font-weight: 600;
+  color: var(--text-main, #f8fafc);
+}
+
+.failed-records-table .batch-tag {
+  font-family: monospace;
+  font-size: 11px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.06);
+  color: #cbd5e1;
+}
+
+.failed-records-table .value-cell {
+  font-family: monospace;
+  font-size: 12px;
+  color: #f87171;
+  background: rgba(239, 68, 68, 0.08);
+  padding: 2px 6px;
+  border-radius: 4px;
+  display: inline-block;
+  max-width: 140px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.failed-records-table .reason-text {
+  color: #ef4444;
+  font-weight: 500;
+  margin-bottom: 4px;
+}
+
+.failed-records-table .action-hint {
+  font-size: 11px;
+  color: var(--text-muted, #94a3b8);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.failed-records-table .action-hint span {
+  color: #38bdf8;
+}
+
+/* Download CSV Button */
+.download-csv-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  font-size: 13px;
+  font-weight: 600;
+  border-radius: 8px;
+  background: rgba(13, 148, 136, 0.15);
+  color: #2dd4bf;
+  border: 1px solid rgba(45, 212, 191, 0.35);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.download-csv-btn:hover {
+  background: rgba(13, 148, 136, 0.25);
+  border-color: #2dd4bf;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(13, 148, 136, 0.2);
+}
+

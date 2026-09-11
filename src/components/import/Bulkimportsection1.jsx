@@ -1,3 +1,4 @@
+import { useState, useMemo } from "react";
 import {
   UploadCloud,
   RefreshCw,
@@ -7,6 +8,7 @@ import {
   AlertCircle,
   X,
   FileSpreadsheet,
+  Download,
 } from "lucide-react";
 import { AnimatePresence, m } from "framer-motion";
 import { TableHeader } from "../common/TableHeader.jsx";
@@ -70,6 +72,347 @@ const fields = [
   },
 ];
 
+function getErrorCategory(err) {
+  if (err.category && err.category !== "Other") return err.category;
+  const field = (err.field || "").toLowerCase();
+  const code = (err.code || err.errorCode || "").toUpperCase();
+  const reason = (err.message || err.reason || "").toLowerCase();
+
+  if (field === "quantity" || code.includes("QUANTITY")) return "Quantity";
+  if (
+    field === "expirydate" ||
+    field === "expiry" ||
+    code.includes("EXPIRY") ||
+    code.includes("EXPIRED")
+  )
+    return "Expiry";
+  if (
+    field === "price" ||
+    field === "mrp" ||
+    field === "sellingprice" ||
+    code.includes("PRICE") ||
+    code.includes("MRP")
+  )
+    return "Pricing";
+  if (code.startsWith("MISSING_") || reason.includes("is required"))
+    return "Required";
+  if (code.includes("DUPLICATE") || reason.includes("duplicate"))
+    return "Duplicate";
+  return "Other";
+}
+
+function downloadFailedRecordsCsv(
+  errorList,
+  filenamePrefix = "failed_inventory_import",
+) {
+  if (!errorList || errorList.length === 0) return;
+
+  const todayStr = new Date().toISOString().split("T")[0];
+  const filename = `${filenamePrefix}_${todayStr}.csv`;
+
+  const headers = [
+    "Original Row",
+    "Medicine Name",
+    "Batch Number",
+    "Failed Field",
+    "Provided Value",
+    "Error Reason",
+    "Recommended Action",
+  ];
+
+  const rows = [];
+  for (const item of errorList) {
+    if (item.errors && Array.isArray(item.errors) && item.errors.length > 0) {
+      for (const err of item.errors) {
+        rows.push([
+          item.row || item.rowNumber || "",
+          item.name || item.medicineName || "",
+          item.batch || item.batchNumber || "",
+          err.field || "",
+          err.value !== undefined && err.value !== null
+            ? String(err.value)
+            : "",
+          err.message || err.reason || "",
+          err.action || "",
+        ]);
+      }
+    } else {
+      rows.push([
+        item.row || item.rowNumber || "",
+        item.name || item.medicineName || "",
+        item.batch || item.batchNumber || "",
+        item.field || "",
+        item.value !== undefined && item.value !== null
+          ? String(item.value)
+          : "",
+        item.message || item.reason || "",
+        item.action || "",
+      ]);
+    }
+  }
+
+  const escapeCsv = (str) => {
+    if (str === null || str === undefined) return '""';
+    const s = String(str).replace(/"/g, '""');
+    return `"${s}"`;
+  };
+
+  const csvContent = [
+    headers.map(escapeCsv).join(","),
+    ...rows.map((row) => row.map(escapeCsv).join(",")),
+  ].join("\r\n");
+
+  const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.setAttribute("href", url);
+  link.setAttribute("download", filename);
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+}
+
+function FailedRecordsView({
+  title,
+  errors = [],
+  selectedCategory,
+  onSelectCategory,
+  onDownloadCsv,
+}) {
+  const categoryCounts = useMemo(() => {
+    const counts = {
+      All: errors.length,
+      Quantity: 0,
+      Expiry: 0,
+      Pricing: 0,
+      Required: 0,
+      Duplicate: 0,
+      Other: 0,
+    };
+    for (const err of errors) {
+      const cat = getErrorCategory(err);
+      if (counts[cat] !== undefined) {
+        counts[cat]++;
+      } else {
+        counts.Other++;
+      }
+    }
+    return counts;
+  }, [errors]);
+
+  const filteredErrors = useMemo(() => {
+    if (selectedCategory === "All") return errors;
+    return errors.filter((err) => {
+      const cat = getErrorCategory(err);
+      if (cat === selectedCategory) return true;
+      if (err.errors && Array.isArray(err.errors)) {
+        return err.errors.some(
+          (sub) => getErrorCategory(sub) === selectedCategory,
+        );
+      }
+      return false;
+    });
+  }, [errors, selectedCategory]);
+
+  if (!errors || errors.length === 0) return null;
+
+  return (
+    <div className="failed-records-panel">
+      <div className="failed-records-header">
+        <h3>
+          <AlertCircle size={20} style={{ color: "var(--danger)" }} />
+          {title || "Failed Import Records"} ({errors.length})
+        </h3>
+        <div className="failed-records-header-actions">
+          <button
+            type="button"
+            className="download-csv-btn"
+            onClick={onDownloadCsv}
+            title="Download failed rows as CSV to fix and re-import"
+          >
+            <Download size={15} />
+            <span>Download Failed Records CSV</span>
+          </button>
+        </div>
+      </div>
+
+      {/* Error Count Cards (PRD §13) */}
+      <div className="error-stat-cards">
+        <button
+          type="button"
+          className={`error-stat-card danger ${selectedCategory === "All" ? "active" : ""}`}
+          onClick={() => onSelectCategory("All")}
+        >
+          <div className="count">{errors.length}</div>
+          <div className="label">Total Failed</div>
+        </button>
+        <button
+          type="button"
+          className={`error-stat-card quantity ${selectedCategory === "Quantity" ? "active" : ""}`}
+          onClick={() => onSelectCategory("Quantity")}
+        >
+          <div className="count">{categoryCounts.Quantity}</div>
+          <div className="label">Quantity</div>
+        </button>
+        <button
+          type="button"
+          className={`error-stat-card expiry ${selectedCategory === "Expiry" ? "active" : ""}`}
+          onClick={() => onSelectCategory("Expiry")}
+        >
+          <div className="count">{categoryCounts.Expiry}</div>
+          <div className="label">Expired</div>
+        </button>
+        <button
+          type="button"
+          className={`error-stat-card pricing ${selectedCategory === "Pricing" ? "active" : ""}`}
+          onClick={() => onSelectCategory("Pricing")}
+        >
+          <div className="count">{categoryCounts.Pricing}</div>
+          <div className="label">Pricing</div>
+        </button>
+        <button
+          type="button"
+          className={`error-stat-card duplicate ${selectedCategory === "Duplicate" ? "active" : ""}`}
+          onClick={() => onSelectCategory("Duplicate")}
+        >
+          <div className="count">{categoryCounts.Duplicate}</div>
+          <div className="label">Duplicate</div>
+        </button>
+        <button
+          type="button"
+          className={`error-stat-card other ${selectedCategory === "Other" ? "active" : ""}`}
+          onClick={() => onSelectCategory("Other")}
+        >
+          <div className="count">
+            {categoryCounts.Required + categoryCounts.Other}
+          </div>
+          <div className="label">Required & Other</div>
+        </button>
+      </div>
+
+      {/* Category Filter Pills (PRD §12) */}
+      <div className="error-filter-bar">
+        {[
+          "All",
+          "Quantity",
+          "Expiry",
+          "Pricing",
+          "Required",
+          "Duplicate",
+          "Other",
+        ].map((cat) => (
+          <button
+            key={cat}
+            type="button"
+            className={`error-pill ${selectedCategory === cat ? "active" : ""}`}
+            onClick={() => onSelectCategory(cat)}
+          >
+            <span>{cat}</span>
+            <span className="badge">{categoryCounts[cat] || 0}</span>
+          </button>
+        ))}
+      </div>
+
+      {/* Failed Records Table (PRD §10 & §11) */}
+      <div className="failed-records-table-container">
+        <table className="failed-records-table">
+          <TableHeader
+            columns={[
+              "Row #",
+              "Medicine Name",
+              "Batch",
+              "Field",
+              "Provided Value",
+              "Reason",
+              "Recommended Action",
+            ]}
+          />
+          <tbody>
+            {filteredErrors.length === 0 ? (
+              <tr>
+                <td
+                  colSpan={7}
+                  style={{
+                    textAlign: "center",
+                    padding: "24px",
+                    color: "var(--text-muted)",
+                  }}
+                >
+                  No errors in category &quot;{selectedCategory}&quot;.
+                </td>
+              </tr>
+            ) : (
+              filteredErrors.map((err, errIdx) => {
+                const subErrors =
+                  err.errors && err.errors.length > 0 ? err.errors : [err];
+                return subErrors.map((sub, subIdx) => (
+                  <tr
+                    key={`${err.row || err.rowNumber || errIdx}-${sub.field || subIdx}`}
+                  >
+                    <td className="row-num">
+                      Row {err.row || err.rowNumber || errIdx + 1}
+                    </td>
+                    <td className="medicine-name">
+                      {err.name || err.medicineName || "Unknown"}
+                    </td>
+                    <td>
+                      {err.batch || err.batchNumber ? (
+                        <span className="batch-tag">
+                          {err.batch || err.batchNumber}
+                        </span>
+                      ) : (
+                        "—"
+                      )}
+                    </td>
+                    <td>
+                      <span
+                        className="match-badge danger"
+                        style={{ fontSize: "11px" }}
+                      >
+                        {sub.field || err.field || "—"}
+                      </span>
+                    </td>
+                    <td>
+                      <span className="value-cell">
+                        {sub.value !== undefined &&
+                        sub.value !== null &&
+                        sub.value !== ""
+                          ? `"${sub.value}"`
+                          : err.value !== undefined &&
+                              err.value !== null &&
+                              err.value !== ""
+                            ? `"${err.value}"`
+                            : "(empty)"}
+                      </span>
+                    </td>
+                    <td>
+                      <div className="reason-text">
+                        {sub.message || sub.reason || err.message}
+                      </div>
+                    </td>
+                    <td>
+                      {sub.action || err.action ? (
+                        <div className="action-hint">
+                          <span>Correction:</span> {sub.action || err.action}
+                        </div>
+                      ) : (
+                        <div className="action-hint">
+                          Review spreadsheet entry
+                        </div>
+                      )}
+                    </td>
+                  </tr>
+                ));
+              })
+            )}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
 export function BulkImportSection1({
   commitResult,
   navigate,
@@ -117,6 +460,9 @@ export function BulkImportSection1({
   existingMedicineCount = 0,
   requiresDuplicateStrategy = false,
 }) {
+  const [selectedCategory, setSelectedCategory] = useState("All");
+  const [previewCategory, setPreviewCategory] = useState("All");
+
   return importStatus === "complete" ? (
     <m.div
       initial={{
@@ -208,89 +554,18 @@ export function BulkImportSection1({
       )}
 
       {commitResult?.errors?.length > 0 && (
-        <div className="error-details-section">
-          <h3>{commitResult.errors.length} Records Failed</h3>
-          <div className="error-summary-badges">
-            {[...new Set(commitResult.errors.map((e) => e.field))].map(
-              (field) => {
-                const count = commitResult.errors.filter(
-                  (e) => e.field === field,
-                ).length;
-                return (
-                  <span
-                    key={field}
-                    className="match-badge danger"
-                    style={{
-                      margin: "0 4px",
-                    }}
-                  >
-                    {field}: {count}
-                  </span>
-                );
-              },
-            )}
-          </div>
-          <div
-            className="table-overflow"
-            style={{
-              maxHeight: "400px",
-              marginTop: "12px",
-            }}
-          >
-            <table className="results-table">
-              <TableHeader
-                columns={[
-                  "Row #",
-                  "Medicine Name",
-                  "Field",
-                  "Received",
-                  "Error",
-                ]}
-              />
-              <tbody>
-                {commitResult.errors.map((err, errIdx) => (
-                  <tr
-                    key={
-                      err.id || `${err.row}-${err.field || err.name || errIdx}`
-                    }
-                  >
-                    <td>Row {err.row}</td>
-                    <td>{err.name || "Unknown"}</td>
-                    <td>
-                      <span
-                        className="match-badge danger"
-                        style={{
-                          fontSize: "11px",
-                        }}
-                      >
-                        {err.field || "—"}
-                      </span>
-                    </td>
-                    <td
-                      style={{
-                        fontFamily: "monospace",
-                        fontSize: "12px",
-                      }}
-                    >
-                      {err.value !== undefined &&
-                      err.value !== null &&
-                      err.value !== ""
-                        ? `"${err.value}"`
-                        : "(empty)"}
-                    </td>
-                    <td
-                      style={{
-                        color: "var(--danger)",
-                      }}
-                    >
-                      {err.message || err.reason}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
+        <FailedRecordsView
+          title="Failed Import Records"
+          errors={commitResult.errors}
+          selectedCategory={selectedCategory}
+          onSelectCategory={setSelectedCategory}
+          onDownloadCsv={() =>
+            downloadFailedRecordsCsv(
+              commitResult.errors,
+              "failed_inventory_import",
+            )
+          }
+        />
       )}
 
       <div className="results-actions">
@@ -303,6 +578,20 @@ export function BulkImportSection1({
         >
           View Stock
         </button>
+        {commitResult?.errors?.length > 0 && (
+          <button
+            type="button"
+            className="pos-btn outline danger"
+            onClick={() =>
+              downloadFailedRecordsCsv(
+                commitResult.errors,
+                "failed_inventory_import",
+              )
+            }
+          >
+            <Download size={16} /> Download Failed Records CSV
+          </button>
+        )}
         <button
           className="pos-btn outline"
           onClick={() => {
@@ -915,72 +1204,18 @@ export function BulkImportSection1({
               </div>
             </div>
             {duplicateResults.errors && duplicateResults.errors.length > 0 && (
-              <div
-                className="validation-errors-section"
-                style={{
-                  marginTop: "24px",
-                  padding: "16px",
-                  border: "1px solid rgba(239, 68, 68, 0.2)",
-                  borderRadius: "8px",
-                  background: "rgba(239, 68, 68, 0.02)",
-                }}
-              >
-                <h4
-                  style={{
-                    color: "var(--danger)",
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "8px",
-                    marginBottom: "12px",
-                  }}
-                >
-                  <X size={16} /> {duplicateResults.errors.length} Validation
-                  Errors (These rows will be skipped)
-                </h4>
-                <div
-                  className="table-overflow"
-                  style={{
-                    maxHeight: "200px",
-                  }}
-                >
-                  <table className="duplicate-list-table">
-                    <TableHeader
-                      columns={[
-                        "ROW #",
-                        "MEDICINE NAME",
-                        "INVALID FIELD",
-                        "ERROR DETAILS",
-                      ]}
-                    />
-                    <tbody>
-                      {duplicateResults.errors.map((err, errIdx) => (
-                        <tr
-                          key={
-                            err.id ||
-                            `${err.row}-${err.field || err.name || errIdx}`
-                          }
-                        >
-                          <td>Row {err.row}</td>
-                          <td className="bold">{err.name || "Unknown"}</td>
-                          <td>
-                            <span className="match-badge danger">
-                              {err.field}
-                            </span>
-                          </td>
-                          <td
-                            className="diff"
-                            style={{
-                              color: "var(--danger)",
-                            }}
-                          >
-                            {err.message}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
+              <FailedRecordsView
+                title="Validation Errors (These rows will be skipped)"
+                errors={duplicateResults.errors}
+                selectedCategory={previewCategory}
+                onSelectCategory={setPreviewCategory}
+                onDownloadCsv={() =>
+                  downloadFailedRecordsCsv(
+                    duplicateResults.errors,
+                    "preview_validation_errors",
+                  )
+                }
+              />
             )}
           </m.div>
         )}
