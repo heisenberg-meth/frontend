@@ -8,6 +8,10 @@ export const updatePurchaseOrder = (id, data) =>
   api.put(`${API_ROUTES.PURCHASES_ORDERS}/${id}`, data);
 export const receivePurchaseOrder = (id, data) =>
   api.post(`${API_ROUTES.PURCHASES_ORDERS}/${id}/receive`, data);
+export const cancelPurchaseOrder = (id, reason = "Cancelled by user") =>
+  api.patch(`${API_ROUTES.PURCHASES_ORDERS}/${id}/cancel`, { reason });
+export const deletePurchaseOrder = (id) =>
+  api.delete(`${API_ROUTES.PURCHASES_ORDERS}/${id}`);
 
 /* ─── Smart Reorder ─── */
 export const createReorder = (data) =>

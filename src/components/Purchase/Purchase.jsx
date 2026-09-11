@@ -1,5 +1,7 @@
+import { useState } from "react";
 import api from "../../api.js";
 import { API_ROUTES } from "../../constants/api.routes.js";
+import { cancelPurchaseOrder } from "../../services/purchases.service.js";
 import {
   ArrowLeft,
   Plus,
@@ -13,6 +15,7 @@ import {
   Loader2,
   Check,
   AlertCircle,
+  AlertTriangle,
 } from "lucide-react";
 import { AnimatePresence, m } from "framer-motion";
 import { TableHeader } from "../common/TableHeader.jsx";
@@ -121,6 +124,22 @@ const renderInvoiceItemsSummary = (inv) => {
           : `₹${minPrice.toFixed(2)} - ₹${maxPrice.toFixed(2)}`,
   };
 };
+const isCancelEligible = (po) => {
+  const status = String(po?.status || "PENDING")
+    .toUpperCase()
+    .replace(/[\s-]+/g, "_");
+  return [
+    "PENDING",
+    "PENDING_APPROVAL",
+    "DRAFT",
+    "APPROVED",
+    "ORDERED",
+    "SENT",
+    "SENT_TO_SUPPLIER",
+    "ACKNOWLEDGED",
+  ].includes(status);
+};
+
 export function PurchaseManagementSection1({
   setFilters,
   filters,
@@ -140,6 +159,41 @@ export function PurchaseManagementSection1({
   filteredOrders,
   filteredReturns,
 }) {
+  const [showCancelModal, setShowCancelModal] = useState(false);
+  const [poToCancel, setPoToCancel] = useState(null);
+  const [isCancelling, setIsCancelling] = useState(false);
+  const [cancelError, setCancelError] = useState(null);
+
+  const handleOpenCancelModal = (po) => {
+    setPoToCancel(po);
+    setCancelError(null);
+    setShowCancelModal(true);
+  };
+
+  const handleConfirmCancel = async () => {
+    if (!poToCancel || isCancelling) return;
+    setIsCancelling(true);
+    setCancelError(null);
+    try {
+      await cancelPurchaseOrder(poToCancel.id, "Cancelled by user");
+      showToast?.(
+        `Purchase order ${poToCancel.orderNumber || poToCancel.id} cancelled successfully.`,
+        "success",
+      );
+      setShowCancelModal(false);
+      setPoToCancel(null);
+      await refreshData?.();
+    } catch (err) {
+      console.error("[CANCEL PO ERROR]", err);
+      const msg =
+        err.response?.data?.message ||
+        err.response?.data?.error ||
+        "Unable to cancel purchase order. The purchase order may have already been received or changed by another user.";
+      setCancelError(msg);
+    } finally {
+      setIsCancelling(false);
+    }
+  };
   return (
     <div className="purchase-table-card">
       {/* Filter Row */}
@@ -212,6 +266,7 @@ export function PurchaseManagementSection1({
               <option>Received</option>
               <option>Approved</option>
               <option>Completed</option>
+              <option>Cancelled</option>
             </>
           )}
         </select>
@@ -452,6 +507,23 @@ export function PurchaseManagementSection1({
                     >
                       <Eye size={14} />
                     </button>
+                    {isCancelEligible(po) && (
+                      <button
+                        aria-label="Cancel Purchase Order"
+                        className="micro-btn"
+                        title="Cancel Purchase Order"
+                        style={{
+                          color: "var(--danger)",
+                          borderColor: "rgba(239, 68, 68, 0.2)",
+                        }}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleOpenCancelModal(po);
+                        }}
+                      >
+                        <X size={14} />
+                      </button>
+                    )}
                     {(po.status === "DRAFT" ||
                       po.status === "PENDING" ||
                       po.status === "PENDING_APPROVAL") && (
@@ -694,6 +766,166 @@ export function PurchaseManagementSection1({
           )}
         </div>
       </div>
+
+      {/* ── Cancel Purchase Order Confirmation Modal ── */}
+      <AnimatePresence>
+        {showCancelModal && poToCancel && (
+          <div
+            role="presentation"
+            className="confirm-modal-overlay"
+            onClick={() => {
+              if (!isCancelling) {
+                setShowCancelModal(false);
+                setPoToCancel(null);
+                setCancelError(null);
+              }
+            }}
+          >
+            <m.div
+              className="confirm-modal-content"
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              transition={{ duration: 0.2, ease: "easeOut" }}
+              onClick={(e) => e.stopPropagation()}
+              role="presentation"
+            >
+              <div className="confirm-modal-header">
+                <div
+                  className="confirm-modal-icon"
+                  style={{
+                    background: "rgba(239, 68, 68, 0.1)",
+                    color: "var(--danger)",
+                  }}
+                >
+                  <AlertTriangle size={24} />
+                </div>
+                <h3>Cancel Purchase Order?</h3>
+                <button
+                  className="confirm-modal-close"
+                  onClick={() => {
+                    if (!isCancelling) {
+                      setShowCancelModal(false);
+                      setPoToCancel(null);
+                      setCancelError(null);
+                    }
+                  }}
+                  aria-label="Close modal"
+                  disabled={isCancelling}
+                >
+                  <X size={18} />
+                </button>
+              </div>
+              <div className="confirm-modal-body">
+                <p style={{ marginBottom: "16px", color: "var(--text)" }}>
+                  Are you sure you want to cancel purchase order{" "}
+                  <strong>{poToCancel.orderNumber || poToCancel.id}</strong>?
+                </p>
+
+                <div
+                  style={{
+                    padding: "12px 16px",
+                    background: "var(--overlay-02)",
+                    borderRadius: "10px",
+                    border: "1px solid var(--overlay-06)",
+                    marginBottom: "16px",
+                    fontSize: "13px",
+                    lineHeight: 1.8,
+                  }}
+                >
+                  <div>
+                    <span style={{ color: "var(--text-muted)" }}>
+                      Supplier:{" "}
+                    </span>
+                    <strong>
+                      {poToCancel.supplier?.name ||
+                        poToCancel.supplierName ||
+                        poToCancel.supplier ||
+                        "-"}
+                    </strong>
+                  </div>
+                  <div>
+                    <span style={{ color: "var(--text-muted)" }}>Items: </span>
+                    <strong>
+                      {Array.isArray(poToCancel.items)
+                        ? poToCancel.items.length
+                        : typeof poToCancel.items === "number"
+                          ? poToCancel.items
+                          : 0}
+                    </strong>
+                  </div>
+                </div>
+
+                <p
+                  style={{
+                    fontSize: "13px",
+                    color: "var(--text-muted)",
+                    margin: 0,
+                  }}
+                >
+                  This action will change the purchase order status to{" "}
+                  <strong style={{ color: "var(--danger)" }}>CANCELLED</strong>.
+                </p>
+
+                {cancelError && (
+                  <div
+                    style={{
+                      marginTop: "16px",
+                      padding: "12px",
+                      borderRadius: "8px",
+                      background: "rgba(239, 68, 68, 0.1)",
+                      border: "1px solid rgba(239, 68, 68, 0.2)",
+                      color: "var(--danger)",
+                      fontSize: "13px",
+                      display: "flex",
+                      alignItems: "flex-start",
+                      gap: "8px",
+                    }}
+                  >
+                    <AlertCircle
+                      size={16}
+                      style={{ flexShrink: 0, marginTop: "2px" }}
+                    />
+                    <div>{cancelError}</div>
+                  </div>
+                )}
+              </div>
+              <div className="confirm-modal-footer">
+                <button
+                  className="confirm-modal-btn cancel"
+                  onClick={() => {
+                    setShowCancelModal(false);
+                    setPoToCancel(null);
+                    setCancelError(null);
+                  }}
+                  disabled={isCancelling}
+                >
+                  Keep Order
+                </button>
+                <button
+                  className="confirm-modal-btn danger"
+                  onClick={handleConfirmCancel}
+                  disabled={isCancelling}
+                  style={{
+                    backgroundColor: "var(--danger)",
+                    color: "white",
+                  }}
+                >
+                  {isCancelling ? (
+                    <>
+                      <Spinner size={14} /> Cancelling...
+                    </>
+                  ) : cancelError ? (
+                    "Try Again"
+                  ) : (
+                    "Cancel Purchase Order"
+                  )}
+                </button>
+              </div>
+            </m.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
