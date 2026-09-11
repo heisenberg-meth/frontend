@@ -55,6 +55,7 @@ export default function Suppliers({ showToast }) {
   const [ordersLoading, setOrdersLoading] = useState(true);
   const [ordersError, setOrdersError] = useState(false);
   const [orders, setOrders] = useState([]);
+  const [summaryData, setSummaryData] = useState(null);
   const [saving, setSaving] = useState(false);
   const handleView = (s) => {
     setCreditBalance(null);
@@ -69,9 +70,10 @@ export default function Suppliers({ showToast }) {
   }, [viewTarget]);
   const fetchSuppliersData = useCallback(async () => {
     try {
-      const [supplierRes, ordersRes] = await Promise.allSettled([
+      const [supplierRes, ordersRes, summaryRes] = await Promise.allSettled([
         getSuppliers(),
         api.get(API_ROUTES.PURCHASES_ORDERS),
+        api.get(API_ROUTES.PURCHASES_SUMMARY),
       ]);
       if (supplierRes.status === "fulfilled") {
         const data = supplierRes.value.data?.data || supplierRes.value.data;
@@ -87,6 +89,12 @@ export default function Suppliers({ showToast }) {
         console.warn(
           "[SUPPLIERS] Failed to load purchase orders for pending count",
         );
+      }
+      if (summaryRes?.status === "fulfilled") {
+        const sumData = summaryRes.value?.data?.data || summaryRes.value?.data;
+        if (sumData && typeof sumData === "object") {
+          setSummaryData(sumData);
+        }
       }
     } finally {
       setLoading(false);
@@ -106,9 +114,12 @@ export default function Suppliers({ showToast }) {
   }, [fetchSuppliersData]);
   const pendingPOCount = useMemo(() => {
     if (ordersLoading || loading) return "...";
+    if (summaryData?.pendingPurchaseOrders !== undefined) {
+      return summaryData.pendingPurchaseOrders;
+    }
     if (ordersError) return "—";
     return getPendingPOCount(orders);
-  }, [orders, loading, ordersLoading, ordersError]);
+  }, [summaryData, orders, loading, ordersLoading, ordersError]);
   const filtered = useMemo(() => {
     return suppliers.filter((s) => {
       const matchSearch =

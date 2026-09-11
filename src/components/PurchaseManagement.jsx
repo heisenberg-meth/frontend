@@ -44,10 +44,7 @@ import AddNewMedicineModal from "./Purchase/AddNewMedicineModal.jsx";
 import { safeNumber } from "../utils/number.js";
 import { safeData } from "../utils/safeData.js";
 import { formatDate } from "../utils/formUtils.js";
-import {
-  getPendingPOCount,
-  getPendingInvoiceCount,
-} from "../utils/purchaseOrderStatus.js";
+import { getPendingPOCount } from "../utils/purchaseOrderStatus.js";
 
 function PurchaseManagementSection3({
   showReturnModal,
@@ -1870,19 +1867,11 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
   });
   const pendingCount = useMemo(() => {
     if (summaryLoading || summaryError) return null;
-    if (summaryData) {
-      if (activeTab === "orders") {
-        return summaryData.orders?.pending ?? summaryData.pendingOrders ?? 0;
-      }
-      return (
-        summaryData.pendingPurchaseOrders ?? summaryData.invoices?.pending ?? 0
-      );
+    if (summaryData?.pendingPurchaseOrders !== undefined) {
+      return summaryData.pendingPurchaseOrders;
     }
-    if (activeTab === "orders") {
-      return getPendingPOCount(orders);
-    }
-    return getPendingInvoiceCount(invoices);
-  }, [summaryData, summaryLoading, summaryError, activeTab, orders, invoices]);
+    return getPendingPOCount(orders);
+  }, [summaryData, summaryLoading, summaryError, orders]);
   const validateReceiveForm = () => {
     const errors = {};
 
@@ -2362,37 +2351,42 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
                   display: "inline-flex",
                   alignItems: "center",
                   gap: "6px",
-                  fontSize: "13px",
+                  fontSize: "12px",
                   color: "var(--danger)",
                   cursor: "pointer",
                 }}
                 title="Failed to load live summary. Click to retry."
               >
-                <span>Error</span>
-                <RefreshCw size={13} />
+                <span>Unable to load</span>
+                <span
+                  style={{
+                    fontSize: "11px",
+                    textDecoration: "underline",
+                    color: "var(--text-secondary)",
+                    marginLeft: "2px",
+                  }}
+                >
+                  Retry
+                </span>
+                <RefreshCw size={12} />
               </button>
             ) : (
               <div style={{ display: "flex", flexDirection: "column" }}>
                 <span>{pendingCount ?? 0}</span>
-                {summaryData?.pendingValue > 0 && activeTab !== "orders" && (
-                  <span
-                    style={{
-                      fontSize: "12px",
-                      color: "var(--text-secondary)",
-                      fontWeight: "normal",
-                      marginTop: "2px",
-                    }}
-                  >
-                    ₹
-                    {Number(summaryData.pendingValue).toLocaleString(
-                      undefined,
-                      {
-                        minimumFractionDigits: 0,
-                        maximumFractionDigits: 0,
-                      },
-                    )}
-                  </span>
-                )}
+                {activeTab === "invoices" &&
+                  summaryData?.invoices?.pendingPayment !== undefined &&
+                  summaryData.invoices.pendingPayment > 0 && (
+                    <span
+                      style={{
+                        fontSize: "11px",
+                        color: "var(--text-secondary)",
+                        fontWeight: "normal",
+                        marginTop: "2px",
+                      }}
+                    >
+                      Unpaid Invoices: {summaryData.invoices.pendingPayment}
+                    </span>
+                  )}
               </div>
             ),
             icon: Clock,
