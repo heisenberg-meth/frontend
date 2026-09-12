@@ -122,6 +122,13 @@
   background: var(--sys-teal-hover);
 }
 
+.sys-btn-fill:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  filter: grayscale(0.3);
+  pointer-events: none;
+}
+
 /* Layout */
 .settings-grid {
   display: grid;
@@ -1489,3 +1496,217 @@
   max-height: 85vh;
   overflow-y: auto;
 }
+
+/* ── Danger Zone ── */
+
+.settings-danger-zone {
+  margin-top: 32px;
+  padding: 24px;
+  border: 1px solid rgba(239, 68, 68, 0.35);
+  border-radius: 16px;
+  background: rgba(239, 68, 68, 0.04);
+}
+
+.settings-danger-zone h3 {
+  margin: 0 0 8px;
+  color: var(--sys-danger, #ef4444);
+  font-size: 16px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.settings-danger-zone p {
+  margin: 0;
+  max-width: 800px;
+  color: var(--sys-text-muted, #64748b);
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.settings-danger-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 20px;
+}
+
+.settings-reset-btn {
+  height: 42px;
+  padding: 0 18px;
+  border-radius: 10px;
+  border: 1px solid rgba(239, 68, 68, 0.45);
+  background: rgba(239, 68, 68, 0.08);
+  color: var(--sys-danger, #ef4444);
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-family: inherit;
+}
+
+.settings-reset-btn:hover {
+  background: rgba(239, 68, 68, 0.16);
+  border-color: var(--sys-danger, #ef4444);
+}
+
+.settings-reset-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+/* Danger Modal */
+.danger-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(6px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  padding: 20px;
+}
+
+.danger-modal-box {
+  background: var(--sys-card, #111827);
+  border: 1px solid rgba(239, 68, 68, 0.4);
+  border-radius: 18px;
+  padding: 32px;
+  max-width: 540px;
+  width: 100%;
+  box-shadow: 0 25px 50px -12px rgba(239, 68, 68, 0.2), 0 0 0 1px rgba(239, 68, 68, 0.1);
+  color: var(--sys-text, #f1f5f9);
+}
+
+.danger-modal-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--sys-danger, #ef4444);
+  font-size: 18px;
+  font-weight: 800;
+  margin: 0 0 14px;
+}
+
+.danger-modal-text {
+  font-size: 13.5px;
+  line-height: 1.6;
+  color: var(--sys-text-muted, #94a3b8);
+  margin-bottom: 18px;
+}
+
+.danger-modal-highlight {
+  padding: 12px 14px;
+  background: rgba(239, 68, 68, 0.08);
+  border-left: 3px solid #ef4444;
+  border-radius: 6px;
+  font-size: 12.5px;
+  color: var(--sys-text, #f1f5f9);
+  margin-bottom: 22px;
+  line-height: 1.5;
+}
+
+.danger-modal-input-group {
+  margin-bottom: 18px;
+  text-align: left;
+}
+
+.danger-modal-label {
+  display: block;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 8px;
+  color: var(--sys-text, #f1f5f9);
+}
+
+.danger-modal-input {
+  width: 100%;
+  padding: 10px 14px;
+  border-radius: 8px;
+  border: 1px solid var(--sys-border, #1f2a44);
+  background: var(--sys-input, #0d1525);
+  color: var(--sys-text, #f1f5f9);
+  font-size: 14px;
+  box-sizing: border-box;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.danger-modal-input:focus {
+  border-color: var(--sys-danger, #ef4444);
+}
+
+.danger-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 24px;
+}
+
+.danger-destruct-btn {
+  height: 42px;
+  padding: 0 20px;
+  border-radius: 10px;
+  border: none;
+  background: #ef4444;
+  color: #fff;
+  font-weight: 700;
+  font-size: 13.5px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.2s;
+  font-family: inherit;
+}
+
+.danger-destruct-btn:hover:not(:disabled) {
+  background: #dc2626;
+  box-shadow: 0 4px 14px rgba(239, 68, 68, 0.4);
+}
+
+.danger-destruct-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* Reset progress box */
+.danger-progress-box {
+  padding: 16px 20px;
+  background: rgba(239, 68, 68, 0.06);
+  border: 1px dashed rgba(239, 68, 68, 0.35);
+  border-radius: 12px;
+  margin-top: 18px;
+  text-align: left;
+}
+
+.danger-progress-step {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  margin-bottom: 8px;
+  color: var(--sys-text-muted, #94a3b8);
+  transition: color 0.3s ease;
+}
+
+.danger-progress-step:last-child {
+  margin-bottom: 0;
+}
+
+.danger-progress-step.active {
+  color: var(--sys-danger, #ef4444);
+  font-weight: 700;
+}
+
+.danger-progress-step.completed {
+  color: #10b981;
+}
+

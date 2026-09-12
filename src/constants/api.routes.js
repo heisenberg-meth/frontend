@@ -62,6 +62,7 @@ export const API_ROUTES = {
   SETTINGS_SECURITY: "/settings/security",
   SETTINGS_INVOICE_TEMPLATE: "/settings/invoice-template",
   SETTINGS_STORE_PROFILE: "/settings/store-profile",
+  SETTINGS_RESET_ACCOUNT_DATA: "/settings/reset-account-data",
   SUBSCRIPTIONS_STATUS: "/subscriptions/status",
   SUBSCRIPTIONS_ACTIVATE: "/subscriptions/activate",
   SUBSCRIPTIONS_TRIAL: "/subscriptions/verify-trial",

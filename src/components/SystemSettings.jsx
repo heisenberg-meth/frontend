@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import {
   RefreshCw,
   Save,
@@ -8,6 +8,8 @@ import {
   Clock,
   AlertTriangle,
   FileText,
+  Trash2,
+  CheckCircle2,
 } from "lucide-react";
 import api from "../api";
 import { useAuth } from "../hooks/useAuth";
@@ -17,6 +19,23 @@ import LegalPages from "./LegalPages";
 import GSTConfigCard from "./GSTConfigCard";
 import ShopDetailsCard from "./ShopDetailsCard";
 import { formatInvoiceTime } from "../utils/dateTime.js";
+
+const DEFAULT_SETTINGS = {
+  lowStock: 10,
+  expiryDays: 30,
+  theme: "dark",
+  emailEnabled: true,
+  whatsappEnabled: false,
+  inAppEnabled: true,
+  smsEnabled: false,
+  alertEmail: "",
+  autoReorderEnabled: true,
+  immutableAudit: false,
+  outOfStockNotification: true,
+  fifoEnabled: true,
+  reorderQuantityMultiplier: 5,
+};
+
 export default function SystemSettings({
   user,
   lowStock,
@@ -33,16 +52,23 @@ export default function SystemSettings({
   const [currentView, setCurrentView] = useState("settings");
   const [saving, setSaving] = useState(false);
   const [settingsData, setSettingsData] = useState(null);
-  const reorderQtyRef = useRef(50);
-  const autoEscalationRef = useRef(true);
-  const immutableAuditRef = useRef(false);
-  const oosNotifRef = useRef(true);
-  const fifoEnfRef = useRef(true);
-  const [notifEmail, setNotifEmail] = useState(true);
-  const notifInAppRef = useRef(true);
-  const notifSmsRef = useRef(false);
-  const [notifWa, setNotifWa] = useState(false);
-  const alertEmailRef = useRef("");
+  const [settings, setSettings] = useState(DEFAULT_SETTINGS);
+  const [savedSettings, setSavedSettings] = useState(DEFAULT_SETTINGS);
+  const [resetModalOpen, setResetModalOpen] = useState(false);
+  const [isResetting, setIsResetting] = useState(false);
+
+  const hasUnsavedChanges = useMemo(
+    () => JSON.stringify(settings) !== JSON.stringify(savedSettings),
+    [settings, savedSettings],
+  );
+
+  const updateSetting = (key, value) => {
+    setSettings((prev) => ({
+      ...prev,
+      [key]: value,
+    }));
+  };
+
   const [notifHistory, setNotifHistory] = useState([]);
   const [queueMetrics, setQueueMetrics] = useState(null);
   const [isOpsLoading, setIsOpsLoading] = useState(false);
@@ -53,40 +79,71 @@ export default function SystemSettings({
       if (settingsRes?.data) {
         const s = settingsRes.data.data || settingsRes.data;
         setSettingsData(s);
-        if (s.lowStock) setLowStock(s.lowStock);
-        if (s.expiryDays) setExpiryDays(s.expiryDays);
-        if (s.theme) setTheme(s.theme);
+        if (s.lowStock && setLowStock) setLowStock(s.lowStock);
+        if (s.expiryDays && setExpiryDays) setExpiryDays(s.expiryDays);
+        if (s.theme && setTheme) setTheme(s.theme);
 
-        if (s.inventory) {
-          if (s.inventory.autoReorderEnabled !== undefined)
-            autoEscalationRef.current = s.inventory.autoReorderEnabled;
-          if (s.inventory.immutableAudit !== undefined)
-            immutableAuditRef.current = s.inventory.immutableAudit;
-          if (s.inventory.outOfStockNotification !== undefined)
-            oosNotifRef.current = s.inventory.outOfStockNotification;
-          if (s.inventory.fifoEnabled !== undefined)
-            fifoEnfRef.current = s.inventory.fifoEnabled;
-          if (s.inventory.reorderQuantityMultiplier)
-            reorderQtyRef.current = s.inventory.reorderQuantityMultiplier * 10;
-        }
-        if (s.notifications) {
-          if (s.notifications.emailEnabled !== undefined)
-            setNotifEmail(s.notifications.emailEnabled);
-          if (s.notifications.inAppEnabled !== undefined)
-            notifInAppRef.current = s.notifications.inAppEnabled;
-          if (s.notifications.smsEnabled !== undefined)
-            notifSmsRef.current = s.notifications.smsEnabled;
-          if (s.notifications.whatsappEnabled !== undefined)
-            setNotifWa(s.notifications.whatsappEnabled);
-          if (s.notifications.alertEmail)
-            alertEmailRef.current = s.notifications.alertEmail;
-        }
+        const loaded = {
+          lowStock: s.lowStock ?? lowStock ?? 10,
+          expiryDays: s.expiryDays ?? expiryDays ?? 30,
+          theme: s.theme ?? theme ?? "dark",
+          emailEnabled:
+            s.notifications?.emailEnabled ??
+            s.notificationSettings?.emailEnabled ??
+            true,
+          whatsappEnabled:
+            s.notifications?.whatsappEnabled ??
+            s.notificationSettings?.whatsappEnabled ??
+            false,
+          inAppEnabled:
+            s.notifications?.inAppEnabled ??
+            s.notificationSettings?.inAppEnabled ??
+            true,
+          smsEnabled:
+            s.notifications?.smsEnabled ??
+            s.notificationSettings?.smsEnabled ??
+            false,
+          alertEmail:
+            s.notifications?.alertEmail ||
+            s.notificationSettings?.alertEmail ||
+            "",
+          autoReorderEnabled:
+            s.inventory?.autoReorderEnabled ??
+            s.inventorySettings?.autoReorderEnabled ??
+            true,
+          immutableAudit:
+            s.inventory?.immutableAudit ??
+            s.inventorySettings?.immutableAudit ??
+            false,
+          outOfStockNotification:
+            s.inventory?.outOfStockNotification ??
+            s.inventorySettings?.outOfStockNotification ??
+            true,
+          fifoEnabled:
+            s.inventory?.fifoEnabled ??
+            s.inventorySettings?.fifoEnabled ??
+            true,
+          reorderQuantityMultiplier:
+            s.inventory?.reorderQuantityMultiplier ??
+            s.inventorySettings?.reorderQuantityMultiplier ??
+            5,
+        };
+        setSettings(loaded);
+        setSavedSettings(loaded);
       }
     } catch (err) {
       console.error("Failed to load settings:", err);
       showToast?.("Failed to load settings", "error");
     }
-  }, [setExpiryDays, setLowStock, setTheme, showToast]);
+  }, [
+    expiryDays,
+    lowStock,
+    setExpiryDays,
+    setLowStock,
+    setTheme,
+    showToast,
+    theme,
+  ]);
 
   const loadSettingsRef = useRef();
   useEffect(() => {
@@ -160,32 +217,41 @@ export default function SystemSettings({
   };
 
   const handleSaveSettings = async () => {
+    if (!hasUnsavedChanges || saving) return;
     setSaving(true);
     try {
       await Promise.all([
-        onSave({ lowStock, expiryDays, theme }),
+        onSave?.({
+          lowStock: settings.lowStock,
+          expiryDays: settings.expiryDays,
+          theme: settings.theme,
+        }),
         api.put(API_ROUTES.SETTINGS_INVENTORY, {
-          lowStockThreshold: lowStock,
-          expiryAlertDays: expiryDays,
-          autoReorderEnabled: autoEscalationRef.current,
-          immutableAudit: immutableAuditRef.current,
-          outOfStockNotification: oosNotifRef.current,
-          fifoEnabled: fifoEnfRef.current,
-          reorderQuantityMultiplier: Math.round(reorderQtyRef.current / 10),
+          lowStockThreshold: settings.lowStock,
+          expiryAlertDays: settings.expiryDays,
+          autoReorderEnabled: settings.autoReorderEnabled,
+          immutableAudit: settings.immutableAudit,
+          outOfStockNotification: settings.outOfStockNotification,
+          fifoEnabled: settings.fifoEnabled,
+          reorderQuantityMultiplier: Math.round(
+            settings.reorderQuantityMultiplier / 10,
+          ),
         }),
         api.put(API_ROUTES.SETTINGS_NOTIFICATIONS, {
-          emailEnabled: notifEmail,
-          inAppEnabled: notifInAppRef.current,
-          smsEnabled: notifSmsRef.current,
-          whatsappEnabled: notifWa,
-          alertEmail: alertEmailRef.current
-            ? alertEmailRef.current.trim()
-            : null,
+          emailEnabled: settings.emailEnabled,
+          inAppEnabled: settings.inAppEnabled,
+          smsEnabled: settings.smsEnabled,
+          whatsappEnabled: settings.whatsappEnabled,
+          alertEmail: settings.alertEmail ? settings.alertEmail.trim() : null,
         }),
       ]);
-      showToast("Global facility configuration synchronized", "success");
+      setSavedSettings(settings);
+      showToast?.("Global facility configuration synchronized", "success");
     } catch (err) {
-      showToast("Synchronization partial failure", err);
+      showToast?.(
+        err?.response?.data?.message || "Synchronization partial failure",
+        "error",
+      );
     } finally {
       setSaving(false);
     }
@@ -316,9 +382,10 @@ export default function SystemSettings({
             <FileText size={16} /> Legal & Compliance
           </button>
           <button
+            type="button"
             className="sys-btn-fill"
             onClick={handleSaveSettings}
-            disabled={saving}
+            disabled={!hasUnsavedChanges || saving}
           >
             <Save size={16} /> {saving ? "Saving..." : "Apply Changes"}
           </button>
@@ -425,8 +492,10 @@ export default function SystemSettings({
               <span className="sys-toggle-label">Email</span>
               <button
                 type="button"
-                className={`sys-toggle ${notifEmail ? "on" : ""}`}
-                onClick={() => setNotifEmail(!notifEmail)}
+                className={`sys-toggle ${settings.emailEnabled ? "on" : ""}`}
+                onClick={() =>
+                  updateSetting("emailEnabled", !settings.emailEnabled)
+                }
                 aria-label="Toggle Email notifications"
               >
                 <div className="sys-toggle-thumb" />
@@ -436,8 +505,10 @@ export default function SystemSettings({
               <span className="sys-toggle-label">WhatsApp</span>
               <button
                 type="button"
-                className={`sys-toggle ${notifWa ? "on" : ""}`}
-                onClick={() => setNotifWa(!notifWa)}
+                className={`sys-toggle ${settings.whatsappEnabled ? "on" : ""}`}
+                onClick={() =>
+                  updateSetting("whatsappEnabled", !settings.whatsappEnabled)
+                }
                 aria-label="Toggle WhatsApp notifications"
               >
                 <div className="sys-toggle-thumb" />
@@ -451,6 +522,31 @@ export default function SystemSettings({
             showToast={showToast}
             tenant={tenant}
           />
+        </div>
+      </div>
+
+      {/* ── Danger Zone: Master Reset ── */}
+      <div className="settings-danger-zone">
+        <h3>
+          <AlertTriangle size={18} /> DANGER ZONE
+        </h3>
+        <p>
+          <strong>Reset Pharmacy Data</strong>: Permanently remove all
+          operational data associated with this pharmacy account and return it
+          to a newly-created empty state. This includes bills, sales, purchases,
+          inventory, suppliers, returns, payments, batches, medicines and
+          related records. Your login credentials, account identity, and
+          enterprise subscription will remain active.
+        </p>
+        <div className="settings-danger-actions">
+          <button
+            type="button"
+            className="settings-reset-btn"
+            onClick={() => setResetModalOpen(true)}
+            disabled={saving || isResetting}
+          >
+            <AlertTriangle size={16} /> Reset All Pharmacy Data
+          </button>
         </div>
       </div>
     </div>
@@ -498,6 +594,217 @@ export default function SystemSettings({
           <LegalPages showBackButton={false} />
         </div>
       )}
+
+      {resetModalOpen && (
+        <MasterResetModal
+          onClose={() => !isResetting && setResetModalOpen(false)}
+          showToast={showToast}
+          isResetting={isResetting}
+          setIsResetting={setIsResetting}
+        />
+      )}
     </>
+  );
+}
+
+function MasterResetModal({ onClose, showToast, isResetting, setIsResetting }) {
+  const [confirmation, setConfirmation] = useState("");
+  const [password, setPassword] = useState("");
+  const [activeStep, setActiveStep] = useState(0);
+  const [errorMsg, setErrorMsg] = useState("");
+
+  const steps = [
+    "Authenticating credentials & tenant session...",
+    "Removing invoices, customer bills & payments...",
+    "Clearing inventory, batches & stock logs...",
+    "Removing purchases, orders & supplier ledgers...",
+    "Purging medicine catalog & finalizing reset...",
+  ];
+
+  const canSubmit =
+    confirmation === "RESET" && password.trim().length > 0 && !isResetting;
+
+  const handleReset = async (e) => {
+    e?.preventDefault();
+    if (!canSubmit) return;
+
+    setErrorMsg("");
+    setIsResetting(true);
+    setActiveStep(0);
+
+    const timer1 = setTimeout(() => setActiveStep(1), 500);
+    const timer2 = setTimeout(() => setActiveStep(2), 1200);
+    const timer3 = setTimeout(() => setActiveStep(3), 2000);
+    const timer4 = setTimeout(() => setActiveStep(4), 2800);
+
+    try {
+      const res = await api.post(API_ROUTES.SETTINGS_RESET_ACCOUNT_DATA, {
+        confirmation: confirmation.trim(),
+        password: password.trim(),
+      });
+
+      clearTimeout(timer1);
+      clearTimeout(timer2);
+      clearTimeout(timer3);
+      clearTimeout(timer4);
+      setActiveStep(5);
+
+      showToast?.(
+        res.data?.message || "Pharmacy operational data reset successfully.",
+        "success",
+      );
+
+      setTimeout(() => {
+        window.location.reload();
+      }, 1200);
+    } catch (err) {
+      clearTimeout(timer1);
+      clearTimeout(timer2);
+      clearTimeout(timer3);
+      clearTimeout(timer4);
+      setIsResetting(false);
+      const msg =
+        err.response?.data?.message ||
+        err.message ||
+        "Failed to reset pharmacy data.";
+      setErrorMsg(msg);
+      showToast?.(msg, "error");
+    }
+  };
+
+  return (
+    <div className="danger-modal-overlay" onClick={onClose} role="presentation">
+      <div
+        className="danger-modal-box"
+        onClick={(e) => e.stopPropagation()}
+        role="dialog"
+        aria-modal="true"
+      >
+        <h2 className="danger-modal-title">
+          <AlertTriangle size={22} /> RESET ALL PHARMACY DATA
+        </h2>
+
+        <p className="danger-modal-text">
+          This action is permanent and cannot be reversed. All bills, sales,
+          purchases, inventory, medicines, suppliers, returns, payments and
+          related operational data will be permanently deleted from the
+          database.
+        </p>
+
+        <div className="danger-modal-highlight">
+          Your user login, email, password, and enterprise subscription will
+          remain completely active.
+        </div>
+
+        {errorMsg && (
+          <div
+            style={{
+              padding: "10px 14px",
+              background: "rgba(239, 68, 68, 0.15)",
+              border: "1px solid #ef4444",
+              borderRadius: "8px",
+              color: "#ef4444",
+              fontSize: "13px",
+              marginBottom: "16px",
+            }}
+          >
+            {errorMsg}
+          </div>
+        )}
+
+        {!isResetting ? (
+          <form onSubmit={handleReset}>
+            <div className="danger-modal-input-group">
+              <label
+                htmlFor="reset-confirm-text"
+                className="danger-modal-label"
+              >
+                Type RESET to continue
+              </label>
+              <input
+                id="reset-confirm-text"
+                type="text"
+                className="danger-modal-input"
+                placeholder="RESET"
+                value={confirmation}
+                onChange={(e) => setConfirmation(e.target.value)}
+                autoComplete="off"
+                disabled={isResetting}
+              />
+            </div>
+
+            <div className="danger-modal-input-group">
+              <label htmlFor="reset-confirm-pwd" className="danger-modal-label">
+                Current Password
+              </label>
+              <input
+                id="reset-confirm-pwd"
+                type="password"
+                className="danger-modal-input"
+                placeholder="Enter your account password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                disabled={isResetting}
+              />
+            </div>
+
+            <div className="danger-modal-actions">
+              <button
+                type="button"
+                className="sys-btn-outline"
+                onClick={onClose}
+                disabled={isResetting}
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                className="danger-destruct-btn"
+                disabled={!canSubmit}
+              >
+                <Trash2 size={16} /> Permanently Reset Data
+              </button>
+            </div>
+          </form>
+        ) : (
+          <div className="danger-progress-box">
+            <div
+              style={{
+                fontWeight: 700,
+                fontSize: 14,
+                marginBottom: 12,
+                color: "var(--sys-danger, #ef4444)",
+              }}
+            >
+              Resetting pharmacy data...
+            </div>
+            {steps.map((label, idx) => {
+              const isDone = activeStep > idx;
+              const isCurrent = activeStep === idx;
+              return (
+                <div
+                  key={idx}
+                  className={`danger-progress-step ${
+                    isDone ? "completed" : isCurrent ? "active" : ""
+                  }`}
+                >
+                  {isDone ? (
+                    <CheckCircle2 size={15} color="#10b981" />
+                  ) : isCurrent ? (
+                    <RefreshCw
+                      size={15}
+                      style={{ animation: "spin 1s linear infinite" }}
+                    />
+                  ) : (
+                    <Clock size={15} />
+                  )}
+                  <span>{label}</span>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    </div>
   );
 }
