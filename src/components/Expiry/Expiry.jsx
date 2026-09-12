@@ -1,4 +1,6 @@
 import {
+  ChevronLeft,
+  ChevronRight,
   ChevronDown,
   ChevronUp,
   TrendingUp,
@@ -44,6 +46,38 @@ const INV_FILTER_OPTIONS = [
     value: "SAFE",
   },
 ];
+const getBatchPageNumbers = (currentPage, totalPages) => {
+  if (totalPages <= 7) {
+    return Array.from({ length: totalPages }, (_, i) => i + 1);
+  }
+
+  if (currentPage <= 4) {
+    return [1, 2, 3, 4, 5, "...", totalPages];
+  }
+
+  if (currentPage >= totalPages - 3) {
+    return [
+      1,
+      "...",
+      totalPages - 4,
+      totalPages - 3,
+      totalPages - 2,
+      totalPages - 1,
+      totalPages,
+    ];
+  }
+
+  return [
+    1,
+    "...",
+    currentPage - 1,
+    currentPage,
+    currentPage + 1,
+    "...",
+    totalPages,
+  ];
+};
+
 export function ExpiryBatchIntelligenceSection1({
   showToast,
   handleExpiredCleared,
@@ -67,6 +101,10 @@ export function ExpiryBatchIntelligenceSection1({
   expiredBatches,
   toggleSelectAll,
   filteredBatches,
+  paginatedBatches = filteredBatches,
+  batchPagination = { page: 1, pageSize: 10 },
+  setBatchPagination,
+  batchTotalPages = 1,
 }) {
   return activeTab === "timeline" && loading ? (
     <div className="empty-state">Loading batches...</div>
@@ -356,7 +394,7 @@ export function ExpiryBatchIntelligenceSection1({
                   </td>
                 </tr>
               ) : (
-                filteredBatches.map((b) => {
+                paginatedBatches.map((b) => {
                   const isExpiredRow = b.days <= 0 || b.status === "expired";
                   const isChecked =
                     isExpiredRow && selectedBatchIds.has(b.batchId);
@@ -524,6 +562,100 @@ export function ExpiryBatchIntelligenceSection1({
               )}
             </tbody>
           </table>
+
+          {filteredBatches.length > 0 && (
+            <div className="expiry-pagination">
+              <div className="pagination-info">
+                Showing{" "}
+                {(batchPagination.page - 1) * batchPagination.pageSize + 1}–
+                {Math.min(
+                  batchPagination.page * batchPagination.pageSize,
+                  filteredBatches.length,
+                )}{" "}
+                of {filteredBatches.length}
+              </div>
+
+              <div className="pagination-controls">
+                <div className="pagination-rows">
+                  <span>Rows:</span>
+
+                  <select
+                    className="pagination-size"
+                    value={batchPagination.pageSize}
+                    aria-label="Rows per page"
+                    onChange={(e) => {
+                      setBatchPagination({
+                        page: 1,
+                        pageSize: Number(e.target.value),
+                      });
+                    }}
+                  >
+                    <option value={10}>10</option>
+                    <option value={25}>25</option>
+                    <option value={50}>50</option>
+                  </select>
+                </div>
+
+                <button
+                  type="button"
+                  className="pagination-btn"
+                  disabled={batchPagination.page <= 1}
+                  onClick={() => {
+                    setBatchPagination((prev) => ({
+                      ...prev,
+                      page: Math.max(1, prev.page - 1),
+                    }));
+                  }}
+                  aria-label="Previous page"
+                >
+                  <ChevronLeft size={16} />
+                </button>
+
+                {getBatchPageNumbers(batchPagination.page, batchTotalPages).map(
+                  (page, index) =>
+                    page === "..." ? (
+                      <span
+                        key={`batch-ellipsis-${index}`}
+                        className="pagination-ellipsis"
+                      >
+                        ...
+                      </span>
+                    ) : (
+                      <button
+                        key={page}
+                        type="button"
+                        className={`pagination-btn ${
+                          page === batchPagination.page ? "active" : ""
+                        }`}
+                        onClick={() => {
+                          setBatchPagination((prev) => ({
+                            ...prev,
+                            page,
+                          }));
+                        }}
+                      >
+                        {page}
+                      </button>
+                    ),
+                )}
+
+                <button
+                  type="button"
+                  className="pagination-btn"
+                  disabled={batchPagination.page >= batchTotalPages}
+                  onClick={() => {
+                    setBatchPagination((prev) => ({
+                      ...prev,
+                      page: Math.min(batchTotalPages, prev.page + 1),
+                    }));
+                  }}
+                  aria-label="Next page"
+                >
+                  <ChevronRight size={16} />
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       </>
     )

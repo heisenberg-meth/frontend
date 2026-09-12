@@ -183,24 +183,32 @@ export default function ExpiryBatchIntelligence({ showToast }) {
       }),
     [],
   );
-  const setFilter = useCallback(
-    (val) =>
-      dispatchIntelligence({
-        type: "SET_FIELD",
-        field: "filter",
-        value: val,
-      }),
-    [],
-  );
-  const setSearchQuery = useCallback(
-    (val) =>
-      dispatchIntelligence({
-        type: "SET_FIELD",
-        field: "searchQuery",
-        value: val,
-      }),
-    [],
-  );
+  const [batchPagination, setBatchPagination] = useState({
+    page: 1,
+    pageSize: 10,
+  });
+  const setFilter = useCallback((val) => {
+    dispatchIntelligence({
+      type: "SET_FIELD",
+      field: "filter",
+      value: val,
+    });
+    setBatchPagination((prev) => ({
+      ...prev,
+      page: 1,
+    }));
+  }, []);
+  const setSearchQuery = useCallback((val) => {
+    dispatchIntelligence({
+      type: "SET_FIELD",
+      field: "searchQuery",
+      value: val,
+    });
+    setBatchPagination((prev) => ({
+      ...prev,
+      page: 1,
+    }));
+  }, []);
   const setShowConfigModal = useCallback(
     (val) =>
       dispatchIntelligence({
@@ -735,6 +743,27 @@ export default function ExpiryBatchIntelligence({ showToast }) {
       return b.status?.toLowerCase() === f.toLowerCase();
     });
   }, [batches, searchQuery, filter]);
+
+  const batchTotalPages = Math.max(
+    1,
+    Math.ceil(filteredBatches.length / (batchPagination.pageSize || 10)),
+  );
+
+  const paginatedBatches = useMemo(() => {
+    const pageSize = batchPagination.pageSize || 10;
+
+    const page = Math.min(Math.max(1, batchPagination.page), batchTotalPages);
+
+    const start = (page - 1) * pageSize;
+
+    return filteredBatches.slice(start, start + pageSize);
+  }, [
+    filteredBatches,
+    batchPagination.page,
+    batchPagination.pageSize,
+    batchTotalPages,
+  ]);
+
   const invFilteredBatches = useMemo(() => {
     return batches.filter((b) => {
       if ((b.qty ?? b.quantity ?? 0) <= 0) return false;
@@ -1653,6 +1682,10 @@ export default function ExpiryBatchIntelligence({ showToast }) {
         expiredBatches={expiredBatches}
         toggleSelectAll={toggleSelectAll}
         filteredBatches={filteredBatches}
+        paginatedBatches={paginatedBatches}
+        batchPagination={batchPagination}
+        setBatchPagination={setBatchPagination}
+        batchTotalPages={batchTotalPages}
       />
 
       {/* ───────────────────── INVENTORY TAB ───────────────────── */}
