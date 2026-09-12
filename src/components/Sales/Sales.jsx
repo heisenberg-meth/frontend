@@ -7,9 +7,6 @@ import {
   Printer,
   MessageCircle,
   RefreshCw,
-  CreditCard,
-  Smartphone,
-  Banknote,
   Search,
   RotateCcw,
   ArrowUpDown,
@@ -29,6 +26,25 @@ import {
   formatInvoiceDate,
 } from "../../utils/dateTime.js";
 
+const getSalesPageNumbers = (current, total) => {
+  current = current || 1;
+  total = total || 1;
+
+  if (total <= 7) {
+    return Array.from({ length: total }, (_, i) => i + 1);
+  }
+
+  if (current <= 4) {
+    return [1, 2, 3, 4, 5, "...", total];
+  }
+
+  if (current >= total - 3) {
+    return [1, "...", total - 4, total - 3, total - 2, total - 1, total];
+  }
+
+  return [1, "...", current - 1, current, current + 1, "...", total];
+};
+
 export function SalesManagementSection1({
   loading,
   dateRange,
@@ -39,6 +55,10 @@ export function SalesManagementSection1({
   handleNextDate,
   filteredSales,
   dailySales,
+  totalDailySales = 0,
+  dailyTotalPages = 1,
+  salesPagination = { page: 1, pageSize: 10 },
+  setSalesPagination,
   handleOpenDetail,
   hourlyData,
   setHoveredBar,
@@ -115,12 +135,11 @@ export function SalesManagementSection1({
           <table className="purchase-table">
             <TableHeader
               columns={[
+                "Date",
                 "Time",
                 "Bill #",
                 "Patient",
                 "Medicines",
-                "Disc",
-                "GST",
                 "Total",
                 "Payment Type",
                 "Payment Status",
@@ -131,7 +150,7 @@ export function SalesManagementSection1({
               {dailySales.length === 0 ? (
                 <tr>
                   <td
-                    colSpan="10"
+                    colSpan="9"
                     style={{
                       textAlign: "center",
                       padding: "40px",
@@ -161,6 +180,9 @@ export function SalesManagementSection1({
                     }}
                     className="table-row-hover"
                   >
+                    <td className="result-meta">
+                      {formatInvoiceDate(sale.createdAt || sale.date) || "--"}
+                    </td>
                     <td className="result-meta">
                       {formatInvoiceTime(sale.createdAt || sale.date) || "--"}
                     </td>
@@ -195,9 +217,9 @@ export function SalesManagementSection1({
                     <td>
                       {sale.items && sale.items.length > 0 ? (
                         <div>
-                          {sale.items.slice(0, 2).map((it) => (
+                          {sale.items.slice(0, 2).map((it, index) => (
                             <div
-                              key={it.qty}
+                              key={`${sale.id}-${index}`}
                               style={{
                                 fontSize: "12px",
                                 whiteSpace: "nowrap",
@@ -226,18 +248,6 @@ export function SalesManagementSection1({
                         <span className="result-meta">—</span>
                       )}
                     </td>
-                    <td>
-                      ₹
-                      {parseFloat(
-                        sale.discountAmount || sale.disc || 0,
-                      ).toFixed(2)}
-                    </td>
-                    <td className="result-meta">
-                      ₹
-                      {parseFloat(
-                        sale.taxAmount || sale.gstAmount || sale.gst || 0,
-                      ).toFixed(2)}
-                    </td>
                     <td
                       style={{
                         fontWeight: 700,
@@ -250,42 +260,51 @@ export function SalesManagementSection1({
                       )}
                     </td>
                     <td>
-                      <div
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: "6px",
-                          fontSize: "11px",
-                          fontWeight: 700,
-                        }}
-                      >
-                        {(sale.paymentMode || sale.payment) === "UPI" && (
-                          <Smartphone size={12} color="var(--info)" />
-                        )}
-                        {(sale.paymentMode || sale.payment) === "CASH" && (
-                          <Banknote size={12} color="var(--primary)" />
-                        )}
-                        {(sale.paymentMode || sale.payment) === "CARD" && (
-                          <CreditCard size={12} color="var(--info)" />
-                        )}
-                        <span className="payment-badge">
-                          {sale.paymentMode ||
-                            sale.payment ||
-                            sale.paymentMethod ||
-                            "UNKNOWN"}
-                        </span>
-                      </div>
+                      <span className="payment-badge">
+                        {sale.paymentMode ||
+                          sale.payment ||
+                          sale.paymentMethod ||
+                          "UNKNOWN"}
+                      </span>
                     </td>
                     <td>
                       <span
-                        className={`p-status ${sale.paymentStatus === "PAID" ? "paid" : sale.paymentStatus === "FAILED" ? "cancelled" : sale.paymentStatus === "PENDING" ? "low" : sale.paymentStatus === "PARTIAL" ? "low" : sale.paymentStatus === "REFUNDED" ? "expired" : "low"}`}
+                        className={`p-status ${
+                          sale.paymentStatus === "PAID"
+                            ? "paid"
+                            : sale.paymentStatus === "FAILED"
+                              ? "cancelled"
+                              : sale.paymentStatus === "PENDING"
+                                ? "low"
+                                : sale.paymentStatus === "PARTIAL"
+                                  ? "low"
+                                  : sale.paymentStatus === "REFUNDED"
+                                    ? "expired"
+                                    : "low"
+                        }`}
                       >
                         {(sale.paymentStatus || "UNKNOWN").toUpperCase()}
                       </span>
                     </td>
                     <td>
                       <span
-                        className={`p-status ${(sale.invoiceStatus || sale.status) === "COMPLETED" ? "paid" : (sale.invoiceStatus || sale.status) === "CANCELLED" ? "cancelled" : (sale.invoiceStatus || sale.status) === "PARTIAL_RETURN" ? "low" : (sale.invoiceStatus || sale.status) === "REFUNDED" ? "expired" : (sale.invoiceStatus || sale.status) === "PENDING" ? "low" : "low"}`}
+                        className={`p-status ${
+                          (sale.invoiceStatus || sale.status) === "COMPLETED"
+                            ? "paid"
+                            : (sale.invoiceStatus || sale.status) ===
+                                "CANCELLED"
+                              ? "cancelled"
+                              : (sale.invoiceStatus || sale.status) ===
+                                  "PARTIAL_RETURN"
+                                ? "low"
+                                : (sale.invoiceStatus || sale.status) ===
+                                    "REFUNDED"
+                                  ? "expired"
+                                  : (sale.invoiceStatus || sale.status) ===
+                                      "PENDING"
+                                    ? "low"
+                                    : "low"
+                        }`}
                       >
                         {(
                           sale.invoiceStatus ||
@@ -299,6 +318,116 @@ export function SalesManagementSection1({
               )}
             </tbody>
           </table>
+
+          <div className="sales-pagination">
+            <div className="pagination-info">
+              Showing{" "}
+              {totalDailySales === 0
+                ? 0
+                : (salesPagination.page - 1) * salesPagination.pageSize + 1}
+              –
+              {Math.min(
+                salesPagination.page * salesPagination.pageSize,
+                totalDailySales,
+              )}{" "}
+              of {totalDailySales}
+            </div>
+
+            <div className="pagination-controls">
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "6px",
+                }}
+              >
+                <span
+                  style={{
+                    fontSize: "12px",
+                    color: "var(--text-muted)",
+                  }}
+                >
+                  Rows:
+                </span>
+
+                <select
+                  className="sales-input pagination-size"
+                  value={salesPagination.pageSize}
+                  aria-label="Rows per page"
+                  onChange={(e) => {
+                    const newSize = Number(e.target.value);
+
+                    setSalesPagination({
+                      page: 1,
+                      pageSize: newSize,
+                    });
+                  }}
+                >
+                  <option value={10}>10</option>
+                  <option value={25}>25</option>
+                  <option value={50}>50</option>
+                </select>
+              </div>
+
+              <button
+                type="button"
+                className="pagination-btn"
+                disabled={salesPagination.page <= 1}
+                onClick={() => {
+                  setSalesPagination((prev) => ({
+                    ...prev,
+                    page: Math.max(1, prev.page - 1),
+                  }));
+                }}
+                aria-label="Previous page"
+              >
+                <ChevronLeft size={16} />
+              </button>
+
+              {getSalesPageNumbers(salesPagination.page, dailyTotalPages).map(
+                (page, index) =>
+                  page === "..." ? (
+                    <span
+                      key={`daily-ellipsis-${index}`}
+                      className="pagination-ellipsis"
+                    >
+                      ...
+                    </span>
+                  ) : (
+                    <button
+                      key={page}
+                      type="button"
+                      className={`pagination-btn ${
+                        page === salesPagination.page ? "active" : ""
+                      }`}
+                      onClick={() => {
+                        setSalesPagination((prev) => ({
+                          ...prev,
+                          page,
+                        }));
+                      }}
+                    >
+                      {page}
+                    </button>
+                  ),
+              )}
+
+              <button
+                type="button"
+                className="pagination-btn"
+                disabled={salesPagination.page >= dailyTotalPages}
+                onClick={() => {
+                  setSalesPagination((prev) => ({
+                    ...prev,
+                    page: Math.min(dailyTotalPages, prev.page + 1),
+                  }));
+                }}
+                aria-label="Next page"
+              >
+                <ChevronRight size={16} />
+              </button>
+            </div>
+          </div>
         </div>
 
         <div className="chart-card">
@@ -410,6 +539,11 @@ export function SalesManagementSection2({
   setFilters,
   filters,
   filteredSales,
+  paginatedBills = [],
+  billsTotalPages = 1,
+  salesPagination = { page: 1, pageSize: 10 },
+  setSalesPagination,
+  onFilterChange,
   dateRange,
 }) {
   return (
@@ -431,10 +565,12 @@ export function SalesManagementSection2({
               }}
               value={filters.search}
               onChange={(e) =>
-                setFilters({
-                  ...filters,
-                  search: e.target.value,
-                })
+                onFilterChange
+                  ? onFilterChange("search", e.target.value)
+                  : setFilters({
+                      ...filters,
+                      search: e.target.value,
+                    })
               }
               id="field_p7qr48"
             />
@@ -444,10 +580,12 @@ export function SalesManagementSection2({
             value={filters.payment}
             aria-label="Filter by payment method"
             onChange={(e) =>
-              setFilters({
-                ...filters,
-                payment: e.target.value,
-              })
+              onFilterChange
+                ? onFilterChange("payment", e.target.value)
+                : setFilters({
+                    ...filters,
+                    payment: e.target.value,
+                  })
             }
           >
             <option>All Payment Modes</option>
@@ -460,10 +598,12 @@ export function SalesManagementSection2({
             value={filters.status}
             aria-label="Filter by status"
             onChange={(e) =>
-              setFilters({
-                ...filters,
-                status: e.target.value,
-              })
+              onFilterChange
+                ? onFilterChange("status", e.target.value)
+                : setFilters({
+                    ...filters,
+                    status: e.target.value,
+                  })
             }
           >
             <option>All Status</option>
@@ -501,7 +641,7 @@ export function SalesManagementSection2({
                 </td>
               </tr>
             ) : (
-              filteredSales.map((sale) => (
+              paginatedBills.map((sale) => (
                 <tr key={sale.id}>
                   <td>
                     {format(
@@ -615,6 +755,114 @@ export function SalesManagementSection2({
             )}
           </tbody>
         </table>
+
+        <div className="sales-pagination">
+          <div className="pagination-info">
+            Showing{" "}
+            {filteredSales.length === 0
+              ? 0
+              : (salesPagination.page - 1) * salesPagination.pageSize + 1}
+            –
+            {Math.min(
+              salesPagination.page * salesPagination.pageSize,
+              filteredSales.length,
+            )}{" "}
+            of {filteredSales.length}
+          </div>
+
+          <div className="pagination-controls">
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "6px",
+              }}
+            >
+              <span
+                style={{
+                  fontSize: "12px",
+                  color: "var(--text-muted)",
+                }}
+              >
+                Rows:
+              </span>
+
+              <select
+                className="sales-input pagination-size"
+                value={salesPagination.pageSize}
+                aria-label="Rows per page"
+                onChange={(e) => {
+                  setSalesPagination({
+                    page: 1,
+                    pageSize: Number(e.target.value),
+                  });
+                }}
+              >
+                <option value={10}>10</option>
+                <option value={25}>25</option>
+                <option value={50}>50</option>
+              </select>
+            </div>
+
+            <button
+              type="button"
+              className="pagination-btn"
+              disabled={salesPagination.page <= 1}
+              onClick={() => {
+                setSalesPagination((prev) => ({
+                  ...prev,
+                  page: Math.max(1, prev.page - 1),
+                }));
+              }}
+              aria-label="Previous page"
+            >
+              <ChevronLeft size={16} />
+            </button>
+
+            {getSalesPageNumbers(salesPagination.page, billsTotalPages).map(
+              (page, index) =>
+                page === "..." ? (
+                  <span
+                    key={`bills-ellipsis-${index}`}
+                    className="pagination-ellipsis"
+                  >
+                    ...
+                  </span>
+                ) : (
+                  <button
+                    key={page}
+                    type="button"
+                    className={`pagination-btn ${
+                      page === salesPagination.page ? "active" : ""
+                    }`}
+                    onClick={() => {
+                      setSalesPagination((prev) => ({
+                        ...prev,
+                        page,
+                      }));
+                    }}
+                  >
+                    {page}
+                  </button>
+                ),
+            )}
+
+            <button
+              type="button"
+              className="pagination-btn"
+              disabled={salesPagination.page >= billsTotalPages}
+              onClick={() => {
+                setSalesPagination((prev) => ({
+                  ...prev,
+                  page: Math.min(billsTotalPages, prev.page + 1),
+                }));
+              }}
+              aria-label="Next page"
+            >
+              <ChevronRight size={16} />
+            </button>
+          </div>
+        </div>
       </div>
     )
   );
@@ -1830,6 +2078,7 @@ export function SalesManagementSection7({
   tempDateRange,
   setTempDateRange,
   setDateRange,
+  setSalesPagination,
   showToast,
   showInvoiceModal,
   setShowInvoiceModal,
@@ -2059,6 +2308,12 @@ export function SalesManagementSection7({
                     return;
                   }
                   setDateRange(tempDateRange);
+                  if (setSalesPagination) {
+                    setSalesPagination((prev) => ({
+                      ...prev,
+                      page: 1,
+                    }));
+                  }
                   setShowDateRangeModal(false);
                   showToast("Date Filter Applied", "success");
                 }}

@@ -102,6 +102,10 @@ export default function SalesManagement({ showToast, storeProfile }) {
           page: 1,
           pageSize: 10,
         },
+        salesPagination: {
+          page: 1,
+          pageSize: 10,
+        },
       };
     },
   );
@@ -131,6 +135,7 @@ export default function SalesManagement({ showToast, storeProfile }) {
     returnFilters,
     returnSort,
     returnPagination,
+    salesPagination,
   } = salesState;
   const setShowInvoiceModal = useCallback(
     (val) =>
@@ -303,15 +308,21 @@ export default function SalesManagement({ showToast, storeProfile }) {
       }),
     [],
   );
-  const setDateRange = useCallback(
-    (val) =>
-      dispatchSales({
-        type: "SET_FIELD",
-        field: "dateRange",
-        value: val,
+  const setDateRange = useCallback((val) => {
+    dispatchSales({
+      type: "SET_FIELD",
+      field: "dateRange",
+      value: val,
+    });
+    dispatchSales({
+      type: "SET_FIELD",
+      field: "salesPagination",
+      value: (prev) => ({
+        ...prev,
+        page: 1,
       }),
-    [],
-  );
+    });
+  }, []);
   const setTempDateRange = useCallback(
     (val) =>
       dispatchSales({
@@ -353,6 +364,15 @@ export default function SalesManagement({ showToast, storeProfile }) {
       dispatchSales({
         type: "SET_FIELD",
         field: "returnPagination",
+        value: val,
+      }),
+    [],
+  );
+  const setSalesPagination = useCallback(
+    (val) =>
+      dispatchSales({
+        type: "SET_FIELD",
+        field: "salesPagination",
         value: val,
       }),
     [],
@@ -505,6 +525,49 @@ export default function SalesManagement({ showToast, storeProfile }) {
     });
   }, [filteredSales, currentDate, dateRange]);
 
+  const salesPageSize = salesPagination.pageSize || 10;
+
+  const dailyTotalPages = Math.max(
+    1,
+    Math.ceil(dailySales.length / salesPageSize),
+  );
+
+  const billsTotalPages = Math.max(
+    1,
+    Math.ceil(filteredSales.length / salesPageSize),
+  );
+
+  const paginatedDailySales = useMemo(() => {
+    const page = Math.min(Math.max(1, salesPagination.page), dailyTotalPages);
+
+    const start = (page - 1) * salesPageSize;
+
+    return dailySales.slice(start, start + salesPageSize);
+  }, [dailySales, salesPagination.page, salesPageSize, dailyTotalPages]);
+
+  const paginatedBills = useMemo(() => {
+    const page = Math.min(Math.max(1, salesPagination.page), billsTotalPages);
+
+    const start = (page - 1) * salesPageSize;
+
+    return filteredSales.slice(start, start + salesPageSize);
+  }, [filteredSales, salesPagination.page, salesPageSize, billsTotalPages]);
+
+  const handleSalesFilterChange = useCallback(
+    (field, value) => {
+      setFilters((prev) => ({
+        ...prev,
+        [field]: value,
+      }));
+
+      setSalesPagination((prev) => ({
+        ...prev,
+        page: 1,
+      }));
+    },
+    [setFilters, setSalesPagination],
+  );
+
   // Always shows only today's invoices, independent of any date-range filter
   const todaysSales = useMemo(() => {
     const todayStr = format(new Date(), "yyyy-MM-dd");
@@ -645,8 +708,20 @@ export default function SalesManagement({ showToast, storeProfile }) {
   ]);
 
   const filteredReturns = processedReturns;
-  const handlePrevDate = () => setCurrentDate((prev) => subDays(prev, 1));
-  const handleNextDate = () => setCurrentDate((prev) => addDays(prev, 1));
+  const handlePrevDate = () => {
+    setCurrentDate((prev) => subDays(prev, 1));
+    setSalesPagination((prev) => ({
+      ...prev,
+      page: 1,
+    }));
+  };
+  const handleNextDate = () => {
+    setCurrentDate((prev) => addDays(prev, 1));
+    setSalesPagination((prev) => ({
+      ...prev,
+      page: 1,
+    }));
+  };
   const fetchInvoiceDetail = async (invoiceId) => {
     try {
       setLoading(true);
@@ -854,16 +929,6 @@ export default function SalesManagement({ showToast, storeProfile }) {
           width: 35,
         },
         {
-          header: "Discount",
-          key: "Discount",
-          width: 10,
-        },
-        {
-          header: "GST",
-          key: "GST",
-          width: 10,
-        },
-        {
           header: "Total",
           key: "Total",
           width: 12,
@@ -925,8 +990,6 @@ export default function SalesManagement({ showToast, storeProfile }) {
                 `${getMedicineName(item)} x${item.quantity || item.qty || 1}`,
             )
             .join(", "),
-          Discount: sale.discountAmount || sale.discount || sale.disc || 0,
-          GST: sale.taxAmount || sale.gstAmount || sale.gst || 0,
           Total: sale.totalAmount || sale.total || 0,
           "Payment Type":
             sale.paymentMode || sale.paymentMethod || sale.payment || "UNKNOWN",
@@ -1263,7 +1326,11 @@ export default function SalesManagement({ showToast, storeProfile }) {
         currentDate={currentDate}
         handleNextDate={handleNextDate}
         filteredSales={filteredSales}
-        dailySales={dailySales}
+        dailySales={paginatedDailySales}
+        totalDailySales={dailySales.length}
+        dailyTotalPages={dailyTotalPages}
+        salesPagination={salesPagination}
+        setSalesPagination={setSalesPagination}
         handleOpenDetail={handleOpenDetail}
         hourlyData={hourlyData}
         setHoveredBar={setHoveredBar}
@@ -1276,6 +1343,11 @@ export default function SalesManagement({ showToast, storeProfile }) {
         setFilters={setFilters}
         filters={filters}
         filteredSales={filteredSales}
+        paginatedBills={paginatedBills}
+        billsTotalPages={billsTotalPages}
+        salesPagination={salesPagination}
+        setSalesPagination={setSalesPagination}
+        onFilterChange={handleSalesFilterChange}
         dateRange={dateRange}
       />
 
@@ -1333,6 +1405,7 @@ export default function SalesManagement({ showToast, storeProfile }) {
         tempDateRange={tempDateRange}
         setTempDateRange={setTempDateRange}
         setDateRange={setDateRange}
+        setSalesPagination={setSalesPagination}
         showToast={showToast}
         showInvoiceModal={showInvoiceModal}
         setShowInvoiceModal={setShowInvoiceModal}
