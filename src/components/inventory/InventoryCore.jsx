@@ -11,7 +11,10 @@ import {
   Check,
 } from "lucide-react";
 import { AnimatePresence, m } from "framer-motion";
-import { getSuppliers } from "../../services/suppliers.service.js";
+import {
+  getSuppliers,
+  createSupplier,
+} from "../../services/suppliers.service.js";
 import { safeNumber } from "../../utils/number.js";
 import { getMedicineStatus } from "../../utils/inventoryStatus.js";
 import {
@@ -173,6 +176,83 @@ export function MedicineModal({
   const [errors, setErrors] = useState({});
   const [suppliers, setSuppliers] = useState([]);
   const [loadingSuppliers, setLoadingSuppliers] = useState(false);
+  const [showAddSupplier, setShowAddSupplier] = useState(false);
+  const [creatingSupplier, setCreatingSupplier] = useState(false);
+  const [supplierForm, setSupplierForm] = useState({
+    name: "",
+    contactPerson: "",
+    phone: "",
+    email: "",
+    address: "",
+  });
+
+  const hasSuppliers = suppliers.length > 0;
+
+  const handleCreateSupplier = async () => {
+    const name = supplierForm.name.trim();
+
+    if (!name) {
+      showToast("Supplier name is required", "error");
+      return;
+    }
+
+    setCreatingSupplier(true);
+
+    try {
+      const res = await createSupplier({
+        name,
+        contactPerson: supplierForm.contactPerson.trim() || undefined,
+        phone: supplierForm.phone.trim() || undefined,
+        email: supplierForm.email.trim() || undefined,
+        address: supplierForm.address.trim() || undefined,
+      });
+
+      const newSupplier = res.data?.data || res.data?.supplier || res.data;
+
+      if (!newSupplier?.id) {
+        throw new Error("Supplier was created but no supplier ID was returned");
+      }
+
+      // Add the new supplier to the local dropdown
+      setSuppliers((current) => [...current, newSupplier]);
+
+      // Automatically select the newly created supplier
+      setForm((current) => ({
+        ...current,
+        supplierId: newSupplier.id,
+      }));
+
+      if (errors.supplierId) {
+        setErrors((e) => ({
+          ...e,
+          supplierId: null,
+        }));
+      }
+
+      // Reset supplier form
+      setSupplierForm({
+        name: "",
+        contactPerson: "",
+        phone: "",
+        email: "",
+        address: "",
+      });
+
+      setShowAddSupplier(false);
+
+      showToast("Supplier created successfully", "success");
+    } catch (err) {
+      showToast(
+        err?.response?.data?.message ||
+          err?.message ||
+          "Failed to create supplier",
+        "error",
+      );
+    } finally {
+      setCreatingSupplier(false);
+    }
+  };
+
   useEffect(() => {
     let ignore = false;
     const loadSuppliers = async () => {
@@ -210,6 +290,9 @@ export function MedicineModal({
   };
   const validate = () => {
     const newErrors = {};
+    if (!editData && !form.supplierId) {
+      newErrors.supplierId = "Supplier is required";
+    }
     const name = String(form.name || "").trim();
     const genericName = String(form.genericName || "").trim();
     if (!name) newErrors.name = "Medicine name is required";
@@ -312,6 +395,13 @@ export function MedicineModal({
         suppliers={suppliers}
         handleSave={handleSave}
         saving={saving}
+        showAddSupplier={showAddSupplier}
+        setShowAddSupplier={setShowAddSupplier}
+        supplierForm={supplierForm}
+        setSupplierForm={setSupplierForm}
+        handleCreateSupplier={handleCreateSupplier}
+        creatingSupplier={creatingSupplier}
+        hasSuppliers={hasSuppliers}
       />
     </div>
   );
@@ -362,6 +452,13 @@ function MedicineModalSection1({
   suppliers,
   handleSave,
   saving,
+  showAddSupplier,
+  setShowAddSupplier,
+  supplierForm,
+  setSupplierForm,
+  handleCreateSupplier,
+  creatingSupplier,
+  hasSuppliers,
 }) {
   return (
     <m.div
@@ -403,372 +500,589 @@ function MedicineModalSection1({
         </button>
       </div>
       <div className="inv-modal-scroll">
-        <div className="inv-form-grid">
-          {/* Medicine Name */}
-          <div className="form-group full">
-            <label htmlFor="field_3whfsd">Medicine Name *</label>
-            <input
-              id="field_3whfsd"
-              required
-              placeholder="e.g. Amoxicillin 500mg Capsules"
-              value={form.name || ""}
-              onChange={(e) => set("name", e.target.value)}
-              className={errors.name ? "input-error" : ""}
-            />
-            {errors.name && <span className="field-error">{errors.name}</span>}
-          </div>
-
-          {/* Generic & Brand */}
-          <div className="form-group">
-            <label htmlFor="field_ftzanu">Generic Name *</label>
-            <input
-              id="field_ftzanu"
-              required
-              placeholder="e.g. Amoxicillin"
-              value={form.genericName || ""}
-              onChange={(e) => set("genericName", e.target.value)}
-              className={errors.genericName ? "input-error" : ""}
-            />
-            {errors.genericName && (
-              <span className="field-error">{errors.genericName}</span>
-            )}
-          </div>
-          <div className="form-group">
-            <label htmlFor="field_c6eanv">Manufacturer</label>
-            <input
-              id="field_c6eanv"
-              required
-              placeholder="e.g. Cipla Ltd"
-              value={form.manufacturer || ""}
-              onChange={(e) => set("manufacturer", e.target.value)}
-            />
-          </div>
-
-          {/* Dosage Form / Type */}
-          <div className="form-group">
-            <label htmlFor="field_dosage_form">Type / Dosage Form</label>
-            <input
-              id="field_dosage_form"
-              type="text"
-              list="medicine-dosage-form-options"
-              placeholder="Select or type (e.g. Tablet)"
-              value={form.dosageForm || ""}
-              onChange={(e) => set("dosageForm", e.target.value)}
-              autoComplete="off"
-            />
-            <datalist id="medicine-dosage-form-options">
-              {DOSAGE_FORMS.map((df) => (
-                <option key={df} value={df} />
-              ))}
-            </datalist>
-          </div>
-
-          {/* Category & Schedule */}
-          <div className="form-group">
-            <label htmlFor="field_r0jnco">Category *</label>
-
-            <input
-              id="field_r0jnco"
-              type="text"
-              list="medicine-category-options"
-              placeholder="Select or type category"
-              value={
-                form.categoryId
-                  ? categories.find(
-                      (c) => String(c.id) === String(form.categoryId),
-                    )?.name ||
-                    form.category ||
-                    ""
-                  : form.category || ""
-              }
-              onChange={(e) => {
-                const typedValue = e.target.value;
-
-                const matchedCategory = categories.find(
-                  (c) =>
-                    String(c.name || "")
-                      .trim()
-                      .toLowerCase() === typedValue.trim().toLowerCase(),
-                );
-
-                setForm((f) => ({
-                  ...f,
-                  category: typedValue,
-                  categoryId: matchedCategory?.id || "",
-                }));
-
-                if (errors.category) {
-                  setErrors((e) => ({
-                    ...e,
-                    category: null,
-                  }));
-                }
-              }}
-              className={errors.category ? "input-error" : ""}
-              autoComplete="off"
-            />
-
-            <datalist id="medicine-category-options">
-              {categories.map((c) => (
-                <option key={c.id} value={c.name} />
-              ))}
-            </datalist>
-
-            {errors.category && (
-              <span className="field-error">{errors.category}</span>
-            )}
-          </div>
-          <div className="form-group">
-            <label htmlFor="field_8yi3yp">Schedule</label>
-
-            <input
-              id="field_8yi3yp"
-              type="text"
-              list="regulatory-classification-options"
-              placeholder="Select or type classification"
-              value={form.schedule || ""}
-              onChange={(e) => set("schedule", e.target.value)}
-              autoComplete="off"
-            />
-
-            <datalist id="regulatory-classification-options">
-              <option value="OTC">Non-Scheduled / OTC</option>
-              <option value="G">Schedule G</option>
-              <option value="H">Schedule H</option>
-              <option value="H1">Schedule H1</option>
-              <option value="X">Schedule X</option>
-              <option value="OTHER">Other / Special</option>
-            </datalist>
-          </div>
-
-          {/* Batch & Expiry */}
-          {!editData && (
-            <>
-              <div className="form-group">
-                <label htmlFor="field_k6t4hl">Batch Number *</label>
-                <input
-                  id="field_k6t4hl"
-                  required
-                  placeholder="e.g. B-20241"
-                  value={form.batchNumber || ""}
-                  onChange={(e) => set("batchNumber", e.target.value)}
-                  className={errors.batchNumber ? "input-error" : ""}
-                />
-                {errors.batchNumber && (
-                  <span className="field-error">{errors.batchNumber}</span>
-                )}
-              </div>
-              <div className="form-group">
-                <label htmlFor="field_zpxyd7">Expiry Date *</label>
-                <input
-                  id="field_zpxyd7"
-                  required
-                  type="date"
-                  value={form.expiryDate || ""}
-                  onChange={(e) => set("expiryDate", e.target.value)}
-                  className={errors.expiryDate ? "input-error" : ""}
-                />
-                {errors.expiryDate && (
-                  <span className="field-error">{errors.expiryDate}</span>
-                )}
-              </div>
-
-              {/* Pricing */}
-              <div className="form-group">
-                <label htmlFor="field_jsq6da">MRP (₹) *</label>
-                <input
-                  id="field_jsq6da"
-                  required
-                  type="number"
-                  step="0.01"
-                  placeholder="0.00"
-                  value={form.mrp ?? ""}
-                  onChange={(e) => set("mrp", e.target.value)}
-                  className={errors.mrp ? "input-error" : ""}
-                />
-                {errors.mrp && (
-                  <span className="field-error">{errors.mrp}</span>
-                )}
-              </div>
-              <div className="form-group">
-                <label htmlFor="field_e3k95g">Selling Price (₹) *</label>
-                <input
-                  id="field_e3k95g"
-                  required
-                  type="number"
-                  step="0.01"
-                  placeholder="0.00"
-                  value={form.sellingPrice ?? ""}
-                  onChange={(e) => set("sellingPrice", e.target.value)}
-                  className={errors.sellingPrice ? "input-error" : ""}
-                />
-                {errors.sellingPrice && (
-                  <span className="field-error">{errors.sellingPrice}</span>
-                )}
-              </div>
-              <div className="form-group">
-                <label htmlFor="field_gkrafq">Purchase Cost (₹)</label>
-                <input
-                  id="field_gkrafq"
-                  required
-                  type="number"
-                  step="0.01"
-                  placeholder="0.00"
-                  value={form.purchaseCost ?? ""}
-                  onChange={(e) => set("purchaseCost", e.target.value)}
-                  className={errors.purchaseCost ? "input-error" : ""}
-                />
-                {errors.purchaseCost && (
-                  <span className="field-error">{errors.purchaseCost}</span>
-                )}
-              </div>
-
-              {/* Quantity & Reorder */}
-              <div className="form-group">
-                <label htmlFor="field_ryi210">Stock Quantity *</label>
-                <input
-                  id="field_ryi210"
-                  required
-                  type="number"
-                  placeholder="0"
-                  value={form.quantity ?? ""}
-                  onChange={(e) => set("quantity", e.target.value)}
-                  className={errors.quantity ? "input-error" : ""}
-                />
-                {errors.quantity && (
-                  <span className="field-error">{errors.quantity}</span>
-                )}
-              </div>
-            </>
-          )}
-          <div className="form-group">
-            <label htmlFor="field_95cr8v">Reorder Level</label>
-            <input
-              id="field_95cr8v"
-              required
-              type="number"
-              placeholder="10"
-              value={form.reorderLevel ?? ""}
-              onChange={(e) => set("reorderLevel", e.target.value)}
-            />
-          </div>
-
-          {/* GST & HSN */}
-          <div className="form-group">
-            <label htmlFor="field_nllaj6">GST %</label>
-            <select
-              id="field_nllaj6"
-              value={form.gst ?? ""}
-              onChange={(e) => set("gst", e.target.value)}
+        {/* Supplier - FIRST FIELD */}
+        <div
+          className="form-group full"
+          style={{
+            padding: "16px",
+            marginBottom: "16px",
+            borderRadius: "12px",
+            background: "var(--surface-2)",
+            border: "1px solid var(--overlay-06)",
+          }}
+        >
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              marginBottom: "8px",
+            }}
+          >
+            <label
+              htmlFor="field_supplier"
+              style={{ margin: 0, fontWeight: 600 }}
             >
-              {GST_OPTIONS.map((g) => (
-                <option key={g} value={g}>
-                  {g}%
-                </option>
-              ))}
-            </select>
-          </div>
-          <div className="form-group">
-            <label htmlFor="field_zd1vfb">HSN Code</label>
-            <input
-              id="field_zd1vfb"
-              required
-              placeholder="e.g. 3004"
-              value={form.hsnCode || ""}
-              onChange={(e) => set("hsnCode", e.target.value)}
-            />
-          </div>
-
-          {/* Barcode & SKU */}
-          <div className="form-group full">
-            <label htmlFor="field_4wbhtl">Barcode / SKU</label>
-            <input
-              id="field_4wbhtl"
-              required
-              placeholder="Scan or enter barcode"
-              value={form.barcode || ""}
-              onChange={(e) => set("barcode", e.target.value)}
-            />
-          </div>
-
-          {/* Supplier */}
-          <div className="form-group full">
-            <label htmlFor="field_zybujv">Supplier</label>
-            {loadingSuppliers ? (
-              <div
+              Supplier {!editData && "*"}
+            </label>
+            {suppliers.length > 0 && !showAddSupplier && (
+              <button
+                type="button"
+                onClick={() => setShowAddSupplier(true)}
                 style={{
-                  padding: "10px",
-                  fontSize: "14px",
-                  color: "var(--text-muted)",
+                  background: "none",
+                  border: "none",
+                  color: "var(--primary)",
+                  fontSize: "13px",
+                  fontWeight: 600,
+                  cursor: "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "4px",
+                  padding: "2px 6px",
                 }}
               >
-                Loading suppliers...
-              </div>
-            ) : suppliers.length > 0 ? (
+                <Plus size={14} /> Add Supplier
+              </button>
+            )}
+          </div>
+
+          {loadingSuppliers ? (
+            <div
+              style={{
+                padding: "10px",
+                fontSize: "14px",
+                color: "var(--text-muted)",
+              }}
+            >
+              Loading suppliers...
+            </div>
+          ) : suppliers.length > 0 ? (
+            <>
               <select
-                id="field_zybujv"
+                id="field_supplier"
                 value={form.supplierId || ""}
                 onChange={(e) => set("supplierId", e.target.value)}
                 className={errors.supplierId ? "input-error" : ""}
               >
                 <option value="">Select Supplier</option>
-                {suppliers.map((s) => (
-                  <option key={s.id} value={s.id}>
-                    {s.name}
+
+                {suppliers.map((supplier) => (
+                  <option key={supplier.id} value={supplier.id}>
+                    {supplier.name}
                   </option>
                 ))}
               </select>
-            ) : (
+
+              {errors.supplierId && (
+                <span className="field-error">{errors.supplierId}</span>
+              )}
+
+              {!form.supplierId && !editData && (
+                <span
+                  style={{
+                    display: "block",
+                    marginTop: "6px",
+                    fontSize: "12px",
+                    color: "var(--text-muted)",
+                  }}
+                >
+                  Select a supplier to continue adding medicine.
+                </span>
+              )}
+            </>
+          ) : (
+            <>
+              <div
+                style={{
+                  padding: "12px",
+                  marginBottom: "10px",
+                  fontSize: "14px",
+                  color: "var(--text-muted)",
+                  background: "var(--surface-1)",
+                  borderRadius: "8px",
+                  border: "1px dashed var(--overlay-06)",
+                }}
+              >
+                No suppliers are available in this inventory.
+              </div>
+
+              {!showAddSupplier && (
+                <button
+                  type="button"
+                  className="inv-modal-btn confirm"
+                  onClick={() => setShowAddSupplier(true)}
+                >
+                  <Plus size={14} />
+                  Add Supplier
+                </button>
+              )}
+            </>
+          )}
+
+          {/* Inline Add Supplier Form inside modal */}
+          {showAddSupplier && (
+            <div
+              style={{
+                marginTop: "12px",
+                padding: "16px",
+                borderRadius: "12px",
+                background: "var(--surface-1)",
+                border: "1px solid var(--overlay-06)",
+              }}
+            >
               <div
                 style={{
                   display: "flex",
-                  flexDirection: "column",
-                  gap: "8px",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  marginBottom: "12px",
                 }}
               >
-                <div
-                  style={{
-                    padding: "10px",
-                    fontSize: "14px",
-                    color: "var(--text-muted)",
-                    background: "var(--surface-2)",
-                    borderRadius: "8px",
-                    border: "1px dashed var(--overlay-06)",
-                  }}
-                >
-                  No suppliers available
-                </div>
-                <a
-                  href="/suppliers"
-                  style={{
-                    color: "var(--primary)",
-                    fontSize: "14px",
-                    fontWeight: "600",
-                    textDecoration: "none",
-                    alignSelf: "flex-start",
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "4px",
-                  }}
-                >
-                  <Plus size={14} /> Create Supplier
-                </a>
-              </div>
-            )}
-          </div>
+                <strong>Add Supplier</strong>
 
-          {/* Notes */}
-          <div className="form-group full">
-            <label htmlFor="field_rgmt7s">Notes</label>
-            <textarea
-              id="field_rgmt7s"
-              placeholder="Storage instructions, side effects, etc."
-              value={form.notes || ""}
-              onChange={(e) => set("notes", e.target.value)}
-              rows={3}
-            />
-          </div>
+                <button
+                  type="button"
+                  className="inv-modal-close-btn"
+                  onClick={() => setShowAddSupplier(false)}
+                >
+                  <X size={16} />
+                </button>
+              </div>
+
+              <div className="inv-form-grid">
+                <div className="form-group full">
+                  <label>Supplier Name *</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. ABC Pharma Distributors"
+                    value={supplierForm.name}
+                    onChange={(e) =>
+                      setSupplierForm((f) => ({
+                        ...f,
+                        name: e.target.value,
+                      }))
+                    }
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label>Contact Person</label>
+                  <input
+                    type="text"
+                    placeholder="Contact person"
+                    value={supplierForm.contactPerson}
+                    onChange={(e) =>
+                      setSupplierForm((f) => ({
+                        ...f,
+                        contactPerson: e.target.value,
+                      }))
+                    }
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label>Phone</label>
+                  <input
+                    type="tel"
+                    placeholder="Phone number"
+                    value={supplierForm.phone}
+                    onChange={(e) =>
+                      setSupplierForm((f) => ({
+                        ...f,
+                        phone: e.target.value,
+                      }))
+                    }
+                  />
+                </div>
+
+                <div className="form-group full">
+                  <label>Email</label>
+                  <input
+                    type="email"
+                    placeholder="supplier@example.com"
+                    value={supplierForm.email}
+                    onChange={(e) =>
+                      setSupplierForm((f) => ({
+                        ...f,
+                        email: e.target.value,
+                      }))
+                    }
+                  />
+                </div>
+
+                <div className="form-group full">
+                  <label>Address</label>
+                  <textarea
+                    rows={2}
+                    placeholder="Supplier address"
+                    value={supplierForm.address}
+                    onChange={(e) =>
+                      setSupplierForm((f) => ({
+                        ...f,
+                        address: e.target.value,
+                      }))
+                    }
+                  />
+                </div>
+              </div>
+
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "flex-end",
+                  gap: "8px",
+                  marginTop: "12px",
+                }}
+              >
+                <button
+                  type="button"
+                  className="inv-modal-btn cancel"
+                  onClick={() => setShowAddSupplier(false)}
+                  disabled={creatingSupplier}
+                >
+                  Cancel
+                </button>
+
+                <button
+                  type="button"
+                  className="inv-modal-btn confirm"
+                  onClick={handleCreateSupplier}
+                  disabled={creatingSupplier || !supplierForm.name.trim()}
+                >
+                  {creatingSupplier ? (
+                    <>
+                      <Spinner size={14} />
+                      Creating...
+                    </>
+                  ) : (
+                    <>
+                      <Plus size={14} />
+                      Create Supplier
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          )}
         </div>
+
+        {/* Medicine Fields - Disabled until supplier is selected for new medicines */}
+        <fieldset
+          disabled={!editData && (!hasSuppliers || !form.supplierId)}
+          style={{
+            border: 0,
+            padding: 0,
+            margin: 0,
+            minWidth: 0,
+            opacity:
+              !editData && (!hasSuppliers || !form.supplierId) ? 0.55 : 1,
+            transition: "opacity 0.2s ease",
+          }}
+        >
+          <div className="inv-form-grid">
+            {/* Medicine Name */}
+            <div className="form-group full">
+              <label htmlFor="field_3whfsd">Medicine Name *</label>
+              <input
+                id="field_3whfsd"
+                required
+                placeholder="e.g. Amoxicillin 500mg Capsules"
+                value={form.name || ""}
+                onChange={(e) => set("name", e.target.value)}
+                className={errors.name ? "input-error" : ""}
+              />
+              {errors.name && (
+                <span className="field-error">{errors.name}</span>
+              )}
+            </div>
+
+            {/* Generic & Brand */}
+            <div className="form-group">
+              <label htmlFor="field_ftzanu">Generic Name *</label>
+              <input
+                id="field_ftzanu"
+                required
+                placeholder="e.g. Amoxicillin"
+                value={form.genericName || ""}
+                onChange={(e) => set("genericName", e.target.value)}
+                className={errors.genericName ? "input-error" : ""}
+              />
+              {errors.genericName && (
+                <span className="field-error">{errors.genericName}</span>
+              )}
+            </div>
+            <div className="form-group">
+              <label htmlFor="field_c6eanv">Manufacturer</label>
+              <input
+                id="field_c6eanv"
+                required
+                placeholder="e.g. Cipla Ltd"
+                value={form.manufacturer || ""}
+                onChange={(e) => set("manufacturer", e.target.value)}
+              />
+            </div>
+
+            {/* Dosage Form / Type */}
+            <div className="form-group">
+              <label htmlFor="field_dosage_form">Type / Dosage Form</label>
+              <input
+                id="field_dosage_form"
+                type="text"
+                list="medicine-dosage-form-options"
+                placeholder="Select or type (e.g. Tablet)"
+                value={form.dosageForm || ""}
+                onChange={(e) => set("dosageForm", e.target.value)}
+                autoComplete="off"
+              />
+              <datalist id="medicine-dosage-form-options">
+                {DOSAGE_FORMS.map((df) => (
+                  <option key={df} value={df} />
+                ))}
+              </datalist>
+            </div>
+
+            {/* Category & Schedule */}
+            <div className="form-group">
+              <label htmlFor="field_r0jnco">Category *</label>
+
+              <input
+                id="field_r0jnco"
+                type="text"
+                list="medicine-category-options"
+                placeholder="Select or type category"
+                value={
+                  form.categoryId
+                    ? categories.find(
+                        (c) => String(c.id) === String(form.categoryId),
+                      )?.name ||
+                      form.category ||
+                      ""
+                    : form.category || ""
+                }
+                onChange={(e) => {
+                  const typedValue = e.target.value;
+
+                  const matchedCategory = categories.find(
+                    (c) =>
+                      String(c.name || "")
+                        .trim()
+                        .toLowerCase() === typedValue.trim().toLowerCase(),
+                  );
+
+                  setForm((f) => ({
+                    ...f,
+                    category: typedValue,
+                    categoryId: matchedCategory?.id || "",
+                  }));
+
+                  if (errors.category) {
+                    setErrors((e) => ({
+                      ...e,
+                      category: null,
+                    }));
+                  }
+                }}
+                className={errors.category ? "input-error" : ""}
+                autoComplete="off"
+              />
+
+              <datalist id="medicine-category-options">
+                {categories.map((c) => (
+                  <option key={c.id} value={c.name} />
+                ))}
+              </datalist>
+
+              {errors.category && (
+                <span className="field-error">{errors.category}</span>
+              )}
+            </div>
+            <div className="form-group">
+              <label htmlFor="field_8yi3yp">Schedule</label>
+
+              <input
+                id="field_8yi3yp"
+                type="text"
+                list="regulatory-classification-options"
+                placeholder="Select or type classification"
+                value={form.schedule || ""}
+                onChange={(e) => set("schedule", e.target.value)}
+                autoComplete="off"
+              />
+
+              <datalist id="regulatory-classification-options">
+                <option value="OTC">Non-Scheduled / OTC</option>
+                <option value="G">Schedule G</option>
+                <option value="H">Schedule H</option>
+                <option value="H1">Schedule H1</option>
+                <option value="X">Schedule X</option>
+                <option value="OTHER">Other / Special</option>
+              </datalist>
+            </div>
+
+            {/* Batch & Expiry */}
+            {!editData && (
+              <>
+                <div className="form-group">
+                  <label htmlFor="field_k6t4hl">Batch Number *</label>
+                  <input
+                    id="field_k6t4hl"
+                    required
+                    placeholder="e.g. B-20241"
+                    value={form.batchNumber || ""}
+                    onChange={(e) => set("batchNumber", e.target.value)}
+                    className={errors.batchNumber ? "input-error" : ""}
+                  />
+                  {errors.batchNumber && (
+                    <span className="field-error">{errors.batchNumber}</span>
+                  )}
+                </div>
+                <div className="form-group">
+                  <label htmlFor="field_zpxyd7">Expiry Date *</label>
+                  <input
+                    id="field_zpxyd7"
+                    required
+                    type="date"
+                    value={form.expiryDate || ""}
+                    onChange={(e) => set("expiryDate", e.target.value)}
+                    className={errors.expiryDate ? "input-error" : ""}
+                  />
+                  {errors.expiryDate && (
+                    <span className="field-error">{errors.expiryDate}</span>
+                  )}
+                </div>
+
+                {/* Pricing */}
+                <div className="form-group">
+                  <label htmlFor="field_jsq6da">MRP (₹) *</label>
+                  <input
+                    id="field_jsq6da"
+                    required
+                    type="number"
+                    step="0.01"
+                    placeholder="0.00"
+                    value={form.mrp ?? ""}
+                    onChange={(e) => set("mrp", e.target.value)}
+                    className={errors.mrp ? "input-error" : ""}
+                  />
+                  {errors.mrp && (
+                    <span className="field-error">{errors.mrp}</span>
+                  )}
+                </div>
+                <div className="form-group">
+                  <label htmlFor="field_e3k95g">Selling Price (₹) *</label>
+                  <input
+                    id="field_e3k95g"
+                    required
+                    type="number"
+                    step="0.01"
+                    placeholder="0.00"
+                    value={form.sellingPrice ?? ""}
+                    onChange={(e) => set("sellingPrice", e.target.value)}
+                    className={errors.sellingPrice ? "input-error" : ""}
+                  />
+                  {errors.sellingPrice && (
+                    <span className="field-error">{errors.sellingPrice}</span>
+                  )}
+                </div>
+                <div className="form-group">
+                  <label htmlFor="field_gkrafq">Purchase Cost (₹)</label>
+                  <input
+                    id="field_gkrafq"
+                    required
+                    type="number"
+                    step="0.01"
+                    placeholder="0.00"
+                    value={form.purchaseCost ?? ""}
+                    onChange={(e) => set("purchaseCost", e.target.value)}
+                    className={errors.purchaseCost ? "input-error" : ""}
+                  />
+                  {errors.purchaseCost && (
+                    <span className="field-error">{errors.purchaseCost}</span>
+                  )}
+                </div>
+
+                {/* Quantity & Reorder */}
+                <div className="form-group">
+                  <label htmlFor="field_ryi210">Stock Quantity *</label>
+                  <input
+                    id="field_ryi210"
+                    required
+                    type="number"
+                    placeholder="0"
+                    value={form.quantity ?? ""}
+                    onChange={(e) => set("quantity", e.target.value)}
+                    className={errors.quantity ? "input-error" : ""}
+                  />
+                  {errors.quantity && (
+                    <span className="field-error">{errors.quantity}</span>
+                  )}
+                </div>
+              </>
+            )}
+            <div className="form-group">
+              <label htmlFor="field_95cr8v">Reorder Level</label>
+              <input
+                id="field_95cr8v"
+                required
+                type="number"
+                placeholder="10"
+                value={form.reorderLevel ?? ""}
+                onChange={(e) => set("reorderLevel", e.target.value)}
+              />
+            </div>
+
+            {/* GST & HSN */}
+            <div className="form-group">
+              <label htmlFor="field_nllaj6">GST %</label>
+              <select
+                id="field_nllaj6"
+                value={form.gst ?? ""}
+                onChange={(e) => set("gst", e.target.value)}
+              >
+                {GST_OPTIONS.map((g) => (
+                  <option key={g} value={g}>
+                    {g}%
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="form-group">
+              <label htmlFor="field_zd1vfb">HSN Code</label>
+              <input
+                id="field_zd1vfb"
+                required
+                placeholder="e.g. 3004"
+                value={form.hsnCode || ""}
+                onChange={(e) => set("hsnCode", e.target.value)}
+              />
+            </div>
+
+            {/* Barcode & SKU */}
+            <div className="form-group full">
+              <label htmlFor="field_4wbhtl">Barcode / SKU</label>
+              <input
+                id="field_4wbhtl"
+                required
+                placeholder="Scan or enter barcode"
+                value={form.barcode || ""}
+                onChange={(e) => set("barcode", e.target.value)}
+              />
+            </div>
+
+            {/* Notes */}
+            <div className="form-group full">
+              <label htmlFor="field_rgmt7s">Notes</label>
+              <textarea
+                id="field_rgmt7s"
+                placeholder="Storage instructions, side effects, etc."
+                value={form.notes || ""}
+                onChange={(e) => set("notes", e.target.value)}
+                rows={3}
+              />
+            </div>
+          </div>
+        </fieldset>
       </div>
       <div className="inv-modal-footer">
         <button className="inv-modal-btn cancel" onClick={onClose}>
@@ -777,7 +1091,9 @@ function MedicineModalSection1({
         <button
           className="inv-modal-btn confirm"
           onClick={handleSave}
-          disabled={saving}
+          disabled={
+            saving || (!editData && (!hasSuppliers || !form.supplierId))
+          }
         >
           {saving ? (
             <>
