@@ -69,9 +69,6 @@ const api = axios.create({
   timeout: 120000,
   headers: {
     "Content-Type": "application/json",
-    ...(import.meta.env.DEV && {
-      "ngrok-skip-browser-warning": "69420",
-    }),
   },
 });
 let isRefreshing = false;
@@ -97,11 +94,6 @@ async function refreshSession() {
       {
         withCredentials: true,
         timeout: 60000,
-        headers: {
-          ...(import.meta.env.DEV && {
-            "ngrok-skip-browser-warning": "69420",
-          }),
-        },
       },
     )
     .then((res) => {
@@ -155,11 +147,6 @@ export async function getCsrfToken(forceRefresh = false) {
   csrfPromise = axios
     .get(`${getBaseUrl()}/csrf-token`, {
       withCredentials: true,
-      headers: {
-        ...(import.meta.env.DEV && {
-          "ngrok-skip-browser-warning": "69420",
-        }),
-      },
     })
     .then((res) => {
       csrfToken = res.data?.csrfToken || res.data?.data?.csrfToken;
@@ -219,6 +206,18 @@ export function cyrb128(str) {
 }
 api.interceptors.request.use(
   async (config) => {
+    console.log("[API REQUEST]", {
+      method: config.method,
+      url: config.url,
+      params: config.params,
+      signal: config.signal
+        ? {
+            aborted: config.signal.aborted,
+            reason: config.signal.reason,
+          }
+        : null,
+    });
+
     if (
       stateChangingMethods.includes(config.method?.toUpperCase()) &&
       !excludeCsrfRoutes.some((route) => config.url?.includes(route))
@@ -251,6 +250,17 @@ api.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config;
     if (axios.isCancel(error)) {
+      console.warn("[API CANCELED]", {
+        url: error.config?.url,
+        method: error.config?.method,
+        params: error.config?.params,
+        code: error.code,
+        name: error.name,
+        message: error.message,
+        signalAborted: error.config?.signal?.aborted,
+        signalReason: error.config?.signal?.reason,
+      });
+
       return Promise.reject(error);
     }
     if (!error.response) {
