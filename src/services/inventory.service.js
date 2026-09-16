@@ -1,9 +1,49 @@
 import api from "../api";
 import { API_ROUTES } from "../constants/api.routes.js";
 
+/**
+ * Helper to retry transient request failures with exponential backoff.
+ * Does not retry aborted requests or 4xx client errors.
+ */
+async function fetchWithRetry(fn, retries = 2, delayMs = 500, signal = null) {
+  let lastError;
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    if (signal?.aborted) {
+      const abortError = new Error("Request aborted");
+      abortError.name = "CanceledError";
+      throw abortError;
+    }
+    try {
+      return await fn();
+    } catch (error) {
+      lastError = error;
+      const isCanceled =
+        error?.name === "CanceledError" ||
+        error?.code === "ERR_CANCELED" ||
+        signal?.aborted;
+      const status = error?.response?.status;
+      // Do not retry cancellations or 4xx client errors (400, 401, 403, 404, etc.)
+      if (isCanceled || (status && status >= 400 && status < 500)) {
+        throw error;
+      }
+      if (attempt < retries) {
+        await new Promise((resolve) =>
+          setTimeout(resolve, delayMs * Math.pow(2, attempt)),
+        );
+      }
+    }
+  }
+  throw lastError;
+}
+
 /* ─── Inventory / Medicine CRUD ─── */
-export const getMedicines = ({ signal, ...params } = {}) =>
-  api.get(API_ROUTES.INVENTORY_MEDICINES, { params, signal });
+export const getMedicines = ({ signal, ...params } = {}, retries = 2) =>
+  fetchWithRetry(
+    () => api.get(API_ROUTES.INVENTORY_MEDICINES, { params, signal }),
+    retries,
+    500,
+    signal,
+  );
 export const createMedicine = (data) =>
   api.post(API_ROUTES.INVENTORY_MEDICINES, data);
 export const updateMedicine = (id, data) =>
@@ -14,8 +54,12 @@ export const searchByBarcode = (barcode) =>
   api.get(`${API_ROUTES.INVENTORY_MEDICINES}/barcode/${barcode}`);
 export const getLowStockMedicines = () =>
   api.get(API_ROUTES.INVENTORY_LOW_STOCK);
-export const getInventorySummary = (params) =>
-  api.get(API_ROUTES.INVENTORY_SUMMARY, { params });
+export const getInventorySummary = (params, retries = 2) =>
+  fetchWithRetry(
+    () => api.get(API_ROUTES.INVENTORY_SUMMARY, { params }),
+    retries,
+    500,
+  );
 
 /* ─── Categories ─── */
 export const getCategories = () => api.get(API_ROUTES.INVENTORY_CATEGORIES);

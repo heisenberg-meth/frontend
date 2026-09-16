@@ -211,6 +211,8 @@ function InventoryCRUDSection2({
   categories,
   statusFilter,
   loading,
+  loadError,
+  onRetry,
   filtered,
   limit,
   totalItems,
@@ -301,6 +303,41 @@ function InventoryCRUDSection2({
               <tr>
                 <td colSpan={8} className="inv-table-loading">
                   <Spinner size={20} /> Loading inventory...
+                </td>
+              </tr>
+            ) : loadError && filtered.length === 0 ? (
+              <tr>
+                <td colSpan={8} className="inv-table-empty">
+                  <div
+                    style={{
+                      display: "flex",
+                      flexDirection: "column",
+                      alignItems: "center",
+                      gap: "10px",
+                      padding: "24px 0",
+                    }}
+                  >
+                    <span
+                      style={{
+                        color: "var(--danger, #ef4444)",
+                        fontWeight: 500,
+                        fontSize: "14px",
+                      }}
+                    >
+                      Failed to load inventory. Please check your connection and
+                      try again.
+                    </span>
+                    {onRetry && (
+                      <button
+                        type="button"
+                        className="inv-btn-primary"
+                        onClick={onRetry}
+                        style={{ padding: "6px 18px", fontSize: "13px" }}
+                      >
+                        Try Again
+                      </button>
+                    )}
+                  </div>
                 </td>
               </tr>
             ) : filtered.length === 0 ? (
@@ -525,7 +562,7 @@ export default function InventoryCRUD({
   title = "Inventory Management",
 }) {
   const navigate = useNavigate();
-  const { user, tenant } = useAuth();
+  const { user, tenant, loading: authLoading, restored } = useAuth();
   const branchId =
     user?.branchId || user?.branch?.id || tenant?.branchId || null;
   const [medicines, setMedicines] = useState([]);
@@ -540,9 +577,13 @@ export default function InventoryCRUD({
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [reorderTarget, setReorderTarget] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [categoriesList, setCategoriesList] = useState([]);
+  const categoriesListRef = useRef([]);
+  const isInitialLoadRef = useRef(true);
+  const hasInitializedSummaryRef = useRef(false);
   const [batchModalOpen, setBatchModalOpen] = useState(false);
   const [editBatchTarget, setEditBatchTarget] = useState(null);
   const [isAddingNewBatch, setIsAddingNewBatch] = useState(false);
@@ -554,6 +595,12 @@ export default function InventoryCRUD({
   const [totalItems, setTotalItems] = useState(0);
   const medicineAbortRef = useRef(null);
   const limit = 25;
+
+  const updateCategoriesList = useCallback((cats) => {
+    categoriesListRef.current = cats;
+    setCategoriesList(cats);
+  }, []);
+
   const getVisiblePages = () => {
     if (totalPages <= 7) {
       return Array.from(
@@ -606,6 +653,7 @@ export default function InventoryCRUD({
         );
         if (res.data?.success && res.data?.data) {
           setSummaryStats(res.data.data);
+          hasInitializedSummaryRef.current = true;
         }
       } catch (err) {
         console.error("Failed to load inventory summary", err);
@@ -615,6 +663,7 @@ export default function InventoryCRUD({
   );
   const loadMedicines = useCallback(
     async (options = {}) => {
+      if (restored === false || authLoading) return;
       const { skipSummary = false, forceRefreshSummary = false } = options;
       if (medicineAbortRef.current) {
         medicineAbortRef.current.abort();
@@ -625,7 +674,7 @@ export default function InventoryCRUD({
       try {
         let categoryId = undefined;
         if (categoryFilter !== "All") {
-          const catObj = categoriesList.find(
+          const catObj = (categoriesListRef.current || []).find(
             (c) => (c.name || c.categoryName || c) === categoryFilter,
           );
           if (catObj) {
@@ -662,21 +711,42 @@ export default function InventoryCRUD({
         setMedicines(mapped);
         setTotalItems(total);
         setTotalPages(pages);
-        if (viewTarget) {
-          const updatedViewTarget = mapped.find((m) => m.id === viewTarget.id);
-          if (updatedViewTarget) {
-            setViewTarget(updatedViewTarget);
-          }
-        }
-        if (!skipSummary) {
+        setLoadError(false);
+        isInitialLoadRef.current = false;
+
+        setViewTarget((prev) => {
+          if (!prev) return null;
+          return mapped.find((m) => m.id === prev.id) || prev;
+        });
+
+        if (
+          !skipSummary &&
+          (forceRefreshSummary || !hasInitializedSummaryRef.current)
+        ) {
           await loadSummary({ forceRefresh: forceRefreshSummary });
         }
       } catch (err) {
         if (err?.name === "CanceledError" || controller.signal.aborted) return;
-        showToast(
-          "Failed to load inventory",
-          err?.response?.data?.error || "error",
-        );
+        console.error("[INVENTORY LOAD FAILED]", {
+          name: err?.name,
+          message: err?.message,
+          code: err?.code,
+          status: err?.response?.status,
+          response: err?.response?.data,
+          url: err?.config?.url,
+          params: err?.config?.params,
+        });
+        const errMsg =
+          err?.response?.data?.error?.message ||
+          err?.response?.data?.message ||
+          err?.message ||
+          "Failed to load inventory";
+        if (isInitialLoadRef.current) {
+          setLoadError(true);
+          showToast("Failed to load inventory", "error");
+        } else {
+          showToast(errMsg, "warning");
+        }
       } finally {
         if (!controller.signal.aborted) {
           setLoading(false);
@@ -689,10 +759,10 @@ export default function InventoryCRUD({
       statusFilter,
       currentPage,
       debouncedSearch,
-      viewTarget,
-      categoriesList,
       loadSummary,
       showToast,
+      restored,
+      authLoading,
     ],
   );
   const handleEditStock = (medicine) => {
@@ -731,33 +801,33 @@ export default function InventoryCRUD({
   };
   useEffect(() => {
     let mounted = true;
+    if (restored === false || authLoading) return;
+
     const initialize = async () => {
       try {
-        setLoading(true);
-        const [categoriesRes] = await Promise.all([
+        const results = await Promise.allSettled([
           getCategories(),
           loadSummary(),
         ]);
         if (!mounted) return;
-        setCategoriesList(
-          Array.isArray(categoriesRes.data?.data)
-            ? categoriesRes.data.data
-            : [],
-        );
-      } catch (err) {
-        console.error(err);
-        showToast("Failed to load inventory", "error");
-      } finally {
-        if (mounted) {
-          setLoading(false);
+        const [categoriesRes] = results;
+        if (categoriesRes.status === "fulfilled") {
+          const list = Array.isArray(categoriesRes.value?.data?.data)
+            ? categoriesRes.value.data.data
+            : [];
+          updateCategoriesList(list);
+        } else {
+          console.warn("Categories fetch failed:", categoriesRes.reason);
         }
+      } catch (err) {
+        console.error("Auxiliary initialization error:", err);
       }
     };
     initialize();
     return () => {
       mounted = false;
     };
-  }, [showToast, loadSummary]);
+  }, [restored, authLoading, updateCategoriesList, loadSummary]);
 
   useEffect(() => {
     const handleRefresh = () => {
@@ -998,6 +1068,8 @@ export default function InventoryCRUD({
         categories={categories}
         statusFilter={statusFilter}
         loading={loading}
+        loadError={loadError}
+        onRetry={() => loadMedicines({ forceRefreshSummary: true })}
         filtered={filtered}
         limit={limit}
         totalItems={totalItems}

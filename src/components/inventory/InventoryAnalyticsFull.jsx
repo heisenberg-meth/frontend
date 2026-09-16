@@ -73,8 +73,12 @@ const LazyRechartsWrapper = lazy(() =>
     },
   })),
 );
-import { getMedicines } from "../../services/inventory.service";
-import { safeNumber } from "../../utils/number.js";
+import {
+  getInventoryValueSummary,
+  getInventoryCategoryBreakdown,
+  getHighValueStock,
+  getExpiryRisk,
+} from "../../services/inventory.service";
 const formatIndianCurrency = (value) => {
   const amount = Number(value) || 0;
   if (amount >= 1_00_00_000) {
@@ -339,107 +343,45 @@ export default function InventoryAnalyticsFull() {
     expiryRisk: data.expiryRisk,
   });
   useEffect(() => {
+    if (data.summary) return;
     let active = true;
     const fetchAnalytics = async () => {
       try {
-        const res = await getMedicines({
-          limit: 10000,
-        });
+        setLoading(true);
+        const [summaryRes, categoriesRes, highValueRes, expiryRiskRes] =
+          await Promise.allSettled([
+            getInventoryValueSummary(),
+            getInventoryCategoryBreakdown(),
+            getHighValueStock(),
+            getExpiryRisk(),
+          ]);
+
         if (!active) return;
-        const items = Array.isArray(res.data?.data?.items)
-          ? res.data.data.items
-          : Array.isArray(res.data?.data)
-            ? res.data.data
+
+        const summaryData =
+          summaryRes.status === "fulfilled"
+            ? summaryRes.value?.data?.data || summaryRes.value?.data || {}
+            : {};
+        const categoriesData =
+          categoriesRes.status === "fulfilled"
+            ? categoriesRes.value?.data?.data || categoriesRes.value?.data || []
             : [];
-        let totalVal = 0,
-          estProfit = 0,
-          riskVal = 0,
-          deadVal = 0;
-        const categoryMap = {},
-          highValue = [],
-          days30 = [],
-          days60 = [],
-          deadStock = [];
-        const today = new Date();
-        items.forEach((item) => {
-          const qty = item.stock ?? 0;
-          if (qty <= 0) return;
-          const batch = item.inventoryBatches?.[0] || {};
-          const purchasePrice = safeNumber(
-            batch.purchasePrice || item.purchasePrice || item.purchaseCost || 0,
-          );
-          const mrp = safeNumber(batch.mrp || item.mrp || 0);
-          const batchNum = batch.batchNumber || item.batchNumber || "N/A";
-          const expDate = batch.expiryDate || item.expiryDate;
-          const itemValue = qty * purchasePrice;
-          totalVal += itemValue;
-          estProfit += qty * (mrp - purchasePrice);
-          const catName =
-            item.category?.name || item.category || "Uncategorized";
-          if (!categoryMap[catName])
-            categoryMap[catName] = {
-              count: 0,
-              value: 0,
-            };
-          categoryMap[catName].count += 1;
-          categoryMap[catName].value += itemValue;
-          highValue.push({
-            name: item.name,
-            batch: batchNum,
-            qty,
-            purchaseValue: itemValue,
-            sellingValue: qty * mrp,
-            margin:
-              purchasePrice > 0
-                ? Math.round(((mrp - purchasePrice) / mrp) * 100)
-                : 0,
-          });
-          if (expDate) {
-            const diffDays = Math.ceil(
-              (new Date(expDate) - today) / (1000 * 60 * 60 * 24),
-            );
-            if (diffDays <= 30 && diffDays > 0) {
-              days30.push({
-                name: item.name,
-                qty,
-                value: itemValue,
-                daysLeft: diffDays,
-              });
-              riskVal += itemValue;
-            } else if (diffDays <= 60 && diffDays > 30) {
-              days60.push({
-                name: item.name,
-                qty,
-                value: itemValue,
-                daysLeft: diffDays,
-              });
-              riskVal += itemValue;
-            } else if (diffDays <= 0) {
-              deadStock.push({
-                name: item.name,
-                qty,
-                value: itemValue,
-                inactiveDays: Math.abs(diffDays),
-              });
-              deadVal += itemValue;
-            }
-          } else {
-            const inactiveDays = Math.ceil(
-              (today - new Date(item.updatedAt || item.createdAt)) /
-                (1000 * 60 * 60 * 24),
-            );
-            if (inactiveDays > 180) {
-              deadStock.push({
-                name: item.name,
-                qty,
-                value: itemValue,
-                inactiveDays,
-              });
-              deadVal += itemValue;
-            }
-          }
-        });
-        highValue.sort((a, b) => b.purchaseValue - a.purchaseValue);
+        const highValueData =
+          highValueRes.status === "fulfilled"
+            ? highValueRes.value?.data?.data || highValueRes.value?.data || []
+            : [];
+        const expiryRiskData =
+          expiryRiskRes.status === "fulfilled"
+            ? expiryRiskRes.value?.data?.data || expiryRiskRes.value?.data || {}
+            : {};
+
+        const totalVal = summaryData.totalValue || 0;
+        const estProfit = summaryData.potentialProfit || 0;
+        const riskVal =
+          (expiryRiskData.risk30?.value || 0) +
+          (expiryRiskData.risk90?.value || 0);
+        const deadVal = expiryRiskData.expired?.value || 0;
+
         setAnalytics({
           summary: {
             totalValue: totalVal,
@@ -447,22 +389,28 @@ export default function InventoryAnalyticsFull() {
             expiryRiskValue: riskVal,
             deadStockValue: deadVal,
           },
-          categories: Object.keys(categoryMap)
-            .map((k) => ({
-              category: k,
-              count: categoryMap[k].count,
-              value: categoryMap[k].value,
-            }))
-            .sort((a, b) => b.value - a.value),
-          highValueStock: highValue.slice(0, 10),
+          categories: categoriesData.map((k) => ({
+            category: k.category || "Uncategorized",
+            count: k.quantity || 0,
+            value: k.value || 0,
+          })),
+          highValueStock: highValueData.map((item) => ({
+            name: item.name,
+            batch: item.genericName || "N/A",
+            qty: item.quantity || 0,
+            purchaseValue: item.totalValue || 0,
+            sellingValue: item.totalValue || 0,
+            margin: 0,
+          })),
           expiryRisk: {
-            days30,
-            days60,
-            deadStock,
+            days30: [],
+            days60: [],
+            deadStock: [],
+            ...expiryRiskData,
           },
         });
       } catch (err) {
-        console.error(err);
+        console.error("Failed to load full inventory analytics:", err);
       } finally {
         if (active) setLoading(false);
       }

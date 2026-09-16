@@ -116,12 +116,14 @@ function AppLoadingScreen() {
   );
 }
 
-function useAppData({ status, restored, user, showToast }) {
+function useAppData({ status, restored, user }) {
   const [medicines, setMedicines] = useState([]);
   const [lowStock, setLowStock] = useState(10);
   const [expiryDays, setExpiryDays] = useState(30);
   const [storeProfile, setStoreProfile] = useState(null);
   const [lastSync, setLastSync] = useState(new Date());
+
+  const branchId = user?.branchId || user?.branch?.id;
 
   const fetchData = useCallback(async () => {
     if (
@@ -134,15 +136,18 @@ function useAppData({ status, restored, user, showToast }) {
 
     try {
       const res = await api.get(API_ROUTES.INVENTORY_MEDICINES, {
-        params: { limit: 100 },
+        params: {
+          limit: 100,
+          ...(branchId ? { branchId } : {}),
+        },
       });
 
       setMedicines(normalizeArrayResponse(res));
       setLastSync(new Date());
     } catch (err) {
-      showToast("Failed to fetch inventory", err);
+      console.warn("Background inventory sync failed:", err);
     }
-  }, [showToast, status]);
+  }, [status, branchId]);
 
   const fetchSettings = useCallback(async () => {
     if (
