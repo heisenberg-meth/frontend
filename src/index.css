@@ -86,7 +86,7 @@
 
   /* Modal overlay - lighter for light theme */
   --modal-overlay: rgba(15, 23, 42, 0.25);
-  --modal-overlay-heavy: rgba(15, 23, 42, 0.50);
+  --modal-overlay-heavy: rgba(15, 23, 42, 0.5);
 
   --primary: #0d9488;
   --primary-glow: rgba(13, 148, 136, 0.15);
@@ -225,18 +225,18 @@ body.modal-open {
 
   cursor: pointer;
 
-  transition: all .2s ease;
+  transition: all 0.2s ease;
 }
 
 .action-btn:hover {
   background: var(--primary);
   color: white;
   transform: translateY(-1px);
-  box-shadow: 0 8px 18px rgba(0,0,0,.25);
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.25);
 }
 
 .action-btn:active {
-  transform: scale(.97);
+  transform: scale(0.97);
 }
 
 .action-btn.editing {
@@ -291,4 +291,3 @@ body.modal-open {
   -webkit-font-smoothing: antialiased;
   font-feature-settings: "liga";
 }
-

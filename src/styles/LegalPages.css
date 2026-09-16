@@ -3,7 +3,7 @@
   background-color: var(--bg-primary, #0f172a);
   color: var(--text-primary, #e2e8f0);
   padding: 2rem;
-  font-family: 'Inter', system-ui, sans-serif;
+  font-family: "Inter", system-ui, sans-serif;
 }
 
 .legal-back-btn {
@@ -102,8 +102,14 @@
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .legal-document h1 {
@@ -245,7 +251,7 @@
 }
 
 .auth-consent-checkbox:checked::after {
-  content: '';
+  content: "";
   position: absolute;
   top: 1px;
   left: 5px;
@@ -284,7 +290,7 @@
   .legal-layout {
     flex-direction: column;
   }
-  
+
   .legal-sidebar {
     width: 100%;
     position: static;
@@ -294,18 +300,18 @@
     gap: 0.5rem;
     padding: 1rem;
   }
-  
+
   .legal-sidebar-title {
     width: 100%;
     margin-bottom: 0.5rem;
   }
-  
+
   .legal-nav-btn {
     width: auto;
     padding: 0.5rem 1rem;
     margin-bottom: 0;
   }
-  
+
   .legal-content {
     padding: 2rem 1.5rem;
   }

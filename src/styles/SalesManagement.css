@@ -98,7 +98,6 @@
   box-sizing: border-box;
 }
 
-
 .chart-bar {
   width: 100%;
   min-height: 0;
@@ -206,10 +205,6 @@
   color: var(--text);
   padding: 12px;
 }
-
-
-
-
 
 /* Micro Action Buttons */
 .micro-btn {
@@ -430,4 +425,3 @@
     min-width: 0 !important;
   }
 }
-

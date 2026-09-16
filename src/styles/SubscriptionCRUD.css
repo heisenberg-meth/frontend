@@ -271,7 +271,9 @@
 
 .sub-plan-card--current {
   border-color: var(--success);
-  box-shadow: 0 0 0 1px var(--success), 0 12px 36px rgba(16, 185, 129, 0.15);
+  box-shadow:
+    0 0 0 1px var(--success),
+    0 12px 36px rgba(16, 185, 129, 0.15);
 }
 
 .sub-plan-popular {

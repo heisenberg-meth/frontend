@@ -12,6 +12,328 @@ import {
 } from "lucide-react";
 import { AnimatePresence, m } from "framer-motion";
 import api from "../../api";
+function LoadingPhase() {
+  return (
+    <div className="cim-loading-box">
+      <Loader2 size={36} className="cim-spinner" />
+      <p className="cim-loading-text">Analyzing active inventory…</p>
+    </div>
+  );
+}
+
+function EmptyPhase({ summary, handleClose }) {
+  return (
+    <>
+      <div className="cim-header">
+        <div className="cim-icon-wrap neutral">
+          <PackageOpen size={22} />
+        </div>
+        <div>
+          <h2 id="cim-modal-title" className="cim-title">
+            Clear Inventory
+          </h2>
+          <p className="cim-subtitle">
+            {summary.branchName
+              ? `Branch: ${summary.branchName}`
+              : "Current Branch"}
+          </p>
+        </div>
+        <button
+          className="cim-close-btn"
+          onClick={handleClose}
+          aria-label="Close dialog"
+        >
+          <X size={18} />
+        </button>
+      </div>
+
+      <div className="cim-body">
+        <div className="cim-empty-card">
+          <PackageOpen size={40} className="cim-empty-icon" />
+          <h3>No Active Inventory Found</h3>
+          <p>
+            There is currently no active inventory or available stock to clear
+            for this branch.
+          </p>
+        </div>
+      </div>
+
+      <div className="cim-footer">
+        <button className="cim-btn primary" onClick={handleClose}>
+          Close
+        </button>
+      </div>
+    </>
+  );
+}
+
+function PreviewPhase({ summary, errorMsg, handleClose, setPhase }) {
+  return (
+    <>
+      <div className="cim-header">
+        <div className="cim-icon-wrap danger">
+          <AlertTriangle size={22} />
+        </div>
+        <div>
+          <h2 id="cim-modal-title" className="cim-title">
+            Clear Entire Inventory?
+          </h2>
+          <p className="cim-subtitle">
+            {summary.branchName
+              ? `Branch: ${summary.branchName}`
+              : "Destructive operation for current branch"}
+          </p>
+        </div>
+        <button
+          className="cim-close-btn"
+          onClick={handleClose}
+          aria-label="Close dialog"
+        >
+          <X size={18} />
+        </button>
+      </div>
+
+      <div className="cim-body">
+        <div className="cim-stats-banner">
+          <div className="cim-stat-col">
+            <span className="cim-stat-num">
+              {summary.batchCount.toLocaleString()}
+            </span>
+            <span className="cim-stat-lbl">Inventory Batches</span>
+          </div>
+          <div className="cim-stat-divider" />
+          <div className="cim-stat-col">
+            <span className="cim-stat-num">
+              {summary.totalUnits.toLocaleString()}
+            </span>
+            <span className="cim-stat-lbl">Total Units Stock</span>
+          </div>
+        </div>
+
+        <div className="cim-impact-section">
+          <h4 className="cim-section-title danger-text">
+            What will be affected:
+          </h4>
+          <ul className="cim-bullet-list danger-bullets">
+            <li>All active inventory batches will be archived.</li>
+            <li>Stock quantities will be reset to 0.</li>
+            <li>Immediate stock availability will become 0.</li>
+          </ul>
+        </div>
+
+        <div className="cim-impact-section">
+          <h4 className="cim-section-title safe-text">
+            What will be preserved:
+          </h4>
+          <ul className="cim-bullet-list safe-bullets">
+            <li>
+              <CheckCircle2 size={14} className="cim-check" />
+              <strong>Medicine Catalog:</strong> Master records &amp; medicines
+              remain intact.
+            </li>
+            <li>
+              <CheckCircle2 size={14} className="cim-check" />
+              <strong>Business Records:</strong> Purchase invoices, sales
+              history, and GST data remain intact.
+            </li>
+            <li>
+              <CheckCircle2 size={14} className="cim-check" />
+              <strong>Traceability:</strong> Full audit logs &amp; inventory
+              ledger history are preserved.
+            </li>
+          </ul>
+        </div>
+
+        {errorMsg && <div className="cim-error-bar">{errorMsg}</div>}
+      </div>
+
+      <div className="cim-footer">
+        <button className="cim-btn secondary" onClick={handleClose}>
+          Cancel
+        </button>
+        <button
+          id="cim-proceed-step2-btn"
+          className="cim-btn primary danger"
+          onClick={() => setPhase("step2_confirm")}
+        >
+          <span>Continue</span>
+          <ArrowRight size={15} />
+        </button>
+      </div>
+    </>
+  );
+}
+
+function ConfirmPhase({
+  summary,
+  confirmInput,
+  setConfirmInput,
+  inputRef,
+  errorMsg,
+  handleClose,
+  handleClear,
+  setPhase,
+}) {
+  return (
+    <>
+      <div className="cim-header">
+        <div className="cim-icon-wrap danger">
+          <ShieldAlert size={22} />
+        </div>
+        <div>
+          <h2 id="cim-modal-title" className="cim-title">
+            Final Safety Confirmation
+          </h2>
+          <p className="cim-subtitle">Action cannot be undone automatically</p>
+        </div>
+        <button
+          className="cim-close-btn"
+          onClick={handleClose}
+          aria-label="Close dialog"
+        >
+          <X size={18} />
+        </button>
+      </div>
+
+      <div className="cim-body">
+        <div className="cim-confirm-box">
+          <p className="cim-confirm-lead">
+            You are about to clear <strong>{summary.batchCount}</strong>{" "}
+            inventory batches and{" "}
+            <strong>{summary.totalUnits.toLocaleString()}</strong> units from
+            active inventory
+            {summary.branchName ? ` at ${summary.branchName}` : ""}.
+          </p>
+          <p className="cim-confirm-instruction">
+            To prevent accidental data loss, please type{" "}
+            <span className="cim-badge-clear">CLEAR</span> below to confirm:
+          </p>
+
+          <div className="cim-input-wrapper">
+            <input
+              ref={inputRef}
+              id="cim-confirm-input"
+              type="text"
+              className="cim-confirm-input"
+              value={confirmInput}
+              onChange={(e) => setConfirmInput(e.target.value)}
+              placeholder="Type CLEAR"
+              autoComplete="off"
+              spellCheck="false"
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && confirmInput.trim() === "CLEAR") {
+                  handleClear();
+                }
+              }}
+            />
+          </div>
+        </div>
+
+        {errorMsg && <div className="cim-error-bar">{errorMsg}</div>}
+      </div>
+
+      <div className="cim-footer">
+        <button
+          className="cim-btn secondary"
+          onClick={() => setPhase("step1_preview")}
+        >
+          <ArrowLeft size={15} />
+          <span>Back</span>
+        </button>
+        <button
+          id="cim-final-clear-btn"
+          className={`cim-btn primary danger ${confirmInput.trim() !== "CLEAR" ? "disabled" : ""}`}
+          disabled={confirmInput.trim() !== "CLEAR"}
+          onClick={handleClear}
+        >
+          <Trash2 size={16} />
+          <span>Clear Entire Inventory</span>
+        </button>
+      </div>
+    </>
+  );
+}
+
+function ClearingPhase({ summary }) {
+  return (
+    <div className="cim-progress-box">
+      <div className="cim-progress-icon">
+        <Loader2 size={40} className="cim-spinner" />
+      </div>
+      <h2 className="cim-progress-title">Clearing Inventory…</h2>
+      <p className="cim-progress-subtitle">
+        Archiving {summary.batchCount} batches and resetting stock quantities.
+      </p>
+      <div className="cim-bar-track">
+        <div className="cim-bar-fill" />
+      </div>
+      <p className="cim-progress-note">
+        Please do not close or refresh this window.
+      </p>
+    </div>
+  );
+}
+
+function DonePhase({ result, handleClose }) {
+  return (
+    <>
+      <div className="cim-header">
+        <div className="cim-icon-wrap success">
+          <CheckCircle2 size={22} />
+        </div>
+        <div>
+          <h2 id="cim-modal-title" className="cim-title text-success">
+            Inventory Cleared Successfully
+          </h2>
+          <p className="cim-subtitle">Active stock has been reset to zero</p>
+        </div>
+        <button
+          className="cim-close-btn"
+          onClick={handleClose}
+          aria-label="Close dialog"
+        >
+          <X size={18} />
+        </button>
+      </div>
+
+      <div className="cim-body">
+        <div className="cim-result-grid">
+          <div className="cim-result-card success">
+            <span className="cim-result-val">
+              {result?.batchesCleared ?? 0}
+            </span>
+            <span className="cim-result-lbl">Batches Cleared</span>
+          </div>
+          <div className="cim-result-card neutral">
+            <span className="cim-result-val">
+              {result?.unitsCleared?.toLocaleString() ?? 0}
+            </span>
+            <span className="cim-result-lbl">Units Removed</span>
+          </div>
+          <div className="cim-result-card highlight">
+            <span className="cim-result-val">0</span>
+            <span className="cim-result-lbl">Active Stock</span>
+          </div>
+        </div>
+
+        <p className="cim-done-assurance">
+          Medicine master records, historical purchase invoices, and audit
+          records remain safely stored and accessible.
+        </p>
+      </div>
+
+      <div className="cim-footer">
+        <button
+          id="cim-done-btn"
+          className="cim-btn primary success"
+          onClick={handleClose}
+        >
+          Done
+        </button>
+      </div>
+    </>
+  );
+}
 
 export default function ClearInventoryModal({
   isOpen,
@@ -85,11 +407,13 @@ export default function ClearInventoryModal({
 
   // Focus input on step2
   useEffect(() => {
-    if (phase === "step2_confirm") {
-      setTimeout(() => {
-        inputRef.current?.focus();
-      }, 100);
-    }
+    if (phase !== "step2_confirm") return;
+
+    const timeoutId = setTimeout(() => {
+      inputRef.current?.focus();
+    }, 100);
+
+    return () => clearTimeout(timeoutId);
   }, [phase]);
 
   // Handle clear submission
@@ -139,6 +463,33 @@ export default function ClearInventoryModal({
 
   if (!isOpen) return null;
 
+  const phaseContent = {
+    loading: <LoadingPhase />,
+    empty: <EmptyPhase summary={summary} handleClose={handleClose} />,
+    step1_preview: (
+      <PreviewPhase
+        summary={summary}
+        errorMsg={errorMsg}
+        handleClose={handleClose}
+        setPhase={setPhase}
+      />
+    ),
+    step2_confirm: (
+      <ConfirmPhase
+        summary={summary}
+        confirmInput={confirmInput}
+        setConfirmInput={setConfirmInput}
+        inputRef={inputRef}
+        errorMsg={errorMsg}
+        handleClose={handleClose}
+        handleClear={handleClear}
+        setPhase={setPhase}
+      />
+    ),
+    clearing: <ClearingPhase summary={summary} />,
+    done: <DonePhase result={result} handleClose={handleClose} />,
+  }[phase];
+
   return (
     <AnimatePresence>
       <div
@@ -159,334 +510,7 @@ export default function ClearInventoryModal({
           exit={{ opacity: 0, scale: 0.94, y: 16 }}
           transition={{ duration: 0.2, ease: "easeOut" }}
         >
-          {/* ════════════════════════════════════════════════════════════════ */}
-          {/* 1. LOADING PHASE */}
-          {/* ════════════════════════════════════════════════════════════════ */}
-          {phase === "loading" && (
-            <div className="cim-loading-box">
-              <Loader2 size={36} className="cim-spinner" />
-              <p className="cim-loading-text">Analyzing active inventory…</p>
-            </div>
-          )}
-
-          {/* ════════════════════════════════════════════════════════════════ */}
-          {/* 2. EMPTY INVENTORY PHASE */}
-          {/* ════════════════════════════════════════════════════════════════ */}
-          {phase === "empty" && (
-            <>
-              <div className="cim-header">
-                <div className="cim-icon-wrap neutral">
-                  <PackageOpen size={22} />
-                </div>
-                <div>
-                  <h2 id="cim-modal-title" className="cim-title">
-                    Clear Inventory
-                  </h2>
-                  <p className="cim-subtitle">
-                    {summary.branchName
-                      ? `Branch: ${summary.branchName}`
-                      : "Current Branch"}
-                  </p>
-                </div>
-                <button
-                  className="cim-close-btn"
-                  onClick={handleClose}
-                  aria-label="Close dialog"
-                >
-                  <X size={18} />
-                </button>
-              </div>
-
-              <div className="cim-body">
-                <div className="cim-empty-card">
-                  <PackageOpen size={40} className="cim-empty-icon" />
-                  <h3>No Active Inventory Found</h3>
-                  <p>
-                    There is currently no active inventory or available stock to
-                    clear for this branch.
-                  </p>
-                </div>
-              </div>
-
-              <div className="cim-footer">
-                <button className="cim-btn primary" onClick={handleClose}>
-                  Close
-                </button>
-              </div>
-            </>
-          )}
-
-          {/* ════════════════════════════════════════════════════════════════ */}
-          {/* 3. STEP 1: IMPACT PREVIEW */}
-          {/* ════════════════════════════════════════════════════════════════ */}
-          {phase === "step1_preview" && (
-            <>
-              <div className="cim-header">
-                <div className="cim-icon-wrap danger">
-                  <AlertTriangle size={22} />
-                </div>
-                <div>
-                  <h2 id="cim-modal-title" className="cim-title">
-                    Clear Entire Inventory?
-                  </h2>
-                  <p className="cim-subtitle">
-                    {summary.branchName
-                      ? `Branch: ${summary.branchName}`
-                      : "Destructive operation for current branch"}
-                  </p>
-                </div>
-                <button
-                  className="cim-close-btn"
-                  onClick={handleClose}
-                  aria-label="Close dialog"
-                >
-                  <X size={18} />
-                </button>
-              </div>
-
-              <div className="cim-body">
-                <div className="cim-stats-banner">
-                  <div className="cim-stat-col">
-                    <span className="cim-stat-num">
-                      {summary.batchCount.toLocaleString()}
-                    </span>
-                    <span className="cim-stat-lbl">Inventory Batches</span>
-                  </div>
-                  <div className="cim-stat-divider" />
-                  <div className="cim-stat-col">
-                    <span className="cim-stat-num">
-                      {summary.totalUnits.toLocaleString()}
-                    </span>
-                    <span className="cim-stat-lbl">Total Units Stock</span>
-                  </div>
-                </div>
-
-                <div className="cim-impact-section">
-                  <h4 className="cim-section-title danger-text">
-                    What will be affected:
-                  </h4>
-                  <ul className="cim-bullet-list danger-bullets">
-                    <li>All active inventory batches will be archived.</li>
-                    <li>Stock quantities will be reset to 0.</li>
-                    <li>Immediate stock availability will become 0.</li>
-                  </ul>
-                </div>
-
-                <div className="cim-impact-section">
-                  <h4 className="cim-section-title safe-text">
-                    What will be preserved:
-                  </h4>
-                  <ul className="cim-bullet-list safe-bullets">
-                    <li>
-                      <CheckCircle2 size={14} className="cim-check" />
-                      <strong>Medicine Catalog:</strong> Master records &amp;
-                      medicines remain intact.
-                    </li>
-                    <li>
-                      <CheckCircle2 size={14} className="cim-check" />
-                      <strong>Business Records:</strong> Purchase invoices,
-                      sales history, and GST data remain intact.
-                    </li>
-                    <li>
-                      <CheckCircle2 size={14} className="cim-check" />
-                      <strong>Traceability:</strong> Full audit logs &amp;
-                      inventory ledger history are preserved.
-                    </li>
-                  </ul>
-                </div>
-
-                {errorMsg && <div className="cim-error-bar">{errorMsg}</div>}
-              </div>
-
-              <div className="cim-footer">
-                <button className="cim-btn secondary" onClick={handleClose}>
-                  Cancel
-                </button>
-                <button
-                  id="cim-proceed-step2-btn"
-                  className="cim-btn primary danger"
-                  onClick={() => setPhase("step2_confirm")}
-                >
-                  <span>Continue</span>
-                  <ArrowRight size={15} />
-                </button>
-              </div>
-            </>
-          )}
-
-          {/* ════════════════════════════════════════════════════════════════ */}
-          {/* 4. STEP 2: TYPING CONFIRMATION (SAFETY GATE) */}
-          {/* ════════════════════════════════════════════════════════════════ */}
-          {phase === "step2_confirm" && (
-            <>
-              <div className="cim-header">
-                <div className="cim-icon-wrap danger">
-                  <ShieldAlert size={22} />
-                </div>
-                <div>
-                  <h2 id="cim-modal-title" className="cim-title">
-                    Final Safety Confirmation
-                  </h2>
-                  <p className="cim-subtitle">
-                    Action cannot be undone automatically
-                  </p>
-                </div>
-                <button
-                  className="cim-close-btn"
-                  onClick={handleClose}
-                  aria-label="Close dialog"
-                >
-                  <X size={18} />
-                </button>
-              </div>
-
-              <div className="cim-body">
-                <div className="cim-confirm-box">
-                  <p className="cim-confirm-lead">
-                    You are about to clear <strong>{summary.batchCount}</strong>{" "}
-                    inventory batches and{" "}
-                    <strong>{summary.totalUnits.toLocaleString()}</strong> units
-                    from active inventory
-                    {summary.branchName ? ` at ${summary.branchName}` : ""}.
-                  </p>
-                  <p className="cim-confirm-instruction">
-                    To prevent accidental data loss, please type{" "}
-                    <span className="cim-badge-clear">CLEAR</span> below to
-                    confirm:
-                  </p>
-
-                  <div className="cim-input-wrapper">
-                    <input
-                      ref={inputRef}
-                      id="cim-confirm-input"
-                      type="text"
-                      className="cim-confirm-input"
-                      value={confirmInput}
-                      onChange={(e) => setConfirmInput(e.target.value)}
-                      placeholder="Type CLEAR"
-                      autoComplete="off"
-                      spellCheck="false"
-                      onKeyDown={(e) => {
-                        if (
-                          e.key === "Enter" &&
-                          confirmInput.trim() === "CLEAR"
-                        ) {
-                          handleClear();
-                        }
-                      }}
-                    />
-                  </div>
-                </div>
-
-                {errorMsg && <div className="cim-error-bar">{errorMsg}</div>}
-              </div>
-
-              <div className="cim-footer">
-                <button
-                  className="cim-btn secondary"
-                  onClick={() => setPhase("step1_preview")}
-                >
-                  <ArrowLeft size={15} />
-                  <span>Back</span>
-                </button>
-                <button
-                  id="cim-final-clear-btn"
-                  className={`cim-btn primary danger ${confirmInput.trim() !== "CLEAR" ? "disabled" : ""}`}
-                  disabled={confirmInput.trim() !== "CLEAR"}
-                  onClick={handleClear}
-                >
-                  <Trash2 size={16} />
-                  <span>Clear Entire Inventory</span>
-                </button>
-              </div>
-            </>
-          )}
-
-          {/* ════════════════════════════════════════════════════════════════ */}
-          {/* 5. CLEARING IN PROGRESS */}
-          {/* ════════════════════════════════════════════════════════════════ */}
-          {phase === "clearing" && (
-            <div className="cim-progress-box">
-              <div className="cim-progress-icon">
-                <Loader2 size={40} className="cim-spinner" />
-              </div>
-              <h2 className="cim-progress-title">Clearing Inventory…</h2>
-              <p className="cim-progress-subtitle">
-                Archiving {summary.batchCount} batches and resetting stock
-                quantities.
-              </p>
-              <div className="cim-bar-track">
-                <div className="cim-bar-fill" />
-              </div>
-              <p className="cim-progress-note">
-                Please do not close or refresh this window.
-              </p>
-            </div>
-          )}
-
-          {/* ════════════════════════════════════════════════════════════════ */}
-          {/* 6. DONE PHASE */}
-          {/* ════════════════════════════════════════════════════════════════ */}
-          {phase === "done" && (
-            <>
-              <div className="cim-header">
-                <div className="cim-icon-wrap success">
-                  <CheckCircle2 size={22} />
-                </div>
-                <div>
-                  <h2 id="cim-modal-title" className="cim-title text-success">
-                    Inventory Cleared Successfully
-                  </h2>
-                  <p className="cim-subtitle">
-                    Active stock has been reset to zero
-                  </p>
-                </div>
-                <button
-                  className="cim-close-btn"
-                  onClick={handleClose}
-                  aria-label="Close dialog"
-                >
-                  <X size={18} />
-                </button>
-              </div>
-
-              <div className="cim-body">
-                <div className="cim-result-grid">
-                  <div className="cim-result-card success">
-                    <span className="cim-result-val">
-                      {result?.batchesCleared ?? 0}
-                    </span>
-                    <span className="cim-result-lbl">Batches Cleared</span>
-                  </div>
-                  <div className="cim-result-card neutral">
-                    <span className="cim-result-val">
-                      {result?.unitsCleared?.toLocaleString() ?? 0}
-                    </span>
-                    <span className="cim-result-lbl">Units Removed</span>
-                  </div>
-                  <div className="cim-result-card highlight">
-                    <span className="cim-result-val">0</span>
-                    <span className="cim-result-lbl">Active Stock</span>
-                  </div>
-                </div>
-
-                <p className="cim-done-assurance">
-                  Medicine master records, historical purchase invoices, and
-                  audit records remain safely stored and accessible.
-                </p>
-              </div>
-
-              <div className="cim-footer">
-                <button
-                  id="cim-done-btn"
-                  className="cim-btn primary success"
-                  onClick={handleClose}
-                >
-                  Done
-                </button>
-              </div>
-            </>
-          )}
+          {phaseContent}
         </m.div>
 
         {/* ════════════════════════════════════════════════════════════════ */}

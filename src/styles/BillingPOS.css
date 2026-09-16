@@ -476,7 +476,10 @@ select.pos-input option {
   box-sizing: border-box;
 
   display: grid;
-  grid-template-columns: minmax(220px, 1.4fr) minmax(180px, 1fr) minmax(120px, auto);
+  grid-template-columns: minmax(220px, 1.4fr) minmax(180px, 1fr) minmax(
+      120px,
+      auto
+    );
 
   align-items: center;
   gap: 20px;

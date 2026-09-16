@@ -46,8 +46,8 @@ function ReportsHubSection1({
         <div className="page-header-content">
           <h1 className="page-title">Reports & Analytics</h1>
           <p className="page-subtitle">
-            Real-time business intelligence: sales aggregates, supply spend,
-            net profit, and expiry risks.
+            Real-time business intelligence: sales aggregates, supply spend, net
+            profit, and expiry risks.
           </p>
         </div>
         <div className="page-header-actions">

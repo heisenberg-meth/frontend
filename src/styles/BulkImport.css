@@ -1587,12 +1587,24 @@ select.pos-input option {
   line-height: 1.2;
 }
 
-.error-stat-card.danger .count { color: #ef4444; }
-.error-stat-card.quantity .count { color: #f59e0b; }
-.error-stat-card.expiry .count { color: #ec4899; }
-.error-stat-card.pricing .count { color: #8b5cf6; }
-.error-stat-card.duplicate .count { color: #06b6d4; }
-.error-stat-card.other .count { color: #94a3b8; }
+.error-stat-card.danger .count {
+  color: #ef4444;
+}
+.error-stat-card.quantity .count {
+  color: #f59e0b;
+}
+.error-stat-card.expiry .count {
+  color: #ec4899;
+}
+.error-stat-card.pricing .count {
+  color: #8b5cf6;
+}
+.error-stat-card.duplicate .count {
+  color: #06b6d4;
+}
+.error-stat-card.other .count {
+  color: #94a3b8;
+}
 
 .error-stat-card .label {
   font-size: 11px;
@@ -1879,5 +1891,3 @@ select.pos-input option {
   color: #f87171;
   font-family: monospace;
 }
-
-
