@@ -1079,11 +1079,6 @@ export default function PurchaseManagement({ showToast, storeProfile }) {
       const data = res?.data?.data || res?.data || null;
       if (data && typeof data === "object") {
         setSummaryData(data);
-        console.log("[PURCHASE SUMMARY]", {
-          endpoint: API_ROUTES.PURCHASES_SUMMARY,
-          status: res?.status || 200,
-          pendingPurchaseOrders: data.pendingPurchaseOrders,
-        });
       } else {
         setSummaryError(true);
       }

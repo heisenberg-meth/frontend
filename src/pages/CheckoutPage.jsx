@@ -162,9 +162,6 @@ export default function CheckoutPage() {
           );
           window.location.replace(cancelUrl);
         });
-
-        console.log("[Razorpay] Checkout opened for order:", orderId);
-        console.log("[CheckoutPage] No frontend timeout logic configured.");
         rzp.open();
       } catch (err) {
         console.error("[Razorpay] Initialization error:", err);
